@@ -1,0 +1,177 @@
+Source: far2l-core
+Section: Productivity
+Priority: optional
+Maintainer: viklequick@github.com
+Homepage: https://github.com/elfmz/far2l.git
+Standards-Version: 4.4.1
+Build-Depends: cmake, dpkg, binutils, devscripts, xz-utils, zstd,
+               debhelper-compat (= 12),
+               dh-exec,
+               dh-python,
+               g++,
+               awk,
+               m4,
+               make,
+               libarchive-dev,
+               libwxgtk3.2-dev, 
+               pkg-config,
+               python3-dev,
+               python3,
+               libxerces-c-dev,
+               libneon27-dev,
+               libssl-dev,
+               libuchardet-dev,
+               libspdlog-dev,
+               libfmt-dev,
+               libnfs-dev,
+               libsmbclient-dev,
+               libssh-dev,
+               libpcre3-dev,
+               python3-cffi, python3-pip
+Rules-Requires-Root: binary-targets
+
+Package: far2l-core
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: bash, libarchive13, libfmt9, libuchardet0, libxerces-c3.2, libpcre3
+Recommends: far2l-ttyxi, far2l-plugins-netrocks-ftp, far2l-plugins-netrocks-sftp, far2l-plugins-netrocks-shell
+Suggests: far2l-wxgtk, far2l-plugins-netrocks-smb, far2l-plugins-netrocks-webdav, far2l-plugins-netrocks-nfs,
+			tar, gzip, bzip2, exif, 7zip, zstd, elfutils, gpg, util-linux,
+          	chafa, jp2a, pandoc, poppler-utils, colordiff, catdoc, universal-ctags, fdisk, rpm, dpkg
+Description: Far for Linux main files with core plug-ins, needs terminal to work
+ .
+ Far 2 Linux is enhanced port of the well-known dual-panel console file manager from the Windows world. Despite to the original, 
+ the far 2 Linux has started from the nearly original code from Eugene Roshal and it is based upon FAR 2 codebase but not FAR 3. 
+ .
+ In addition, Linux version supports both X11 and console modes, with over-ssh access to the clipboard and fully-working keyboard 
+ rather than ancient termcap limitations. It introduces background operations for copying, live console scrolling and many other 
+ features have implemented in Linux version. Couple of well-known plug-ins are available out of the box, including 
+ Colorer, archiving, and network operations.
+
+
+Package: far2l-ttyxi
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: libXi6, far2l-core
+Description: Far for Linux extension to support enhanced keyboard (for case it have started inside X session)
+
+Package: far2l-wxgtk
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, libwxbase3.2, libwxgtk3.2
+Description: Far for Linux UI for X11 on top of wxWidgets and GTK
+
+Package: far2l-plugins-netrocks-ftp
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, libssl3
+Description: Far for Linux plug-in to communicate via FTP, as part of NetRocks
+
+Package: far2l-plugins-netrocks-sftp
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, libssl3, libssh2-1
+Description: Far for Linux plug-in to communicate via sFTP, as part of NetRocks
+
+Package: far2l-plugins-netrocks-smb
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, libsmbclient
+Description: Far for Linux plug-in to communicate via SMB, as part of NetRocks
+
+Package: far2l-plugins-netrocks-webdav
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, libneon27
+Description: Far for Linux plug-in to communicate via WebDAV, as part of NetRocks
+
+Package: far2l-plugins-netrocks-nfs
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, libnfs13
+Description: Far for Linux plug-in to communicate via NFS, as part of NetRocks
+
+Package: far2l-plugins-netrocks-shell
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core
+Description: Far for Linux plug-in to communicate via FISH protocol, as part of NetRocks
+
+Package: far2l-plugins-netcfg
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core
+Description: Far for Linux plug-in to manage network interfaces, separate plug-in with MIT license from https://github.com/VPROFi/netcfgplugin
+
+Package: far2l-plugins-sqlite
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, libsqlite3-0
+Build-Depends: sqlite3-dev
+Description: Far for Linux plug-in to manage SQLite files, separate plug-in with MIT license from https://github.com/VPROFi/sqlplugin
+
+Package: far2l-plugins-processes
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core
+Description: Far for Linux plug-in to manage Linux processes, separate plug-in with MIT license from https://github.com/VPROFi/processes
+
+Package: far2l-plugins-python
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, python3
+Build-Depends: python3, python3-cffi, python3-pip
+Description: Far for Linux plug-in to support Python plug-ins support, with extra samples inside
+
+Package: far2l-plugins-lua
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, lua-51, luajit
+Build-Depends: lua51-dev, luajit-dev
+Description: Far for Linux plug-in to support Lua-based plugins
+
+Package: far2l-plugins-jumpword
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core
+Description: Far for Linux plug-in to navigate the definition of the word under cursor (in forward and backward direction), like IDE doing. 
+
+Package: far2l-plugins-editwrap
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core
+Description: Far for Linux editor plug-in to wrap long lines. Warning: it is sample plug-in and it uses whole text editor area despite of the selection
+
+Package: far2l-server
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, far2l-ttyxi, far2l-plugins-netrocks-ftp, far2l-plugins-netrocks-sftp, far2l-plugins-netrocks-shell
+Description: Far for Linux (server-based minimal configuration; use desktop if you looking for confortable environment instead)
+
+Package: far2l-desktop
+Multi-Arch: same
+Architecture: any
+Pre-Depends: dpkg (>= 1.15.6~), ${misc:Pre-Depends}
+Depends: far2l-core, far2l-ttyxi, far2l-wxgtk, 
+				far2l-plugins-netrocks-ftp, far2l-plugins-netrocks-nfs, far2l-plugins-netrocks-sftp,
+                far2l-plugins-netrocks-shell, far2l-plugins-netrocks-smb, far2l-plugins-netrocks-webdav,
+                far2l-plugins-netcfg, far2l-plugins-processes, far2l-plugins-sqlite
+Suggests: far2l-plugins-python
+Description: Far for Linux (desktop-ready extended configuration)

@@ -6,8 +6,7 @@ merge_commit() {
 
 commit_meta() {
   git show --no-patch --format="* %cd %aN <%ae> - %H" --date=local "$@" | \
-    head -1 | \
-    sed -E 's/^(\* [a-z0-9 ]{9,10}) \d{2}:\d{2}:\d{2}/\1/i'
+    head -1 | sed -E 's/^(\* [a-z0-9 ]{9,10}) \d{2}:\d{2}:\d{2}/\1/i'
 }
 
 merge_meta() {
@@ -26,8 +25,8 @@ filter_vers() {
     s/^(\* [a-z0-9 ]{9,10}) \d{2}:\d{2}:\d{2}/$1/i;
     if (m/(?<= - )([0-9a-f]{40})$/) {
       $hash = $1; 
-      $ver = `git describe --tags --match="v[0-9]*" --long --abbrev=8 $hash 2>/dev/null`;
-      $ver =~ s/^v(.*)-(\d*)-g([0-9a-f]*)\n?/$1.$2+$3/;
+      $ver = `git describe --tags --match="v_[0-9]*" --long --abbrev=8 $hash 2>/dev/null`;
+      $ver =~ s/^v_(.*)-(\d*)-g([0-9a-f]*)\n?/$1.$2+$3/;
       s/ - $hash$/ - $ver/ if $ver;
     }'
 }
@@ -42,20 +41,14 @@ get_commits() {
 
 run_one() {
   local hash="$1"
-  if false; then
-    git log --format="* %cd %aN <%ae> - %H%n" --date=local $hash^-1 | \
-      head -1 | \
-      sed -E 's/^(\* [A-Za-z0-9 ]{9,10}) [0-9]{2}:[0-9]{2}:[0-9]{2} (.*) - [0-9a-f]{40}$/\1 \2 - '$ver'-1/'
-    git log --format="- %s%d" $hash^-1
+  if merge_commit $hash; then
+    local branch=`git show --no-patch --format='%P' $hash | head -1 | cut -d ' ' -f 2`
+    #echo ",,,$hash merge commit -> branch=$branch"
+    merge_meta $hash $branch
   else
-    if merge_commit $hash; then
-      local branch=`git show --no-patch --format='%P' $hash | head -1 | cut -d ' ' -f 2`
-      merge_meta $hash $branch
-    else
-      commit_meta $hash
-    fi
-    commit_mesg $hash^-1
+    commit_meta $hash
   fi
+  commit_mesg $hash^-1
 }
 
 run() {

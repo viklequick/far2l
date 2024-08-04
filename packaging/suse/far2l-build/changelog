@@ -1,0 +1,1796 @@
+* Mon Jul 29 2024 elfmz <fenix1905@tut.by> - 2.6.3.28+85f4bbe2
+- ci: fix warnings in build logs
+- ci: add worflow for cleaning old workflow runs
+- cosmetis
+- corrections from @unxed
+- Readme add table with explanation of Backends
+- Editor: fix replace with regexp (see Mantis 2465) (from far2m)
+- Fix FCTL_xxx Far crashes (see Mantis 2603) (from far2m)
+- Fix ECTL_SAVEFILE crash (see Mantis 2348) (from far2m)
+- Free memory after canceling F6 in the Viewer (Mantis 2605) (from far2m)
+- Fix a crash bug in VMenu (from far2m)
+- Fix ShiftF2 & ShiftF3 operation when multiple plugins-archivers are present (from far2m)
+- Fix CmdLine.CurPos (from far2m)
+- More accurate check index from plugin's dialog (from far2m)
+- fix TTYX (without Xi) keymods (touch #2309 #2310)
+
+* Thu Jul 25 2024 elfmz <fenix1905@tut.by> - 2.6.3.0+8300c9c9
+- Bump version to 2.6.3 (tag: v_2.6.3)
+
+* Thu Jul 25 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.2.37+9a2b8c0f
+- Apply WSL clipboard workaround in TTY mode also
+
+* Wed Jul 24 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.2.35+14b62a0a
+- miscellaneous tiny commits
+
+* Tue Jul 23 2024 Ivan <spnethw@gmail.com> - 2.6.2.33+4ad82ce3
+- fix tab order in FindFile dialog
+
+* Sat Jul 20 2024 elfmz <fenix1905@tut.by> - 2.6.2.28+35fafc01
+- save CaseSensitive and SelectFolders checkboxes in file select by + dialog
+
+* Sat Jul 20 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.2.26+44814e87
+- Fix #2235
+
+* Fri Jul 19 2024 elfmz <fenix1905@tut.by> - 2.6.2.24+9ce5dea6
+- fix glitches on Ctrl+Enter etc when hidden command line
+- fix some issues in prev change
+- Panels resize by Ctrl+Down allows to hide command line, subsequently allowing fast file find without pressing Alt
+
+* Fri Jul 19 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.2.20+e39cc3df
+- finnaly made it work 3/2 :))
+- finnaly made it work 2/2 :)
+- finnaly made it work
+- cscript.exe still have charset problems on some systems (https://t.me/far2l_ru/25428), lets stuck with powershell for now
+- removed redundancy
+- fix cscript
+- bring back cscript as it should be faster?
+- trying to fix charset issues
+- Users report charset problems with cscript.exe solution: https://t.me/far2l_ru/25309 Actually, every Windows version having WSL[g] also has PowerShell, so using cscript.exe is redundant.
+
+* Thu Jul 18 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.2.4+30af1dab
+- fix redundant newlines appearing at the end of clipboard content
+
+* Wed Jul 17 2024 elfmz <fenix1905@tut.by> - 2.6.2.2+d3c3f15a
+- fix languages to fit to dialog
+
+* Tue Jul 16 2024 elfmz <fenix1905@tut.by> - 2.6.2.1+efa04d16
+- FindFile: shuffle checkboxes to more convinient and space-efficient places
+- Bump version to 2.6.2 (tag: v_2.6.2)
+- dont use wxTheClipboard->Flush under WXGTK
+
+* Mon Jul 15 2024 elfmz <fenix1905@tut.by> - 2.6.1.332+c373b82f
+- may be fix problem with cursor visibility after command execution (touch #2287)
+- recognize also "msdos" filesystem as case insensitive
+- recognize also exfat as case-insensitive fs
+- colorer: fix compilation under MacOS ElCapitan
+
+* Sun Jul 14 2024 elfmz <fenix1905@tut.by> - 2.6.1.328+0c581fa9
+- NR: bring back 2 and 3 columns modes, just avoid Align file extensions
+- fix fill background in editor
+- Revert "editor/colorer: fix coloring artifacts when rendering strings with characters of nonstandard width (touch #1941)"
+- fallback to regular file if mode doesnt specify file type (fix #2263)
+- fix Plugin Colorer crashes #2277
+- umask override option replaced with use of chmod with possibility to disable it at all (touch #2257)
+
+* Sat Jul 13 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.1.317+3f9a6157
+- fix #2238
+
+* Sat Jul 13 2024 Ivan <spnethw@gmail.com> - 2.6.1.315+64cf2ebc
+- allow autofilters to work with extensions in both cases + style
+- update translation
+- add automation
+- adapt FileFilterParams to work with case(in)sensitive file masks
+
+* Sat Jul 13 2024 deep-soft <deep-soft@users.noreply.github.com> - 2.6.1.309+bbba0d16
+- Update macro.cpp
+
+* Sat Jul 13 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.305+43993781
+- add in readme explanation after #2271
+- NetRocks: for site connections list don't use current far2l panel modes
+
+* Mon Jul 8 2024 Ivan <spnethw@gmail.com> - 2.6.1.300+490b3728
+- indent fix
+- revert FileFilter change
+- files highlighting is back case sensitive + style fixes
+- update farlang.templ.m4 for FindFileCase
+- touch issue #2029, attempt to fix case-(in)sensitive option
+
+* Sun Jul 7 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.291+73d2ba96
+- History AltF8 fix escaping filenames in jump to file by CtrlF10 / F3
+- correction position of new functions in struct FarStandardFunctions after @shmuz advice
+- Advanced compare: add (in)sensitive option compare
+
+* Wed Jun 26 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.285+64af5341
+- Customize Case (in)sensitive option for file masks in Find file
+
+* Sun Jun 23 2024 elfmz <fenix1905@tut.by> - 2.6.1.282+60f4f399
+- ma: undo fork() experiment as measurements shown not so much improvements
+- revert libarchive detection workarouns for MacOS
+- fix pre-redraw func crash in certain conditions (fix #2262)
+- Help on Case sensitive when compare or select
+- Customize Case sensitive option for Compare folders and (De)Select in Panels
+- ma: experiment - use fork() instead of executing when extracting files by builtin handler if screen output and sudo are not required. This should make text search in archives much faster for those archive types that extracted using builtin handlers'
+- ma: remove unused code
+- ma: minus another two arrays
+
+* Sat Jun 22 2024 elfmz <fenix1905@tut.by> - 2.6.1.268+1ce11bc3
+- ma: get rid of few more fixed size arrays
+- ma: get rid of some strcpy for a company
+- multiarc: get rid of most fixed size arrays and all sprintfs
+
+* Fri Jun 21 2024 elfmz <fenix1905@tut.by> - 2.6.1.263+2844634b
+- helpers for trivial int->string conversions; fixed couple other warnings
+
+* Fri Jun 21 2024 Stanislav Mekhanoshin <Stanislav.Mekhanoshin@amd.com> - 2.6.1.262+439da6c7
+- Fixing most of the obvious warnings with clang15 and MacOS.
+
+* Thu Jun 20 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.260+6a5dc95b
+- typo
+- History - use all-far2l date-time format
+- History - add confirmation before remove non-existing entries by Ctrl+R
+- History commands - add path in prefix in Alt+F8
+- Attributes dialog CtrlA: workaround to compare current & initial date
+
+* Thu Jun 20 2024 Dazzar56 <dazzar994@gmail.com> - 2.6.1.254+354783bc
+- fix incorrect focus on tab key in DI_RADIOBUTTON
+
+* Tue Jun 11 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.250+ecc75b6b
+- History - more accurately HistoryFooter
+- History - fix duplicates in autocomplete after #2241
+- Attributes dialog CtrlA: mouse db-click only on changeable data times
+- NetRocks CtrlA: hotkeys closely to main far2l CtrlA
+
+* Tue Jun 11 2024 elfmz <fenix1905@tut.by> - 2.6.1.247+a0fa57d4
+- tests: improve viewer word-wrap testcase
+- tests: viewer word-wrap testcase
+
+* Mon Jun 10 2024 elfmz <fenix1905@tut.by> - 2.6.1.238+c9f150db
+- viewer: fix..
+- viewer: more up-scrolling fixes (touch #2246)
+
+* Sun Jun 9 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.1.235+1c30f3c3
+- Removed LACodepage, actually not needed
+- Process archives with ANSI charset correctly. Closes #2237. Passes all my test .zip archives set.
+
+* Sat Jun 8 2024 elfmz <fenix1905@tut.by> - 2.6.1.231+b260323b
+- viewer: fix spaces at lines begins when scrolling up in word-wrap mode (touch #2246)
+
+* Sat Jun 8 2024 anta999 <arcticshine999@gmail.com> - 2.6.1.230+3be06702
+- Fixed console history clearing crash
+
+* Sat Jun 8 2024 m32 <grzegorz.makarewicz@gmail.com> - 2.6.1.226+066593a3
+- be quiet
+- alt-f7 and select panel - python opens first found plugin
+- active vs inactive state
+- bettet ls output parsing
+- when to use the plugin list without restrictions and when with restrictions on how to invoke it
+
+* Sat Jun 8 2024 Ivan <spnethw@gmail.com> - 2.6.1.206+56413409
+- prevent crash on Quick View and when calculating folder size
+
+* Tue Jun 4 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.204+51cf4e3d
+- History - also add choice "never" for delete duplicates
+- History - delete duplicates if Name and Extra equal
+
+* Tue Jun 4 2024 anta999 <arcticshine999@gmail.com> - 2.6.1.200+cf845c04
+- Add menu option stop wrap on edge
+- few small fixes
+
+* Tue Jun 4 2024 Ivan <spnethw@gmail.com> - 2.6.1.196+72229eda
+- close file descriptor after futimens call
+
+* Sun Jun 2 2024 Felix Richter <makefu@users.noreply.github.com> - 2.6.1.194+5cd93104
+- README: update nixos link to official wiki url
+
+* Sun May 19 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.1.190+e2a524bd
+- revert wrong change
+- 7zz tools, often provided in 7zip package, offers more recent 7zip Linux port comparing to p7zip package version.
+
+* Sun May 19 2024 Aleksey Dobrunov <ctapmex@ctapmex.com> - 2.6.1.186+024c1053
+- typo in build.yml
+- update ci
+- build on gcc-7; build without std::filesystems
+- sync colorer-library with upstream
+
+* Sun May 19 2024 anta999 <arcticshine999@gmail.com> - 2.6.1.183+831533f7
+- resolve merge conflict
+- oops
+- item colors bug fix
+- few fixes
+- RGB Palette Testing
+
+* Sun May 19 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.175+3aee56f2
+- Attributes dialog CtrlA: explanation surprise situation with symlinks properties
+- Fix #2223
+
+* Sun May 19 2024 Ivan <spnethw@gmail.com> - 2.6.1.173+9b7187c7
+- ScanFileByMapping fix: take into account the exact upper boundary
+
+* Sun May 19 2024 Dazzar56 <dazzar994@gmail.com> - 2.6.1.170+a0f92c46
+- fixed initialization of default focused item
+- fix incorrect initial focus highlighting
+
+* Sun May 19 2024 atolismesh <130924690+atolismesh@users.noreply.github.com> - 2.6.1.166+76549cdc
+- Update custom.ini
+- Add support for UDF ISO archives and fix custom.ini
+
+* Tue May 14 2024 Dazzar56 <dazzar994@gmail.com> - 2.6.1.156+2068c468
+- renamed functions to the local name conventions
+- macrosses replaced for inline functions
+- gap more than one line now considered as separator
+- fine tuning of keyboard movement logic inside of dialog  * take into account DI_BUTTON  * movement by coordinates now happens according to borders in current dialog config  * DI_SINGLEBOX, DI_DOUBLEBOX, DI_VTEXT, and DI_TEXT (with separator Flags) are considered as borders  * complex logic expressions moved into marcoses
+
+* Sun May 12 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.148+5247f418
+- setattr (Attributes dialog CtrlA): hotkeys correction
+- correct after #2213 vertical keys processing in dialog
+
+* Sat May 11 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.145+4751f6d0
+- Date format customization: more detect formats from locale
+- Refactoring
+- Fix locale in old systems (FreeBSD,...) + tiny refectoring
+- Date format customization via Interface settings - from locale
+- Date format customization: current button + improvement
+- Minor: typo
+- Date format customization via Interface settings
+
+* Sat May 11 2024 Aleksey Dobrunov <ctapmex@ctapmex.com> - 2.6.1.136+b56383f2
+- fix clang build
+- run workflow 'Artifacts' only on master
+- add new workflow
+- build on openwrt #1615
+- update colorer schemes
+- add .clang-format from colorer; reformat farcolorer
+- fix filter in outliner form
+- remove some raw pointers
+- fix clean editor on plugin disable
+- fix error on reenable plugin
+- remove colorer viewer, linux don`t supported
+- clean main module
+- remove ConsoleAnnotation.h; rework truemode
+- remove resource.h
+- restore user settings load
+- unreachable code removed
+
+* Sat May 11 2024 Dazzar56 <dazzar994@gmail.com> - 2.6.1.132+74283133
+- new keyboard navigation method now is default * flag DIF_HORIZONTALLAYOUT removed. It`s no longer needed * fix some conflicts in setattr hotkeys
+- restore hotkeys in setattr and add horizontal layout for checkbox and radiobutton
+
+* Sat May 11 2024 Denis Stanishevskiy <std.denis@gmail.com> - 2.6.1.129+1d0a9016
+- Option to disable automatic highlights in history lists
+
+* Sat May 11 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.1.125+a7a107cd
+- fix #2028
+
+* Mon May 6 2024 elfmz <fenix1905@tut.by> - 2.6.1.107+fa01a507
+- NetRocks: add proxychains proxifier support, also now proxifier settings are configured on per-site basis but not one-for-all (touch #2200)
+- ma/libarch: dont use extraction to /dev/null when testing archive to avoid damaging that /dev/null (fix #2182)
+
+* Mon May 6 2024 Ivan <spnethw@gmail.com> - 2.6.1.106+079172e0
+- multiarc: check if we have read access to the archive
+
+* Sun May 5 2024 elfmz <fenix1905@tut.by> - 2.6.1.103+b383f994
+- fix BreakKeys problem by shmuz (fix #2189)
+- fix no-openssl build (fix #2199)
+
+* Sun May 5 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.101+78f46ced
+- readme revert spaces
+- readme update
+
+* Sat May 4 2024 TrNullFree <TrNullFree@ya.com> - 2.6.1.97+5ddf91ce
+- Add basic support for build and debug with Visual Studio Code
+
+* Sat May 4 2024 Ivan <spnethw@gmail.com> - 2.6.1.95+2ba540e8
+- remove unnecessary PrepareDiskPath call, fix error message according to changes
+- open.sh -- remove subshell overhead
+
+* Sat May 4 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.93+77710679
+- setattr (Attributes dialog CtrlA): rearrange + editable octal
+
+* Sat May 4 2024 Aleksey Dobrunov <ctapmex@ctapmex.com> - 2.6.1.87+9fca7351
+- disable stopping the build on warning message
+- sync with upstream commit d4b9fd7a0033704730bbf1a2d4696cf4d93ebfce
+
+* Sat May 4 2024 alexax66 <alexax66@gmail.com> - 2.6.1.84+b73e6340
+- Fix build on DragonflyBSD 6.4. with gcc12
+
+* Sat May 4 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.1.82+b168e260
+- Backported 1ef8c8cfc2487a91fff300111638dc5f82f94ddc from Colorer-schemes
+
+* Mon Apr 29 2024 Ivan <spnethw@gmail.com> - 2.6.1.80+cafa42fa
+- Revert Silent == (OpMode & OPM_FIND) as ArcCommand ctor arg
+- logic of setting NeedSudo has been modified, ArcCommand CommandType params fixed
+- handle directory deletion correctly, too
+- check if sudo is required for the dir containing the file to be deleted, not for the file itself
+
+* Mon Apr 29 2024 elfmz <fenix1905@tut.by> - 2.6.1.76+bda32627
+- Fix 'Align file extensions' from shmuz (fix #2175)
+
+* Sun Apr 28 2024 Aleksey Dobrunov <ctapmex@ctapmex.com> - 2.6.1.72+81285389
+- sync with upstream: fix build on bsd
+- try crash on edit binary files
+- try build on macos
+- fix lang file
+- fix exception
+- fix error, warnings
+- update colorer to latest version
+
+* Sun Apr 28 2024 Ivan <spnethw@gmail.com> - 2.6.1.64+6b293bf3
+- restore positioning on files in panels in case of manual setup saving (Shift-F9) too
+
+* Sun Apr 28 2024 unxed <unxed@mail.ru> - 2.6.1.62+f9df9721
+- Вроде бы дней через 20 в 24.04 должен появиться фикс, так что убрал лишнее
+- moved to original location
+- Added Ubuntu workaround
+
+* Sun Apr 28 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.57+f8c9416e
+- man actualization & typo in help
+- Help: explain user menu location (after #2184)
+
+* Sun Apr 21 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.1.54+47a5092d
+- Move dialog: explaining dirs processing slowly depend on symlink combobox
+
+* Wed Apr 17 2024 anatoly techtonik <techtonik@gmail.com> - 2.6.1.51+33f12690
+- Add installation chapter with Docker info
+- Add build in Docker
+- Simplify Actions workflow
+
+* Wed Apr 17 2024 elfmz <fenix1905@tut.by> - 2.6.1.46+32ce3414
+- TST: update readme
+- remove std:min
+- marshal OnConsoleSetCursorBlinkTime to UI thread (fix mac window size and cursor freeze)
+
+* Mon Apr 15 2024 elfmz <fenix1905@tut.by> - 2.6.1.41+d6cc2178
+- refer testing readme
+- fix dialog pos as it was
+- setattr (Attributes dialog): optimize memory (from far2m)
+- uchardet: 1) treat ASCII as UTF-8; 2) indentation fixes
+- copylen bug fixed
+- Try 4
+- Try 3
+- try to fix build errors
+- Added some buildin highlights
+- Marks inherit + some fixes
+- Pick color dialogs added
+- Font styles added + some chgs
+- Added color masks, color dialog updated and works
+- TST: update readme
+- TST: progress - some real tests now
+
+* Mon Apr 15 2024 anatoly techtonik <techtonik@gmail.com> - 2.6.1.40+e3f58e7c
+- Clickable CODESTYLE.md
+- Clickable HACKING.md
+- Update actions to remove build warnings
+
+* Sun Apr 14 2024 Ivan <spnethw@gmail.com> - 2.6.1.12+8fe1cef7
+- indentation fixes
+- type of nodetect variable changed from char* to dword (now used as bitmask)
+
+* Sun Apr 14 2024 elfmz <fenix1905@tut.by> - 2.6.1.8+45910ec6
+- setattr (Attributes dialog): prevent duplicates in Owners/Groups (from far2m)
+- TST: FS functions etc
+- TST: socket read timeout (30 seconds by default)
+- Tst: more input simulation functions
+
+* Sat Apr 13 2024 elfmz <fenix1905@tut.by> - 2.6.1.0+0b521368
+- Bump version to 2.6.1 (tag: v_2.6.1)
+- fix version bump script
+- _testing -> testing
+- fix it better
+- fix composed command line arguments autocompletion
+- let's use actually developing putty4far2l link
+- update readme
+- some more functions...
+- ReadCell*
+- looks usable (origin/test-server)
+- use JS for actual tests code
+- progress
+- TestServer for automated smoke tests
+
+* Fri Apr 12 2024 elfmz <fenix1905@tut.by> - 2.6.0.197+0a234353
+- workaround for zero createtime returned by libssh
+
+* Fri Apr 12 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.196+e7e191aa
+- NetRocks CtrlA-3: show timestamp (read only)
+- setattr - skip adding duplicates owners & gropus
+
+* Fri Apr 12 2024 Ivan <spnethw@gmail.com> - 2.6.0.192+e126fcdc
+- sudo: futimens processing
+
+* Fri Apr 12 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.0.190+2920ab63
+- Revert "hardcode width detection logic for chars 0..31. fixes #2136"
+- hardcode width detection logic for chars 0..31. fixes #2136
+- exclude non-chars (unassigned or private use)
+- do not process unassigned code points
+- added one more test using one more lib
+- Added another test using utf8proc library that probably can be more reliable.
+- Added simple test showing differences between char width detected by wcwidth() and by CharClasses.cpp functions
+
+* Sun Apr 7 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.0.181+e6ad61a1
+- updated char classes on Ubuntu 23.10
+- much better solution
+- fix artifacts in viewer in tty
+
+* Sun Apr 7 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.177+2cca9ad3
+- Help: Far2lGettingStarted - actualization & remove obsolete after recently accepted PRs
+- Help: Location & mounted drives (explain problem #1933)
+- NetRocks CtrlA: workaround from ChangeModeOfPath() described obvious
+- NetRocks CtrlA-2: Stupid mismatch in Original reset
+- NetRocks CtrlA-2: directory close to far2l CtrlA + editable octal (fix #2011)
+
+* Sun Apr 7 2024 atolismesh <130924690+atolismesh@users.noreply.github.com> - 2.6.0.173+10e413e1
+- Update wslgclip.sh
+
+* Sun Apr 7 2024 elfmz <fenix1905@tut.by> - 2.6.0.171+0aa16359
+- NR: fix wrong creation time
+
+* Sun Apr 7 2024 Ivan <spnethw@gmail.com> - 2.6.0.166+9d0eca4a
+- search for file descriptions in any case
+- ISO-8859-11: replace 28601 with 874 due they're very close, and the last one is supported by far2l
+
+* Sun Mar 31 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.161+7d275f4a
+- NetRocks CtrlA: show non-editable owner & group + octal + rearrange
+
+* Sun Mar 31 2024 Ivan <spnethw@gmail.com> - 2.6.0.159+48dad3e6
+- edit stderr message
+- take into account EACCES too
+- attempt to fix #2067: unneeded open.sh call after clicking on a broken symbolic link
+
+* Sun Mar 31 2024 atolismesh <130924690+atolismesh@users.noreply.github.com> - 2.6.0.153+d8a88d62
+- Update WinPortMain.cpp
+- Fix build under Ubuntu 18.04 - update WinPortMain.cpp
+
+* Sat Mar 30 2024 Ivan <spnethw@gmail.com> - 2.6.0.150+0ee81187
+- bugfixes and improvings in automatic encoding detection
+
+* Sat Mar 30 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.0.147+063ed51f
+- fix path
+- debug
+- debugx
+- another try to fix suse on wslg
+- do it better way
+- fix clipboard on wslg
+
+* Sat Mar 30 2024 Dazzar56 <dazzar994@gmail.com> - 2.6.0.135+b3e0da9c
+- While mouse button is pressed no longer spam drag events in TTY backend
+
+* Sat Mar 30 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.133+548ab811
+- Calc plugin patch (from far2m)
+
+* Sun Mar 24 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.0.130+bbaa676d
+- fixed remaining #1889 problems
+- fixes #1889
+
+* Sun Mar 24 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.127+e43c1475
+- Language menus alphabetically sorted (from far2m)
+- Fix editor AttrStr symbols duplicate during save file
+- Fix copy to Telegram last NUL char
+- Force non-escaping filenames during files suggestion in comboboxes (touch #1670)
+- Force non-escaping filenames when insert in editor (touch #2071)
+
+* Sun Mar 24 2024 Aleksey Dobrunov <ctapmex@ctapmex.com> - 2.6.0.123+5a307280
+- updated the schema library to the current one on 03/23/2023
+
+* Sun Mar 24 2024 m32 <grzegorz.makarewicz@gmail.com> - 2.6.0.119+242075a3
+- new plugins
+- proper plugin selection for Open
+
+* Sun Mar 24 2024 Dazzar56 <dazzar994@gmail.com> - 2.6.0.116+03caa220
+- fix incorrect coordinates
+- implmenting SGR extended mouse report and mouse move support
+- finaly fix elfmz/far2l#2072 mouse input in win32-input mode
+- continuation of work on mouse input in win32-input mode elfmz/far2l#2072
+- work-around for double encoded mouse events in win32-input mode elfmz/far2l#2072 (Work in Progress)
+
+* Sat Mar 16 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.0.104+39f5e5f4
+- revert c723e90c067e8adb93e117cdde94242a4e9edccc
+- Temporary workaround for #1658 and #2053 until they are fixed upstream
+- some debug output
+- support not only getting, but also setting clipboard in wayland-friendly manner
+- support data format default on wayland systems for text in utf-8
+
+* Sat Mar 16 2024 unxed <unxed@mail.ru> - 2.6.0.95+7d03b95e
+- detect Wayland better (on WSLg, for example)
+
+* Sat Mar 16 2024 Grzegorz Makarewicz <mak@trisoft.com.pl> - 2.6.0.92+d1bf4a99
+- view rec
+
+* Tue Mar 12 2024 anta999 <arcticshine999@gmail.com> - 2.6.0.85+3a395980
+- CursorBlink rate2
+- Cursor blink rate for wx backend
+- WX working
+
+* Mon Mar 11 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.0.78+010f994c
+- better detect wayland on wsl
+
+* Mon Mar 11 2024 elfmz <fenix1905@tut.by> - 2.6.0.73+627f8778
+- CaseSensitiveSort by default off (touch #2003)
+- more fine tune for #2003
+- more fine tune for #2003
+- more fine tune for #2003
+- more consts from windows
+- new plugin
+- only when text is selected
+- Need to redraw
+- parsing ls output
+- more fine tune for #2003
+- make dotfiles first (touch #2003)
+- Refactoring bool DeleteEndSlash() & more clarify buttons in mkdir messages (from far2m)
+- Mark string fixed for wide chars
+- Increased size of mark in file highlighting
+- more tricks for case-sensitive comparing (touch #2003)
+
+* Sun Mar 10 2024 elfmz <fenix1905@tut.by> - 2.6.0.40+94a898de
+- compactize wine compose/decompose tables
+- update wine casemaps and fix type casts (touch #2045)
+- workaround to make BIG letters be first in sort (touch #2003)
+- try fix string compare inconsistencies (touch #2003)
+- use LC_COLLATE wherever defined (touch #2045)
+- revert to wine string routines for WCHARs less then 65535 (touch #2045)
+- repaint sudo dialog by timer to avoid its corruption by parallel paintings
+- use kioclient if installed for delete-to-trash (close #2049)
+- apply escaping for arguments containing slashes too (fix #2050)
+
+* Sun Mar 10 2024 Ivan Sorokin <unxed@mail.ru> - 2.6.0.33+a22cddd7
+- Revert "handle the situation then x11 backend is selected for terminal app in env var"
+- handle the situation then x11 backend is selected for terminal app in env var
+- Fix for #2041
+
+* Sun Mar 10 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.28+0ca11dc7
+- Help: TTY|F, TTY|a, TTY|k, and TTY|w Backends update info in terminals list
+- Help: TTY|a, TTY|Xa, TTY|k, TTY|Xk and TTY|w, TTY|Xw Backends
+- Help: add info about TTY|Xa, TTY|Xk and TTY|Xw Backends
+
+* Tue Mar 5 2024 elfmz <fenix1905@tut.by> - 2.6.0.20+7ada2e81
+- NR/FTP: more correct LIST command format autodetection
+
+* Mon Mar 4 2024 elfmz <fenix1905@tut.by> - 2.6.0.19+877e856a
+- Cirrus: use FreeBSD 14.0
+- NR/FTP: implement LIST command format autodetection (fix #2034)
+
+* Sun Mar 3 2024 elfmz <fenix1905@tut.by> - 2.6.0.17+0ee15ed5
+- NR: fix protocol options settings UX inconsistencies (fix #2026)
+- NR: make confirm new server identity dialog wider (fix #2030)
+- findfile: dismiss old pattern if its not needed (fix #2033)
+
+* Sun Mar 3 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.14+22591fd9
+- Help: AutoCompleteSettings describe
+- Properly escape !& metasymbol (from far2m) (touch #2027)
+
+* Sun Feb 25 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.11+69cb1476
+- Avoid CMake error when the Git repository not found (from far2m)
+- Clear filtering at close drop-down list (from far2m) (touch #2017)
+- Use only one variable
+- far:about - add uname and more compact languages & codepages lines
+- FarCommands also from User menu, File associations & Apply Command by Ctrl-G (touch #2021)
+- Prevent crashing on incorrect DM_SETITEMPOSITION parameters (from far2m)
+- Obtain committer date in old Git versions (before git 2.25.0) that don't support %cs (from far2m)
+
+* Thu Feb 22 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.6.0.3+3fce1dfb
+- Fix crash if nonexist config parametrs in -set:foo=bar
+
+* Tue Feb 20 2024 elfmz <fenix1905@tut.by> - 2.6.0.1+01956d09
+- sudo: use WINDOW_BUFFER_SIZE_EVENT to force screen repaint after sudo dialog closed (fix #2012)
+
+* Mon Feb 19 2024 elfmz <fenix1905@tut.by> - 2.6.0.0+048ab79f
+- Bump version to 2.6.0 (tag: v_2.6.0)
+- make new version controllable from command line
+
+* Mon Feb 19 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.197+412f491b
+- ShowTime was sometimes called unexpectedly (from far2m)
+- Apply a fix for https://bugs.farmanager.com/view.php?id=2097 (from far2m)
+
+* Sun Feb 18 2024 elfmz <fenix1905@tut.by> - 2.5.3.194+f3f465c7
+- NR: fix SHELL/SCP protocol wrong year sometimes (touch #2004)
+- NR: fix Ctrl+F5/F6 nonworking (fix #2000)
+
+* Wed Feb 14 2024 Mikhail Lukashov <michael.lukashov@gmail.com> - 2.5.3.192+20de73da
+- Colorer: Fix resource leak: resource acquired by call to `opendir()` is not released
+
+* Mon Feb 12 2024 elfmz <fenix1905@tut.by> - 2.5.3.190+27f85ba6
+- udlist to do case-sensitive comparing (touch #1903)
+- another way of fallback to case insensitive mode for predictable ordering (touch #2003)
+
+* Sun Feb 11 2024 elfmz <fenix1905@tut.by> - 2.5.3.188+941df49d
+- fallback to case insensitive mode for a sake of predictable ordering (touch #2003)
+- VT: history log clear should affect only active terminal log
+
+* Sun Feb 11 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.187+470e81f2
+- Refactoring Help
+- Refactoring
+- Add command line option -set:<parameter>=<value>
+- Fix also lang name if lang file incorrect
+
+* Sat Feb 10 2024 elfmz <fenix1905@tut.by> - 2.5.3.180+2aa83ddb
+- VT: restore title and palette when re-activating background command
+- fix compatibility with recent gcc picky about (VOID) as arguments (touch #2001)
+- colorer: update DB (touch #1994)
+
+* Fri Feb 9 2024 elfmz <fenix1905@tut.by> - 2.5.3.176+79c75e4a
+- fix status date/time formats (fix #1996)
+
+* Fri Feb 9 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.175+ba2dbc14
+- StdDlg GetSearchReplaceString - fix #1995
+
+* Fri Feb 9 2024 Alexander Tsidaev <a.tsidaev@gmail.com> - 2.5.3.173+24384df2
+- Add SetFileTime to the functions, which are exported with WINPORT_DIRECT
+
+* Sun Feb 4 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.171+c8858b0d
+- Help: about background run
+
+* Fri Feb 2 2024 elfmz <fenix1905@tut.by> - 2.5.3.167+a9e63522
+- args count check fix by shmuz (fix #1989)
+
+* Fri Feb 2 2024 m32 <grzegorz.makarewicz@gmail.com> - 2.5.3.166+940c04f3
+- working mkdir, rm on files and directories, better ls output parsing
+
+* Fri Feb 2 2024 Mikhail Lukashov <michael.lukashov@gmail.com> - 2.5.3.162+f76eff78
+- bugfix: Far2l process crash if compiled with -D_GLIBCXX_ASSERTIONS
+
+* Thu Feb 1 2024 Grzegorz Makarewicz <mak@trisoft.com.pl> - 2.5.3.160+f438b23d
+- python cffi doesn't like casting
+
+* Wed Jan 31 2024 elfmz <fenix1905@tut.by> - 2.5.3.157+c7800281
+- done
+- VT: support SGR mouse mode (touch #1984)
+
+* Sun Jan 28 2024 elfmz <fenix1905@tut.by> - 2.5.3.151+bcd0ae95
+- VT: ability to preview background command output by F3 in Screens menu
+- VT: more consistent history for background terminals
+- ma/7z: fix wrong file attributes (fix #1980)
+- VT: wait for keypress for reactivated background commands too
+- fix compare plugin crash (touch #1982)
+- Add missing ssh port in ways.ini
+
+* Sat Jan 27 2024 elfmz <fenix1905@tut.by> - 2.5.3.137+9a7fbddd
+- VT: update terminal size after continue
+- VT: fix text color after backgrounding
+- bugfixes from shmuz (fix #1977 fix #1979)
+- VT: fix some artifacts on background switch
+- VT: print info notice on command backgrounding
+- VT: fix stuck on log view
+- VT: notifications should work for background commands too
+- VT: ability to run put running command to background using Ctrl+Alt+Z and return to it later from F12 (Screens) menu
+
+* Sat Jan 27 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.126+af2e1e37
+- far:config - add column with saved or never symbol
+- Fix Misprint #1967
+- Add in list by default info about keys for toggle filtering feature in bottom & Help
+
+* Fri Jan 26 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.120+00cba6d2
+- Workaround for crash #1968
+
+* Sun Jan 14 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.118+086b1477
+- Help: actualization for command line parameters & FAR2L_ARGS
+
+* Mon Jan 8 2024 elfmz <fenix1905@tut.by> - 2.5.3.113+830299b6
+- rm unused anymore files
+- align columns in attributes dialog (fix #1962)
+
+* Sun Jan 7 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.110+19749816
+- far:config - Rearrange all NSecSystem together
+- far:config - Edit input also hex values
+
+* Sat Jan 6 2024 elfmz <fenix1905@tut.by> - 2.5.3.106+3ab2c15e
+- far:config - change int & DWORD only if string was convert to number
+- move #include "farcommon.h" out of namespace oldfar
+- viewer: same clock separator as in editor
+- editor: experimental clock separator
+- editor: put space between clock and status
+- recover align file extensions feature (fix #1958)
+
+* Sat Jan 6 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.95+6dffb623
+- far:config - finally a full editing
+- far:about & far:config - F1 call draft help topic
+
+* Thu Jan 4 2024 elfmz <fenix1905@tut.by> - 2.5.3.91+4be055b6
+- add farcommon.h to SDK where common typedef-s are resided (touch #1947)
+- NetRocks: display symlink target in Ctrl+A dialog (touch #1952)
+
+* Wed Jan 3 2024 elfmz <fenix1905@tut.by> - 2.5.3.86+bbd2e64a
+- update doc
+- add new plugin export GetLinkTargetW and use it within NetRocks (touch #1952)
+
+* Wed Jan 3 2024 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.82+3deff390
+- Incorrect insertion of vertical block at the file end when AutoIndent On (see https://github.com/FarGroup/FarManager/commit/5ecdaceac9a7e7348e7c1b99f5709baad3ebb953 ) (from far2m)
+- Make ECTL_INSERTSTRING faster (see https://github.com/FarGroup/FarManager/commit/f1d5d544fb61237521c22d93e07ee3e208f54574 ) (from far2m)
+- Correct Editor::SetTabSize (from far2m)
+
+* Tue Jan 2 2024 elfmz <fenix1905@tut.by> - 2.5.3.78+2ef645c9
+- fix plain C compatibility
+- fix another possible key code mishandle
+- fix broken TranslateKeyToVK (fix #1949)
+- use key values ranges that likely more compatible
+- redefine EXTENDED_KEY_BASE to accomodate UTF32 chars range (touch #1947)
+
+* Mon Jan 1 2024 elfmz <fenix1905@tut.by> - 2.5.3.71+5108d642
+- fix handling of right-joining characters (touch #1941)
+- tmppanel: fix command line handling (fix #1946)
+- editor/colorer: fix coloring artifacts when rendering strings with characters of nonstandard width (touch #1941)
+
+* Sat Dec 30 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.67+0492d4bf
+- if uncehcked in Options->Confirmations then disable variants & set only Overwrite
+
+* Wed Dec 27 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.65+75078455
+- Indent fix
+- Customize the default suggestion for Link type in Alt-F6
+
+* Tue Dec 26 2023 elfmz <fenix1905@tut.by> - 2.5.3.62+eb0fd8c4
+- fixing issues with no-highlight items (touch #1939)
+
+* Mon Dec 25 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.59+b6214827
+- far:about - show $TERM
+
+* Mon Dec 25 2023 elfmz <fenix1905@tut.by> - 2.5.3.57+138741fa
+- Mac: force using .zprofile/.bash_profile (fix #1900)
+- fix running executables with spaces in name (fix #1923)
+
+* Sun Dec 24 2023 elfmz <fenix1905@tut.by> - 2.5.3.55+74922037
+- Editor: after successful Reload send EE_CLOSE & EE_READ to Plugins
+- VT: support for \033c sequence - clear terminal (close #1935)
+- Mac: show user notification from far2l without notify.sh (fix #1934)
+
+* Sun Dec 17 2023 elfmz <fenix1905@tut.by> - 2.5.3.49+61d8fac1
+- avoid stuck attributes window on fifo, character and block devices (also fix #1907)
+- copy: re-create device nodes for fifo, character and block devices instead of copying them (thats typically bad idea) (fix #1907)
+
+* Sat Dec 16 2023 elfmz <fenix1905@tut.by> - 2.5.3.47+339aa211
+- fix Shift+Enter in some systems (close #1913)
+- update default highlighting with extra archive extensions (close #1928)
+- update UNRAR diagnostics message (close #1929)
+
+* Fri Dec 15 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.44+2e7224a1
+- Editor: revert position ShiftF10 and F4 for their correct processing
+
+* Sun Dec 10 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.42+c5cba9ae
+- Editor: fix Shift-F10 & more accurately errors messaging during reload in Shift-f2 or in F8/Shift-F8
+- In Editor::FreeAllocatedData() also set NumLine to 0
+- Show standard codepages as readable text in Editor/Viewer Status bar
+
+* Sun Dec 3 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.38+d8b279a9
+- far:about - show $GDK_BACKEND and $DESKTOP_SESSION
+- Help
+
+* Thu Nov 30 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.35+972f6b18
+- Editor Undo Glitch (from Far3, see FarGroup/FarManager#752)
+
+* Sun Nov 26 2023 elfmz <fenix1905@tut.by> - 2.5.3.33+dfccc052
+- FTP to use server address for data connections instead of specified in passive response (touch #1915)
+
+* Sun Nov 26 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.32+61f35b7d
+- version - change _ to - due  #1920
+
+* Sat Nov 25 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.30+41a049a3
+- chafa - fix #1578
+
+* Wed Nov 22 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.28+eba6bf33
+- Help: more accurately about Wayland problems
+- far:about - show $XDG_SESSION_TYPE
+- Fix loop vertical limit
+
+* Sat Nov 18 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.3.23+660ca38e
+- Show in version commit date, not only commit hash
+
+* Sat Nov 11 2023 elfmz <fenix1905@tut.by> - 2.5.3.21+851edd2f
+- Help: typo
+- Help: typo
+- progress dialog examples
+- autoloading plugins
+- delete.cpp: correct messages and behavior during deleting symbolic links
+- other initialization, enable far2lc module
+- better errors handling
+- TTY|Xi: avoid deadlock on clipboard paste with pasteq tool (touch #1908)
+
+* Sun Nov 5 2023 elfmz <fenix1905@tut.by> - 2.5.3.0+545754a1
+- Bump version to 2.5.3 (tag: v_2.5.3)
+
+* Sun Oct 29 2023 elfmz <fenix1905@tut.by> - 2.5.2.196+8f643702
+- mac: ability to crete signed packages
+
+* Sun Oct 22 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.195+da69d254
+- accurate logic for error messages in case multiple names after #1893
+
+* Sat Oct 21 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.193+3f40bc0d
+- Buttons { Cancel } [ Skip ] clearly then { Ok } [ Skip ]
+- Jump to directory also if it existed before creation attempt by F7
+
+* Sun Oct 15 2023 elfmz <fenix1905@tut.by> - 2.5.2.190+cf7ecd16
+- ma: fix crash after plugin reload
+- NetRocks Help typo
+- NetRocks Help title correction
+- NetRocks Help added clearly info about background feature
+- multiarc/libarch: avoid mtree format differently (touch #1887)
+
+* Sat Oct 14 2023 elfmz <fenix1905@tut.by> - 2.5.2.182+27b39878
+- multiarc/libarch: avoid mtree format (fix #1887)
+- fix potential buffer overflow
+- ma: dont use -r key for 7z - it behaves inadequately (touch #1884)
+- revert changes in unrar as its 3rd party code and not maintained in far2l
+
+* Sat Oct 14 2023 Mikhail Lukashov <michael.lukashov@gmail.com> - 2.5.2.177+6b446a3d
+- nitpick: fix typos
+- nitpick: fix whitespaces
+- nitpick: remove stray semicolons
+- nitpick: forward declare used classes
+- improvement: fix warning: Class 'ClientReconstructCurDir' does not have a copy constructor which is recommended since it has dynamic memory/resource allocation(s)
+- improvement: MenuItemEx: implement copy constructor
+- improvement: fix warning: The 'UserDefinedListItem' class implements the copy assignment operator, but lacks a copy constructor. It is dangerous to use such a class
+- improvement: fix warning: Class 'TAbstractSet' does not have a operator= which is recommended since it has dynamic memory/resource allocation(s).
+- improvement: fix warning: The 'FileFilterParams' class implements the copy assignment operator, but lacks a copy constructor. It is dangerous to use such a class.
+- improvement: EditorUndoData: add copy constructor and operator=
+- improvement: fix warning: Class 'IOBuffer' does not have a operator= which is recommended since it has dynamic memory/resource allocation(s).
+- improvement: fix warning: "DialogBuilderBase<T>::AddIntEditField(int *, int, int) [with T=FarDialogItem]" is hidden by "PluginDialogBuilder::AddIntEditField"
+- improvement: fix warnings: uninitialized variables
+- improvement: fix warnings: unused variable
+- improvement: add used includes
+- bugfix: MatchWildcard: the 'cp' pointer in the 'cp++' expression equals nullptr
+
+* Sat Oct 14 2023 deep-soft <deep-soft@users.noreply.github.com> - 2.5.2.158+7b0615ea
+- Update filefilterparams.cpp
+- Update setattr.cpp
+- Update setattr.cpp
+
+* Sun Oct 8 2023 elfmz <fenix1905@tut.by> - 2.5.2.151+4fcd0934
+- use ls -H only if its supported (touch #1879)
+- simplify recent changes
+
+* Sun Oct 8 2023 pkubaj <pkubaj@FreeBSD.org> - 2.5.2.149+cf6e91aa
+- Fix build on big-endian architectures
+
+* Tue Oct 3 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.147+c7d34d09
+- Help small UPD 'FAR2L features - Getting Started'
+- Help UPD - about 'exit' & 'exit far' in Special commands
+- far:config UPD
+- Help UPD
+
+* Tue Oct 3 2023 sxored <80121803+sxored@users.noreply.github.com> - 2.5.2.142+566daf3a
+- update view.sh to use sed instead of perl or awk
+- update view.sh to use more coloring tools for diffs
+- update view.sh to use -- parameter additionally
+
+* Sun Oct 1 2023 elfmz <fenix1905@tut.by> - 2.5.2.137+706304a8
+- yet again change way to detect far2l fish terminal; improve command line parsing in fish
+- different way to detect far2l fish terminal (touch #1875)
+- Far2lTTY: new input notification about terminal size (fix #1856)
+- try to negotiate far2l terminal extensions if working via pipe regardless of ability to setup raw mode (fix #1857)
+- fix 32bit builds (touch #1854)
+- fix path to ini file
+- fix possible uncaught exception
+- fix build
+- fix build
+- small fix
+- macOS workaround for #1754 & #1869 described in README.md & Help FAR2L features - Getting Started
+- Help: typo
+- Help: about Special commands far:
+
+* Sun Oct 1 2023 atolismesh <130924690+atolismesh@users.noreply.github.com> - 2.5.2.136+220bb443
+- Update ConfigureProtocolSHELL.cpp
+- Fix for issue #1873
+
+* Sat Sep 30 2023 elfmz <fenix1905@tut.by> - 2.5.2.117+faffbbdb
+- fix build
+- help update, serial parity setting
+- SHELL: some configurationing, serial port supports and fixes
+
+* Thu Sep 28 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.114+2e7d52f9
+- tiny corrections
+- New far commands: `far:view:file` `far:view file` `far:edit:file` `far:edit file`
+
+* Wed Sep 27 2023 elfmz <fenix1905@tut.by> - 2.5.2.107+30739322
+- handle tc[s/g]etattr errors differently (touch #1867 #1865)
+- Revert "tsset/getattr signal handling"
+
+* Wed Sep 27 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.2.105+cfc4e828
+- remove unneeded stuff
+- leave only really used methods
+- Make building TVar also optional (-50 Kb for routers, etc)
+- Allow far2l to be build without macro system at all. This saves ~300 Kb for embedded purposes, also opening the way to make macro system swichable. See #1409
+
+* Wed Sep 27 2023 ma5ter <ma5ter@mail> - 2.5.2.95+72d63fb0
+- .clang-format updated to the current syntax according to the https://clang.llvm.org/docs/ClangFormatStyleOptions.html additionally schema override for CLion added as .clang-format.json to reflect changes from https://github.com/elfmz/llvm-project repo
+
+* Tue Sep 26 2023 ma5ter <ma5ter@mail> - 2.5.2.93+49ff9c1f
+- Execution of plugin commands from user menu (i.e. for NetRocks & scp)
+
+* Mon Sep 25 2023 elfmz <fenix1905@tut.by> - 2.5.2.91+b6a1fba0
+- remove useless include
+
+* Sun Sep 24 2023 elfmz <fenix1905@tut.by> - 2.5.2.89+af0eedb3
+- Add format string capabilities to Messager class
+- NetRocks: SHELL (aka FISH) protocol initial implementation
+- Mac: fix missing LANG env (fix #1848)
+
+* Sat Sep 23 2023 elfmz <fenix1905@tut.by> - 2.5.2.81+07f1ad3c
+- tsset/getattr signal handling
+
+* Sat Sep 23 2023 atolismesh <130924690+atolismesh@users.noreply.github.com> - 2.5.2.80+f2d5299d
+- Update TmpPanel.cpp
+
+* Tue Sep 19 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.78+61bc7173
+- Rename VMENU_BYSINGLEMOUSECLICK_ONLYSELECT to VMENU_IGNORE_SINGLECLICK
+- New Flag VMENU_BYSINGLEMOUSECLICK_ONLYSELECT
+
+* Sun Sep 17 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.75+c05899e3
+- `far:about`: plugins filenames in separator lines
+- vmenu - fix #1831
+- vmenu behavior - for empty separator line not append sep symbol to vmenu title
+
+* Thu Sep 14 2023 m32 <grzegorz.makarewicz@gmail.com> - 2.5.2.69+dd86c229
+- use spaces not tabs
+- python >= 3.9 compatible
+- python >= 3.9 compatible
+
+* Mon Sep 11 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.65+0e801431
+- draft `far:about`: separate FarAbout() function
+- draft `far:config` -  more accurately info about exotic situation for no default binary
+- draft `far:config` -  remove unused code lines
+- new draft `far:config` & update draft `far:about`
+
+* Sun Sep 10 2023 Randolf Richardson 張文道 <randolf@richardson.tw> - 2.5.2.57+39179111
+- Update README.md
+
+* Wed Sep 6 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.55+be371384
+- draft `far:about`: not close by ENTER
+- Command prefix `far:` and draft `far:about` command
+
+* Tue Sep 5 2023 elfmz <fenix1905@tut.by> - 2.5.2.51+19181840
+- help update for recent changes
+
+* Mon Sep 4 2023 elfmz <fenix1905@tut.by> - 2.5.2.50+fcd81efe
+- Viewer: WholeWords in grep
+- Viewer: use CtrlF7 for grep instead of ShiftF5, as it appeared that CtrlF7 is actually free
+
+* Sun Sep 3 2023 elfmz <fenix1905@tut.by> - 2.5.2.48+c13d6f9a
+- fix some issues detected by coverity
+- fix crash ShiftTab in dialog with DI_LISTBOX/DIF_LISTNOAMPERSAND (fix #1823)
+- restore view pos after grep filter dismiss
+- Viewer: ESC exits from grep to original file view
+
+* Sat Sep 2 2023 elfmz <fenix1905@tut.by> - 2.5.2.41+652aa686
+- use correct arch when generating help files (touch #1822)
+- fix belarussian translation (touch #1822)
+- add ${SCRIPTS}/farlang.templ.m4 to dependencies of generated files
+- VT: option to enable/disable command output splitter (dashes) in Options/Command line: Splitter (close #1817)
+- One more fix
+- workaround artifacts under screen (touch #1804)
+- handle forceful abort in init/deinit cmd
+
+* Fri Sep 1 2023 elfmz <fenix1905@tut.by> - 2.5.2.30+6b3db4f0
+- add $STORAGE variable to allow init/deinit scripts to exchange data via temp file
+- missing include; unix eol-s (origin/nr-improvements)
+- NetRocks: init-connection command for any protocol (touch #1816); per-connection time adjustement setting
+
+* Thu Aug 31 2023 elfmz <fenix1905@tut.by> - 2.5.2.22+30e12e9d
+- editor: fix sporadic crash on clipboard paste
+
+* Sun Aug 27 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.21+28913ebd
+- Alt-Shift-F9 in Options menu
+- Refactoring: '/'->GOOD_SLASH & L"/"->WGOOD_SLASH (partially)
+- Add help "Common history list commands"
+
+* Sun Aug 27 2023 m32 <grzegorz.makarewicz@gmail.com> - 2.5.2.17+e356ff22
+- removed
+- more far2l api
+- #pragma pack
+- more far2l api
+- more far2l api
+- editor plugins
+- example
+
+* Thu Aug 24 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.2.9+dc93b41f
+- History - do view with time column shown by default
+- Key combinations containing Alt should not reset 'unchanged' state in edit controls
+- Select folders - checkbox in Select masks dialog
+
+* Thu Aug 24 2023 atolismesh <130924690+atolismesh@users.noreply.github.com> - 2.5.2.4+07a79be6
+- Update CMakeLists.txt to fix python plugin
+
+* Sat Aug 19 2023 unxed <unxed@mail.ru> - 2.5.2.2+437ee828
+- fix deps descr
+
+* Tue Aug 15 2023 elfmz <fenix1905@tut.by> - 2.5.2.0+d1c85d0b
+- Bump version to 2.5.2 (tag: v_2.5.2)
+
+* Mon Aug 14 2023 elfmz <fenix1905@tut.by> - 2.5.1.224+fe3da218
+- fix uninitialized ColorsPtr (touch #1785)
+- try to fix with _FORTIFY_SOURCE=3 (touch #1798)
+- fix wrong transparent check when using RGB colors (fix #1797)
+
+* Sun Aug 13 2023 elfmz <fenix1905@tut.by> - 2.5.1.221+91a392f4
+- NetRocks: indicate inaccurate timestamps by OPIF_COMPAREFATTIME (fix #1793)
+
+* Sun Aug 13 2023 Alexei Golovin <golovin.alexei@gmail.com> - 2.5.1.220+15798797
+- Issue #1795: logger instantiation fixed.
+
+* Sat Aug 12 2023 elfmz <fenix1905@tut.by> - 2.5.1.218+e7ee6662
+- copy file: trigger desktop notification in case of error (close #1794)
+
+* Sat Aug 5 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.217+b686d9f4
+- Help: updating after question in #1787
+
+* Wed Aug 2 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.214+782eed68
+- Help: updating
+
+* Sun Jul 30 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.210+a63a0997
+- Refactoring
+
+* Sat Jul 29 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.208+69670a9c
+- SimpleIndent Tab & Shift-Tab behavior for block with not fully selected lines
+
+* Thu Jul 27 2023 elfmz <fenix1905@tut.by> - 2.5.1.204+bd5d4b35
+- ma/libarchive: fix crash when opening unsupported archive (touch #1780)
+
+* Thu Jul 27 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.203+688d7d30
+- Help: typo
+
+* Thu Jul 27 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.1.200+4fa105fc
+- removed unneeded debug info
+- fix #1777
+
+* Wed Jul 26 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.197+b748e9c0
+- Help: FAR2L features - Getting Started
+
+* Wed Jul 26 2023 elfmz <fenix1905@tut.by> - 2.5.1.195+981ae252
+- custom format will work without pcre, but with no regexp support in config
+- 1) On some systems (like Ubuntu 14.04 LXC image) you need to install pkg-config manually for cmake to succeed. 2) All cmake options needed to build far2l without any dependency are now documented in README.
+- Update README.md
+- switching from awk to Perl, remaining parts
+- awk no needed any more
+- m4 is not a dependency any more
+- m4 -> Perl
+- word correct
+- Help: FAR2L features - Getting Started
+- forget to add this file, see 36f624a08fda9c81e9b7ffee64a7ceeda6e55036
+- reverted files committed by a mistake
+- reverted line committed by a mistake
+- awk is not a dependecy now
+- Rewritten mkhlf in Perl; removed awk dependency
+- undo hackfix
+- workaround for #1730
+- NetRocks: fix ftp when compiling without openssl (fix #1775)
+
+* Mon Jul 24 2023 elfmz <fenix1905@tut.by> - 2.5.1.156+d785b31c
+- fix true-color hilighting for file types that have marking char (fix #1769)
+
+* Sun Jul 23 2023 elfmz <fenix1905@tut.by> - 2.5.1.154+26da207d
+- fix default value of USESPDLOG
+- cmake arg USESPDLOG to explicitely control using of spdlog library instead of using it if exists
+- add --norgb command line argument that forces using base 16 colors palette
+
+* Sun Jul 23 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.1.152+36da5d39
+- removing spdlog from deps, see 4e0fbbc8
+- fix cmake files
+- fix build on older gcc
+- allow to build without spdlog
+
+* Sun Jul 23 2023 unxed <unxed@mail.ru> - 2.5.1.149+f21f95bc
+- more compact code
+- fix for older cmake versions
+
+* Sun Jul 23 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.136+652157ec
+- Show Unix file types/permissions in Attr column of file panel as in `ls -l`
+
+* Sun Jul 23 2023 cmdorexe <rych.91@gmail.com> - 2.5.1.134+1051788b
+- fix __AES__ for old GCC
+
+* Tue Jul 18 2023 elfmz <fenix1905@tut.by> - 2.5.1.132+72338d31
+- workaround for annoying window enlargement in the morn.. start (touch #1654)
+- use truecolor in file filters color example control
+
+* Tue Jul 18 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.131+e927720d
+- Help: Особенности FAR2L - начало работы - корректировка
+
+* Mon Jul 17 2023 elfmz <fenix1905@tut.by> - 2.5.1.128+5e590329
+- color dialog: fix some artifacts (fix #1757)
+
+* Mon Jul 17 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.127+56615d73
+- setattr: Explicit Info for special files
+
+* Sun Jul 16 2023 elfmz <fenix1905@tut.by> - 2.5.1.125+0de36c35
+- some fixes
+- initial changes to support truecolor for files highlighting; implement device highligthing (close #1662)
+
+* Sun Jul 16 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.121+ad52853f
+- Help: Особенности FAR2L - начало работы - корректировка
+
+* Sat Jul 15 2023 elfmz <fenix1905@tut.by> - 2.5.1.119+3797cdf3
+- editor: dont reload .editorconfig on each keypress (optimization)
+
+* Fri Jul 14 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.118+597fadb6
+- Help: Особенности FAR2L - начало работы - перефразировани и расширение после #1748
+
+* Wed Jul 12 2023 elfmz <fenix1905@tut.by> - 2.5.1.116+dcde5dba
+- Help: Особенности FAR2L - начало работы
+- Set Attributes Dialog: add draft confirmation if new symlink target not exist
+- Set Attributes Dialog: after #1742 more details info if selected>1
+- Set Attributes Dialog: Improvements
+- fix building at path containing spaces (fix #1746)
+
+* Sun Jul 9 2023 elfmz <fenix1905@tut.by> - 2.5.1.104+93a50b27
+- setattr: fix some issues with recently added csymlink editing
+
+* Sat Jul 8 2023 elfmz <fenix1905@tut.by> - 2.5.1.103+13c09193
+- document newly added DM_SETREADONLY
+- set attributes dialog: symlink editing (close #1690)
+- CirrusCI: use BSD13.2
+
+* Fri Jul 7 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.99+888fabeb
+- Help: Info about Tab/Shift-Tab with blocks in Editor
+
+* Fri Jul 7 2023 elfmz <fenix1905@tut.by> - 2.5.1.97+f23ac529
+- ma: fix crash on 7z files that have no file name entity (fix #1734)
+
+* Thu Jul 6 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.96+6ac33433
+- Help: Info about common menu commands (Ctrl-Alt-F & Alt-) a la Far3
+
+* Tue Jul 4 2023 elfmz <fenix1905@tut.by> - 2.5.1.94+9a16192d
+- VMenu Title During Filtering - hide vmenu title only if (menu title + filter text) is wider than window
+- fix build with Android NDK
+- NetRocks: temp value cache for failed file times and modes (touch #1730)
+
+* Tue Jul 4 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.93+5a774d8e
+- Help: History add info about scroll for long line
+- VMenu Title During Filtering - more smartly
+- Add Ctrl-Alt-F info for Code Pages Menu
+
+* Mon Jul 3 2023 elfmz <fenix1905@tut.by> - 2.5.1.81+6f608d31
+- NetRocks: option to ignore time and mode update errors (touch #1708)
+
+* Sun Jul 2 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.80+eb4668ab
+- 1/2 from #1415
+- Update cmdline.cpp
+- Alt-F8 for F3 or Ctrl-F10 not only go to directory but try guess filename from command & position on it in panel
+
+* Sun Jul 2 2023 elfmz <fenix1905@tut.by> - 2.5.1.76+77a1fb80
+- TTY: fix artifacts under windterm (fix #1725)
+
+* Wed Jun 28 2023 elfmz <fenix1905@tut.by> - 2.5.1.75+494d3695
+- cmd completion: sort before quoting (touch #1606)
+
+* Sun Jun 25 2023 elfmz <fenix1905@tut.by> - 2.5.1.74+202dd5a6
+- space before true to avoid history (touch #1720 #1606)
+- more autocompletion fixes (touch #1720 #1606)
+- some autocompletion fix (touch #1720 #1606)
+
+* Wed Jun 21 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.67+5e8e5a51
+- Attributes dialog: Owner and Group lists obtaining via API
+
+* Tue Jun 20 2023 elfmz <fenix1905@tut.by> - 2.5.1.64+9067ed0e
+- menu: improve separators filtering
+
+* Tue Jun 20 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.63+f927558e
+- Help typo fix
+- Attributes dialog: Owner and Group Small Fix
+- History commands by Alt-F8: fix save directory from panel by Enter
+
+* Mon Jun 19 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.59+432af61e
+- Attributes dialog: Owner and Group become comboboxes
+
+* Sun Jun 18 2023 elfmz <fenix1905@tut.by> - 2.5.1.57+87e6f0da
+- add translation for messages added with #1707
+
+* Sun Jun 18 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.56+c6e36186
+- Help add .editorconfig info
+
+* Sat Jun 17 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.54+852950b6
+- Unification far2ledit & far2l -e for edit new empty file
+- Apply suggestion from #1687
+
+* Sat Jun 17 2023 spvkgn <spvkgn@users.noreply.github.com> - 2.5.1.52+185bedd8
+- cmake: symlink fix
+
+* Fri Jun 16 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.48+97865bd6
+- Flags to AddIntEditField() & Editor: warnings when trying to change values set in .editorconfig
+
+* Thu Jun 15 2023 unxed <unxed@mail.ru> - 2.5.1.46+39f5982e
+- fix build for some cases
+
+* Wed Jun 14 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.44+2a8b5cb9
+- History improvements
+
+* Wed Jun 14 2023 spvkgn <spvkgn@users.noreply.github.com> - 2.5.1.42+70a64b0b
+- cmake: far2ledit symlink fix
+
+* Tue Jun 13 2023 elfmz <fenix1905@tut.by> - 2.5.1.40+ff0f7e55
+- hist.menu: extend F3 dialog (touch #1618)
+- Create symlink far2ledit
+- workaround for compatibility with old OpenSSL (touch #1701)
+
+* Mon Jun 12 2023 elfmz <fenix1905@tut.by> - 2.5.1.33+5f044faa
+- cmd.hist: show curdir by F3 and extra (touch #1618)
+
+* Sun Jun 11 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.32+341eab7b
+- Viewer & Editor F8: ANSI/OEM/UTF8
+
+* Sun Jun 11 2023 elfmz <fenix1905@tut.by> - 2.5.1.30+7b74a6d9
+- All Save history config in one place
+- Space in dialog windows after title before border line
+- fix submenu items margins
+
+* Thu Jun 8 2023 elfmz <fenix1905@tut.by> - 2.5.1.22+b13e9f3a
+- hist.menu: use grayed color for times instead of dedicated column (touch #1618)
+
+* Wed Jun 7 2023 elfmz <fenix1905@tut.by> - 2.5.1.21+28867e17
+- hist.menu: recall selected item after Ctrl+T (touch #1618)
+- dont use timestamps column for automatic hotkeys (touch #1618)
+
+* Tue Jun 6 2023 elfmz <fenix1905@tut.by> - 2.5.1.19+ae0e51a4
+- Help: hardcore bottom notification about BETA & windows legacy
+- history timestamps UX improvements (touch #1618)
+
+* Sun Jun 4 2023 elfmz <fenix1905@tut.by> - 2.5.1.15+b8182b71
+- history menu: show items timestamps by Ctrl+T (touch #1618)
+
+* Sun Jun 4 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.1.14+e4e6a3db
+- Special symbols: Remove windows legacy !-! !+! !&~, combine !/ !\
+
+* Sat Jun 3 2023 elfmz <fenix1905@tut.by> - 2.5.1.12+67643832
+- NetRocks/FTPS: additional TLS1.3 fix
+- NetRocks/FTPS: fix TLS session reuse for TLS1.3
+
+* Sat Jun 3 2023 m32 <grzegorz.makarewicz@gmail.com> - 2.5.1.10+c6f6ff83
+- additional api methods
+- additional methods from far2l
+- spacer is for computing size only
+- fixes
+- parameter type and make it optional
+- unused parameter
+- expose functions from far2l static libraries
+
+* Sun May 28 2023 elfmz <fenix1905@tut.by> - 2.5.1.0+88acded8
+- Bump version to 2.5.1 (tag: v_2.5.1)
+
+* Sat May 20 2023 Alexei Golovin <golovin.alexei@gmail.com> - 2.5.0.518+01c821c5
+- Code style fixed again.
+- Code style fixed.
+- Issue #1688: VTCompletor взаимодействует с дочерним процессом по возможности через pty с откатом в pipes.
+
+* Tue May 16 2023 elfmz <fenix1905@tut.by> - 2.5.0.514+d3f3d8a6
+- ma: fix crash on parsing certain zip files
+
+* Tue May 16 2023 m32 <grzegorz.makarewicz@gmail.com> - 2.5.0.513+726dcfe1
+- cffi from pypi is outdated, fresh compile is needed
+
+* Sat May 13 2023 elfmz <fenix1905@tut.by> - 2.5.0.511+9c21a4e2
+- stop notifications and escape current directory if its being unmounted via alt+F.. menu (touch #1674)
+- external clipboard feature (--clipboard command line or ~/.config/far2l/clipboard script)
+
+* Fri May 12 2023 m32 <grzegorz.makarewicz@gmail.com> - 2.5.0.505+6902cd1c
+- simple game
+- varname for static text
+
+* Wed May 10 2023 Victor Krapivin <vik@scand.com> - 2.5.0.501+835bc652
+- openSUSE: new version of the specs and build scripts
+
+* Wed May 10 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.0.499+6c980d46
+- Update view.sh to work with files starting with dash '-'
+- Correction obtaining file information for filenames starting with a dash '-'
+
+* Thu May 4 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.0.495+a270426b
+- Correction menu/dialog title & explanation in help after #1626
+
+* Thu May 4 2023 elfmz <fenix1905@tut.by> - 2.5.0.493+c1bcafb6
+- Attributes dialog: button for more details about symlink (touch #1667)
+
+* Tue May 2 2023 elfmz <fenix1905@tut.by> - 2.5.0.492+4dd723df
+- ma/7z: support dirs timestamps extraction (close #1644)
+- show plain 1st level symlink target in attributes dialog, but not final one (touch #1667)
+
+* Mon May 1 2023 elfmz <fenix1905@tut.by> - 2.5.0.490+3b81a6c3
+- TTY: show backend extension character in title
+- TTY: dont use Xi keys filtering if some terminal extension is avalable (touch #1591)
+- WX: apply real timestamp check on keypress event not only under macos (fix #1659)
+
+* Mon May 1 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.488+eb42e55b
+- detect iterm2 mode on modifier key press also
+
+* Sun Apr 30 2023 elfmz <fenix1905@tut.by> - 2.5.0.484+f0bf6a13
+- ma/7z: support files timestamps extraction (touch #1644)
+- next plugin
+- VT: some autocompletion fixes (touch #1660)
+
+* Sat Apr 29 2023 elfmz <fenix1905@tut.by> - 2.5.0.478+e99b2f84
+- use setsid() in process hosing bash autocompletor (touch #1655)
+- preserve pointer
+- python and pointers
+- remove unneeded legacy code 2/2
+- copyright string encoding not used any more
+- better looking dialogs
+- directory with user plugins
+- without spacers
+- include space/tabs insertions in Undo history
+- dont probe terminal anyhow if --notty arg specified (touch #1655)
+
+* Thu Apr 27 2023 elfmz <fenix1905@tut.by> - 2.5.0.461+ca2f0cf6
+- try fix build under Ubuntu 16
+- fixed editor completion plugin that was resently broken
+- shell option treated now as command line but not its single first argument (touch #1619)
+
+* Thu Apr 27 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.456+30cdf822
+- - removed debug messages - stop searching for spaces at the beginnings of lines if tab at the beginning of a line is found
+- added two additional conditions: - if space found at the beginning of one of previous lines, do not used tabs for filling gaps from line end to cursor position - if non-space char found in the current line, do not use tabs for filling such gaps also
+- insert tabs if possible instead of spaces if cursor is beyond EOL and char key is pressed (or paste happend) if tab mode is 0
+- removed debug string
+- disable char* Copyright decoding as we do not encode it now
+- do not rewrite lang.inc if it has not been changed
+- update copyright header generation also
+- removed unneeded line
+- old cmake versions do not support "string(HEX ..."
+- avoid unneeded recompilations on git revision change
+
+* Thu Apr 27 2023 m32 <grzegorz.makarewicz@gmail.com> - 2.5.0.448+cba4a70f
+- use virtual python
+- python from virtualenv
+- unix time to windows time, diable scanning remote while in quick view
+
+* Wed Apr 26 2023 elfmz <fenix1905@tut.by> - 2.5.0.432+085310bb
+- rm garbage
+- VT: make view opened by F3 non-modal if shell is inactive (touch #1635)
+- VT: make editor opened by F4 non-modal if shell is inactive (touch #1635)
+
+* Wed Apr 26 2023 Grzegorz Makarewicz <mak@trisoft.com.pl> - 2.5.0.430+a9c61bcd
+- undefined variable
+
+* Wed Apr 26 2023 m32 <grzegorz.makarewicz@gmail.com> - 2.5.0.427+a7938fb5
+- f2s,s2f - the same behavior as for plugin
+- USERHOME - where store plugin configuration
+- honor contructor parameters
+- various shells - busybox vs toolbox vs toybox, persisting configuration with dialog, much faster
+- hoto set and get result from dialog fields
+- much faster
+- without api limiting
+- without hding python module
+- more complete plugin
+- without hiding python module
+- no bracket
+
+* Tue Apr 25 2023 elfmz <fenix1905@tut.by> - 2.5.0.412+358a91cf
+- TTYXi: fix Ctrl+` shortcut (touch #1625)
+- make far2l.desktop have +x mode bit
+- Make mouse select+copy hint shorter and yellow
+- fix Alt+Ins grabber for true color attributes (fix #1636)
+- ensure no dup events emitted in KeyDown handler (origin/dbg1625)
+- avoid dup messages from menu-based accelerators (touch #1625)
+
+* Tue Apr 25 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.0.407+6812815c
+- Info about: Select screen fragment & immediately to clipboard
+
+* Tue Apr 25 2023 unxed <unxed@mail.ru> - 2.5.0.405+a7145a72
+- fix #1595
+- Revert "touch #1625"
+- touch #1625
+
+* Mon Apr 24 2023 elfmz <fenix1905@tut.by> - 2.5.0.395+1c9a12f7
+- fix Alt+Ins grabber for true color attributes (fix #1636)
+- workaround werterm's bug 3594; document some quircks for wezterm past issues
+- Back to initial wrapper generation, cffi library and libffi must be in the version that generated far2lcffi.
+- Help: Actualization Help after current symlink jump to target & revert #1611
+- fix #1558
+- try to handle modifiers state better
+- Revert "added some debug output"
+- added some debug output
+- experimental fix for option+letter quick search under iterm2 under macos
+- dont remember in history space-beginning entries (touch #1626)
+
+* Fri Apr 21 2023 Vitaly Takmazov <vitalyster@gmail.com> - 2.5.0.371+4249583c
+- cmake: use pkg-config to configure libarchive/libpcre
+
+* Thu Apr 20 2023 elfmz <fenix1905@tut.by> - 2.5.0.369+ff8e7177
+- NetRocks: provide more contextual information in change mode dialog (close #1622)
+- VT: fix clear history
+
+* Tue Apr 18 2023 elfmz <fenix1905@tut.by> - 2.5.0.367+291c6604
+- NetRocks: fix failure to change mode in some cases (touch #1622)
+
+* Mon Apr 17 2023 elfmz <fenix1905@tut.by> - 2.5.0.366+2f7cf1ee
+- revert libarchive path lookup workaround
+- use _exit instead of exit for fork-ed process in MacDockIcon::OnMenuNewInstance (touch #1620)
+
+* Sun Apr 16 2023 elfmz <fenix1905@tut.by> - 2.5.0.364+e4ce7184
+- CtrlShiftPgDn: traverse to first target symlink, but not final
+- NetRocks/scp: fix wrong names of char/block devices
+- NetRocks/scp: improve busybox detection (touch #1609)
+- README: typo fix
+- Ctrl+Shift+PgUp to revert last symlynk traverse (touch #1611)
+
+* Sat Apr 15 2023 Vitaly Takmazov <vitalyster@gmail.com> - 2.5.0.353+3d19f54d
+- cmake: do not hardcode OpenSSL/libarchive paths, update README with correct usage example
+
+* Sat Apr 15 2023 elfmz <fenix1905@tut.by> - 2.5.0.351+487be1b5
+- Revert old Ctrl+PgDn behavior for symlinks, and use Ctrl+Shift+PgDn to navigate to its target (#1611)
+
+* Sat Apr 15 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.349+09fd8524
+- remove debug stuff
+- another try to fix iterm2 workaround
+- forgot to set go variable
+- another try to fix iterm2 workaround
+- make iterm2 cmd+v hack more reliable
+- cmd key state change is reproted by iterm2 not as keydown by as flags change
+- fix some problems in iterm2 cmd+v workaround
+- cmd+v not working in iterm2 in 1337 mode (looks like iterm2's bug). workaround: turn 1337 mode off on cmd press and turn it back on after 2 seconds
+- instead of mapping right Command to right Control, use right Option for this (as right Command is used for iTerm2's hotkeys)
+- map right Command to right Control
+- fix a typo
+- workaround keydown events does not arrive sometimes in iterm2
+- trying to fix ctrl+numbers
+- better del handling
+- map forwarddelete to backspace
+- add flags change seqs support; debug output added
+- ignore unsupported esc sequences
+- behave better on terminal focus lose
+- add more sequences (fixes F1, F2, F4 under WezTerm)
+- merge kittys-keys fix
+- highly experimental support for iTerm2 input mode
+
+* Wed Apr 12 2023 elfmz <fenix1905@tut.by> - 2.5.0.307+41d5a490
+- improve Abort-By-Esc UX by purging all extra keypresses before showing confirm dialog
+- GetTickCount: use CLOCK_MONOTONIC_COARSE whenever possible as it much faster
+- VT: configurable terminal log limit
+- confirmations: revert device removal dialog, add clear terminal confirmation (close #1567)
+
+* Wed Apr 12 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.0.304+b1a67366
+- Help: Actualization after elfmz add confirmation before terminal clear
+
+* Tue Apr 11 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.0.301+cccf4047
+- Help: Actualization description for vertical block selection in Editor
+
+* Mon Apr 10 2023 elfmz <fenix1905@tut.by> - 2.5.0.297+cfedad85
+- fix focused control in Attributes dialog
+- Attributes dialog: show symlink destination or other brief info directly in dialog (close #1587)
+- Ctrl+PgDn on symlink navigates to its target instead of usual open (touch #1587)
+- behave better on terminal focus lose
+- add more sequences (fixes F1, F2, F4 under WezTerm)
+- fix numpad 5 under wezterm
+- .editorconfig settings for some files that were missed previously
+
+* Sat Apr 8 2023 elfmz <fenix1905@tut.by> - 2.5.0.277+99ecf12d
+- Compilation fixes with recent compiler versions (GCC 13, clang 16).
+- Mac: ignore unpaired keyup events during first 100msec after geting focus (touch #1580)
+- update CODESTYLE
+- Update CODESTYLE.md
+- actually .hlf have no indentation standard
+- remove .editorconfig files that are not needed any more; manual indentation fixes spaces->tabs where spaces were left
+- add para about spaces&ellipses
+- use markdown format
+- add CODESTYLE.txt
+- rollback debug change
+- autoformat: spaces and indentations
+- include string.h here always
+
+* Sat Apr 8 2023 alexax66 <alexax66@gmail.com> - 2.5.0.255+51d1a34f
+- fix typos
+- fix building far2l on DragonFly BSD
+- Make Far2l built on Dragonfly BSD
+
+* Sat Apr 8 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.253+e1f2ee0e
+- added unicode char validity check
+- do not use kittys parser for classical terminal esc seqs
+- fix F3 on modern kitties
+- fixed alt+arrow_keys (set enhanced key flag correctly)
+- added support for kovidgoyal's kitty keyboard protocol as described here https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+
+* Thu Apr 6 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.238+d860dbdd
+- dont forget to set scan code in OnChar also
+
+* Wed Apr 5 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.236+1a3f8037
+- added missing numpad scan codes; disable compact input for right shift as it treats it as left shift
+- improved support for scan codes and enhanced key flag, see #1562
+
+* Tue Apr 4 2023 unxed <unxed@mail.ru> - 2.5.0.229+6043306e
+- fix for old compilers, second try
+
+* Tue Apr 4 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.226+528b7a5c
+- fix for older compilers
+
+* Sun Apr 2 2023 elfmz <fenix1905@tut.by> - 2.5.0.224+8fa92101
+- fix build
+- add missing error status checks
+- rewrite parsing of winterm sequences
+
+* Sun Apr 2 2023 unxed <unxed@mail.ru> - 2.5.0.222+ee35e5f3
+- lazy _xkb_en init; fallback to old method if _xkb_en not available
+- lazy _xkb_en initialization
+- now latin key detection works even if english keyboard layout is not installed on system
+
+* Sat Apr 1 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.216+edf9b739
+- support win32-input-mode
+
+* Thu Mar 30 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.214+175e52ce
+- key_code here represents WX key code, not windows virtual key code. so lets use wx codes to avoid double wx->vkc translations
+- moved keyboard layout detection stuff to ttyx constructor
+- fix build
+- enable compact input even if virtual scan code is set
+- provide keyboard layout independent keystroke information for tty backend also. see #1562
+- enable key_code detection only if english kb layout is installed, avoid using other latin layouts
+- reverted unneeded changes
+- Fix double Ctrl+non_latin_key events (rawkeyflags trick should be only applied then keycode is zero)
+
+* Thu Mar 30 2023 unxed <unxed@mail.ru> - 2.5.0.211+f81f7bb9
+- fix build, second try
+- fix build
+
+* Thu Mar 30 2023 elfmz <fenix1905@tut.by> - 2.5.0.200+d4173ff9
+- add caching to new keycode lookup workaround
+
+* Wed Mar 29 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.194+7016f969
+- fix build, try 2
+- fix build
+- Set correct virtual scan codes in event records
+- Also add support for some Ctrl+non_russian_letter key combinations
+- Fix zero virtural key code for Alt+non_latin_letter key combinations
+
+* Wed Mar 29 2023 elfmz <fenix1905@tut.by> - 2.5.0.187+05be5070
+- crash logger: alternate way to obtain stack backtrace
+- fix NULL ptr dereference in fprintf (fix #1566)
+
+* Mon Mar 20 2023 Yevgeniy Filatov <itspec.ru@gmail.com> - 2.5.0.185+39489dd8
+- small help fix
+
+* Sun Mar 19 2023 elfmz <fenix1905@tut.by> - 2.5.0.183+ef50ac45
+- editor: fix local keybar and titlebar option behavior (fix #1560)
+- Minor actualization in Help [Eng, Rus only]
+- help: show F7 on keybar (tocuh #1561)
+
+* Sun Mar 19 2023 akruphi <92621645+akruphi@users.noreply.github.com> - 2.5.0.182+62cd6728
+- Help: Terminal
+
+* Wed Mar 15 2023 elfmz <fenix1905@tut.by> - 2.5.0.175+f79718c5
+- Code readability
+- Code readability
+- Code readability: reformatted some complex lines of code to fit screen at reasonable resolution and font size without horizontal scrolling
+- editor: fix current position display (fix #1557)
+
+* Mon Mar 13 2023 elfmz <fenix1905@tut.by> - 2.5.0.166+67ae9282
+- fix losing of window size even in Esc press checkers; fix ExpandEnvironmentStrA for nonlatic strings
+- ma: fix opening command line with non-latin files (fix #1551)
+
+* Sun Mar 12 2023 elfmz <fenix1905@tut.by> - 2.5.0.161+f9fa5b11
+- fix another bunch of errors reported by PVS
+- fix another bunch of errors reported by PVS
+- retire EdOpt.F7Rules (fix #1519)
+- update unrar sources to 6.2.6 (close #1544)
+- Ctrl+` hotkey to go to home (close #1538)
+
+* Sun Mar 12 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.155+1948e765
+- Minor indentation fixes
+- Accidentally left this unneeded line
+- Accidentally left this unneeded line
+- Fixed mixed indentation
+- Reverted triple slash removal
+- Fix mixed indentation
+- Fix mixed indentation
+
+* Sat Mar 11 2023 elfmz <fenix1905@tut.by> - 2.5.0.139+f0e3340f
+- Fix indentation
+- Fix mixed indentation
+- Update README.md
+- Fix mixed indentation
+- Fix mixed indentation
+- Fix mixed indentation
+- NR: fix possible stuck during NFS connect (fix #1543)
+
+* Thu Mar 9 2023 elfmz <fenix1905@tut.by> - 2.5.0.126+caeffa98
+- Fix mixed indentation
+- Fix mixed indentation
+- avoid excessive stack usage by some other objects
+- avoid excessive stack usage also by UserMenu object
+- avoid excessive stack usage by Help object (touch #1525)
+- edit: use F5 to show/hide whitespaces and switch tab expansion by Ctrl+F5 instead
+- edit/view: open local settings by F9 too, clarify some help topics..
+- rm garbage files (fix #1533)
+- Fix also hlf files
+- fix wrong indentation
+- editorconfig: fix relative pathes
+
+* Thu Mar 9 2023 Ivan Sorokin <unxed@mail.ru> - 2.5.0.118+68b3bde7
+- Minor indent fixes
+- Minor indent fix
+- Fix mixed indentation
+- Fix mixed indentation
+- Fix mixed indentation
+- Added rules for .yml files
+- .def's are actually 3-space indented
+- removed redundancy
+- 2 space indentation for .hlf
+- let's maintain 2 space indentation for all .hlf files across the source tree
+- Restored accidently removed colon
+- More mixed indentation fixes
+- Fixed mixed tab/space indentation at the beginning of some lines of code
+
+* Wed Mar 8 2023 elfmz <fenix1905@tut.by> - 2.5.0.91+f81fddb2
+- Use "S2" for .hlf files
+- Minor .editorconfig fixes and updates
+- [*] section in child folder overrides settings from parent folder, so let us redeclare CMakeLists.txt section where needed
+- Wrong indentation was specified
+- Modify .editorconfig to reflect MA indentation changes.
+- Make indentation more consistent throughtout MA. It's default styling is 2 spaces, so let's make exclustions only for ha sources (as it is imported code) and libarchive wrapper (written from scratch).
+- editorconfig: parse section from last to first
+- KeyFileHelper: preserve sections order
+- Simplify .editorconfig files hierarchy: only one top level .editorconfig file per folder
+- Actually files are in mixed indentation here, so lets leave .editorconfig defaults unchanged
+- Remove redundant definitions
+- Make indentation consistent
+- All CMakeLists.txt are now configured via root .editorconfig
+- Make indentation consistent
+- Added some more .editorconfig files
+- Make CMakeLists.txt indentation consistent (4 spaces, as it was in far2/CMakeLists.txt), simplify .editorconfig files.
+- Added .editorconfig files for consistent code style
+- Update far2l.desktop
+- editor: add .editorconfig support
+- KeyFileHelper: load non-section-ed values into empty-name section
+
+* Tue Mar 7 2023 elfmz <fenix1905@tut.by> - 2.5.0.65+8f218e96
+- add NORM_STOP_ON_NULL support (touch #1525)
+
+* Mon Mar 6 2023 elfmz <fenix1905@tut.by> - 2.5.0.64+ea9ed6ca
+- save per-file tab state only if it was customized
+
+* Sun Mar 5 2023 elfmz <fenix1905@tut.by> - 2.5.0.63+e6ae1109
+- editor: F5 to toggle new Tabs behavior, but dont convert existing ones
+- editor help update according to recent changes
+- increase default max poscache elements count to 2048
+- editor: CtrlF5 to show/hide whitespaces
+- edit: ShiftF5 to change spaces per tab, indicate tab mode in title (touch #1222)
+- save tab expansion settings per file in edit history (origin/edit-live-expandtab)
+
+* Sat Mar 4 2023 elfmz <fenix1905@tut.by> - 2.5.0.57+92e05a47
+- fix compilation with old macos and new brew libs
+- fix couple of compilation warnings
+- fix some other issues with plugin menus hotkeys (fix #1516)
+- fix typo standart -> standard
+- convert path to full when invoking trash.sh (touch #1521)
+
+* Fri Mar 3 2023 elfmz <fenix1905@tut.by> - 2.5.0.50+eff021e5
+- macos: fix delete to recycle bin if gio unavailable (touch #1521)
+
+* Thu Mar 2 2023 elfmz <fenix1905@tut.by> - 2.5.0.49+3e949d49
+- fix missing hotkeys in F11 menu (fix #1516)
+- fix mistype
+- copy: override umask if permissions copy enabled
+
+* Wed Mar 1 2023 elfmz <fenix1905@tut.by> - 2.5.0.46+2455020c
+- ma: fix wrong size of some zip entries (fix #1515)
+
+* Tue Feb 28 2023 elfmz <fenix1905@tut.by> - 2.5.0.45+a8acf100
+- NetRocks: fix custom subsystem setting behavior
+
+* Mon Feb 27 2023 elfmz <fenix1905@tut.by> - 2.5.0.44+1076d518
+- TTY: fix low-31 ascii chars output filtering for composit char case (fix #1513)
+
+* Sun Feb 26 2023 Alex Myczko <alex@aiei.ch> - 2.5.0.43+be7a3156
+- debian pkg and simple sid backport
+
+* Sun Feb 26 2023 elfmz <fenix1905@tut.by> - 2.5.0.41+0dac807b
+- 7z: dont use code that uses ARM CRC intrinstrics if compiler indicated that theyre not supported
+
+* Sat Feb 25 2023 elfmz <fenix1905@tut.by> - 2.5.0.40+88a9d309
+- improve tolerance to unknown platform
+- interpret negative window size as size in chars
+- set win size in chars if consolesize is present
+- use wxDefaultPosition to allow wm to pos window
+- fix wrong directive
+
+* Thu Feb 23 2023 elfmz <fenix1905@tut.by> - 2.5.0.33+4c25feca
+- TTY: fix handling mouse move with pressed button
+
+* Wed Feb 22 2023 elfmz <fenix1905@tut.by> - 2.5.0.32+958b6ac0
+- VT: fix mouse right button and scrolling direction (fix #1509)
+- change triple-licensed colorer DB files to GPL only (#692)
+
+* Tue Feb 21 2023 elfmz <fenix1905@tut.by> - 2.5.0.30+275fc2cd
+- change three-license colorer files to single-license (GPL-2) as it allowed by paragraph starting from 'Alternatively, the contents of this file may be used ' words (touch #692)
+
+* Mon Feb 20 2023 elfmz <fenix1905@tut.by> - 2.5.0.29+b8bd6a3a
+- Cmdline autocomplete: double tab behavior detected by matching substring but not key as char keys handled by menu (touch #1506)
+
+* Sun Feb 19 2023 elfmz <fenix1905@tut.by> - 2.5.0.28+c08ff72a
+- refresh autocomplete according to actually selected item after shift+del (touch #1504)
+
+* Sat Feb 18 2023 elfmz <fenix1905@tut.by> - 2.5.0.27+87d01390
+- libexec to load lib in FARHOME curdir and then chdir to needed one (touch #1505)
+- start sudo dispatcher in FARHOME curdir instead of hardcoded /bin (touch #1505)
+
+* Tue Feb 14 2023 elfmz <fenix1905@tut.by> - 2.5.0.25+32213be2
+- remove unneeded debug printout
+- VT: fix nonlatic window title (fix #1503)
+- -DUNRAR config option to allow using libunrar + unrar instead of bundled sources or not using unrar at all (touch #977790)
+
+* Mon Feb 13 2023 elfmz <fenix1905@tut.by> - 2.5.0.22+d8fbdd09
+- WX backend: fix wheel direction indicating value to fit documentation (touch #1501)
+
+* Sat Feb 11 2023 elfmz <fenix1905@tut.by> - 2.5.0.21+d459737b
+- fixing build..
+- revert using statvfs to get f_namemax
+- move Mac-needed {#define st_mtim st_mtimespec} to wider scope (touch #1498)
+- use statfs instead of statvfs as later reports disk sizes only in 32 bit values under MacOS (touch #1496)
+
+* Sun Feb 5 2023 elfmz <fenix1905@tut.by> - 2.5.0.17+3e5aea01
+- Mac/WX: Cmd+M to minimize window (close #1495)
+- GUI: get ready to wxGetKeyState supporting NUM/CAPS/SCROLL under Wayland in upcoming WX (touch #1494)
+
+* Sun Jan 29 2023 elfmz <fenix1905@tut.by> - 2.5.0.15+431f28ba
+- $u and $n to embed username and computername in command line prompt
+- fix ESC key in delete-to-recycly-bin error dialog (fix #1491)
+- use ~ instead of home path in default command prompt (close #1492)
+- VT: fixup cursor position to fit in screen area after terminal size reduced (fix #1489)
+
+* Sun Jan 22 2023 elfmz <fenix1905@tut.by> - 2.5.0.11+c52d95d5
+- remove temporary debug print
+- NetRocks: rewrite OpenSSH config files option - allow to specify alternate config files or not to use them at all (later works on libssh >= 0.9.0)
+
+* Sat Jan 21 2023 elfmz <fenix1905@tut.by> - 2.5.0.9+684f8c40
+- Issue-1485: small fix.
+- Issue-1485: зависимости DEB-пакета подбираются под версию wxWidgets.
+- mention wxgtk3.2 in readme (close #1485)
+
+* Fri Jan 20 2023 elfmz <fenix1905@tut.by> - 2.5.0.2+3314adc8
+- reapply TTY palette after far2l being recovered from background mode; br package to reference unstable master
+- workaround for LXDE window size not restored (fix #1483)
+
+* Sun Jan 15 2023 elfmz <fenix1905@tut.by> - 2.5.0.0+edcc4d85
+- Bump version to 2.5.0 (tag: v_2.5.0)
+
+* Sat Jan 14 2023 elfmz <fenix1905@tut.by> - 2.4.1.279+1e6fe362
+- shorter phrasing (touch #1481)
+- increase default window width to 800px (touch #1481)
+
+* Fri Jan 13 2023 elfmz <fenix1905@tut.by> - 2.4.1.276+628df098
+- custom draw characters 2190-2193; some other optimizations
+- Cirrus CI: bump BSD version
+- more rendering optimizations...
+
+* Thu Jan 12 2023 elfmz <fenix1905@tut.by> - 2.4.1.271+3d72a37b
+- add potentially missing include
+- rename atoul/htoul to natoul/nhtoul to avoid conflicts
+- some tweaks to avoid render lags on startup (touch #1474)
+
+* Tue Jan 10 2023 elfmz <fenix1905@tut.by> - 2.4.1.266+76219039
+- yet another workaround for XWayland rendering glitches (touch #1303 #1454 #1474)
+
+* Mon Jan 9 2023 elfmz <fenix1905@tut.by> - 2.4.1.264+c26b9148
+- fix Location menu alignment edgecases (fix #1478)
+- fix panels were not painted sometimes on start
+- fix panels size if directory update on start caused update progress status shown
+
+* Sun Jan 8 2023 elfmz <fenix1905@tut.by> - 2.4.1.261+8a5dfd27
+- fix crash on window resize during file panels update (fix #1475)
+- VT: if app changes palette - pass this request to backend instead of local processing (fix #1473)
+- more random improvements...
+- fortify clipboard authentification
+
+* Sun Jan 8 2023 unxed <unxed@mail.ru> - 2.4.1.258+a801423f
+- added more apps supporting far2l terminal extensions protocol
+
+* Sat Jan 7 2023 elfmz <fenix1905@tut.by> - 2.4.1.254+f1ae369d
+- use stronger random where appropriate
+- default palette: make bright blue more readable on dark background
+- NetRocks: fix saving site settings when pressing enter (fix #1470)
+
+* Thu Jan 5 2023 elfmz <fenix1905@tut.by> - 2.4.1.247+d13619ce
+- TTY: add config option for palette override
+- use palette color 0 for filling window edges (fix #1467)
+- align saved size by font dimensions
+- fix some multimonitor issue (touch #1452)
+- persist window state only when saving far2l config (Shift+F9) (close #1465)
+- make maximize work on macos too
+- persist window pos/state, add --maximize/--nomaximize args (fix #729 fix #46 touch #1465)
+- VT: fix messed colors
+
+* Wed Jan 4 2023 elfmz <fenix1905@tut.by> - 2.4.1.236+340865e6
+- far2l TTY/VT to use OSC4/104 too
+- TTY: override base colors to values taken from palette.ini (close #1385)
+- fix running commands in separate xterm by Shift+Enter (fix #1463)
+
+* Tue Jan 3 2023 elfmz <fenix1905@tut.by> - 2.4.1.232+20dd2b23
+- fix missing include for ElCapitan
+- Customizable alignment in Location menu (fix #1379 close #1458)
+
+* Mon Jan 2 2023 elfmz <fenix1905@tut.by> - 2.4.1.229+ab539ede
+- License: put WinPort/FarTTY.h to public domain (me is only author if this file so can do this by my own)
+- CirrusCI: use Ventura/M1
+
+* Sun Jan 1 2023 elfmz <fenix1905@tut.by> - 2.4.1.225+19431bd1
+- Cirrus CI: disable MacOS tests as Cirrus disabled Intel machines. Need to implement M1 builds eventually...
+- fix FARTTY_INTERRACT_CLIP_GETDATA description (fix #1461)
+- ensure extra zero-filled space sizeof(WCHAR) at the tail of allocated clipboard data to guard against unterminated strings (touch #1460)
+

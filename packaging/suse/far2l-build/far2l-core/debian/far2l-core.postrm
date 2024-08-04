@@ -1,0 +1,11 @@
+#! /bin/sh -e
+
+set -e
+
+if [ "$1" = purge ]; then
+	if [ -x /usr/bin/update-desktop-database ]; then
+		/usr/bin/update-desktop-database > /dev/null || :
+	fi
+fi
+
+#DEBHELPER#

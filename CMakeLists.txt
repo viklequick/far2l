@@ -497,6 +497,11 @@ else()
     endif()
 endif()
 
+if (DEFINED LUAFAR AND LUAFAR)
+    message(STATUS "Lua plugin enabled")
+    add_subdirectory (luafar)
+endif()
+
 if (NOT DEFINED SIMPLEINDENT OR SIMPLEINDENT)
     message(STATUS "SIMPLEINDENT plugin enabled")
     add_subdirectory (SimpleIndent)

@@ -1,7 +1,10 @@
 find_path(fmt_INCLUDE_DIR NAMES fmt/format.h)
 
 if(fmt_INCLUDE_DIR)
-  set(_fmt_version_file "${fmt_INCLUDE_DIR}/fmt/core.h")
+  set(_fmt_version_file "${fmt_INCLUDE_DIR}/fmt/base.h")
+  if(NOT EXISTS "${_fmt_version_file}")
+  	set(_fmt_version_file "${fmt_INCLUDE_DIR}/fmt/core.h")
+  endif()
   if(NOT EXISTS "${_fmt_version_file}")
     set(_fmt_version_file "${fmt_INCLUDE_DIR}/fmt/format.h")
   endif()
@@ -11,12 +14,17 @@ if(fmt_INCLUDE_DIR)
       REGEX "^#define[ \t]+FMT_VERSION[ \t]+[0-9]+$")
     string(REGEX REPLACE "^#define[ \t]+FMT_VERSION[ \t]+([0-9]+)$"
       "\\1" fmt_VERSION "${fmt_VERSION_LINE}")
-    foreach(ver "fmt_VERSION_PATCH" "fmt_VERSION_MINOR" "fmt_VERSION_MAJOR")
-      math(EXPR ${ver} "${fmt_VERSION} % 100")
-      math(EXPR fmt_VERSION "(${fmt_VERSION} - ${${ver}}) / 100")
-    endforeach()
-    set(fmt_VERSION
-      "${fmt_VERSION_MAJOR}.${fmt_VERSION_MINOR}.${fmt_VERSION_PATCH}")
+
+	if("${fmt_VERSION}" STREQUAL "")
+	  message(STATUS "libfmt: version is not discovered, FIXME")
+	else()
+      foreach(ver "fmt_VERSION_PATCH" "fmt_VERSION_MINOR" "fmt_VERSION_MAJOR")
+        math(EXPR ${ver} "${fmt_VERSION} - ${fmt_VERSION} / 100 * 100")
+        math(EXPR fmt_VERSION "${fmt_VERSION} / 100")
+      endforeach()
+      set(fmt_VERSION
+        "${fmt_VERSION_MAJOR}.${fmt_VERSION_MINOR}.${fmt_VERSION_PATCH}")
+    endif()
   endif()
 endif()
 

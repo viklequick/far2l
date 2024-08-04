@@ -50,7 +50,7 @@ set(SOURCES
 add_library (luafar2l MODULE ${SOURCES})
 target_link_libraries(luafar2l ${LIB_LUA} uuid)
 
-target_compile_definitions(luafar2l PRIVATE -DWINPORT_DIRECT -DFAR_DONT_USE_INTERNALS)
+target_compile_definitions(luafar2l PRIVATE -DWINPORT_DIRECT -DFAR_USE_INTERNALS)
 
 target_include_directories(luafar2l PRIVATE ../far2l/far2sdk)
 target_include_directories(luafar2l PRIVATE ../WinPort)

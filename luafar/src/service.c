@@ -37,7 +37,10 @@ extern int  far_MacroCallFar(lua_State *L);
 extern int  far_FarMacroCallToLua(lua_State *L);
 extern int  bit64_push(lua_State *L, INT64 v);
 extern int  bit64_getvalue(lua_State *L, int pos, INT64 *target);
+
+#ifdef Lua_MacroV3
 extern void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroValue* Values);
+#endif
 
 #ifndef ARRAYSIZE
 #  define ARRAYSIZE(buff) (sizeof(buff)/sizeof(buff[0]))
@@ -2226,10 +2229,12 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
     lua_gettable(L, -2);     // +1
     if (lua_type(L,-1) != LUA_TTABLE)
       luaLF_SlotError (L, 7, "table");
+#ifdef Lua_MacroV3
     Item->ListItems = CreateList(L, historyindex);
     int SelectIndex = GetOptIntFromTable(L, "SelectIndex", -1);
     if (SelectIndex > 0 && SelectIndex <= (int)lua_objlen(L,-1))
       Item->ListItems->Items[SelectIndex-1].Flags |= LIF_SELECTED;
+#endif
     lua_pop(L,1);                    // 0
   }
   else if (Item->Type == DI_USERCONTROL)
@@ -2238,17 +2243,21 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
     if (lua_type(L,-1) == LUA_TUSERDATA)
     {
       TFarUserControl* fuc = CheckFarUserControl(L, -1);
+#ifdef Lua_MacroV3
       Item->VBuf = fuc->VBuf;
+#endif
     }
     lua_pop(L,1);
   }
   else if (Item->Type == DI_CHECKBOX || Item->Type == DI_RADIOBUTTON) {
     lua_pushinteger(L, 7);
     lua_gettable(L, -2);
+#ifdef Lua_MacroV3
     if (lua_isnumber(L,-1))
       Item->Selected = lua_tointeger(L,-1);
     else
       Item->Selected = lua_toboolean(L,-1) ? BSTATE_CHECKED : BSTATE_UNCHECKED;
+#endif
     lua_pop(L, 1);
   }
   else if (Item->Type == DI_EDIT || Item->Type == DI_FIXEDIT) {
@@ -2259,7 +2268,9 @@ void SetFarDialogItem(lua_State *L, struct FarDialogItem* Item, int itemindex,
       lua_gettable(L, -2);     // +1
       if (!lua_isstring(L,-1))
         luaLF_SlotError (L, 7, "string");
+#ifdef Lua_MacroV3
       Item->History = check_utf8_string (L, -1, NULL); // +1 --> Item->History and Item->Mask are aliases (union members)
+#endif
       size_t len = lua_objlen(L, historyindex);
       lua_rawseti (L, historyindex, len+1); // +0; put into "histories" table to avoid being gc'ed
     }
@@ -2310,22 +2321,30 @@ void PushDlgItem (lua_State *L, const struct FarDialogItem* pItem, BOOL table_ex
 
   if (pItem->Type == DI_LISTBOX || pItem->Type == DI_COMBOBOX) {
     lua_rawgeti(L, -1, 7);
+#ifdef Lua_MacroV3
     lua_pushinteger(L, pItem->ListPos+1);
+#endif
     lua_setfield(L, -2, "SelectIndex");
     lua_pop(L,1);
   }
   else if (pItem->Type == DI_USERCONTROL)
   {
+#ifdef Lua_MacroV3
     lua_pushlightuserdata(L, pItem->VBuf);
+#endif
     lua_rawseti(L, -2, 7);
   }
   else if (pItem->Type == DI_CHECKBOX || pItem->Type == DI_RADIOBUTTON)
   {
+#ifdef Lua_MacroV3
     PushCheckbox(L, pItem->Selected);
+#endif
     lua_rawseti(L, -2, 7);
   }
+#ifdef Lua_MacroV3
   else
     PutIntToArray(L, 7, pItem->Selected);
+#endif
 
   PutIntToArray  (L, 8, pItem->Flags);
   PutIntToArray  (L, 9, pItem->DefaultButton);
@@ -3709,7 +3728,11 @@ int far_ProcessName (lua_State *L)
   int Flags = OptFlags(L,4,0);
   struct FarStandardFunctions* FSF = GetFSF(L);
 
-  if(Op == PN_CMPNAME || Op == PN_CMPNAMELIST || Op == PN_CHECKMASK) {
+  if(Op == PN_CMPNAME || Op == PN_CMPNAMELIST
+#ifdef Lua_MacroV3
+   || Op == PN_CHECKMASK
+#endif
+   ) {
     int result = FSF->ProcessName(Mask, (wchar_t*)Name, 0, Op|Flags);
     lua_pushboolean(L, result);
   }
@@ -4698,6 +4721,7 @@ int far_BackgroundTask(lua_State *L)
   return 0;
 }
 
+#ifdef Lua_MacroV3
 void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target)
 {
   INT64 val64;
@@ -4745,7 +4769,9 @@ void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target)
     target->Value.Integer = val64;
   }
 }
+#endif
 
+#ifdef Lua_MacroV3
 int far_MacroLoadAll(lua_State* L)
 {
   TPluginData *pd = GetPluginData(L);
@@ -4793,6 +4819,7 @@ int MacroSendString(lua_State* L, int Param1)
   return 1;
 }
 
+#ifdef Lua_MacroV3
 int far_MacroPost(lua_State* L)
 {
   return MacroSendString(L, MSSC_POST);
@@ -4824,6 +4851,7 @@ int far_MacroGetLastError(lua_State* L)
 
   return 1;
 }
+#endif
 
 typedef struct
 {
@@ -4949,6 +4977,7 @@ int far_MacroExecute(lua_State* L)
 
   return 1;
 }
+#endif
 
 int far_Log(lua_State *L)
 {
@@ -4957,6 +4986,7 @@ int far_Log(lua_State *L)
   return 0;
 }
 
+#ifdef Lua_MacroV3
 int far_ColorDialog(lua_State *L)
 {
   PSInfo *info = GetPluginStartupInfo(L);
@@ -4968,6 +4998,7 @@ int far_ColorDialog(lua_State *L)
     lua_pushnil(L);
   return 1;
 }
+#endif
 
 int far_GetConfigDir(lua_State *L)
 {
@@ -5475,7 +5506,9 @@ static const luaL_Reg far_funcs[] = {
   {"DispatchInterThreadCalls", far_DispatchInterThreadCalls},
   {"BackgroundTask",      far_BackgroundTask},
 
+#ifdef Lua_MacroV3
   {"ColorDialog",         far_ColorDialog},
+#endif
   {"CPluginStartupInfo",  far_CPluginStartupInfo},
   {"GetCurrentDirectory", far_GetCurrentDirectory},
   {"GetFileOwner",        far_GetFileOwner},
@@ -5483,6 +5516,7 @@ static const luaL_Reg far_funcs[] = {
   {"LuafarVersion",       far_LuafarVersion},
   {"MakeMenuItems",       far_MakeMenuItems},
   {"Show",                far_Show},
+#ifdef Lua_MacroV3
   {"MacroAdd",            far_MacroAdd},
   {"MacroDelete",         far_MacroDelete},
   {"MacroExecute",        far_MacroExecute},
@@ -5493,6 +5527,7 @@ static const luaL_Reg far_funcs[] = {
   {"MacroSaveAll",        far_MacroSaveAll},
   {"MacroCheck",          far_MacroCheck},
   {"MacroPost",           far_MacroPost},
+#endif
   {"Log",                 far_Log},
   {"GetConfigDir",        far_GetConfigDir},
 
@@ -5540,6 +5575,7 @@ int luaopen_far (lua_State *L)
   lua_insert(L, -2);
   lua_setfield(L, -2, "Flags");
 
+#ifdef Lua_MacroV3
   if (Info->StructSize > offsetof(PSInfo, Private) && Info->Private)
   {
     lua_pushcfunction(L, far_MacroCallFar);
@@ -5547,6 +5583,7 @@ int luaopen_far (lua_State *L)
     lua_pushcfunction(L, far_FarMacroCallToLua);
     lua_setfield(L, -2, "FarMacroCallToLua");
   }
+#endif
 
   (void)luaL_dostring(L, far_Guids);
 
@@ -5584,7 +5621,9 @@ int luaopen_far (lua_State *L)
   (void) luaL_dostring(L, far_Dialog);
 
   luaL_newmetatable(L, AddMacroDataType);
+#ifdef Lua_MacroV3
   lua_pushcfunction(L, AddMacroData_gc);
+#endif
   lua_setfield(L, -2, "__gc");
   lua_pop(L, 1);
 

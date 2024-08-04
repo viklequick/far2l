@@ -5,11 +5,15 @@
 
 extern int bit64_getvalue(lua_State *L, int pos, INT64 *target);
 extern int pcall_msg(lua_State* L, int narg, int nret);
+
+#ifdef Lua_MacroV3
 extern void PushFarMacroValue(lua_State* L, const struct FarMacroValue* val);
 extern void ConvertLuaValue (lua_State *L, int pos, struct FarMacroValue *target);
+#endif
 
 static const DWORD LuamacroId = 0x4EBBEFC8;
 
+#ifdef Lua_MacroV3
 static int FL_PushParams(lua_State* L, const struct FarMacroCall* Data)
 {
 	int ret = lua_checkstack(L, 2 + (int)Data->Count);
@@ -239,3 +243,5 @@ int far_FarMacroCallToLua(lua_State *L)
 	}
 	return 0;
 }
+
+#endif

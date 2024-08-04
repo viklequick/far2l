@@ -17,7 +17,9 @@ extern int  bit64_push(lua_State *L, INT64 v);
 extern int  bit64_getvalue(lua_State *L, int pos, INT64 *target);
 extern void FillInputRecord(lua_State *L, int pos, INPUT_RECORD *ir);
 
+#ifdef Lua_MacroV3
 void PackMacroValues(lua_State* L, size_t Count, const struct FarMacroValue* Values); // forward declaration
+#endif
 
 // "Collector" is a Lua table referenced from the Plugin Object table by name.
 // Collector contains an array of lightuserdata which are pointers to new[]'ed
@@ -595,6 +597,7 @@ void LF_GetOpenPluginInfo(lua_State* L, HANDLE hPlugin, struct OpenPluginInfo *a
 }
 //---------------------------------------------------------------------------
 
+#ifdef Lua_MacroV3
 void PushFarMacroValue(lua_State* L, const struct FarMacroValue* val)
 {
 	switch(val->Type)
@@ -822,6 +825,7 @@ void LF_ClosePlugin(lua_State* L, HANDLE hPlugin)
   DestroyCollector(L, hPlugin, COLLECTOR_OPI);
   luaL_unref(L, LUA_REGISTRYINDEX, (INT_PTR)hPlugin);
 }
+#endif
 
 int LF_Compare(lua_State* L, HANDLE hPlugin, const struct PluginPanelItem *Item1,
                const struct PluginPanelItem *Item2, unsigned int Mode)

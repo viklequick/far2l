@@ -124,17 +124,18 @@ transforms your commands into the corresponding external archiver calls.
 
 @Far2lGettingStarted
 $ # FAR2L features - Getting Started#
-    FAR2L is Linux port FAR Manager v2 (see ~About FAR2L~@About@)
+    FAR2L is a Linux port of FAR Manager v2 (see ~About FAR2L~@About@)
     FAR2L official site: ~https://github.com/elfmz/far2l~@https://github.com/elfmz/far2l@
 
 
  #UI Backends#
     FAR2L has 3 base UI Backends (see details in ~UI backends~@UIBackends@):
-        - #GUI#: uses wxWidgets, works in graphics mode, ideal UX, requires a lot of X11 dependencies;
+        - #GUI#: uses wxWidgets, works in graphics mode, #ideal UX#
+(might add dependencies to your desktop environment, e.g. wxWidgets toolkit and related packages);
         - #TTY|Xi#: works in terminal mode, requires a dependency on pair X11 libraries
-(to access clipboard and to get state of all keyboard modifiers), almost perfect UX;
+(to access clipboard and to get state of all keyboard modifiers), #almost perfect UX#;
         - #TTY|X#: works in terminal mode, uses X11 to access clipboard, all keyboard works via terminal;
-        - #TTY#: plain terminal mode, no X11 dependencies, UX with some restrictions
+        - #TTY#: plain terminal mode, no X11 dependencies, #UX with some restrictions#
 (works fully when running in the terminal emulators,
 which provide clipboard access and has their advanced keyboard-protocols, see list below).
     You can see FAR2L version and currently used backend in window title or by ~pseudo-command~@SpecCmd@ #far:about#.
@@ -300,9 +301,6 @@ runs inside.
   Use PRIMARY selection instead of CLIPBOARD X11 selection. This argument applies only to far2l
 that runs with WX backend.
 
-  Backend-specific options also can be set via the #FAR2L_ARGS# environment variable
-(for example: #export FAR2L_ARGS="--tty --nodetect --ee"# and then simple #far2l# to force start only TTY backend).
-
 
  #FAR2L command-line options:#
   #-a#
@@ -347,7 +345,7 @@ and from the path given at the "~Path for personal plugins~@PluginsManagerSettin
   Macros with the "Run after FAR2L start" option set will not be run when FAR2L is started.
 
   #-u <identity># or #-u <path>#
-  Allows to specify separate settings identity or FS location.
+  Allows to specify separate settings identity or FS location (it override #FARSETTINGS# environment variable value).
   #-u <path>#: in path/.config/ (if path is full path)
   #-u <identity>#: in ~~/.config/far2l/custom/identity/ or in $XDG_CONFIG_HOME/far2l/custom/identity/
 
@@ -378,6 +376,10 @@ resides and place the cursor on the file, if it exists;
   - ^<wrap>when prefixes specified (simultaneous use with common paths allowed)
 passive command executes first (passive panel activates temporary). Односимвольные префиксы игнорируются.
   Example: far ma:Far20.7z "macro:post MsgBox(\\"FAR2L\\",\\"Successfully started\\")"
+
+
+  All options (except #-h# and #-u#) also can be set via the #FAR2L_ARGS# environment variable
+(for example: #export FAR2L_ARGS="--tty --nodetect --ee"# and then simple #far2l# to force start only TTY backend).
 
 
 @KeyRef
@@ -2232,6 +2234,8 @@ executed when invoking the user menu. The menu may contain submenus.
 titles. Note, that !?<title>?<init>! symbol may be used to enter additional
 parameters directly before executing commands.
 
+    You may reorder menu items by pressing #Ctrl-Up# and #Ctrl-Down#.
+
     With the #Edit user menu# command from the ~Commands menu~@CmdMenu@, you
 may edit or create main or local user menu. There may only be one main user
 menu. The main user menu is called if no local menu for the current folder is
@@ -3409,6 +3413,10 @@ combinations are available:
     The highlighting groups are checked from top to bottom. If it is detected
 that a file belongs to a group, no further groups are checked.
 
+    Display of markers is controlled globally via a checkbox
+in the ~Panel settings~@PanelSettings@ dialog
+or may be switched by #Ctrl-Alt-M# in panels.
+
     See also: common ~menu~@MenuCmd@ keyboard commands.
 
 
@@ -3446,7 +3454,8 @@ will not be analyzed, and only file attributes will be taken into account.
      - it has none of the excluded attributes.
 
     Display of markers is controlled globally via a checkbox
-in the ~Panel settings~@PanelSettings@ dialog.
+in the ~Panel settings~@PanelSettings@ dialog
+or may be switched by #Ctrl-Alt-M# in panels.
 
     The Compressed, Encrypted, Not indexed, Sparse, Temporary attributes and
 Symbolic links are valid for NTFS drives only.

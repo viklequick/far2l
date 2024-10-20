@@ -1,5 +1,8 @@
 project(NetRocks)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(SOURCES
 src/Erroring.cpp
 src/Globals.cpp

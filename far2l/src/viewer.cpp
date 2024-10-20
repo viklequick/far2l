@@ -1856,6 +1856,8 @@ int Viewer::ProcessKey(FarKey Key)
 
 int Viewer::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
+	// VK: TODO: add mouse selection and automatic copy to primary
+
 	if (!(MouseEvent->dwButtonState & 3))
 		return FALSE;
 

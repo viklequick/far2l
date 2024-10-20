@@ -650,6 +650,9 @@ void CommandLine::InsertString(const wchar_t *Str)
 
 int CommandLine::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
+	// VK: TODO: handle paste from primary
+	// VK: TODO: handle mouse selection and copy to primary
+
 	if (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED && MouseEvent->dwMousePosition.X == X2 + 1) {
 		return ProcessKey(KEY_ALTF8);
 	}

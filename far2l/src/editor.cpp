@@ -2719,6 +2719,8 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	Edit *NewPtr;
 	int NewDist, Dist;
 
+	// VK: TODO: handle selection and copy to primary
+
 	// Shift + Mouse click -> adhoc quick edit
 	if ((MouseEvent->dwControlKeyState & SHIFT_PRESSED) != 0 && (MouseEvent->dwEventFlags & MOUSE_MOVED) == 0
 			&& (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
@@ -2796,6 +2798,8 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	if (MouseEvent->dwButtonState == FROM_LEFT_2ND_BUTTON_PRESSED
 			&& (MouseEvent->dwEventFlags & (DOUBLE_CLICK | MOUSE_MOVED | MOUSE_HWHEELED | MOUSE_WHEELED))
 					== 0) {
+		// VK: TODO: hande paste from primary here
+		// VK: now it uses clipboard instead
 		ProcessPasteEvent();
 	}
 

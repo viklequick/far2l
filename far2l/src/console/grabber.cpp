@@ -205,6 +205,8 @@ void Grabber::DisplayObject()
 							& (~(FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR));
 				}
 
+			// VK: TODO: copy fragment to primary
+
 			PutText(area.left, area.top, area.right, area.bottom, char_info.data());
 		}
 

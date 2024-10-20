@@ -1874,6 +1874,10 @@ void Edit::RefreshStrByMask(int InitMode)
 
 int Edit::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
+	// VK: TODO: paste from primary
+	// handle middle button click to paste from primary selection (if exists)
+	// and if applied, return
+
 	if (!(MouseEvent->dwButtonState & 3))
 		return FALSE;
 
@@ -2932,6 +2936,9 @@ int EditControl::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 					}
 					Select(Min(SelectionStart, CurPos), Min(StrSize, Max(SelectionStart, CurPos)));
 					Show();
+
+					// VK: TODO: primary selection here
+					// push selection to primary clipboard
 				}
 			}
 		}

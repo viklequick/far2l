@@ -186,6 +186,7 @@ enum CopyMode
 	CM_ONLYNEWER,
 	CM_SEPARATOR,
 	CM_ASKRO,
+	CM_RESUME
 };
 
 // CopyProgress start
@@ -926,6 +927,7 @@ ShellCopy::ShellCopy(Panel *SrcPanel,		// исходная панель (акт�
 			ComboList.Items[CM_SKIP].Text = Msg::CopySkipOvr;
 			ComboList.Items[CM_RENAME].Text = Msg::CopyRename;
 			ComboList.Items[CM_APPEND].Text = Msg::CopyAppend;
+			ComboList.Items[CM_RESUME].Text = Msg::CopyResume;
 			ComboList.Items[CM_ONLYNEWER].Text = Msg::CopyOnlyNewerFiles;
 			ComboList.Items[CM_ASKRO].Text = Msg::CopyAskRO;
 			// if uncehcked in Options->Confirmations then disable variants & set only Overwrite
@@ -1938,8 +1940,9 @@ ShellCopy::CreateSymLink(const char *Target, const wchar_t *NewName, const FAR_F
 	if (errno == EEXIST) {
 		int RetCode = 0;
 		bool Append = false;
+		bool Resume = false;
 		FARString strNewName = NewName, strTarget = Target;
-		if (AskOverwrite(SrcData, strTarget, NewName, 0, 0, 0, 0, Append, strNewName, RetCode)) {
+		if (AskOverwrite(SrcData, strTarget, NewName, 0, 0, 0, 0, Append, 0, Resume, strNewName, RetCode)) {
 			if (strNewName == NewName) {
 				fprintf(stderr, "CreateSymLink('%s', '%ls') - overwriting and strNewName='%ls'\n", Target,
 						NewName, strNewName.CPtr());
@@ -2087,7 +2090,7 @@ COPY_CODES ShellCopy::ShellCopyOneFileNoRetry(const wchar_t *Src, const FAR_FIND
 			DestAttr = DestData.dwFileAttributes;
 	}
 
-	bool SameName = false, Append = false;
+	bool SameName = false, Append = false, Resume = false;
 
 	if (DestAttr != INVALID_FILE_ATTRIBUTES && (DestAttr & FILE_ATTRIBUTE_DIRECTORY)) {
 		bool CmpCode = CmpFullNames(Src, strDestPath);
@@ -2262,6 +2265,7 @@ COPY_CODES ShellCopy::ShellCopyOneFileNoRetry(const wchar_t *Src, const FAR_FIND
 		FARString strNewName;
 
 		if (!AskOverwrite(SrcData, Src, strDestPath, DestAttr, SameName, Rename, (Flags.LINK ? 0 : 1), Append,
+					(Flags.LINK ? 0 : 1), Resume,
 					strNewName, RetCode)) {
 			return ((COPY_CODES)RetCode);
 		}
@@ -2303,7 +2307,7 @@ COPY_CODES ShellCopy::ShellCopyOneFileNoRetry(const wchar_t *Src, const FAR_FIND
 				AskDelete = 0;
 			} else {
 				do {
-					CopyCode = ShellCopyFile(Src, SrcData, strDestPath, Append);
+					CopyCode = ShellCopyFile(Src, SrcData, strDestPath, Append, Resume);
 				} while (CopyCode == COPY_RETRY);
 
 				switch (CopyCode) {
@@ -2340,7 +2344,7 @@ COPY_CODES ShellCopy::ShellCopyOneFileNoRetry(const wchar_t *Src, const FAR_FIND
 			}
 		} else {
 			do {
-				CopyCode = ShellCopyFile(Src, SrcData, strDestPath, Append);
+				CopyCode = ShellCopyFile(Src, SrcData, strDestPath, Append, Resume);
 			} while (CopyCode == COPY_RETRY);
 
 			if (Append && DestData.dwUnixMode != 0
@@ -2396,6 +2400,7 @@ COPY_CODES ShellCopy::ShellCopyOneFileNoRetry(const wchar_t *Src, const FAR_FIND
 		FARString strNewName;
 
 		if (!AskOverwrite(SrcData, Src, strDestPath, DestAttr, SameName, Rename, (Flags.LINK ? 0 : 1), Append,
+					(Flags.LINK ? 0 : 1), Resume,
 					strNewName, RetCode))
 			return ((COPY_CODES)RetCode);
 
@@ -2487,7 +2492,7 @@ static void ProgressUpdate(bool force, const FAR_FIND_DATA_EX &SrcData, const wc
 /////////////////////////////////////////////////////////// BEGIN OF ShellFileTransfer
 
 ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA_EX &SrcData,
-		const FARString &strDestName, bool Append, ShellCopyBuffer &CopyBuffer, COPY_FLAGS &Flags)
+		const FARString &strDestName, bool Append, bool Resume, ShellCopyBuffer &CopyBuffer, COPY_FLAGS &Flags)
 	:
 	_SrcName(SrcName), _strDestName(strDestName), _CopyBuffer(CopyBuffer), _Flags(Flags), _SrcData(SrcData)
 {
@@ -2503,6 +2508,25 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 		_ModeToCreateWith = _SrcData.dwUnixMode | S_IWUSR;
 	}
 
+	FAR_FIND_DATA_EX DstData;
+	if (Resume) {
+		DstData.Clear();
+		_AppendPos = 0;
+
+		do {
+			if (!apiGetFindDataForExactPathName(strDestName, DstData)) {
+				Resume = false;
+				break;
+			}
+			INT64 nPos = (INT64)DstData.nFileSize;
+			if (!_SrcFile.SetPointer(0, &nPos, FILE_BEGIN)) {
+				_SrcFile.SetPointer(0, &_AppendPos, FILE_BEGIN);
+				Resume = false;
+				break;
+			}
+		} while (false);
+	}
+
 	_DstFlags = FILE_FLAG_SEQUENTIAL_SCAN;
 	if (Flags.WRITETHROUGH) {
 		_DstFlags|= FILE_FLAG_WRITE_THROUGH;
@@ -2514,7 +2538,7 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 	}
 
 	bool DstOpened = _DestFile.Open(_strDestName, GENERIC_WRITE, FILE_SHARE_READ,
-			_Flags.COPYACCESSMODE ? &_ModeToCreateWith : nullptr, (Append ? OPEN_EXISTING : CREATE_ALWAYS),
+			_Flags.COPYACCESSMODE ? &_ModeToCreateWith : nullptr, ((Append || Resume) ? OPEN_EXISTING : CREATE_ALWAYS),
 			_DstFlags);
 
 	if ((_DstFlags & (FILE_FLAG_WRITE_THROUGH | FILE_FLAG_NO_BUFFERING)) != 0) {
@@ -2522,7 +2546,7 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 			_DstFlags&= ~(FILE_FLAG_WRITE_THROUGH | FILE_FLAG_NO_BUFFERING);
 			DstOpened = _DestFile.Open(_strDestName, GENERIC_WRITE, FILE_SHARE_READ,
 					_Flags.COPYACCESSMODE ? &_ModeToCreateWith : nullptr,
-					(Append ? OPEN_EXISTING : CREATE_ALWAYS), _DstFlags);
+					((Append || Resume) ? OPEN_EXISTING : CREATE_ALWAYS), _DstFlags);
 			if (DstOpened) {
 				Flags.WRITETHROUGH = false;
 				fprintf(stderr, "COPY: unbuffered FAILED: 0x%x\n",
@@ -2540,7 +2564,7 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 		throw ErSr;
 	}
 
-	if (Append) {
+	if (Append || Resume) {
 		_AppendPos = 0;
 		if (!_DestFile.SetPointer(0, &_AppendPos, FILE_END)) {
 			ErrnoSaver ErSr;
@@ -2797,7 +2821,7 @@ static dev_t GetRDev(FARString SrcName)
 }
 
 int ShellCopy::ShellCopyFile(const wchar_t *SrcName, const FAR_FIND_DATA_EX &SrcData, FARString &strDestName,
-		int Append)
+		int Append, int Resume)
 {
 	OrigScrX = ScrX;
 	OrigScrY = ScrY;
@@ -2846,7 +2870,7 @@ int ShellCopy::ShellCopyFile(const wchar_t *SrcName, const FAR_FIND_DATA_EX &Src
 		}
 #endif
 
-		ShellFileTransfer(SrcName, SrcData, strDestName, Append != 0, CopyBuffer, Flags).Do();
+		ShellFileTransfer(SrcName, SrcData, strDestName, Append != 0, Resume != 0, CopyBuffer, Flags).Do();
 		return CP->Cancelled() ? COPY_CANCEL : COPY_SUCCESS;
 	} catch (ErrnoSaver &ErSr) {
 		_localLastError = ErSr.Get();
@@ -2891,6 +2915,7 @@ enum WarnDlgItems
 	WDLG_RENAME,
 	WDLG_APPEND,
 	WDLG_CANCEL,
+	WDLG_RESUME,
 };
 
 #define DM_OPENVIEWER DM_USER + 33
@@ -2975,8 +3000,9 @@ LONG_PTR WINAPI WarnDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
 }
 
 int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcName, const wchar_t *DestName,
-		DWORD DestAttr, bool SameName, bool Rename, bool AskAppend, bool &Append, FARString &strNewName,
-		int &RetCode)
+		DWORD DestAttr, bool SameName, bool Rename, bool AskAppend, bool &Append, 
+		bool askResume, bool& Resume,
+		FARString &strNewName, int &RetCode)
 {
 	enum
 	{
@@ -2997,6 +3023,7 @@ int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcN
 		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP, Msg::CopySkipOvr},
 		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP, Msg::CopyRename},
 		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP | (AskAppend ? 0 : (DIF_DISABLE | DIF_HIDDEN)), Msg::CopyAppend},
+		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP | (askResume ? 0 : (DIF_DISABLE | DIF_HIDDEN)), Msg::CopyResume},
 		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP,Msg::CopyCancelOvr}
 	};
 	FAR_FIND_DATA_EX DestData;
@@ -3087,6 +3114,9 @@ int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcN
 					case WDLG_APPEND:
 						MsgCode = WarnCopyDlg[WDLG_CHECKBOX].Selected ? 7 : 6;
 						break;
+					case WDLG_RESUME:
+						MsgCode = WarnCopyDlg[WDLG_CHECKBOX].Selected ? 10 : 9;
+						break;
 					case -1:
 					case -2:
 					case WDLG_CANCEL:
@@ -3118,6 +3148,11 @@ int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcN
 			OvrMode = 6;
 		case 6:
 			Append = true;
+			break;
+		case 10:
+			OvrMode = 9;
+		case 9:
+			Resume = true;
 			break;
 		case -1:
 		case -2:
@@ -3165,6 +3200,8 @@ int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcN
 					WarnCopyDlgData[WDLG_RENAME].Data = L"";
 					WarnCopyDlgData[WDLG_APPEND].Type = DI_TEXT;
 					WarnCopyDlgData[WDLG_APPEND].Data = L"";
+					WarnCopyDlgData[WDLG_RESUME].Type = DI_TEXT;
+					WarnCopyDlgData[WDLG_RESUME].Data = L"";
 					MakeDialogItemsEx(WarnCopyDlgData, WarnCopyDlg);
 					FARString strSrcName;
 					ConvertNameToFull(SrcData.strFileName, strSrcName);

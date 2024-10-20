@@ -145,8 +145,15 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wno-unused-function -D_FILE_OFFSET_BITS=64") #  -fsanitize=address
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c99 -fPIC -Wno-unused-function -D_FILE_OFFSET_BITS=64") #  -fsanitize=address
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPROCPLUGINMACROFUNC=1")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPROCPLUGINMACROFUNC=1")
+
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} -O2")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS} -O2")
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DPROCPLUGINMACROFUNC=1")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DPROCPLUGINMACROFUNC=1")
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(APP_DIR ${CMAKE_BINARY_DIR}/install)
@@ -504,6 +511,36 @@ else()
             execute_process(COMMAND rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2l/Plugins/python/plug/python.far-plug-wide)
             " COMPONENT system)
     endif()
+endif()
+
+if (DEFINED NETCFG AND NETCFG)
+    message(STATUS "NETCFG plugin enabled")
+    add_subdirectory(netcfg)
+endif()
+
+if (DEFINED SQLITEPLUGIN AND SQLITEPLUGIN)
+    message(STATUS "SQLite plugin enabled")
+    add_subdirectory(sqlite)
+endif()
+
+if (DEFINED PROCPLUGIN AND PROCPLUGIN)
+    message(STATUS "Processes plugin enabled")
+    add_subdirectory(processes)
+endif()
+
+if (DEFINED EDITOR_JUMPWORD AND EDITOR_JUMPWORD)
+    message(STATUS "EDITOR JUMPWORD plugin enabled")
+    add_subdirectory(jumpword)
+endif()
+
+if (DEFINED EDITOR_EDITWRAP AND EDITOR_EDITWRAP)
+    message(STATUS "EDITOR EDITWRAP plugin enabled")
+    add_subdirectory(editwrap)
+endif()
+
+if (DEFINED LUAFAR AND LUAFAR)
+    message(STATUS "Lua plugin enabled")
+    add_subdirectory(luafar)
 endif()
 
 if (NOT DEFINED SIMPLEINDENT OR SIMPLEINDENT)

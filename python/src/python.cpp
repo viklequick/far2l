@@ -115,6 +115,7 @@ PYTHON_LOG("status exception\n"); \
 
 static bool init_python()
 {
+#if PY_MINOR_VERSION >= 8
     PyStatus status;
 
     PyConfig config;
@@ -144,6 +145,15 @@ static bool init_python()
 done:
     PyConfig_Clear(&config);
     return false;
+
+#else
+    PyImport_AppendInittab("far2lc", PyInit_far2lc);
+    //Py_SetProgramName((wchar_t *)program_name.c_str());
+
+    Py_Initialize();
+
+    return true;
+#endif
 }
 
 #ifdef PYPLUGIN_THREADED
@@ -165,8 +175,14 @@ protected:
         std::string syspath = "import sys";
         syspath += "\nsys.path.insert(1, '" + pluginPath + "')";
 
-PYTHON_LOG("initial sys.path=%s\n", syspath.c_str());
+        PYTHON_LOG("initial sys.path=%s\n", syspath.c_str());
         PyRun_SimpleString(syspath.c_str());
+
+        TranslateInstallPath_Lib2Share(pluginPath);
+
+        syspath += "\nsys.path.insert(1, '" + pluginPath + "')";
+        syspath += "\nsys.path.insert(1, '" + pluginPath + "/plugins')";
+        PYTHON_LOG("pluginpath: %s\n", pluginPath.c_str());
 
         PyObject *pName;
         pName = PyUnicode_DecodeFSDefault("far2l");

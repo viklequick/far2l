@@ -127,6 +127,9 @@ $ # FAR2L features - Getting Started#
     FAR2L is a Linux port of FAR Manager v2 (see ~About FAR2L~@About@)
     FAR2L official site: ~https://github.com/elfmz/far2l~@https://github.com/elfmz/far2l@
 
+  - Having troubles? Search for solution in communiry wiki:
+    ~https://github.com/akruphi/far2l/wiki~@https://github.com/akruphi/far2l/wiki@
+    (currently in Russian only)
 
  #UI Backends#
     FAR2L has 3 base UI Backends (see details in ~UI backends~@UIBackends@):
@@ -233,7 +236,7 @@ for clipboard need turn on OSC 52)
 
  #Location of FAR2L settings and history#
     - FAR2L by default works with settings located in #~~/.config/far2l/# or in #$XDG_CONFIG_HOME/far2l/#
-    - command line switch #-u# (or #$FARSETTINGS# environment variable) allows to specify arbitrary settings location:
+    - command line switch #-u# (or #$FARSETTINGS# ~environment variable~@FAREnv@) allows to specify arbitrary settings location:
         #-u <path>#: in #path/.config/# (if path or $FARSETTINGS is full path)
         #-u <identity>#: in #~~/.config/far2l/custom/identity/# or in #$XDG_CONFIG_HOME/far2l/custom/identity/#
     - some settings files (may be missing):
@@ -345,7 +348,7 @@ and from the path given at the "~Path for personal plugins~@PluginsManagerSettin
   Macros with the "Run after FAR2L start" option set will not be run when FAR2L is started.
 
   #-u <identity># or #-u <path>#
-  Allows to specify separate settings identity or FS location (it override #FARSETTINGS# environment variable value).
+  Allows to specify separate settings identity or FS location (it override #FARSETTINGS# ~environment variable~@FAREnv@ value).
   #-u <path>#: in path/.config/ (if path is full path)
   #-u <identity>#: in ~~/.config/far2l/custom/identity/ or in $XDG_CONFIG_HOME/far2l/custom/identity/
 
@@ -1600,8 +1603,7 @@ like NetRocks SFTP/SCP protocols to execute remote commands.
   Hard kill everything in shell                             #Ctrl+Alt+C#
     (not recommended, it may cause corruption or lost of unsaved data)
 
-  Put far2l instance to background                          #Ctrl+Alt+Z#
-    (only if far2l works in TTY backend)
+  Send currently running command to the background          #Ctrl+Alt+Z#
 
   See also: ~pseudo-commands~@SpecCmd@
 
@@ -2379,8 +2381,8 @@ $ #Special symbols#
     #!.!#         File name with extension
     #!@@!# or #!$!#  Name of file with selected file names list
     #!&#          List of selected files
-    #!/#  or #!\\#   Current path
-    #!=/# or #!=\\#  Current path considering ~symbolic links~@HardSymLink@.
+    #!/#          Current path
+    #!=/#         Current path considering ~symbolic links~@HardSymLink@.
 
     #!?<title>?<init>!#
              This symbol is replaced by user input, when
@@ -2417,7 +2419,7 @@ $ #Special symbols#
              symbol forces it (and all the following characters)
              to refer to the active panel (see note 4).
              For example, !^!.! denotes a current file name on
-             the active panel, !##!\\!^!.! - a file on the passive
+             the active panel, !##!/!^!.! - a file on the passive
              panel with the same name as the name of the current
              file on the active panel.
 
@@ -2450,7 +2452,7 @@ command is executed.
     4. ^<wrap>The prefixes "!##" and "!^" work as toggles for associations. The effect
 of these prefixes continues up to the next similar prefix. For example:
 
-    if exist !##!\\!^!.! diff -c -p !##!\\!^!.! !\\!.!
+    if exist !##!/!^!.! diff -c -p !##!/!^!.! !/!.!
 
   "If the same file exists on the passive panel as the file under
    the cursor on the active panel, show the differences between
@@ -4378,69 +4380,22 @@ or directory.
 $ #Operating system commands#
     FAR2L by itself processes the following operating system commands:
 
-    #CLS#
+    #reset#
 
-    Clears the screen.
-
-    #disk:#
-
-    !! Windows legacy (not relevant on Linux/*BSD/Mac) !!
-
-    To change the current disk on the active panel to the specified disk.
-
-    !! Windows legacy end !!
-
-    #CD path# or #CHDIR path#
-
-    To change the current path on the active panel to the specified path.
-If the active panel shows a ~plugin~@Plugins@ emulated file system, the command
-"CD" in the command line may be used to change the folder in the plugin file
-system. Unlike "CD", "CHDIR" command always treats the specified parameter
-as a real folder name, regardless of the file panel type.
-
-    #CHCP [nnn]#
-
-    Displays or sets the active code page number. "nnn" - specifies a code
-page number. Type CHCP without a parameter to display the active code
-page number.
-
-    #SET variable=[string]#
-
-    Set environment variable "variable" to the value "string". If "string" is
-not specified, the environment variable "variable" will be removed. On startup,
-FAR2L sets several ~environment variables~@FAREnv@ by itself.
-
-    #IF [NOT] EXIST filename command#
-
-    Execute a command "command" if "filename" exists. Prefix "NOT" - execute
-the command only if the condition is false.
-
-    #IF [NOT] DEFINED variable command#
-
-    The "DEFINED" conditional works just like "EXISTS" except it takes an
-environment variable name and returns true if the environment variable is
-defined.
-
-
-    "IF" commands can be nested, for instance, command "command"
-
-    #if exist file1 if not exist file2 if defined variable command#
-
-    will be executed if the file "file1" exists, the file "file2" does not
-exist and the environment variable "variable" is defined.
+    Clears the screen of the built-in ~Terminal~@Terminal@.
 
     #pushd path#
 
-    Команда PUSHD сохраняет текущий каталог во внутреннем стеке и делает
-текущим каталог path.
+    Stores the current path on the internal stack and sets the current
+directory on the active panel to specified path.
 
     #popd#
 
-    Переходит в каталог, сохраненный командой PUSHD.
+    Changes the current path on the active panel to that stored by the “pushd” command.
 
-    #clrd#
+    #exit#
 
-    Очищает стек каталогов, сохраненных командой PUSHD.
+    Сloses the background shell of the built-in ~Terminal~@Terminal@.
 
     Notes:
 
@@ -4459,15 +4414,17 @@ $ #Environment variables#
     On startup, FAR2L sets the following environment variables available
 to child processes:
 
-    #FARHOME#            path to the folder from which FAR2L was started.
+    #FARHOME#            directory containing far2l resources (e.g. /usr/share/far2l)
 
     #FARLANG#            the name of the current interface language.
 
-    #FARUSER#            ^<wrap>the name of the current user given by the -u ~command line~@CmdLine@ option.
+    #FARSETTINGS#        ^<wrap>the name of user given by the -u ~command line~@CmdLine@ option.
 
-    #FARDIRSTACK#        ^<wrap>the contents of directories stack top (the stack is managed with #pushd# and #popd# commands)
+    #FARADMINMODE#       ^<wrap>equals "1" if FAR2L was run by an administrator (i.e., if its effective user ID is 0)
 
-    #FARADMINMODE#       ^<wrap>equals "1" if FAR2L was run by an administrator
+    #FARPID#             FAR2L process id
+
+    See also ~FAR2L: command line switches~@CmdLine@ for the #FAR2L_ARGS# environment variable.
 
 
 @RegExp

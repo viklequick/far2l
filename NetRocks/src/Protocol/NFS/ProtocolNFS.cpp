@@ -522,7 +522,7 @@ public:
 	virtual void Write(const void *buf, size_t len)
 	{
 
-#ifdef USE_OLD_NFSLIB
+#if USE_OLD_NFSLIB
 #define BUF_TYPE_A	char*
 #else
 #define BUF_TYPE_A	const char*

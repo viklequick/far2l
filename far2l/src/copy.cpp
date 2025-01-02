@@ -183,10 +183,10 @@ enum CopyMode
 	CM_SKIP,
 	CM_RENAME,
 	CM_APPEND,
+	CM_RESUME,
 	CM_ONLYNEWER,
 	CM_SEPARATOR,
-	CM_ASKRO,
-	CM_RESUME
+	CM_ASKRO
 };
 
 // CopyProgress start
@@ -1054,6 +1054,9 @@ ShellCopy::ShellCopy(Panel *SrcPanel,		// исходная панель (акт�
 				break;
 			case CM_APPEND:
 				OvrMode = 7;
+				break;
+			case CM_RESUME:
+				OvrMode = 10;
 				break;
 			case CM_ONLYNEWER:
 				Flags.ONLYNEWERFILES = true;
@@ -2290,7 +2293,7 @@ COPY_CODES ShellCopy::ShellCopyOneFileNoRetry(const wchar_t *Src, const FAR_FIND
 		if (Rename) {
 			int MoveCode = FALSE, AskDelete;
 
-			if (!Append) {
+			if (!Append && !Resume) {
 				FARString strSrcFullName;
 				ConvertNameToFull(Src, strSrcFullName);
 
@@ -2349,7 +2352,7 @@ COPY_CODES ShellCopy::ShellCopyOneFileNoRetry(const wchar_t *Src, const FAR_FIND
 				CopyCode = ShellCopyFile(Src, SrcData, strDestPath, Append, Resume);
 			} while (CopyCode == COPY_RETRY);
 
-			if (Append && DestData.dwUnixMode != 0
+			if ((Append || Resume) && DestData.dwUnixMode != 0
 					&& (CopyCode != COPY_SUCCESS || DestData.dwUnixMode != SrcData.dwUnixMode)) {
 				const std::string &mbDestPath = strDestPath.GetMB();
 				sdc_chmod(mbDestPath.c_str(), DestData.dwUnixMode);
@@ -2514,6 +2517,7 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 	if (Resume) {
 		DstData.Clear();
 		_AppendPos = 0;
+		Append = false;
 
 		do {
 			if (!apiGetFindDataForExactPathName(strDestName, DstData)) {
@@ -2916,8 +2920,8 @@ enum WarnDlgItems
 	WDLG_SKIP,
 	WDLG_RENAME,
 	WDLG_APPEND,
-	WDLG_CANCEL,
 	WDLG_RESUME,
+	WDLG_CANCEL
 };
 
 #define DM_OPENVIEWER DM_USER + 33
@@ -3003,7 +3007,7 @@ LONG_PTR WINAPI WarnDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
 
 int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcName, const wchar_t *DestName,
 		DWORD DestAttr, bool SameName, bool Rename, bool AskAppend, bool &Append, 
-		bool askResume, bool& Resume,
+		bool askResume, bool &Resume,
 		FARString &strNewName, int &RetCode)
 {
 	enum
@@ -3026,12 +3030,13 @@ int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcN
 		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP, Msg::CopyRename},
 		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP | (AskAppend ? 0 : (DIF_DISABLE | DIF_HIDDEN)), Msg::CopyAppend},
 		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP | (askResume ? 0 : (DIF_DISABLE | DIF_HIDDEN)), Msg::CopyResume},
-		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP,Msg::CopyCancelOvr}
+		{DI_BUTTON,    0, 10, 0,                  10, {}, DIF_CENTERGROUP, Msg::CopyCancelOvr}
 	};
 	FAR_FIND_DATA_EX DestData;
 	DestData.Clear();
 	int DestDataFilled = FALSE;
 	Append = false;
+	Resume = false;
 
 	if (DestAttr == INVALID_FILE_ATTRIBUTES)
 		if ((DestAttr = apiGetFileAttributes(DestName)) == INVALID_FILE_ATTRIBUTES)
@@ -3131,27 +3136,27 @@ int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcN
 
 	switch (MsgCode) {
 		case 1:
-			OvrMode = 1;
+			OvrMode = 1; // overwrite
 		case 0:
 			break;
 		case 3:
-			OvrMode = 2;
+			OvrMode = 2; // skip
 		case 2:
 			RetCode = COPY_NEXT;
 			return FALSE;
 		case 5:
-			OvrMode = 5;
+			OvrMode = 5; // rename
 			GenerateName(strDestName, strRenamedFilesPath);
 		case 4:
 			RetCode = COPY_RETRY;
 			strNewName = strDestName;
 			break;
 		case 7:
-			OvrMode = 6;
+			OvrMode = 6; // append
 		case 6:
 			Append = true;
 			break;
-		case 10:
+		case 10:        // resume
 			OvrMode = 9;
 		case 9:
 			Resume = true;
@@ -3197,7 +3202,7 @@ int ShellCopy::AskOverwrite(const FAR_FIND_DATA_EX &SrcData, const wchar_t *SrcN
 					WarnCopyDlgData[WDLG_SRCFILEBTN].Data = strSrcFileStr;
 					WarnCopyDlgData[WDLG_DSTFILEBTN].Data = strDestFileStr;
 					WarnCopyDlgData[WDLG_TEXT].Data = Msg::CopyFileRO;
-					WarnCopyDlgData[WDLG_OVERWRITE].Data = (Append ? Msg::CopyAppend : Msg::CopyOverwrite);
+					WarnCopyDlgData[WDLG_OVERWRITE].Data = (Resume ? Msg::CopyResume : (Append ? Msg::CopyAppend : Msg::CopyOverwrite));
 					WarnCopyDlgData[WDLG_RENAME].Type = DI_TEXT;
 					WarnCopyDlgData[WDLG_RENAME].Data = L"";
 					WarnCopyDlgData[WDLG_APPEND].Type = DI_TEXT;

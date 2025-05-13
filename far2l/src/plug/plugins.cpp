@@ -451,6 +451,11 @@ HANDLE PluginManager::OpenFilePlugin(const wchar_t *Name, int OpMode, OPENFILEPL
 	TPointerArray<PluginHandle> items;
 	FARString strFullName;
 
+	AnalyseInfo AInfo;
+	OpenAnalyseInfo oainfo;
+
+//	fprintf(stderr, "OpenFilePlugin -> start \n" );
+
 	if (Name) {
 		ConvertNameToFull(Name, strFullName);
 		Name = strFullName;
@@ -511,13 +516,24 @@ HANDLE PluginManager::OpenFilePlugin(const wchar_t *Name, int OpMode, OPENFILEPL
 				handle->pPlugin = pPlugin;
 			}
 		} else {
-			AnalyseData AData;
-			AData.lpwszFileName = Name;
-			AData.pBuffer = smm ? (const unsigned char *)smm->View() : nullptr;
-			AData.dwBufferSize = smm ? (DWORD)smm->Length() : 0;
-			AData.OpMode = OpMode;
+//			AnalyseInfo AInfo;
 
-			if (pPlugin->Analyse(&AData)) {
+			AInfo.StructSize = sizeof(AnalyseInfo);
+			AInfo.FileName = Name;
+//			AInfo.Buffer = smm ? (const unsigned char *)smm->View() : NULL;
+			AInfo.Buffer = smm ? (unsigned char *)smm->View() : NULL;
+			AInfo.BufferSize = smm ? (DWORD)smm->Length() : 0;
+			AInfo.OpMode = OpMode;
+			AInfo.Instance = 0;
+
+			HANDLE hhandle = pPlugin->Analyse(&AInfo);
+			oainfo.Handle = hhandle;
+			oainfo.Info = &AInfo;
+
+			// fprintf(stderr, "hhandle = pPlugin->Analyse(&AInfo);     = %llX\n", (long long unsigned int)hhandle);
+
+			if (hhandle != INVALID_HANDLE_VALUE) {
+				// fprintf(stderr, "Add plugin item...  \n" );
 				PluginHandle *handle = items.addItem();
 				handle->pPlugin = pPlugin;
 				handle->hPlugin = INVALID_HANDLE_VALUE;
@@ -574,7 +590,9 @@ HANDLE PluginManager::OpenFilePlugin(const wchar_t *Name, int OpMode, OPENFILEPL
 		}
 
 		if (pResult && pResult->hPlugin == INVALID_HANDLE_VALUE) {
-			HANDLE h = pResult->pPlugin->OpenPlugin(OPEN_ANALYSE, 0);
+
+			oainfo.StructSize = sizeof(OpenAnalyseInfo);
+			HANDLE h = pResult->pPlugin->OpenPlugin(OPEN_ANALYSE, (INT_PTR)&oainfo);
 
 			if (h != INVALID_HANDLE_VALUE)
 				pResult->hPlugin = h;

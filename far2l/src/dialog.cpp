@@ -961,7 +961,7 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 					имеющие этот флаг группируются в редактор с возможностью
 					вставки и удаления строк
 				*/
-				if (!(ItemFlags & DIF_EDITOR)) {
+				if (!(ItemFlags & DIF_EDITOR) && CurItem->Type != DI_COMBOBOX) {
 					DialogEdit->SetEditBeyondEnd(FALSE);
 
 					if (!DialogMode.Check(DMODE_INITOBJECTS))
@@ -6390,6 +6390,12 @@ LONG_PTR WINAPI SendDlgMessage(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2
 {
 	if (!hDlg)
 		return 0;
+
+	Dialog *Dlg = (Dialog *)hDlg;
+
+	if (Dlg->CheckDialogMode(DMODE_ASYNC)) {
+		return SendDlgMessageSynched(hDlg, Msg, Param1, Param2);
+	}
 
 	return InterThreadCall<LONG_PTR, 0>(std::bind(SendDlgMessageSynched, hDlg, Msg, Param1, Param2));
 }

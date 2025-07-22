@@ -221,12 +221,12 @@ public:
 			return def_value;
 	}
 
-#if sizeof(uintptr_t) != sizeof(int)
+//#if sizeof(uintptr_t) != sizeof(int)
 	void set_int(const wchar_t *name, uintptr_t value, uintptr_t def_value)
 	{
 		set(name, (UInt64)value);
 	}
-#endif
+//#endif
 
 	void set_int64(const wchar_t *name, uint64_t value, uint64_t def_value)
 	{

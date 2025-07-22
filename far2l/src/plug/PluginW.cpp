@@ -73,6 +73,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "farversion.h"
 
+
 static const char *szCache_Preload = "Preload";
 static const char *szCache_Preopen = "Preopen";
 static const char *szCache_SysID = "SysID";
@@ -398,21 +399,6 @@ static size_t WINAPI farStrSizeOfCells(const wchar_t *Str, size_t CharsCount, si
 	return StrSizeOfCells(Str, CharsCount, *CellsCount, RoundUp != FALSE);
 }
 
-static BOOL farsdc_lstat(const wchar_t *lpwszFileName, void *_s)
-{
-	struct stat *s = (struct stat *)_s;
-	int r = sdc_lstat(Wide2MB(lpwszFileName).c_str(), s);
-	if (r == -1) {
-		return FALSE;
-	}
-	return TRUE;
-}
-
-static int farsdc_symlink(const char *path1, const char *path2)
-{
-	return sdc_symlink(path1, path2);
-}
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static int WINAPI farESetFileMode(const wchar_t *Name, DWORD Mode, int SkipMode)
@@ -444,13 +430,6 @@ static const char *WINAPI farGroupNameByID(uid_t id)
 {
 	return GroupNameByID(id);
 }
-
-static size_t WINAPI farReadLink(const char *path, char *buf, size_t bufsiz)
-{
-//Wide2MB(Symbol).c_str()
-	return sdc_readlink(path, buf, bufsiz);
-}
-
 
 static BOOL farGetFindData(const wchar_t *lpwszFileName, WIN32_FIND_DATAW *FindDataW)
 {
@@ -535,8 +514,7 @@ void CreatePluginStartupInfo(Plugin *pPlugin, PluginStartupInfo *PSI, FarStandar
 		StandardFunctions.FarNameToKey = KeyNameToKeyW;
 		StandardFunctions.FarInputRecordToKey = InputRecordToKey;
 		StandardFunctions.XLat = Xlat;
-		StandardFunctions.GetFileOwner = farGetFileOwner;
-		StandardFunctions.GetFileGroup = farGetFileGroup;
+
 		StandardFunctions.GetNumberOfLinks = GetNumberOfLinks;
 		StandardFunctions.FarRecursiveSearch = FarRecursiveSearch;
 		StandardFunctions.MkTemp = FarMkTemp;
@@ -556,15 +534,14 @@ void CreatePluginStartupInfo(Plugin *pPlugin, PluginStartupInfo *PSI, FarStandar
 		StandardFunctions.VTEnumBackground = farAPIVTEnumBackground;
 		StandardFunctions.VTLogExport = farAPIVTLogExportW;
 
+		StandardFunctions.GetFileOwner = farGetFileOwner;
+		StandardFunctions.GetFileGroup = farGetFileGroup;
 		StandardFunctions.ESetFileMode = farESetFileMode;
 		StandardFunctions.ESetFileTime = farESetFileTime;
 		StandardFunctions.ESetFileGroup = farESetFileGroup;
 		StandardFunctions.ESetFileOwner = farESetFileOwner;
 		StandardFunctions.OwnerNameByID = farOwnerNameByID;
 		StandardFunctions.GroupNameByID = farGroupNameByID;
-		StandardFunctions.ReadLink = farReadLink;
-		StandardFunctions.sdc_lstat = farsdc_lstat;
-		StandardFunctions.sdc_symlink = farsdc_symlink;
 		StandardFunctions.GetFindData = farGetFindData;
 		StandardFunctions.GetDateFormat = farGetDateFormat;
 		StandardFunctions.GetDateSeparator = farGetDateSeparator;

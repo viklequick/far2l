@@ -312,7 +312,7 @@ void error_dlg(const std::wstring &title, const Error &e)
 	if (show_file_line)
 		st << extract_file_name(widen(e.file)) << L':' << e.line;
 
-	message(c_error_dialog_guid, st.str(), 0, (FARMESSAGEFLAGS)(FMSG_WARNING | FMSG_MB_OK));
+	message(c_error_dialog_guid, st.str(), 0, FMSG_WARNING | FMSG_MB_OK);
 }
 
 void info_dlg(const GUID &id, const std::wstring &title, const std::wstring &msg)

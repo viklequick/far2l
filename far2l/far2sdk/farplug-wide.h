@@ -141,8 +141,17 @@ typedef struct _CHAR_INFO    CHAR_INFO;
 
 #include "farcommon.h"
 
-enum FARMESSAGEFLAGS
-{
+
+#ifdef __cpp_inline_variables
+#define FAR_INLINE_CONSTANT inline constexpr
+#else
+#define FAR_INLINE_CONSTANT static const
+#endif
+
+typedef uint32_t FARMESSAGEFLAGS;
+typedef GUID UUID;
+
+FAR_INLINE_CONSTANT FARMESSAGEFLAGS
 	FMSG_WARNING             = 0x00000001,
 	FMSG_ERRORTYPE           = 0x00000002,
 	FMSG_KEEPBACKGROUND      = 0x00000004,
@@ -161,8 +170,7 @@ enum FARMESSAGEFLAGS
 	FMSG_MB_YESNO            = 0x00040000,
 	FMSG_MB_YESNOCANCEL      = 0x00050000,
 	FMSG_MB_RETRYCANCEL      = 0x00060000,
-	FMSG_NONE                = 0,
-};
+	FMSG_NONE                = 0;
 
 typedef intptr_t ( *FARAPIMESSAGE)(
 	INT_PTR PluginNumber,
@@ -172,7 +180,6 @@ typedef intptr_t ( *FARAPIMESSAGE)(
 	int ItemsNumber,
 	int ButtonsNumber
 );
-
 
 enum DialogItemTypes
 {
@@ -1423,14 +1430,14 @@ struct WindowInfo
 	int NameSize;
 };
 
-enum PROGRESSTATE
-{
+typedef uint32_t PROGRESSTATE;
+
+static const PROGRESSTATE
 	PGS_NOPROGRESS   =0x0,
 	PGS_INDETERMINATE=0x1,
 	PGS_NORMAL       =0x2,
 	PGS_ERROR        =0x4,
-	PGS_PAUSED       =0x8,
-};
+	PGS_PAUSED       =0x8;
 
 struct PROGRESSVALUE
 {
@@ -2181,23 +2188,19 @@ typedef struct FarStandardFunctions
 	FARAPIVT_LOGEXPORT         VTLogExport;
 
 //	FARSETFILEGROUP			   GetFileOwner;
-//	FARSETFILEGROUP			   GetFileGroup;
+	FARSETFILEGROUP			   GetFileGroup;
 	FARESETFILEMODE			   ESetFileMode;
 	FARESETFILETIME			   ESetFileTime;
 	FARESETFILEGROUP		   ESetFileGroup;
 	FARESETFILEOWNER		   ESetFileOwner;
 	FAROWNERNAMEBYID		   OwnerNameByID;
 	FARGROUPNAMEBYID		   GroupNameByID;
-	FARREADLINK				   ReadLink;
-	FARSDCLSTAT				   sdc_lstat;
-	FARSDCSYMLINK			   sdc_symlink;
 	FARGETFINDDATA			   GetFindData;
 	FARGETDATEFORMAT		   GetDateFormat;
 	FARGETDATESEPARATOR		   GetDateSeparator;
 	FARGETTIMESEPARATOR		   GetTimeSeparator;
 	FARGETDECIMALSEPARATOR	   GetDecimalSeparator;
 
-	FARSTDGETFILEGROUP         GetFileGroup;
 } FARSTANDARDFUNCTIONS;
 
 struct PluginStartupInfo
@@ -2366,20 +2369,18 @@ struct KeyBarTitles
 	wchar_t *CtrlAltTitles[12];
 };
 
-
-enum OPERATION_MODES
-{
-	OPM_SILENT     =0x0001,
-	OPM_FIND       =0x0002,
-	OPM_VIEW       =0x0004,
-	OPM_EDIT       =0x0008,
-	OPM_TOPLEVEL   =0x0010,
-	OPM_DESCR      =0x0020,
-	OPM_QUICKVIEW  =0x0040,
-	OPM_PGDN       =0x0080,
-	OPM_COMMANDS   =0x0100,
-	OPM_NONE       =0,
-};
+typedef uint32_t OPERATION_MODES;
+FAR_INLINE_CONSTANT OPERATION_MODES
+	OPM_SILENT     =0x0000000000000001ULL,
+	OPM_FIND       =0x0000000000000002ULL,
+	OPM_VIEW       =0x0000000000000004ULL,
+	OPM_EDIT       =0x0000000000000008ULL,
+	OPM_TOPLEVEL   =0x0000000000000010ULL,
+	OPM_DESCR      =0x0000000000000020ULL,
+	OPM_QUICKVIEW  =0x0000000000000040ULL,
+	OPM_PGDN       =0x0000000000000080ULL,
+	OPM_COMMANDS   =0x0000000000000100ULL,
+	OPM_NONE       =0;
 
 struct OpenPluginInfo
 {

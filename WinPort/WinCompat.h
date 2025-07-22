@@ -187,7 +187,6 @@ typedef ULONG LCID;         // winnt
 typedef PULONG PLCID;       // winnt
 typedef USHORT LANGID;      // winnt
 
-
 typedef HANDLE HKEY;
 typedef struct _OVERLAPPED *LPOVERLAPPED;
 typedef HKEY *PHKEY;
@@ -1006,6 +1005,7 @@ typedef void *HMODULE;
 #define FILE_SHARE_READ                 0x00000001
 #define FILE_SHARE_WRITE                0x00000002
 #define FILE_SHARE_DELETE               0x00000004
+
 #define FILE_ATTRIBUTE_READONLY             0x00000001
 #define FILE_ATTRIBUTE_HIDDEN               0x00000002
 #define FILE_ATTRIBUTE_SYSTEM               0x00000004
@@ -1021,7 +1021,7 @@ typedef void *HMODULE;
 #define FILE_ATTRIBUTE_NOT_CONTENT_INDEXED  0x00002000
 #define FILE_ATTRIBUTE_ENCRYPTED            0x00004000
 #define FILE_ATTRIBUTE_INTEGRITY_STREAM     0x00008000
-#define FILE_ATTRIBUTE_VIRTUAL              0x00010000
+#define FILE_ATTRIBUTE_VIRTUAL              0x00010000 // ======
 #define FILE_ATTRIBUTE_NO_SCRUB_DATA        0x00020000
 #define FILE_ATTRIBUTE_EA                   0x00040000
 #define FILE_ATTRIBUTE_PINNED               0x00080000

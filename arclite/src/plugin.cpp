@@ -1507,6 +1507,8 @@ static HANDLE analyse_open(const AnalyseInfo *info, bool from_analyse)
 {
 	GUARD(g_detect_next_time = triUndef);
 
+//	fprintf(stderr, "**********Analyse open ********************\n");
+
 	OpenOptions options;
 	options.arc_path = info->FileName;
 	bool pgdn = (info->OpMode & OPM_PGDN) != 0;
@@ -1607,6 +1609,11 @@ SHAREDSYMBOL HANDLE WINAPI AnalyseW(const AnalyseInfo *info)
 //	fprintf(stderr, " +++ info->Instance   = %lx\n", (long)info->Instance);
 //	fprintf(stderr, " +++ info->OpMode     = %u\n", info->OpMode);
 
+//	fprintf(stderr, "**********AnalyseW ********************\n");
+
+	if (!g_options.plugin_enabled)
+		return INVALID_HANDLE_VALUE;
+
 	try {
 		if (!info->FileName) {
 
@@ -1657,6 +1664,11 @@ SHAREDSYMBOL HANDLE WINAPI OpenPluginW(int OpenFrom, INT_PTR Data)
 	bool delayed_analyse_open = false;
 	FAR_ERROR_HANDLER_BEGIN
 
+//	fprintf(stderr, "**********OpenPluginW ********************\n");
+
+	if (!g_options.plugin_enabled)
+		return INVALID_HANDLE_VALUE;
+
 	if (OpenFrom == OPEN_PLUGINSMENU) {
 		Far::MenuItems menu_items;
 		unsigned open_menu_id = menu_items.add(Far::get_msg(MSG_MENU_OPEN));
@@ -1672,6 +1684,12 @@ SHAREDSYMBOL HANDLE WINAPI OpenPluginW(int OpenFrom, INT_PTR Data)
 		if (item == open_menu_id || item == detect_menu_id) {
 			OpenOptions options;
 			options.detect = item == detect_menu_id;
+
+//			fprintf(stderr, "OpenFrom == OPEN_PLUGINSMENU !!!\n");
+
+//			fprintf(stderr, "detect_menu_id = %u item = %u\n", detect_menu_id, item );
+//			fprintf(stderr, "Option detect = %u\n", options.detect );
+
 			PanelInfo panel_info;
 			if (!Far::get_panel_info(PANEL_ACTIVE, panel_info)) {
 				return INVALID_HANDLE_VALUE;
@@ -2000,9 +2018,9 @@ SHAREDSYMBOL int WINAPI GetFilesW(HANDLE hPlugin, struct PluginPanelItem *PanelI
 	// CriticalSectionLock lock(GetExportSync());
 	FAR_ERROR_HANDLER_BEGIN
 	if (ArcAPI::have_virt_destructor())
-		reinterpret_cast<Plugin<true> *>(hPlugin)->get_files(PanelItem, ItemsNumber, Move, DestPath, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<true> *>(hPlugin)->get_files(PanelItem, ItemsNumber, Move, DestPath, OpMode);
 	else
-		reinterpret_cast<Plugin<false> *>(hPlugin)->get_files(PanelItem, ItemsNumber, Move, DestPath, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<false> *>(hPlugin)->get_files(PanelItem, ItemsNumber, Move, DestPath, OpMode);
 
 	return 1;
 	FAR_ERROR_HANDLER_END(return 0, return -1, (OpMode & (OPM_FIND | OPM_QUICKVIEW)) != 0)
@@ -2014,9 +2032,9 @@ SHAREDSYMBOL int WINAPI PutFilesW(HANDLE hPlugin, struct PluginPanelItem *PanelI
 {
 	FAR_ERROR_HANDLER_BEGIN
 	if (ArcAPI::have_virt_destructor())
-		reinterpret_cast<Plugin<true> *>(hPlugin)->put_files(PanelItem, ItemsNumber, Move, SrcPath, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<true> *>(hPlugin)->put_files(PanelItem, ItemsNumber, Move, SrcPath, OpMode);
 	else
-		reinterpret_cast<Plugin<false> *>(hPlugin)->put_files(PanelItem, ItemsNumber, Move, SrcPath, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<false> *>(hPlugin)->put_files(PanelItem, ItemsNumber, Move, SrcPath, OpMode);
 
 	return 2;
 	FAR_ERROR_HANDLER_END(return 0, return -1, (OpMode & OPM_FIND) != 0)
@@ -2029,9 +2047,9 @@ DeleteFilesW(HANDLE hPlugin, struct PluginPanelItem *PanelItem, int ItemsNumber,
 	// CriticalSectionLock lock(GetExportSync());
 	FAR_ERROR_HANDLER_BEGIN
 	if (ArcAPI::have_virt_destructor())
-		reinterpret_cast<Plugin<true> *>(hPlugin)->delete_files(PanelItem, ItemsNumber, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<true> *>(hPlugin)->delete_files(PanelItem, ItemsNumber, OpMode);
 	else
-		reinterpret_cast<Plugin<false> *>(hPlugin)->delete_files(PanelItem, ItemsNumber, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<false> *>(hPlugin)->delete_files(PanelItem, ItemsNumber, OpMode);
 
 	return TRUE;
 	FAR_ERROR_HANDLER_END(return FALSE, return FALSE, (OpMode & OPM_SILENT) != 0)
@@ -2043,9 +2061,9 @@ SHAREDSYMBOL int WINAPI MakeDirectoryW(HANDLE hPlugin, const wchar_t **Name, int
 	// CriticalSectionLock lock(GetExportSync());
 	FAR_ERROR_HANDLER_BEGIN
 	if (ArcAPI::have_virt_destructor())
-		reinterpret_cast<Plugin<true> *>(hPlugin)->create_dir(Name, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<true> *>(hPlugin)->create_dir(Name, OpMode);
 	else
-		reinterpret_cast<Plugin<false> *>(hPlugin)->create_dir(Name, (OPERATION_MODES)OpMode);
+		reinterpret_cast<Plugin<false> *>(hPlugin)->create_dir(Name, OpMode);
 
 	return 1;
 	FAR_ERROR_HANDLER_END(return -1, return -1, (OpMode & OPM_SILENT) != 0)
@@ -2067,9 +2085,9 @@ ProcessHostFileW(HANDLE hPlugin, struct PluginPanelItem *PanelItem, int ItemsNum
 	if (item == 0) {
 
 		if (ArcAPI::have_virt_destructor())
-			reinterpret_cast<Plugin<true> *>(hPlugin)->test_files(PanelItem, ItemsNumber, (OPERATION_MODES)OpMode);
+			reinterpret_cast<Plugin<true> *>(hPlugin)->test_files(PanelItem, ItemsNumber, OpMode);
 		else
-			reinterpret_cast<Plugin<false> *>(hPlugin)->test_files(PanelItem, ItemsNumber, (OPERATION_MODES)OpMode);
+			reinterpret_cast<Plugin<false> *>(hPlugin)->test_files(PanelItem, ItemsNumber, OpMode);
 
 		//    if (info->OpMode == OPM_NONE)
 		if (OpMode == OPM_NONE)
@@ -2142,6 +2160,7 @@ SHAREDSYMBOL int WINAPI ConfigureW(int ItemNumber)
 	FAR_ERROR_HANDLER_BEGIN
 	PluginSettings settings;
 
+	settings.plugin_enabled = g_options.plugin_enabled;
 	settings.handle_create = g_options.handle_create;
 	settings.handle_commands = g_options.handle_commands;
 	settings.own_panel_view_mode = g_options.own_panel_view_mode;
@@ -2161,6 +2180,7 @@ SHAREDSYMBOL int WINAPI ConfigureW(int ItemNumber)
 	settings.preferred_7zip_path = g_options.preferred_7zip_path;
 
 	if (settings_dialog(settings)) {
+		g_options.plugin_enabled = settings.plugin_enabled;
 		g_options.handle_create = settings.handle_create;
 		g_options.handle_commands = settings.handle_commands;
 		g_options.own_panel_view_mode = settings.own_panel_view_mode;

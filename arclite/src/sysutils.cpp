@@ -719,7 +719,7 @@ FileEnum::~FileEnum()
 
 bool FileEnum::next()
 {
-	bool more;
+	bool more = false;
 	//fprintf(stderr, " FileEnum::next() ->\n");
 	next_nt(more);
 	//  if (!next_nt(more))

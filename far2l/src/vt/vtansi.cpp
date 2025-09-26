@@ -533,6 +533,12 @@ struct VTAnsiContext
 		HANDLE _preserved_con_hnd{NULL};
 
 	public:
+		~AlternativeScreenBuffer()
+		{
+			if (_preserved_con_hnd) {
+				WINPORT(DiscardConsole)(_preserved_con_hnd);
+			}
+		}
 		void Toggle(HANDLE con_hnd, bool activate)
 		{
 			if (activate) {
@@ -760,8 +766,9 @@ struct VTAnsiContext
 
 					case 7:
 						mode = ENABLE_PROCESSED_OUTPUT | ENABLE_WINDOW_INPUT | ENABLE_EXTENDED_FLAGS | ENABLE_MOUSE_INPUT;
-						if (suffix == 'h')
+						if (suffix == 'h') {
 							mode |= ENABLE_WRAP_AT_EOL_OUTPUT;
+						}
 						WINPORT(SetConsoleMode)( con_hnd, mode );
 						break;
 

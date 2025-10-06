@@ -2344,10 +2344,12 @@ void Edit::ApplyColor()
 			continue;
 
 		// Отсекаем элементы заведомо не попадающие на экран
-		if (CurItem.StartPos - LeftPos > X2 && CurItem.EndPos - LeftPos < X1)
-			continue;
+		/*if (CurItem.StartPos - LeftPos > X2 && CurItem.EndPos - LeftPos < X1)
+			continue;*/
+		/* ^^^ закомментировано, т.к. при текущем && условие никогда не выполняется - лишняя проверка в цикле.
+		       Замена на || приводит к некорректной логике,
+		       если в строке за пределами видимой части есть \t или многобайтовые.*/
 
-		DWORD64 Attr = CurItem.Color;
 		int Length = CurItem.EndPos - CurItem.StartPos + 1;
 
 		if (CurItem.StartPos + Length >= StrSize)
@@ -2388,6 +2390,7 @@ void Edit::ApplyColor()
 			continue;
 
 		// Корректировка относительно табов (отключается, если присутвует флаг ECF_TAB1)
+		DWORD64 Attr = CurItem.Color;
 		int CorrectPos = Attr & ECF_TAB1 ? 0 : 1;
 
 		if (!CorrectPos)
@@ -2399,7 +2402,7 @@ void Edit::ApplyColor()
 
 		/*
 			Обрабатываем случай, когда предыдущая позиция равна текущей, то есть
-			длина раскрашиваемой строкии равна 1
+			длина раскрашиваемой строки равна 1
 		*/
 		if (Pos == EndPos) {
 			/*

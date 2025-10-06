@@ -67,9 +67,9 @@ void settings::load()
 	show_dword_seps = kfr.GetInt(param_show_dword_seps, 0) != 0;
 	move_inside_byte = kfr.GetInt(param_move_inside_byte, 0) != 0;
 	std_cursor_size = kfr.GetInt(param_std_cursor_size, 0) != 0;
-	clr_active = static_cast<FarColor>(kfr.GetInt(param_clr_active, 0));
-	clr_updated = static_cast<FarColor>(kfr.GetInt(param_clr_updated, 0));
-	clr_offset = static_cast<FarColor>(kfr.GetInt(param_clr_offset, 0));
+	clr_active = static_cast<FarColor>(kfr.GetULL(param_clr_active, 0));
+	clr_updated = static_cast<FarColor>(kfr.GetULL(param_clr_updated, 0));
+	clr_offset = static_cast<FarColor>(kfr.GetULL(param_clr_offset, 0));
 }
 
 
@@ -84,9 +84,9 @@ void settings::save()
 	kfh.SetInt(INI_SECTION, param_show_dword_seps, show_dword_seps ? 1 : 0);
 	kfh.SetInt(INI_SECTION, param_move_inside_byte, move_inside_byte ? 1 : 0);
 	kfh.SetInt(INI_SECTION, param_std_cursor_size, std_cursor_size ? 1 : 0);
-	kfh.SetInt(INI_SECTION, param_clr_active, clr_active);
-	kfh.SetInt(INI_SECTION, param_clr_updated, clr_updated);
-	kfh.SetInt(INI_SECTION, param_clr_offset, clr_offset);
+	kfh.SetULL(INI_SECTION, param_clr_active, clr_active);
+	kfh.SetULL(INI_SECTION, param_clr_updated, clr_updated);
+	kfh.SetULL(INI_SECTION, param_clr_offset, clr_offset);
 }
 
 void settings::configure()
@@ -138,6 +138,10 @@ void settings::configure()
 	dlg.buildFDI(&vbox1);
 
 	settings::Dialog = &dlg;
+	FarColor save_clr_active = settings::clr_active;
+	FarColor save_clr_updated = settings::clr_updated;
+	FarColor save_clr_offset = settings::clr_offset;
+
 
 	const HANDLE hDlg = dlg.DialogInit();
 	const intptr_t rc = _PSI.DialogRun(hDlg);
@@ -151,6 +155,10 @@ void settings::configure()
 		std_cursor_size = dlg.GetCheck(dlg.getID("std_csize")) != 0;
 		show_dword_seps = dlg.GetCheck(dlg.getID("show_dd")) != 0;
 		save();
+	} else {
+		settings::clr_active = save_clr_active;
+		settings::clr_updated = save_clr_updated;
+		settings::clr_offset = save_clr_offset;
 	}
 	_PSI.DialogFree(hDlg);
 }
@@ -167,8 +175,10 @@ LONG_PTR WINAPI settings::dlg_proc(HANDLE dlg, int Msg, int Param1, LONG_PTR Par
 			fc = &settings::clr_active;
 		else if (Param1 == dlg->getID("clr_updated"))
 			fc = &settings::clr_updated;
-		if (fc)
+		if (fc){
 			_PSI.ColorDialog(0, fc);
+			return 1;
+		}
 	}
 	return _PSI.DefDlgProc(dlg, Msg, Param1, Param2);
 }

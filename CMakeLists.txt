@@ -563,6 +563,16 @@ else()
         " COMPONENT system)
 endif()
 
+if (DEFINED U_ADB AND U_ADB)
+    message(STATUS "ADB plugin enabled")
+    add_subdirectory(adb)
+endif()
+
+if (DEFINED U_MTP AND U_MTP)
+    message(STATUS "MTP plugin enabled")
+    add_subdirectory(mtp)
+endif()
+
 if (NOT DEFINED HEXITOR OR HEXITOR)
     message(STATUS "HEXITOR plugin enabled")
     add_subdirectory (hexitor)

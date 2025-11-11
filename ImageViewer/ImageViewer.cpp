@@ -8,11 +8,22 @@
 #include <memory>
 #include <cstdio>
 #include <set>
+#include <signal.h>
 #include <dirent.h>
 #include <utils.h>
 #include <math.h>
+#include <ExecAsync.h>
 
 #define WINPORT_IMAGE_ID "image_viewer"
+
+#define HINT_STRING "[Navigate: PGUP PGDN HOME | Pan: TAB CURSORS NUMPAD + - = | Select: SPACE | Deselect: BS | Toggle: INS | ENTER | ESC]"
+
+// how long msec wait before showing progress message window
+#define COMMAND_TIMEOUT_BEFORE_MESSAGE 300
+// how long msec wait between checking for skip keypress while command is running
+#define COMMAND_TIMEOUT_CHECK_PRESS 100
+// how long msec wait after gracefull kill before doing kill -9
+#define COMMAND_TIMEOUT_HARD_KILL 300
 
 #define EXITED_DUE_ERROR      -1
 #define EXITED_DUE_ENTER      42
@@ -20,6 +31,72 @@
 
 static PluginStartupInfo g_far;
 static FarStandardFunctions g_fsf;
+
+class IVInfoMessage
+{
+private:
+	HANDLE _h_scr;
+	std::wstring _title;
+	std::wstring _text1;
+	std::wstring _text2;
+
+public:
+	void Show(std::wstring const &text2, std::wstring const &text1 = L"")
+	{
+		WINPORT(DeleteConsoleImage)(NULL, WINPORT_IMAGE_ID);
+		if (_h_scr == nullptr)
+			_h_scr = g_far.SaveScreen(0,0,-1,-1);
+		if (!text1.empty()) {
+			_text1 = text1;
+			if (_text1.back() != L'\n')
+				_text1 += L'\n';
+		}
+		_text2 = text2;
+		std::wstring tmp = _title + L'\n' + _text1 + _text2;
+		g_far.Message(g_far.ModuleNumber, FMSG_ALLINONE, nullptr,
+			(const wchar_t * const *) tmp.c_str(),
+			0, 0);
+	}
+	void Close()
+	{
+		if (_h_scr) {
+			g_far.RestoreScreen(_h_scr);
+			_h_scr = nullptr;
+		}
+	}
+	IVInfoMessage(const std::wstring &text1 = L"", const std::wstring &title = L"ImageViewer")
+		: _h_scr(nullptr), _title(title), _text1(text1), _text2(L"")
+		{
+			if (_text1.back() != L'\n')
+				_text1 += L'\n';
+		}
+	~IVInfoMessage() { Close(); }
+};
+
+static bool CheckForPgDnUpPress()
+{
+	WORD KeyCodes[] = {VK_NEXT, VK_PRIOR};
+	return WINPORT(CheckForKeyPress)(NULL, KeyCodes, ARRAYSIZE(KeyCodes),
+		CFKP_KEEP_OTHER_EVENTS | CFKP_KEEP_MATCHED_KEY_EVENTS | CFKP_KEEP_UNMATCHED_KEY_EVENTS | CFKP_KEEP_MOUSE_EVENTS) != 0;
+}
+
+static bool ExecAsyncSmartWait(ExecAsync &ea, IVInfoMessage &ivmessage, const std::wstring &text)
+{
+	if (!ea.Wait(COMMAND_TIMEOUT_BEFORE_MESSAGE)) {
+		ivmessage.Show(text);
+		do {
+			if (CheckForPgDnUpPress()) {
+				ea.KillSoftly();
+				if (!ea.Wait(COMMAND_TIMEOUT_HARD_KILL)) {
+					ea.KillHardly();
+				}
+				return false;
+			}
+		} while (!ea.Wait(COMMAND_TIMEOUT_CHECK_PRESS));
+		ivmessage.Close();
+	}
+	return true;
+}
 
 class ImageViewer
 {
@@ -29,6 +106,17 @@ class ImageViewer
 	COORD _pos{}, _size{};
 	int _dx{0}, _dy{0};
 	int _scale{100};
+	int _rotate{0};
+	int _orig_w{0}, _orig_h{0}; // info about image size for title
+	std::string _err_str;
+
+	void ErrorMessage()
+	{
+		std::wstring ws_cur_file = L"\"" + StrMB2Wide(_cur_file) + L"\"";
+		std::wstring werr_str = StrMB2Wide(_err_str);
+		const wchar_t *MsgItems[]={L"Image Viewer", L"Failed to load image file:", ws_cur_file.c_str(), werr_str.c_str(), L"Ok"};
+		g_far.Message(g_far.ModuleNumber, FMSG_WARNING|FMSG_ERRORTYPE, nullptr, MsgItems, sizeof(MsgItems)/sizeof(MsgItems[0]), 1);
+	}
 
 	bool IterateFile(bool forward)
 	{
@@ -63,6 +151,7 @@ class ImageViewer
 		_cur_file = *it;
 		_dx = _dy = 0;
 		_scale = 100;
+		_rotate = 0;
 		return true;
 	}
 
@@ -83,10 +172,12 @@ class ImageViewer
 
 		struct stat st {};
 		if (stat(_cur_file.c_str(), &st) == -1) {
+			_selection.erase(_cur_file); // remove non-loadable files from _selection
 			return false;
 		}
 
 		if (!S_ISREG(st.st_mode) || st.st_size == 0) {
+			_selection.erase(_cur_file); // remove non-loadable files from _selection
 			return false;
 		}
 
@@ -94,18 +185,36 @@ class ImageViewer
 			return true;
 		}
 
-		std::string cmd = StrPrintf(
-			"ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 -- '%s'",
-			_cur_file.c_str());
+		IVInfoMessage ivmessage(
+			L"Processing video file ("
+			+ ( st.st_size < 1024 ? std::to_wstring(st.st_size) + L" b"
+				: st.st_size < 1024*1024 ? std::to_wstring(st.st_size / 1024) + L" K"
+				: st.st_size < 1024*1024*1024 ? std::to_wstring(st.st_size / 1024 / 1024) + L" M"
+				: std::to_wstring(st.st_size / 1024 / 1024 / 1024) + L" G" )
+			+ L"):\n\""
+			+ StrMB2Wide(_cur_file) + L"\""
+			);
+
+		_orig_w = _orig_h = 0; // clear info about image size for title
+
+		DenoteState("Transforming...");
 
 		std::string frames_count;
-		if (!POpen(frames_count, cmd.c_str())) {
-			fprintf(stderr, "ERROR: ffprobe failed.\n");
-			return false;
+		{
+			ExecAsync ea("ffprobe");
+			if (ea.StartWithArguments("ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets",
+				"-show_entries", "stream=nb_read_packets", "-of csv=p=0", "--", _cur_file)) {
+				if (!ExecAsyncSmartWait(ea, ivmessage, L"Video file: get count of frames...")) {
+					return false;
+				}
+				frames_count = ea.FetchStdout();
+			}
 		}
-		fprintf(stderr, "\n--- ImageViewer: frames_count=%s from %s\n", frames_count.c_str(), cmd.c_str());
 
-		unsigned int frames_interval = atoi(frames_count.c_str()) / 6;
+		fprintf(stderr, "\n--- ImageViewer: frames_count=%s\n", frames_count.c_str());
+
+		unsigned int frames_count_i = atoi(frames_count.c_str());
+		unsigned int frames_interval = frames_count_i / 6;
 		if (frames_interval < 5) frames_interval = 5;
 
 		if (_tmp_file.empty()) {
@@ -117,14 +226,22 @@ class ImageViewer
 
 		unlink(_tmp_file.c_str());
 
-		cmd = StrPrintf("ffmpeg -i '%s' -vf \"select='not(mod(n,%d))',_scale=200:-1,tile=3x2\" '%s'",
-			_cur_file.c_str(), frames_interval, _tmp_file.c_str());
+		{
+			ExecAsync ea("ffmpeg");
+			ea.DontCare();
+			if (ea.StartWithArguments("ffmpeg", "-i", _cur_file,
+					"-vf", StrPrintf("select='not(mod(n,%d))',scale=200:-1,tile=3x2", frames_interval), _tmp_file)) {
 
-		int r = system(cmd.c_str());
-		fprintf(stderr, "\n--- ImageViewer: r=%d from %s\n", r, cmd.c_str());
+				if (!ExecAsyncSmartWait(ea, ivmessage,
+						L"Video file has " + std::to_wstring(frames_count_i) + L" frames.\nObtaining 6 frames to preview picture...")) {
+					return false;
+				}
+			}
+		}
 
 		if (stat(_tmp_file.c_str(), &st) == -1 || st.st_size == 0) {
 			unlink(_tmp_file.c_str());
+			_selection.erase(_cur_file); // remove non-loadable files from _selection
 			return false;
 		}
 
@@ -132,120 +249,178 @@ class ImageViewer
 		return true;
 	}
 
-	bool LoadAndShowImage()
+	bool RenderImage(bool bmess = false)
 	{
-		fprintf(stderr, "\n--- ImageViewer: '%s' ---\n", _cur_file.c_str());
+		fprintf(stderr, "\n--- ImageViewer: '%s' ---\n", _render_file.c_str());
+
+		_orig_w = _orig_h = 0; // clear info about image size for title
 
 		if (_render_file.empty()) {
-			fprintf(stderr, "ERROR: bad file.\n");
+			_err_str = "ERROR: bad file";
+			fprintf(stderr, "%s.\n", _err_str.c_str());
 			return false;
 		}
 
 		fprintf(stderr, "Target cell grid _pos=%dx%d _size=%dx%d\n", _pos.X, _pos.Y, _size.X, _size.Y);
 		if (_pos.X < 0 || _pos.Y < 0 || _size.X <= 0 || _size.Y <= 0) {
-			fprintf(stderr, "ERROR: bad grid.\n");
+			_err_str = "ERROR: bad grid";
+			fprintf(stderr, "%s.\n", _err_str.c_str());
 			return false;
 		}
 
-
-		// 1. Получаем оригинальные размеры картинки
-		std::string cmd = "identify -format \"%w %h\" -- \"";
-		cmd += _render_file;
-		cmd += "\"";
-
-		std::string dims_str;
-		if (!POpen(dims_str, cmd.c_str())) {
-			fprintf(stderr, "ERROR: ImageMagick 'identify' failed.\n");
-			return false;
-		}
-
-		int orig_w = 0, orig_h = 0;
-		if (sscanf(dims_str.c_str(), "%d %d", &orig_w, &orig_h) != 2 || orig_w <= 0 || orig_h <= 0) {
-			fprintf(stderr, "ERROR: Failed to parse original dimensions. Got: '%s'\n", dims_str.c_str());
-			return false;
-		}
-
-		// 2. Получаем соотношение сторон ячейки терминала
+		// 1. Получаем соотношение сторон ячейки терминала
 		WinportGraphicsInfo wgi{};
 
-		if (!WINPORT(GetConsoleImageCaps)(NULL, sizeof(wgi), &wgi) || !wgi.Caps) {
-			fprintf(stderr, "ERROR: GetConsoleImageCaps failed\n");
+		if (!WINPORT(GetConsoleImageCaps)(NULL, sizeof(wgi), &wgi) || (wgi.Caps & WP_IMGCAP_RGBA) == 0) {
+			_err_str = "ERROR: GetConsoleImageCaps failed";
+			fprintf(stderr, "%s.\n", _err_str.c_str());
 			return false;
 		}
 		int canvas_w = int(_size.X) * wgi.PixPerCell.X;
 		int canvas_h = int(_size.Y) * wgi.PixPerCell.Y;
 
+		IVInfoMessage ivmessage(L"Processing file: \"" + StrMB2Wide(_render_file) + L"\"");
+
+		DenoteState("Analyzing...");
+		// 2. Получаем оригинальные размеры картинки
+
+		int orig_w = 0, orig_h = 0;
+		{
+			ExecAsync ea("identify");
+			if (ea.StartWithArguments("identify", "-format", "%w %h", "--", _render_file)) {
+				if (!ExecAsyncSmartWait(ea, ivmessage, L"Obtain picture size via ImageMagick 'identify'...")) {
+					return false;
+				}
+			}
+
+			const std::string &dims_str = ea.FetchStdout();
+			if (sscanf(dims_str.c_str(), "%d %d", &orig_w, &orig_h) != 2 || orig_w <= 0 || orig_h <= 0) {
+				_err_str = "ERROR: Failed to parse original dimensions. Got: '" + dims_str + "'";
+				fprintf(stderr, "%s.\n", _err_str.c_str());
+				_selection.erase(_cur_file); // remove non-loadable files from _selection
+				return false;
+			}
+		}
+
 		fprintf(stderr, "Image pixels _size, original: %dx%d canvas: %dx%d\n", orig_w, orig_h, canvas_w, canvas_h);
 
-		// 5. Формируем команду для imagemagick: ресайз, центрирование и добавление полей.
+		// update info about image size for title
+		_orig_w = orig_w;
+		_orig_h = orig_h;
+
+		DenoteState("Rendering...");
+		// 3. Формируем команду для imagemagick: ресайз, центрирование и добавление полей.
+		if (bmess)
+			ivmessage.Show(L"Executing ImageMagick 'convert'...");
 		int resize_w = canvas_w, resize_h = canvas_h;
 		if (_scale != 100) {
 			resize_w = long(resize_w) * long(_scale) / 100;
 			resize_h = long(resize_h) * long(_scale) / 100;
 		}
-		cmd.clear();
-		if (resize_w > 8000 || resize_h > 8000) {
-			cmd += "timeout 3 "; // workaround for stuck on too huge images
+
+		ExecAsync ea("convert");
+		ea.AddArguments("convert", "--", _render_file, "-background", "black", "-gravity", "Center");
+
+		if (_rotate != 0) {
+			ea.AddArguments("-rotate", _rotate);
 		}
-		cmd += "convert -- \"";
-		cmd += _render_file;
-		cmd += "\" -background black -gravity Center";
 
 		if (_dx != 0 || _dy != 0) {
 			int rdx = long(orig_w) * long(_dx) / 100;
 			int rdy = long(orig_h) * long(_dy) / 100; // orig_h
-			cmd += " -roll ";
-			if (rdx >= 0) cmd+= "+";
-			cmd+= std::to_string(rdx);
-			if (rdy >= 0) cmd+= "+";
-			cmd+= std::to_string(rdy);
+			const auto &roll_arg
+				= StrPrintf( (rdx >= 0) ? "+%d" : "%d", rdx)
+				+ StrPrintf( (rdy >= 0) ? "+%d" : "%d", rdy);
+			ea.AddArguments("-roll", roll_arg);
 		}
+		ea.AddArguments("-resize", std::to_string(resize_w) + "x" + std::to_string(resize_h));
+		ea.AddArguments("-extent", std::to_string(canvas_w) + "x" + std::to_string(canvas_h));
+		ea.AddArguments("-depth", "8", "rgba:-");
 
-		cmd += " -resize " + std::to_string(resize_w) + "x" + std::to_string(resize_h);
-		cmd += " -extent " + std::to_string(canvas_w) + "x" + std::to_string(canvas_h);
-		cmd += " -depth 8 rgba:-";
-
-		fprintf(stderr, "Executing ImageMagick: %s\n", cmd.c_str());
-
-		FILE* fp = popen(cmd.c_str(), "r");
-		if (!fp) {
-			fprintf(stderr, "ERROR: ImageMagick start failed.\n");
+		std::vector<char> final_pixel_data;
+		if (ea.Start()) {
+			if (!ExecAsyncSmartWait(ea, ivmessage, L"Convering picture via ImageMagick 'convert'...")) {
+				return false;
+			}
+			ea.FetchStdout(final_pixel_data);
+		}
+		const size_t pixels_count = size_t(canvas_w) * canvas_h;
+		if (final_pixel_data.size() != pixels_count * 4) {
+			_err_str = "ERROR: ImageMagick 'convert' failed";
+			fprintf(stderr, "%s.\n", _err_str.c_str());
+			_selection.erase(_cur_file); // remove non-loadable files from _selection
 			return false;
 		}
 
-		std::vector<uint8_t> final_pixel_data(canvas_w * canvas_h * 4);
-		size_t n_read = fread(final_pixel_data.data(), final_pixel_data.size(), 1, fp);
-		if (pclose(fp) != 0) {
-			fprintf(stderr, "ERROR: ImageMagick 'convert' failed.\n");
-			return false;
+		DWORD flags = WP_IMG_RGB; // use RGBA only if image really has non-opaque pixels
+		for (size_t i = 0; i < pixels_count; ++i) {
+			if (final_pixel_data[i * 4 + 3] != 0xff) {
+				flags = WP_IMG_RGBA;
+				break;
+			}
+		}
+		if (flags == WP_IMG_RGB) {
+			std::vector<char> rgb_pixel_data(pixels_count * 3);
+			for (size_t i = 0; i < pixels_count; ++i) {
+				rgb_pixel_data[i * 3] = final_pixel_data[i * 4];
+				rgb_pixel_data[i * 3 + 1] = final_pixel_data[i * 4 + 1];
+				rgb_pixel_data[i * 3 + 2] = final_pixel_data[i * 4 + 2];
+			}
+			final_pixel_data.swap(rgb_pixel_data);
 		}
 
-		if (n_read != 1) {
-			fprintf(stderr, "ERROR: Failed to read final pixel data from ImageMagick.\n");
-			return false;
-		}
+		if (bmess)
+			ivmessage.Close();
 
-		// 6. Создаем ConsoleImage с готовым битмапом.
-		fprintf(stderr, "--- Image processing finished, creating ConsoleImage ---\n\n");
-		return WINPORT(SetConsoleImage)(NULL, WINPORT_IMAGE_ID, 0, _pos, canvas_w, canvas_h, final_pixel_data.data()) != FALSE;
+		// 4. Создаем ConsoleImage с готовым битмапом.
+		fprintf(stderr, "--- Image processing finished, flags=%u ---\n\n", flags);
+		return WINPORT(SetConsoleImage)(NULL, WINPORT_IMAGE_ID, flags, _pos, canvas_w, canvas_h, final_pixel_data.data()) != FALSE;
 	}
 
-	void UpdateDialogTitle()
+	void SetTitleAndStatus(const std::string &title, const std::string &status)
 	{
-		std::wstring ws_cur_file = StrMB2Wide(_cur_file);
-		if (_selection.find(_cur_file) != _selection.end()) {
-			ws_cur_file.insert(0, L"* "); 
-		} else {
-			ws_cur_file.insert(0, L"  "); 
-		}
+		std::wstring ws_title = StrMB2Wide(title);
+		std::wstring ws_status = StrMB2Wide(status);
 
-		std::wstring ws_hint = L"[Navigate: PGUP PGDN HOME | Pan: CURSORS NUMPAD + - = | Select: SPACE | Deselect: BS | Toggle: INS | ENTER | ESC]";
-
-		FarDialogItemData dd_title = { ws_cur_file.size(), (wchar_t*)ws_cur_file.c_str() };
-		FarDialogItemData dd_hint = { ws_hint.size(), (wchar_t*)ws_hint.c_str() };
+		FarDialogItemData dd_title = { ws_title.size(), (wchar_t*)ws_title.c_str() };
+		FarDialogItemData dd_status = { ws_status.size(), (wchar_t*)ws_status.c_str() };
 
 		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 0, (LONG_PTR)&dd_title);
-		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 2, (LONG_PTR)&dd_hint);
+		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 2, (LONG_PTR)&dd_status);
+	}
+
+	void DenoteState(const char *stage = NULL)
+	{
+		std::string title = (_selection.find(_cur_file) != _selection.end()) ? "* " : "  ";
+		title+= _cur_file;
+		if (stage) {
+			title+= " [";
+			title+= stage;
+			title+= ']';
+		}
+		else if (_orig_w > 0 && _orig_h > 0)
+			title+= " (" + std::to_string(_orig_w) + 'x' + std::to_string(_orig_h) + ')';
+
+		std::string status = HINT_STRING;
+
+		char prefix[32];
+
+		if (_dx != 0 || _dy != 0) {
+			snprintf(prefix, ARRAYSIZE(prefix), "%s%d:%s%d ", (_dx > 0) ? "+" : "", _dx, (_dy > 0) ? "+" : "", _dy);
+			status.insert(0, prefix);
+		}
+
+		if (_scale != 100) {
+			snprintf(prefix, ARRAYSIZE(prefix), "%d%% ", _scale);
+			status.insert(0, prefix);
+		}
+
+		if (_rotate != 0) {
+			snprintf(prefix, ARRAYSIZE(prefix), "%d° ", _rotate);
+			status.insert(0, prefix);
+		}
+
+		SetTitleAndStatus(title, status);
 	}
 
 public:
@@ -279,13 +454,12 @@ public:
 		_size.X = rc.Right > 1 ? rc.Right - 1 : 1;
 		_size.Y = rc.Bottom > 1 ? rc.Bottom - 1 : 1;
 
-		UpdateDialogTitle();
-		if (!InspectFileFormat() || !LoadAndShowImage()) {
-			std::wstring ws_cur_file = StrMB2Wide(_cur_file);
-			const wchar_t *MsgItems[]={L"Image Viewer", L"Failed to load image file:", ws_cur_file.c_str()};
-			g_far.Message(g_far.ModuleNumber, FMSG_WARNING|FMSG_ERRORTYPE, nullptr, MsgItems, sizeof(MsgItems)/sizeof(MsgItems[0]), 1);
+		_err_str.clear();
+		if (!InspectFileFormat() || !RenderImage(true)) {
+			ErrorMessage();
 			return false;
 		}
+		DenoteState();
 
 		return true;
 	}
@@ -293,8 +467,8 @@ public:
 	void Home()
 	{
 		_cur_file = _initial_file;
-		if (InspectFileFormat() && LoadAndShowImage()) {
-			UpdateDialogTitle();
+		if (InspectFileFormat() && RenderImage()) {
+			DenoteState();
 		}
 	}
 
@@ -305,60 +479,78 @@ public:
 				_cur_file.clear();
 				return false; // bail out on logic error or infinite loop
 			}
-			if (InspectFileFormat() && LoadAndShowImage()) {
-				UpdateDialogTitle();
+			if (InspectFileFormat() && RenderImage()) {
+				DenoteState();
 				return true;
 			}
-			_selection.erase(_cur_file); // remove non-loadable files from _selection
 		}
 	}
 
 	void Scale(int change)
 	{
 		if (change > 0) {
-			if (_scale < 100) _scale+= 10;
-			else if (_scale < 200) _scale+= 50;
-			else if (_scale < 400) _scale+= 100;
+			if (_scale < 100) _scale+= change;
+			else if (_scale < 200) _scale+= change * 5;
+			else if (_scale < 400) _scale+= change * 10;
 		} else if (change < 0) {
-			if (_scale >= 200) _scale-= 100;
-			else if (_scale >= 100) _scale-= 50;
-			else if (_scale > 10) _scale-= 10;
+			if (_scale > 200) _scale+= change * 10;
+			else if (_scale > 100) _scale+= change * 5;
+			else if (_scale > 10) _scale+= change;
 		}
-		LoadAndShowImage();
+		if (_scale < 10) {
+			_scale = 10;
+		}
+		RenderImage();
+		DenoteState();
+	}
+
+	void Rotate(int change)
+	{
+		_rotate+= (change > 0) ? 90 : -90;
+		if (_rotate == 360 || _rotate == -360) {
+			_rotate = 0;
+		}
+		RenderImage();
+		DenoteState();
 	}
 
 	void Shift(int horizontal, int vertical)
 	{
 		if (horizontal != 0) {
-			int ddx = (horizontal < 0) ? -10 : 10;
-			_dx = std::min(std::max(_dx + ddx, -100), 100);
+			_dx+= horizontal;
+			if (_dx >= 100) _dx-= 100;
+			if (_dx <= -100) _dx+= 100;
 		}
 		if (vertical != 0) {
-			int ddy = (vertical < 0) ? -10 : 10;
-			_dy = std::min(std::max(_dy + ddy, -100), 100);
+			_dy+= vertical;
+			if (_dy >= 100) _dy-= 100;
+			if (_dy <= -100) _dy+= 100;
 		}
-		LoadAndShowImage();
+		RenderImage();
+		DenoteState();
 	}
 
 	void Reset()
 	{
 		_dx = _dy = 0;
 		_scale = 100;
+		_rotate = 0;
 
-		LoadAndShowImage();
+		RenderImage();
+		DenoteState();
 	}
 
 	void Select()
 	{
 		if (_selection.insert(_cur_file).second) {
-			UpdateDialogTitle();
+			DenoteState();
 		}
 	}
 
 	void Deselect()
 	{
 		if (_selection.erase(_cur_file)) {
-			UpdateDialogTitle();
+			DenoteState();
 		}
 	}
 
@@ -367,7 +559,7 @@ public:
 		if (!_selection.erase(_cur_file)) {
 			_selection.insert(_cur_file);
 		}
-		UpdateDialogTitle();
+		DenoteState();
 	}
 };
 
@@ -395,18 +587,20 @@ static LONG_PTR WINAPI ViewerDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR 
 		case DN_KEY:
 		{
 			ImageViewer *iv = (ImageViewer *)g_far.SendDlgMessage(hDlg, DM_GETDLGDATA, 0, 0);
-			switch ((int)Param2) {
+			const int delta = ((((int)Param2) & KEY_SHIFT) != 0) ? 1 : 10;
+			switch ((int)(Param2 & ~KEY_SHIFT)) {
 				case KEY_CLEAR: case KEY_MULTIPLY: case '=': case '*': iv->Reset(); break;
-				case KEY_NUMPAD6: case KEY_RIGHT: iv->Shift(1, 0); break;
-				case KEY_NUMPAD4: case KEY_LEFT: iv->Shift(-1, 0); break;
-				case KEY_NUMPAD2: case KEY_DOWN: iv->Shift(0, 1); break;
-				case KEY_NUMPAD8: case KEY_UP: iv->Shift(0, -1); break;
-				case KEY_NUMPAD9: iv->Shift(1, -1); break;
-				case KEY_NUMPAD1: iv->Shift(-1, 1); break;
-				case KEY_NUMPAD3: iv->Shift(1, 1); break;
-				case KEY_NUMPAD7: iv->Shift(-1, -1); break;
-				case KEY_ADD: case '+': iv->Scale(1); break;
-				case KEY_SUBTRACT: case '-': iv->Scale(-1); break;
+				case KEY_NUMPAD6: case KEY_RIGHT: iv->Shift(delta, 0); break;
+				case KEY_NUMPAD4: case KEY_LEFT: iv->Shift(-delta, 0); break;
+				case KEY_NUMPAD2: case KEY_DOWN: iv->Shift(0, delta); break;
+				case KEY_NUMPAD8: case KEY_UP: iv->Shift(0, -delta); break;
+				case KEY_NUMPAD9: iv->Shift(delta, -delta); break;
+				case KEY_NUMPAD1: iv->Shift(-delta, delta); break;
+				case KEY_NUMPAD3: iv->Shift(delta, delta); break;
+				case KEY_NUMPAD7: iv->Shift(-delta, -delta); break;
+				case KEY_ADD: case '+': iv->Scale(delta); break;
+				case KEY_SUBTRACT: case '-': iv->Scale(-delta); break;
+				case KEY_TAB: iv->Rotate( (delta == 1) ? -90 : 90); break;
 				case KEY_INS: iv->Toggle(); break;
 				case KEY_SPACE: iv->Select(); break;
 				case KEY_BS: iv->Deselect(); break;
@@ -422,6 +616,10 @@ static LONG_PTR WINAPI ViewerDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR 
 			}
 			return TRUE;
 		}
+
+		case DN_CLOSE:
+			WINPORT(DeleteConsoleImage)(NULL, WINPORT_IMAGE_ID);
+			break;
 	}
 
 	return g_far.DefDlgProc(hDlg, Msg, Param1, Param2);
@@ -436,7 +634,7 @@ static bool ShowImage(const std::string &initial_file, std::set<std::string> &se
 
 	FarDialogItem DlgItems[] = {
 		{ DI_DOUBLEBOX, 0, 0, Rect.Right, Rect.Bottom, FALSE, {}, 0, 0, L"???", 0 },
-		{ DI_USERCONTROL, 1, 1, Rect.Right - 2, Rect.Bottom - 2, 0, {}, 0, 0, L"", 0},
+		{ DI_USERCONTROL, 1, 1, Rect.Right - 1, Rect.Bottom - 1, 0, {}, 0, 0, L"", 0},
 		{ DI_TEXT, 0, Rect.Bottom, Rect.Right, Rect.Bottom, 0, {}, DIF_CENTERTEXT, 0, L"", 0},
 	};
 
@@ -450,8 +648,6 @@ static bool ShowImage(const std::string &initial_file, std::set<std::string> &se
 
 	int exit_code = g_far.DialogRun(hDlg);
 	g_far.DialogFree(hDlg);
-
-	WINPORT(DeleteConsoleImage)(NULL, WINPORT_IMAGE_ID);
 
 	if (exit_code != EXITED_DUE_ENTER) {
 		return false;

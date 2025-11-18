@@ -3754,7 +3754,6 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			&& (MouseEvent->dwEventFlags & (DOUBLE_CLICK | MOUSE_MOVED | MOUSE_HWHEELED | MOUSE_WHEELED)) == 0) {
 		// VK: TODO: hande paste from primary here
 		// VK: now it uses clipboard instead
-			&& (MouseEvent->dwEventFlags & (DOUBLE_CLICK | MOUSE_MOVED | MOUSE_HWHEELED | MOUSE_WHEELED)) == 0) {
 		ProcessPasteEvent();
 	}
 

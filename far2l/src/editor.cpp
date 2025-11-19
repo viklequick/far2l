@@ -3589,9 +3589,11 @@ case KEY_CTRLNUMPAD3: {
 
 int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
+	static bool isDraggingSelection = false;
+	static Edit* selectionAnchorLine = nullptr;
+	static int selectionAnchorPos = 0;
+	static int selectionAnchorLineNum = 0;
 	m_MouseButtonIsHeld = MouseEvent->dwButtonState & 3;
-
-	// VK: TODO: handle selection and copy to primary
 
 	// Shift + Mouse click -> adhoc quick edit
 	if ((MouseEvent->dwControlKeyState & SHIFT_PRESSED) != 0 && (MouseEvent->dwEventFlags & MOUSE_MOVED) == 0
@@ -3600,8 +3602,15 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		return TRUE;
 	}
 
+	// Отпускание кнопки мыши завершает процесс выделения
+	if (isDraggingSelection && !(MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED))
+	{
+		isDraggingSelection = false;
+		// VK: TODO: grab selection and copy to selection buffer
+	}
+
 	// $ 28.12.2000 VVM - Щелчок мышкой снимает непостоянный блок всегда
-	if ((MouseEvent->dwButtonState & 3) && !(MouseEvent->dwEventFlags & MOUSE_MOVED)) {
+	if (!isDraggingSelection && (MouseEvent->dwButtonState & 3) && !(MouseEvent->dwEventFlags & MOUSE_MOVED)) {
 		if ((!EdOpt.PersistentBlocks) && (BlockStart || VBlockStart)) {
 			UnmarkBlock();
 			Show();
@@ -3628,24 +3637,28 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				while (IsMouseButtonPressed())
 					GoToLine((NumLastLine - 1) * (MouseY - Y1) / (Y2 - Y1));
 			}
+			isDraggingSelection = false; // Скроллбар отменяет выделение
 		}
 		return TRUE;
 	}
 
-	// scroll up/down by dragging outside editor window
-	if (MouseEvent->dwMousePosition.Y < Y1 && (MouseEvent->dwButtonState & 3)) {
-		while (IsMouseButtonPressed() && MouseY < Y1) ProcessKey(KEY_UP);
+	// Автопрокрутка при выделении мышью за пределами окна редактора
+	if (isDraggingSelection && MouseEvent->dwMousePosition.Y < Y1 && (MouseEvent->dwButtonState & 3)) {
+		while (IsMouseButtonPressed() && MouseY < Y1) Up();
+		// Обновление выделения произойдет при следующем событии MOUSE_MOVED
 		return TRUE;
 	}
-	if (MouseEvent->dwMousePosition.Y > Y2 && (MouseEvent->dwButtonState & 3)) {
-		while (IsMouseButtonPressed() && MouseY > Y2) ProcessKey(KEY_DOWN);
+	if (isDraggingSelection && MouseEvent->dwMousePosition.Y > Y2 && (MouseEvent->dwButtonState & 3)) {
+		while (IsMouseButtonPressed() && MouseY > Y2) Down();
+		// Обновление выделения произойдет при следующем событии MOUSE_MOVED
 		return TRUE;
 	}
 
-	// For any click inside the editor window, first position the cursor
+	// Основная логика обработки кликов и выделения внутри окна редактора
 	if (MouseEvent->dwMousePosition.X >= X1 && MouseEvent->dwMousePosition.X <= XX2
 		&& MouseEvent->dwMousePosition.Y >= Y1 && MouseEvent->dwMousePosition.Y <= Y2)
 	{
+		// Перемещение курсора в точку клика/движения
 		if((MouseEvent->dwButtonState & 3))
 		{
 			Edit* TargetLine = nullptr;
@@ -3694,6 +3707,11 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 			if (TargetLine)
 			{
+				// Если это не продолжение выделения, а новый клик, снимаем старое выделение
+				if (!isDraggingSelection && !(MouseEvent->dwEventFlags & MOUSE_MOVED)) {
+					UnmarkBlock();
+				}
+
 				CurLine = TargetLine;
 				NumLine = CalcDistance(TopList, CurLine, -1);
 				CurLine->SetCurPos(TargetPos);
@@ -3705,18 +3723,15 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 					m_WordWrapMaxRightPos = CurLine->GetCellCurPos() - CurLine->RealPosToCell(v_start);
 					MaxRightPos = CurLine->GetCellCurPos();
 				}
-				// Снимаем любое предыдущее выделение при новом клике.
-		        // UnmarkBlock() должен вызываться только при первом клике, а не при каждом движении
-        		if (!(MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-					UnmarkBlock();
-				}
-				Show();
 			}
 		}
 
 		// --- Common logic for click/double-click/triple-click ---
 		if (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 		{
+			bool multiClickHandled = false;
+
+			// --- Сначала обрабатываем двойные/тройные клики ---
 			static int EditorPrevClickCount = 0;
 			static DWORD EditorPrevClickTime = 0;
 			static COORD EditorPrevPosition = {0,0};
@@ -3733,12 +3748,19 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				EditorPrevClickCount = 1;
 			}
 
-			EditorPrevClickTime = WINPORT(GetTickCount)();
-			EditorPrevPosition = MouseEvent->dwMousePosition;
+			// Только обновляем, если это начало новой последовательности кликов
+			if (EditorPrevClickCount == 1) {
+				EditorPrevClickTime = WINPORT(GetTickCount)();
+				EditorPrevPosition = MouseEvent->dwMousePosition;
+			}
 
 			if (EditorPrevClickCount == 2) // Double-click
 			{
 				ProcessKey(KEY_OP_SELWORD);
+				multiClickHandled = true;
+				isDraggingSelection = false; // Двойной клик - это атомарное действие, а не начало выделения
+
+				// VK: TODO: grab selection and copy to selection buffer
 			}
 			else if (EditorPrevClickCount >= 3) // Triple-click (and more)
 			{
@@ -3748,15 +3770,89 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 					BlockStart = CurLine;
 					BlockStartLine = NumLine;
 				}
-				EditorPrevClickCount = 0; // Reset to avoid re-triggering
+				multiClickHandled = true;
+				isDraggingSelection = false; // Тройной клик - тоже
+				EditorPrevClickCount = 0; // Сбрасываем, чтобы следующий клик был одинарным
+
+				// VK: TODO: grab selection and copy to selection buffer
 			}
-			Show();
+
+			// --- Затем, если это не был мульти-клик, обрабатываем выделение перетаскиванием ---
+
+			// НАЧАЛО ВЫДЕЛЕНИЯ (первый клик)
+			if (!multiClickHandled && !isDraggingSelection && !(MouseEvent->dwEventFlags & MOUSE_MOVED))
+			{
+				isDraggingSelection = true;
+				selectionAnchorLine = CurLine;
+				selectionAnchorPos = CurLine->GetCurPos();
+				selectionAnchorLineNum = NumLine;
+
+				// Устанавливаем состояние, совместимое с клавиатурным выделением
+				Flags.Set(FEDITOR_MARKINGBLOCK);
+				BlockStart = CurLine;
+				BlockStartLine = NumLine;
+				// Начинаем с выделения нулевой длины в точке клика
+				CurLine->Select(selectionAnchorPos, selectionAnchorPos);
+			}
+			// ПРОЦЕСС ВЫДЕЛЕНИЯ (движение мышью с зажатой кнопкой)
+			else if (isDraggingSelection && (MouseEvent->dwEventFlags & MOUSE_MOVED))
+			{
+				// Курсор уже перемещен в нужную позицию кодом выше
+				Edit *startLine, *endLine;
+				int startPos, endPos, startLineNum;
+
+				// Определяем, где начало и где конец выделения (якорь и текущая позиция)
+				if (NumLine < selectionAnchorLineNum || (NumLine == selectionAnchorLineNum && CurLine->GetCurPos() < selectionAnchorPos)) {
+					startLine = CurLine;
+					startPos = CurLine->GetCurPos();
+					startLineNum = NumLine;
+					endLine = selectionAnchorLine;
+					endPos = selectionAnchorPos;
+				} else {
+					startLine = selectionAnchorLine;
+					startPos = selectionAnchorPos;
+					startLineNum = selectionAnchorLineNum;
+					endLine = CurLine;
+					endPos = CurLine->GetCurPos();
+				}
+
+				// Применяем выделение: сначала всё снимаем, потом выставляем заново
+				UnmarkBlock();
+
+				BlockStart = startLine;
+				BlockStartLine = startLineNum;
+				Flags.Set(FEDITOR_MARKINGBLOCK);
+
+				if (startLine == endLine) {
+					// Выделение в пределах одной строки
+					startLine->Select(startPos, endPos);
+				} else {
+					// Выделение охватывает несколько строк
+					Edit* p = startLine;
+
+					// Первая строка: от начальной позиции до конца
+					p->Select(startPos, -1);
+					p = p->m_next;
+
+					// Средние строки: выделяем полностью
+					while(p && p != endLine) {
+						p->Select(0, -1);
+						p = p->m_next;
+					}
+
+					// Последняя строка: от начала до конечной позиции
+					if (p == endLine) {
+						p->Select(0, endPos);
+					}
+				}
+			}
 		}
+		Show();
 	}
 
 	if (MouseEvent->dwButtonState == FROM_LEFT_2ND_BUTTON_PRESSED
 			&& (MouseEvent->dwEventFlags & (DOUBLE_CLICK | MOUSE_MOVED | MOUSE_HWHEELED | MOUSE_WHEELED)) == 0) {
-		// VK: TODO: hande paste from primary here
+		// VK: TODO: hande paste from selection here
 		// VK: now it uses clipboard instead
 		ProcessPasteEvent();
 	}
@@ -4039,11 +4135,6 @@ void Editor::DeleteString(Edit *DelPtr, int LineNumber, int DeleteLast, int Undo
 
 void Editor::InsertString()
 {
-	if (m_bWordWrap) {
-		const wchar_t* str_addr;
-		int str_len;
-		CurLine->GetBinaryString(&str_addr, nullptr, str_len);
-	}
 	if (Flags.Check(FEDITOR_LOCKMODE))
 		return;
 

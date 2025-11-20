@@ -3607,6 +3607,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	{
 		isDraggingSelection = false;
 		// VK: TODO: grab selection and copy to selection buffer
+		UnmarkEmptyBlock();
 	}
 
 	// $ 28.12.2000 VVM - Щелчок мышкой снимает непостоянный блок всегда

@@ -2189,35 +2189,41 @@ void WinPortPanel::OnGetConsoleImageCaps(WinportGraphicsInfo *wgi)
 
 bool WinPortPanel::OnSetConsoleImage(const char *id, DWORD64 flags, const SMALL_RECT *area, DWORD width, DWORD height, const void *buffer)
 {
-	if (!_images.Set(id, flags, area, width, height, buffer, _paint_context.FontHeight())) {
-		return false;
-	}
+	auto impl = [&]() {
+		if (!_images.Set(id, flags, area, width, height, buffer, _paint_context.FontHeight())) {
+			return false;
+		}
+		Refresh(false, nullptr);
+		return true;
+	};
 
-	auto fn = std::bind(&WinPortPanel::Refresh, this, false, nullptr);
-	CallInMainNoRet(fn);
-	return true;
+	return wxIsMainThread() ? impl() : CallInMain<bool>(impl);
 }
 
 bool WinPortPanel::OnRotateConsoleImage(const char *id, const SMALL_RECT *area, unsigned char angle_x90)
 {
-	if (!_images.Rotate(id, area, angle_x90)) {
-		return false;
-	}
+	auto impl = [&]() {
+		if (!_images.Rotate(id, area, angle_x90)) {
+			return false;
+		}
+		Refresh(false, nullptr);
+		return true;
+	};
 
-	auto fn = std::bind(&WinPortPanel::Refresh, this, false, nullptr);
-	CallInMainNoRet(fn);
-	return true;
+	return wxIsMainThread() ? impl() : CallInMain<bool>(impl);
 }
 
 bool WinPortPanel::OnDeleteConsoleImage(const char *id)
 {
-	if (!_images.Delete(id)) {
-		return false;
-	}
+	auto impl = [&]() {
+		if (!_images.Delete(id)) {
+			return false;
+		}
+		Refresh(false, nullptr);
+		return true;
+	};
 
-	auto fn = std::bind(&WinPortPanel::Refresh, this, false, nullptr);
-	CallInMainNoRet(fn);
-	return true;
+	return wxIsMainThread() ? impl() : CallInMain<bool>(impl);
 }
 
 void WinPortPanel::OnKillFocus( wxFocusEvent &event )

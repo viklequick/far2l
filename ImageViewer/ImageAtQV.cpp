@@ -1,5 +1,5 @@
 #include "Common.h"
-#include "ImageViewer.h"
+#include "ImageView.h"
 #include <optional>
 #include <mutex>
 #include <condition_variable>
@@ -22,7 +22,7 @@ class ImageAtQV : public Threaded
 	{
 		fprintf(stderr, "ImageAtQV: thread started\n");
 
-		std::optional<ImageViewer> iv;
+		std::optional<ImageView> iv;
 		std::string file;
 		SMALL_RECT area;
 		for (;;) {
@@ -36,14 +36,7 @@ class ImageAtQV : public Threaded
 					_changing = false;
 					file = _cur_file;
 					area = _cur_area;
-					if (area.Right - area.Left > 2) {
-						area.Left++;
-						area.Right--;
-					}
-					if (area.Bottom - area.Top > 2) {
-						area.Top++;
-						area.Bottom--;
-					}
+					RectReduce(area);
 					break;
 				}
 				_cond.wait(lock);
@@ -52,9 +45,8 @@ class ImageAtQV : public Threaded
 				area.Left, area.Top, area.Right, area.Bottom, file.c_str());
 
 			iv.reset();
-			std::set<std::string> single_selection;
-			single_selection.emplace(file); // prevent navigation to another file
-			iv.emplace(file, single_selection);
+			std::vector<std::pair<std::string, bool> > all_files{{file, false}};
+			iv.emplace(0, all_files);
 			if (!iv->SetupQV(area, &_changing)) {
 				iv.reset();
 			}

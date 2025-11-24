@@ -1,15 +1,15 @@
 #include "Common.h"
-#include "ImageViewer.h"
+#include "ImageView.h"
 
-class ImageViewerAtFull : public ImageViewer
+class ImageViewAtFull : public ImageView
 {
 	WinportGraphicsInfo _drag_wgi{};
 	COORD _drag_prev_pos{}, _drag_pending{};
 	bool _dragging{false};
 
 public:
-	ImageViewerAtFull(const std::string &initial_file, const std::set<std::string> &selection)
-		: ImageViewer(initial_file, selection)
+	ImageViewAtFull(size_t initial_file, const std::vector<std::pair<std::string, bool> > &all_files)
+		: ImageView(initial_file, all_files)
 	{
 	}
 
@@ -29,12 +29,7 @@ public:
 		_drag_prev_pos = pos;
 	}
 
-	void DraggingFinish()
-	{
-		_dragging = false;
-	}
-
-	void DraggingCommit()
+	void DraggingApplyMoves()
 	{
 		if (_drag_pending.X != 0 || _drag_pending.Y != 0) {
 			COORD actual = ShiftByPixels(_drag_pending);
@@ -46,28 +41,37 @@ public:
 			}
 		}
 	}
+
+	void DraggingFinish()
+	{
+		if (_dragging) {
+			_dragging = false;
+			DraggingApplyMoves();
+		}
+	}
 };
 
 static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2)
 {
 	switch(Msg) {
-		case DN_ENTERIDLE:
-		{
-			ImageViewerAtFull *iv = (ImageViewerAtFull *)g_far.SendDlgMessage(hDlg, DM_GETDLGDATA, 0, 0);
-			iv->DraggingCommit();
-			return TRUE;
-		}
 		case DN_MOUSEEVENT:
 		{
-			ImageViewerAtFull *iv = (ImageViewerAtFull *)g_far.SendDlgMessage(hDlg, DM_GETDLGDATA, 0, 0);
+			ImageViewAtFull *iv = (ImageViewAtFull *)g_far.SendDlgMessage(hDlg, DM_GETDLGDATA, 0, 0);
 			const MOUSE_EVENT_RECORD *me = (const MOUSE_EVENT_RECORD *)Param2;
-			if ((me->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
+			if ( (me->dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0 && (me->dwEventFlags & MOUSE_MOVED)  == 0) {
+				if ((me->dwControlKeyState & (SHIFT_PRESSED | LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) != 0) {
+					iv->Rotate(-90);
+				} else {
+					iv->Rotate(90);
+				}
+
+			} else if ((me->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0) {
 				iv->DraggingMove(me->dwMousePosition);
+				if (!WINPORT(WaitConsoleInput)(NULL, 0)) { // avoid movements 'accumulation'
+					iv->DraggingApplyMoves();
+				}
 			} else {
 				iv->DraggingFinish();
-			}
-			if ((me->dwControlKeyState & (SHIFT_PRESSED | LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) != 0) {
-				iv->DraggingCommit();
 			}
 			return TRUE;
 		}
@@ -76,20 +80,12 @@ static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 		{
 			g_far.SendDlgMessage(hDlg, DM_SETDLGDATA, 0, Param2);
 
-			SMALL_RECT Rect;
-			g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &Rect, 0);
+			SMALL_RECT rc;
+			g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &rc, 0);
+			RectReduce(rc);
 
-			ImageViewerAtFull *iv = (ImageViewerAtFull *)Param2;
-
-			if (Rect.Right - Rect.Left > 2) {
-				Rect.Left++;
-				Rect.Right--;
-			}
-			if (Rect.Bottom - Rect.Top > 2) {
-				Rect.Top++;
-				Rect.Bottom--;
-			}
-			if (iv->SetupFull(Rect, hDlg)) {
+			ImageViewAtFull *iv = (ImageViewAtFull *)Param2;
+			if (iv->SetupFull(rc, hDlg)) {
 				g_far.SendDlgMessage(hDlg, DM_SETMOUSEEVENTNOTIFY, 1, 0);
 			} else {
 				g_far.SendDlgMessage(hDlg, DM_CLOSE, EXITED_DUE_ERROR, 0);
@@ -100,26 +96,26 @@ static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 
 		case DN_KEY:
 		{
-			ImageViewerAtFull *iv = (ImageViewerAtFull *)g_far.SendDlgMessage(hDlg, DM_GETDLGDATA, 0, 0);
+			ImageViewAtFull *iv = (ImageViewAtFull *)g_far.SendDlgMessage(hDlg, DM_GETDLGDATA, 0, 0);
 			const int delta = ((((int)Param2) & KEY_SHIFT) != 0) ? 1 : 10;
 			const int key = (int)(Param2 & ~KEY_SHIFT);
-			PurgeAccumulatedKeyPresses(); // avoid navigation etc keypresses 'accumulation'
+			PurgeAccumulatedInputEvents(); // avoid navigation etc keypresses 'accumulation'
 			switch (key) {
 				case 'a': case 'A': case KEY_MULTIPLY: case '*':
 					g_def_scale = DS_LESSOREQUAL_SCREEN;
-					iv->Reset();
+					iv->Reset(true);
 					break;
 				case 'q': case 'Q': case KEY_DEL: case KEY_NUMDEL:
 					g_def_scale = DS_EQUAL_SCREEN;
-					iv->Reset();
+					iv->Reset(true);
 					break;
 				case 'z': case 'Z': case KEY_DIVIDE: case '/':
 					g_def_scale = DS_EQUAL_IMAGE;
-					iv->Reset();
+					iv->Reset(true);
 					break;
-				case KEY_CLEAR: case '=': iv->Reset(); break;
-				case KEY_ADD: case '+': iv->Scale(delta); break;
-				case KEY_SUBTRACT: case '-': iv->Scale(-delta); break;
+				case KEY_CLEAR: case '=': iv->Reset(false); break;
+				case KEY_ADD: case '+': case KEY_MSWHEEL_UP: iv->Scale(delta); break;
+				case KEY_SUBTRACT: case '-': case KEY_MSWHEEL_DOWN: iv->Scale(-delta); break;
 				case KEY_NUMPAD6: case KEY_RIGHT: iv->Shift(delta, 0); break;
 				case KEY_NUMPAD4: case KEY_LEFT: iv->Shift(-delta, 0); break;
 				case KEY_NUMPAD2: case KEY_DOWN: iv->Shift(0, delta); break;
@@ -152,24 +148,29 @@ static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 		case DN_RESIZECONSOLE:
 			g_far.SendDlgMessage(hDlg, DM_CLOSE, EXITED_DUE_RESIZE, 0);
 			break;
+
+		case DN_DRAGGED:
+			return FALSE;
 	}
 
 	return g_far.DefDlgProc(hDlg, Msg, Param1, Param2);
 }
 
-bool ShowImageAtFull(const std::string &initial_file, std::set<std::string> &selection)
+bool ShowImageAtFull(size_t initial_file, std::vector<std::pair<std::string, bool> > &all_files, std::unordered_set<std::string> &selection)
 {
-	ImageViewerAtFull iv(initial_file, selection);
+	ImageViewAtFull iv(initial_file, all_files);
 
 	for (;;) {
 		SMALL_RECT Rect;
 		g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &Rect, 0);
 
 		FarDialogItem DlgItems[] = {
-			{ DI_SINGLEBOX, 0, 0, Rect.Right, Rect.Bottom, FALSE, {}, 0, 0, L"???", 0 },
-			{ DI_DOUBLEBOX, 0, 0, Rect.Right, Rect.Bottom, FALSE, {}, DIF_HIDDEN, 0, L"???", 0 },
+			{ DI_SINGLEBOX, 0, 0, Rect.Right, Rect.Bottom, FALSE, {}, DIF_SHOWAMPERSAND, 0, L"???", 0 },
+			{ DI_DOUBLEBOX, 0, 0, Rect.Right, Rect.Bottom, FALSE, {}, DIF_HIDDEN | DIF_SHOWAMPERSAND, 0, L"???", 0 },
 			{ DI_USERCONTROL, 1, 1, Rect.Right - 1, Rect.Bottom - 1, 0, {COL_DIALOGBOX}, 0, 0, L"", 0},
-			{ DI_TEXT, 0, Rect.Bottom, Rect.Right, Rect.Bottom, 0, {}, DIF_CENTERTEXT, 0, L"", 0},
+			{ DI_TEXT, 0, Rect.Bottom, Rect.Right, Rect.Bottom, 0, {}, DIF_CENTERTEXT | DIF_SHOWAMPERSAND, 0, L"", 0},
+			{ DI_TEXT, Rect.Left + 1, Rect.Top, Rect.Left + 1, Rect.Top, 0, {}, DIF_SHOWAMPERSAND, 0, L"", 0},
+			{ DI_TEXT, Rect.Right - 1, Rect.Top, Rect.Right - 1, Rect.Top, 0, {}, DIF_SHOWAMPERSAND, 0, L"", 0},
 		};
 
 		HANDLE hDlg = g_far.DialogInit(g_far.ModuleNumber, 0, 0, Rect.Right, Rect.Bottom,
@@ -187,7 +188,7 @@ bool ShowImageAtFull(const std::string &initial_file, std::set<std::string> &sel
 			if (exit_code != EXITED_DUE_ENTER) {
 				return false;
 			}
-			selection = iv.GetSelection();
+			selection = std::move(iv.GetSelection());
 			return true;
 		}
 	}

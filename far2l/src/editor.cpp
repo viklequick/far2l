@@ -109,7 +109,10 @@ Editor::Editor(ScreenObject *pOwner, bool DialogUsed)
 	LastGetLine(nullptr),
 	LastGetLineNumber(0),
 	SaveTabSettings(false),
-	m_MouseButtonIsHeld(false)
+	m_MouseButtonIsHeld(false),
+	m_CachedTotalLines(0),
+	m_CachedLineNumWidth(0),
+	m_LineCountDirty(true)
 {
 	_KEYMACRO(SysLog(L"Editor::Editor()"));
 	_KEYMACRO(SysLog(1));
@@ -228,6 +231,49 @@ void Editor::UpdateCursorPosition(int horizontal_cell_pos)
 	CurLine->SetCurPos(new_pos);
 }
 
+// Helper function to count total lines in the editor
+int Editor::CalculateTotalLines()
+{
+	int TotalLines = 0;
+	for (Edit *CountPtr = TopList; CountPtr; CountPtr = CountPtr->m_next) {
+		TotalLines++;
+	}
+	return TotalLines;
+}
+
+// Helper function to calculate the width needed for line number display
+int Editor::CalculateLineNumberWidth()
+{
+	if (!EdOpt.ShowLineNumbers) {
+		return 0;
+	}
+
+	// Use cached value if available
+	if (!m_LineCountDirty) {
+		return m_CachedLineNumWidth;
+	}
+
+	// Recalculate when cache is dirty
+	int TotalLines = CalculateTotalLines();
+	int LineNumWidth = 1;
+	int temp = TotalLines;
+	while (temp >= 10) {
+		LineNumWidth++;
+		temp /= 10;
+	}
+	if (LineNumWidth < 4) {
+		LineNumWidth = 4;
+	}
+	LineNumWidth += 1;  // Add space after numbers
+
+	// Update cache
+	m_CachedTotalLines = TotalLines;
+	m_CachedLineNumWidth = LineNumWidth;
+	m_LineCountDirty = false;
+
+	return LineNumWidth;
+}
+
 void Editor::FreeAllocatedData(bool FreeUndo)
 {
 	while (EndList) {
@@ -243,6 +289,7 @@ void Editor::FreeAllocatedData(bool FreeUndo)
 	m_TopScreenLogicalLine = nullptr;
 	m_TopScreenVisualLine = 0;
 	m_CurVisualLineInLogicalLine = 0;
+	m_LineCountDirty = true;  // Invalidate line number cache
 	ClearStackBookmarks();
 	TopList = EndList = CurLine = nullptr;
 	NumLastLine = 0;
@@ -482,12 +529,35 @@ void Editor::ShowEditor(int CurLineOnly)
 		Edit *CurLogicalLine = m_TopScreenLogicalLine;
 		int CurVisualLine = m_TopScreenVisualLine;
 
+		// Calculate line number width if needed
+		int LineNumWidth = CalculateLineNumberWidth();
+		int LineNumX1 = X1 + LineNumWidth;
+
+		// Calculate line number for first visible line
+		int CurrentLineNum = 1;
+		for (Edit *CountPtr = TopList; CountPtr && CountPtr != m_TopScreenLogicalLine; CountPtr = CountPtr->m_next) {
+			CurrentLineNum++;
+		}
+
 		for (int Y = Y1; Y <= Y2; Y++)
 		{
 			if (!CurLogicalLine)
 			{
+				// Clear the entire line including line number area when there's no content
 				SetScreen(X1, Y, XX2, Y, L' ', FarColorToReal(COL_EDITORTEXT));
 				continue;
+			}
+
+			// Display line number if enabled
+			if (EdOpt.ShowLineNumbers && CurVisualLine == 0) {
+				wchar_t LineNumStr[16];
+				swprintf(LineNumStr, ARRAYSIZE(LineNumStr), L"%*d ", LineNumWidth - 1, CurrentLineNum);
+				Text(X1, Y, FarColorToReal(COL_EDITORLINENUMBER), LineNumStr);
+			} else if (EdOpt.ShowLineNumbers) {
+				// Fill line number area with spaces for wrapped lines
+				for (int i = 0; i < LineNumWidth; i++) {
+					Text(X1 + i, Y, FarColorToReal(COL_EDITORLINENUMBER), L" ");
+				}
 			}
 
 			int VisualLineStart, VisualLineEnd;
@@ -499,7 +569,7 @@ void Editor::ShowEditor(int CurLineOnly)
 			ShowString.SetBinaryString(CurLogicalLine->GetStringAddr() + VisualLineStart, VisualLineEnd - VisualLineStart);
 			ShowString.SetCurPos(0);
 
-			ShowString.SetPosition(X1, Y, XX2, Y);
+			ShowString.SetPosition(EdOpt.ShowLineNumbers ? LineNumX1 : X1, Y, XX2, Y);
 
 			ShowString.SetObjectColor(CurLogicalLine->Color, CurLogicalLine->SelColor, CurLogicalLine->ColorUnChanged);
 			ShowString.SetLeftPos(0);
@@ -585,8 +655,8 @@ void Editor::ShowEditor(int CurLineOnly)
 					if ((current_ci.StartPos <= 0 && current_ci.EndPos >= CurLogicalLine->GetLength() - 1)
 						|| (current_ci.StartPos == -1 && current_ci.EndPos == -1) )
 					{
-						// Apply background coloring directly to the screen buffer.
-						SetScreen(X1, Y, XX2, Y, L' ', current_ci.Color);
+						// Apply background coloring directly to the screen buffer, but preserve line number area
+						SetScreen(EdOpt.ShowLineNumbers ? LineNumX1 : X1, Y, XX2, Y, L' ', current_ci.Color);
 						background_filled = true;
 						break;
 					}
@@ -598,9 +668,23 @@ void Editor::ShowEditor(int CurLineOnly)
 			// We use a large relative index hint to force Edit::ApplyColor to fill up to XX2.
 			const int FULL_LINE_END_POS_HINT = 10000;
 
+			// Calculate line number offset for coordinate conversion
+			int LineNumOffset = CalculateLineNumberWidth();
+
 			for (size_t i = 0; CurLogicalLine->GetColor(&ci, i); ++i)
 			{
-				if ((ci.StartPos == -1 && ci.EndPos == -1) || (ci.StartPos < VisualLineEnd && ci.EndPos >= VisualLineStart))
+				// Convert stored coordinates back to logical string positions for processing
+				// Colors are stored with line number offset added (see ECTL_ADDCOLOR),
+				// so we need to subtract it to get original logical positions
+				int LogicalStartPos = ci.StartPos;
+				int LogicalEndPos = ci.EndPos;
+
+				if (ci.StartPos != -1 && ci.EndPos != -1) {
+					LogicalStartPos = ci.StartPos - X1 - LineNumOffset;
+					LogicalEndPos = ci.EndPos - X1 - LineNumOffset;
+				}
+
+				if ((ci.StartPos == -1 && ci.EndPos == -1) || (LogicalStartPos < VisualLineEnd && LogicalEndPos >= VisualLineStart))
 				{
 					ColorItem new_ci = ci;
 
@@ -609,24 +693,69 @@ void Editor::ShowEditor(int CurLineOnly)
 					if (ci.StartPos != -1 || ci.EndPos != -1) // Standard color item
 					{
 						// Heuristic: if the color covers the entire content of the visible portion, assume it's a background fill.
-						if (ci.StartPos <= VisualLineStart && ci.EndPos >= VisualLineEnd - 1)
+						if (LogicalStartPos <= VisualLineStart && LogicalEndPos >= VisualLineEnd - 1)
 						{
 							is_full_visual_line_coverage = true;
 						}
 
-						new_ci.StartPos -= VisualLineStart;
-						new_ci.EndPos -= VisualLineStart;
+						// Clip logical positions to current visual line and convert to coordinate system
+						// expected by Edit::ApplyColor
+						int ClippedLogicalStart = LogicalStartPos;
+						int ClippedLogicalEnd = LogicalEndPos;
 
-						if (new_ci.StartPos < 0) new_ci.StartPos = 0;
+						// Clip to current visual line boundaries in logical coordinates
+						if (ClippedLogicalStart < VisualLineStart) ClippedLogicalStart = VisualLineStart;
+						if (ClippedLogicalEnd >= VisualLineEnd) ClippedLogicalEnd = VisualLineEnd - 1;
 
-						if (is_full_visual_line_coverage)
-						{
-							// Force EndPos large to cause DrawColor/ApplyColor to fill to the screen edge (via its internal clamping to X2).
-							new_ci.EndPos = FULL_LINE_END_POS_HINT;
+						if (EdOpt.ShowLineNumbers) {
+							// With line numbers: Edit::ApplyColor expects ShowString-relative positions + offset
+							// 1. Convert to ShowString-relative (0-based within visual line content)
+							// 2. Add line number offset so Edit::ApplyColor positions correctly on screen
+							int ShowStringRelStart = ClippedLogicalStart - VisualLineStart;
+							int ShowStringRelEnd = ClippedLogicalEnd - VisualLineStart;
+							new_ci.StartPos = ShowStringRelStart + X1 + LineNumOffset;
+							new_ci.EndPos = ShowStringRelEnd + X1 + LineNumOffset;
+						} else {
+							// Without line numbers: Edit::ApplyColor expects ShowString-relative positions
+							new_ci.StartPos = ClippedLogicalStart - VisualLineStart;
+							new_ci.EndPos = ClippedLogicalEnd - VisualLineStart;
 						}
-						else if (new_ci.EndPos >= (VisualLineEnd - VisualLineStart))
-						{
-							new_ci.EndPos = (VisualLineEnd - VisualLineStart) - 1;
+
+						// Apply boundary adjustments
+						if (EdOpt.ShowLineNumbers) {
+							// With line numbers: coordinates are ShowString-relative + offset
+							// Apply same boundary logic as without line numbers, but account for offset
+							int ShowStringRelStart = new_ci.StartPos - X1 - LineNumOffset;
+							int ShowStringRelEnd = new_ci.EndPos - X1 - LineNumOffset;
+
+							if (ShowStringRelStart < 0) {
+								ShowStringRelStart = 0;
+								new_ci.StartPos = ShowStringRelStart + X1 + LineNumOffset;
+							}
+
+							if (is_full_visual_line_coverage)
+							{
+								// Force EndPos large to cause DrawColor/ApplyColor to fill to the screen edge
+								new_ci.EndPos = FULL_LINE_END_POS_HINT;
+							}
+							else if (ShowStringRelEnd >= (VisualLineEnd - VisualLineStart))
+							{
+								ShowStringRelEnd = (VisualLineEnd - VisualLineStart) - 1;
+								new_ci.EndPos = ShowStringRelEnd + X1 + LineNumOffset;
+							}
+						} else {
+							// Without line numbers: ShowString-relative coordinates
+							if (new_ci.StartPos < 0) new_ci.StartPos = 0;
+
+							if (is_full_visual_line_coverage)
+							{
+								// Force EndPos large to cause DrawColor/ApplyColor to fill to the screen edge
+								new_ci.EndPos = FULL_LINE_END_POS_HINT;
+							}
+							else if (new_ci.EndPos >= (VisualLineEnd - VisualLineStart))
+							{
+								new_ci.EndPos = (VisualLineEnd - VisualLineStart) - 1;
+							}
 						}
 					}
 					else // Special case for {-1, -1} background element
@@ -676,8 +805,9 @@ void Editor::ShowEditor(int CurLineOnly)
 					CurLogicalLine->GetRealSelection(RealSelStart, RealSelEnd);
 					if (RealSelStart == 0 && RealSelEnd == -1)
 					{
-						// Draw a single selected space directly to the screen buffer
-						SetScreen(X1, Y, X1, Y, L' ', FarColorToReal(COL_EDITORSELECTEDTEXT));
+						// Draw a single selected space directly to the screen buffer (after line numbers)
+						int SelX = EdOpt.ShowLineNumbers ? LineNumX1 : X1;
+						SetScreen(SelX, Y, SelX, Y, L' ', FarColorToReal(COL_EDITORSELECTEDTEXT));
 					}
 				}
 
@@ -692,7 +822,7 @@ void Editor::ShowEditor(int CurLineOnly)
 						::SetCursorType(1, Opt.CursorSize[0] ? Opt.CursorSize[0] : 10);
 					}
 					// For an empty line, cursor is always at the beginning.
-					MoveCursor(X1, Y);
+					MoveCursor(EdOpt.ShowLineNumbers ? LineNumX1 : X1, Y);
 				}
 			}
 			if (CurVisualLine < CurLogicalLine->GetVisualLineCount() - 1)
@@ -706,6 +836,7 @@ void Editor::ShowEditor(int CurLineOnly)
 			{
 				CurVisualLine = 0;
 				CurLogicalLine = CurLogicalLine->m_next;
+				CurrentLineNum++;
 			}
 		}
 
@@ -808,6 +939,16 @@ void Editor::ShowEditor(int CurLineOnly)
 
 	DrawScrollbar();
 
+	// Calculate line number width if needed (non-word-wrap mode)
+	int LineNumWidth = CalculateLineNumberWidth();
+	int LineNumX1 = X1 + LineNumWidth;
+
+	// Calculate line number for first visible line (non-word-wrap mode)
+	int CurrentLineNum = 1;
+	for (Edit *CountPtr = TopList; CountPtr && CountPtr != TopScreen; CountPtr = CountPtr->m_next) {
+		CurrentLineNum++;
+	}
+
 	if (!CurLineOnly) {
 		LeftPos = CurLine->GetLeftPos();
 #if 0
@@ -825,8 +966,15 @@ void Editor::ShowEditor(int CurLineOnly)
 
 		for (CurPtr = TopScreen, Y = Y1; Y <= Y2; Y++)
 			if (CurPtr) {
+				// Display line number if enabled
+				if (EdOpt.ShowLineNumbers) {
+					wchar_t LineNumStr[16];
+					swprintf(LineNumStr, ARRAYSIZE(LineNumStr), L"%*d ", LineNumWidth - 1, CurrentLineNum);
+					Text(X1, Y, FarColorToReal(COL_EDITORLINENUMBER), LineNumStr);
+				}
+
 				CurPtr->SetEditBeyondEnd(TRUE);
-				CurPtr->SetPosition(X1, Y, XX2, Y);
+				CurPtr->SetPosition(EdOpt.ShowLineNumbers ? LineNumX1 : X1, Y, XX2, Y);
 				// CurPtr->SetTables(UseDecodeTable ? &TableSet:nullptr);
 				//_D(SysLog(L"Setleftpos 3 to %i",LeftPos));
 				CurPtr->SetLeftPos(LeftPos);
@@ -836,7 +984,9 @@ void Editor::ShowEditor(int CurLineOnly)
 				}
 				CurPtr->SetEditBeyondEnd(EdOpt.CursorBeyondEOL);
 				CurPtr = CurPtr->m_next;
+				CurrentLineNum++;
 			} else {
+				// Clear the entire line including line number area when there's no content
 				SetScreen(X1, Y, XX2, Y, L' ', FarColorToReal(COL_EDITORTEXT));		// Пустые строки после конца текста
 			}
 	}
@@ -848,19 +998,22 @@ void Editor::ShowEditor(int CurLineOnly)
 		int CurScreenLine = NumLine - CalcDistance(TopScreen, CurLine, -1);
 		LeftPos = CurLine->GetLeftPos();
 
+		// Account for line numbers when calculating VBlock positions
+		int VBlockBaseX = EdOpt.ShowLineNumbers ? LineNumX1 : X1;
+
 		for (CurPtr = TopScreen, Y = Y1; Y <= Y2; Y++) {
 			if (CurPtr) {
 				if (CurScreenLine >= VBlockY && CurScreenLine < VBlockY + VBlockSizeY) {
-					int BlockX1 = VBlockX - LeftPos + X1;
-					int BlockX2 = VBlockX + VBlockSizeX - 1 - LeftPos + X1;
+					int BlockX1 = VBlockX - LeftPos + VBlockBaseX;
+					int BlockX2 = VBlockX + VBlockSizeX - 1 - LeftPos + VBlockBaseX;
 
-					if (BlockX1 < X1)
-						BlockX1 = X1;
+					if (BlockX1 < VBlockBaseX)
+						BlockX1 = VBlockBaseX;
 
 					if (BlockX2 > XX2)
 						BlockX2 = XX2;
 
-					if (BlockX1 <= XX2 && BlockX2 >= X1)
+					if (BlockX1 <= XX2 && BlockX2 >= VBlockBaseX)
 						ChangeBlockColor(BlockX1, Y, BlockX2, Y, FarColorToReal(COL_EDITORSELECTEDTEXT));
 				}
 
@@ -3637,6 +3790,9 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		// Перемещение курсора в точку клика/движения
 		if((MouseEvent->dwButtonState & 3))
 		{
+			// Calculate line number width if needed
+			int LineNumWidth = CalculateLineNumberWidth();
+
 			Edit* TargetLine = nullptr;
 			int TargetPos = -1;
 
@@ -3660,7 +3816,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 					m_CurVisualLineInLogicalLine = scanVisual;
 					int visualLineStart, visualLineEnd;
 					TargetLine->GetVisualLine(m_CurVisualLineInLogicalLine, visualLineStart, visualLineEnd);
-					int mouseCellPos = MouseEvent->dwMousePosition.X - X1;
+					int mouseCellPos = MouseEvent->dwMousePosition.X - X1 - LineNumWidth;
 					int visualLineStartCell = TargetLine->RealPosToCell(visualLineStart);
 					TargetPos = TargetLine->CellPosToReal(visualLineStartCell + mouseCellPos);
 					if (TargetPos > visualLineEnd && visualLineEnd < TargetLine->GetLength()) TargetPos = visualLineEnd;
@@ -3676,7 +3832,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				}
 
 				if (TargetLine) {
-					int mouseCellPos = MouseEvent->dwMousePosition.X - X1 + TargetLine->GetLeftPos();
+					int mouseCellPos = MouseEvent->dwMousePosition.X - X1 - LineNumWidth + TargetLine->GetLeftPos();
 					TargetPos = TargetLine->CellPosToReal(mouseCellPos);
 				}
 			}
@@ -3911,8 +4067,10 @@ void Editor::HighlightAsWrapped(int Y, Edit &ShowString)
 	int startCell = ShowString.RealPosToCell(lastCharPos);
 	int endCell = ShowString.RealPosToCell(lastCharPos + 1);
 
-	int startX = X1 + startCell;
-	int endX = X1 + endCell - 1;
+	// Use ShowString's X1 position (which accounts for line numbers) instead of Editor's X1
+	int ShowStringX1 = ShowString.X1;
+	int startX = ShowStringX1 + startCell;
+	int endX = ShowStringX1 + endCell - 1;
 
 	if (startX > XX2) return;
 	if (endX > XX2) endX = XX2;
@@ -4046,6 +4204,7 @@ void Editor::DeleteString(Edit *DelPtr, int LineNumber, int DeleteLast, int Undo
 	}
 
 	NumLastLine--;
+	m_LineCountDirty = true;  // Invalidate line number cache
 
 	if (LastGetLine) {
 		if (LineNumber <= LastGetLineNumber) {
@@ -6740,8 +6899,12 @@ int Editor::EditorControl(int Command, void *Param)
 				_ECTLLOG(SysLog(L"  Color       =%d (0x%08X)", col->Color, col->Color));
 				_ECTLLOG(SysLog(L"}"));
 				ColorItem newcol{0};
-				newcol.StartPos = col->StartPos + (col->StartPos != -1 ? X1 : 0);
-				newcol.EndPos = col->EndPos + X1;
+
+				// Calculate line number offset if needed
+				int LineNumOffset = CalculateLineNumberWidth();
+
+				newcol.StartPos = col->StartPos + (col->StartPos != -1 ? (X1 + LineNumOffset) : 0);
+				newcol.EndPos = col->EndPos + X1 + LineNumOffset;
 				newcol.Color = col->Color;
 				Edit *CurPtr = GetStringByNumber(col->StringNumber);
 
@@ -6782,8 +6945,11 @@ int Editor::EditorControl(int Command, void *Param)
 					return FALSE;
 				}
 
-				col->StartPos = curcol.StartPos - X1;
-				col->EndPos = curcol.EndPos - X1;
+				// Calculate line number offset if needed
+				int LineNumOffset = CalculateLineNumberWidth();
+
+				col->StartPos = curcol.StartPos - X1 - LineNumOffset;
+				col->EndPos = curcol.EndPos - X1 - LineNumOffset;
 				col->Color = curcol.Color & 0xffff;
 				if (Command == ECTL_GETTRUECOLOR) {
 					EditorTrueColor *tcol = (EditorTrueColor *)Param;
@@ -7517,6 +7683,14 @@ void Editor::SetWordWrap(int NewMode)
 			Flags.Clear(FEDITOR_MARKINGVBLOCK);
 		}
 
+		// Clear vertical block selection when switching wrap modes
+		// Vertical blocks don't make sense in wrap mode and can cause issues
+		if (VBlockStart)
+		{
+			VBlockStart = nullptr;
+			Flags.Clear(FEDITOR_MARKINGVBLOCK);
+		}
+
 		if (m_bWordWrap) // Turning ON
 		{
 			m_TopScreenLogicalLine = TopScreen;
@@ -7530,6 +7704,23 @@ void Editor::SetWordWrap(int NewMode)
 		int Width = ObjWidth;
 		if (EdOpt.ShowScrollBar)
 			Width--;
+
+		// Account for line numbers if enabled
+		if (EdOpt.ShowLineNumbers) {
+			int TotalLines = 0;
+			for (Edit *CountPtr = TopList; CountPtr; CountPtr = CountPtr->m_next) {
+				TotalLines++;
+			}
+			int LineNumWidth = 1;
+			int temp = TotalLines;
+			while (temp >= 10) {
+				LineNumWidth++;
+				temp /= 10;
+			}
+			if (LineNumWidth < 4) LineNumWidth = 4;
+			LineNumWidth += 1;
+			Width -= LineNumWidth;
+		}
 
 		Edit *CurPtr = TopList;
 		int line_idx = 0;
@@ -7585,6 +7776,44 @@ void Editor::SetShowWhiteSpace(int NewMode)
 
 		for (Edit *CurPtr = TopList; CurPtr; CurPtr = CurPtr->m_next) {
 			CurPtr->SetShowWhiteSpace(NewMode);
+		}
+	}
+}
+
+void Editor::SetShowLineNumbers(int NewMode)
+{
+	if (NewMode != EdOpt.ShowLineNumbers) {
+		EdOpt.ShowLineNumbers = NewMode;
+
+		// Clear all syntax highlighting colors since they need to be reapplied
+		// This is necessary because the coordinate system changes with line numbers
+		Edit *CurPtr = TopList;
+		while (CurPtr) {
+			CurPtr->DeleteColor(-1);  // Delete all colors
+			CurPtr = CurPtr->m_next;
+		}
+
+		// If word wrap is enabled, recalculate wrap positions for all lines
+		if (m_bWordWrap) {
+			// Calculate line number width
+			int LineNumWidth = CalculateLineNumberWidth();
+
+			// Recalculate word wrap with adjusted width
+			int Width = X2 - X1 + 1;
+			if (EdOpt.ShowScrollBar)
+				Width--;
+			Width -= LineNumWidth;
+
+			CurPtr = TopList;
+			while (CurPtr) {
+				CurPtr->RecalculateWordWrap(Width, EdOpt.TabSize);
+				CurPtr = CurPtr->m_next;
+			}
+		}
+
+		// Trigger plugin event to reapply syntax highlighting
+		if (!Flags.Check(FEDITOR_DIALOGMEMOEDIT)) {
+			CtrlObject->Plugins.ProcessEditorEvent(EE_REDRAW, EEREDRAW_ALL);
 		}
 	}
 }
@@ -7762,6 +7991,7 @@ Edit *Editor::InsertString(const wchar_t *lpwszStr, int nLength, Edit *pAfter, i
 		}
 
 		NumLastLine++;
+		m_LineCountDirty = true;  // Invalidate line number cache
 
 		if (AfterLineNumber < LastGetLineNumber) {
 			LastGetLineNumber++;
@@ -7949,6 +8179,9 @@ void Editor::SetPosition(int X1, int Y1, int X2, int Y2)
 		int RecalcWidth = X2 - X1 + 1;
 		if (EdOpt.ShowScrollBar) // Consistent with ShowEditor logic
 			RecalcWidth--;
+
+		// Account for line numbers if enabled
+		RecalcWidth -= CalculateLineNumberWidth();
 
 		for(Edit *CurPtr=TopList; CurPtr; CurPtr=CurPtr->m_next)
 		{

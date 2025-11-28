@@ -1,8 +1,7 @@
 #include "Common.h"
 #include "ImageView.h"
 #include "ExecAsync.h"
-
-#define HINT_STRING L"[Navigate: PGUP PGDN HOME | Pan: TAB CURSORS NUMPAD DEL + - * / = | Selection: SPACE BS INS | ENTER | ESC]"
+#include "Settings.h"
 
 // how long msec wait before showing progress message window
 #define COMMAND_TIMEOUT_BEFORE_MESSAGE 300
@@ -46,7 +45,7 @@ public:
 		}
 		if (s_warned_tools.insert(ws_tool).second) {
 			const auto &ws_pkg = MB2Wide(pkg);
-			const wchar_t *MsgItems[] = { PLUGIN_TITLE,
+			const wchar_t *MsgItems[] = { g_settings.Msg(M_TITLE),
 				L"Failed to run tool:", ws_tool.c_str(),
 				L"Please install package:", ws_pkg.c_str(),
 				L"Ok"
@@ -58,8 +57,8 @@ public:
 
 	void InfoDialog(const char *pkg)
 	{
-		std::wstring tmp;
-		tmp = PLUGIN_TITLE L" - operation details\n";
+		std::wstring tmp = g_settings.Msg(M_TITLE);
+		tmp+= L" - operation details\n";
 		tmp+= L"Package: ";
 		tmp+= MB2Wide(pkg);
 		tmp+= L'\n';
@@ -76,9 +75,10 @@ public:
 	{
 		WINPORT(DeleteConsoleImage)(NULL, WINPORT_IMAGE_ID);
 
-		wchar_t buf[0x100]{};
-		swprintf(buf, ARRAYSIZE(buf) - 1, PLUGIN_TITLE L"\nFile of %s:\n", size_str.c_str());
-		std::wstring tmp = buf;
+		std::wstring tmp = g_settings.Msg(M_TITLE);
+		tmp+= L'\n';
+		wchar_t buf[0x100]{}; swprintf(buf, ARRAYSIZE(buf) - 1, L"File of %s:", size_str.c_str());
+		tmp+= buf;
 		StrMB2Wide(file, tmp, true);
 		tmp+= L'\n';
 		StrMB2Wide(info, tmp, true);
@@ -195,19 +195,6 @@ unsigned int ImageView::EnsureRotated()
 	return rotated_angle;
 }
 
-void ImageView::ErrorMessage()
-{
-	std::wstring ws_cur_file = L"\"" + StrMB2Wide(CurFile()) + L"\"";
-	std::wstring werr_str = StrMB2Wide(_err_str);
-	const wchar_t *MsgItems[] = { PLUGIN_TITLE,
-		L"Failed to load image file:",
-		ws_cur_file.c_str(),
-		werr_str.c_str(),
-		L"Ok"
-	};
-	g_far.Message(g_far.ModuleNumber, FMSG_WARNING, nullptr, MsgItems, ARRAYSIZE(MsgItems), 1);
-}
-
 bool ImageView::IterateFile(bool forward)
 {
 	if (forward) {
@@ -225,19 +212,7 @@ bool ImageView::IterateFile(bool forward)
 
 bool ImageView::IsVideoFile() const
 {
-	const char *video_extensions[] = {
-				".3g2",  ".3gp",  ".asf",  ".avchd", ".avi",
-				".divx", ".enc",  ".flv",  ".ifo",   ".m1v",  ".m2ts",
-				".m2v",  ".m4p",  ".m4v",  ".mkv",   ".mov",  ".mp2",
-				".mp4",  ".mpe",  ".mpeg", ".mpg",   ".mpv",  ".mts",
-				".ogm",  ".qt",   ".ra",   ".ram",   ".rmvb", ".swf",
-				".ts",   ".vob",  ".vob",  ".webm",  ".wm",   ".wmv" };
-	for (const auto &video_ext : video_extensions) {
-		if (StrEndsBy(CurFile(), video_ext)) {
-			return true;
-		}
-	}
-	return false;
+	return g_settings.MatchVideoFile(CurFile().c_str());
 }
 
 bool ImageView::IdentifyImage()
@@ -613,51 +588,13 @@ void ImageView::DenoteState(const char *stage)
 		pan.insert(0, 1, ' ');
 	}
 
-	SetInfoAndPan(info, pan);
+	DenoteInfoAndPan(info, pan);
 }
 
-void ImageView::SetInfoAndPan(const std::string &info, const std::string &pan)
+void ImageView::DenoteInfoAndPan(const std::string &info, const std::string &pan)
 {
-	if (_dlg != INVALID_HANDLE_VALUE) {
-		ConsoleRepaintsDeferScope crds(NULL);
-		std::wstring ws_title = _all_files[_cur_file].second ? L"* " : L"  ";
-		StrMB2Wide(CurFile(), ws_title, true);
-		FarDialogItemData dd_title = { ws_title.size(), (wchar_t*)ws_title.c_str() };
-
-		// update pan and info lengthes before title, so title will paint over previous one
-		// but texts  - after title, so text it will get drawn after title, and due to that - will remain visible
-		std::wstring ws_pan = StrMB2Wide(pan);
-		FarDialogItem di{};
-		if (g_far.SendDlgMessage(_dlg, DM_GETDLGITEMSHORT, 4, (LONG_PTR)&di)) {
-			di.X2 = di.X1 + (ws_pan.empty() ? 0 : ws_pan.size() - 1);
-			g_far.SendDlgMessage(_dlg, DM_SETDLGITEMSHORT, 4, (LONG_PTR)&di);
-		}
-		std::wstring ws_info = StrMB2Wide(info);
-		if (g_far.SendDlgMessage(_dlg, DM_GETDLGITEMSHORT, 5, (LONG_PTR)&di)) {
-			di.X1 = di.X2 - (ws_info.empty() ? 0 : ws_info.size() - 1);
-			g_far.SendDlgMessage(_dlg, DM_SETDLGITEMSHORT, 5, (LONG_PTR)&di);
-		}
-
-		if (_all_files[_cur_file].second) {
-			g_far.SendDlgMessage(_dlg, DM_SHOWITEM, 0, 0);
-			g_far.SendDlgMessage(_dlg, DM_SHOWITEM, 1, 1);
-		} else {
-			g_far.SendDlgMessage(_dlg, DM_SHOWITEM, 0, 1);
-			g_far.SendDlgMessage(_dlg, DM_SHOWITEM, 1, 0);
-		}
-
-		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 0, (LONG_PTR)&dd_title);
-		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 1, (LONG_PTR)&dd_title);
-
-		FarDialogItemData dd_status = { wcslen(HINT_STRING), (wchar_t*)HINT_STRING };
-		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 3, (LONG_PTR)&dd_status);
-
-		FarDialogItemData dd_pan = { ws_pan.size(), (wchar_t*)ws_pan.c_str() };
-		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 4, (LONG_PTR)&dd_pan);
-
-		FarDialogItemData dd_info = { ws_info.size(), (wchar_t*)ws_info.c_str() };
-		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 5, (LONG_PTR)&dd_info);
-	}
+	fprintf(stderr, "DenoteInfoAndPan: %s'%s' '%s' '%s'\n",
+		CurFileSelected() ? "*" : "", CurFile().c_str(), info.c_str(), pan.c_str());
 }
 
 
@@ -698,8 +635,9 @@ std::unordered_set<std::string> ImageView::GetSelection() const
 	return out;
 }
 
-bool ImageView::SetupCommon(SMALL_RECT &rc)
+bool ImageView::Setup(SMALL_RECT &rc, volatile bool *cancel)
 {
+	_cancel = cancel;
 	_pos.X = rc.Left;
 	_pos.Y = rc.Top;
 	_size.X = rc.Right > rc.Left ? rc.Right - rc.Left + 1 : 1;
@@ -710,28 +648,11 @@ bool ImageView::SetupCommon(SMALL_RECT &rc)
 
 	_err_str.clear();
 	if (!PrepareImage() || !RenderImage()) {
-		if (_dlg != INVALID_HANDLE_VALUE) { // show error dialog only if not quick-view mode
-			ErrorMessage();
-		}
 		return false;
 	}
 	DenoteState();
 
 	return true;
-}
-
-bool ImageView::SetupQV(SMALL_RECT &rc, volatile bool *cancel)
-{
-	_dlg = INVALID_HANDLE_VALUE;
-	_cancel = cancel;
-	return SetupCommon(rc);
-}
-
-bool ImageView::SetupFull(SMALL_RECT &rc, HANDLE dlg)
-{
-	_dlg = dlg;
-	_cancel = nullptr;
-	return SetupCommon(rc);
 }
 
 void ImageView::Home()

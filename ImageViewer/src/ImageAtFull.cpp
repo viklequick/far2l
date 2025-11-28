@@ -1,16 +1,80 @@
 #include "Common.h"
 #include "ImageView.h"
+#include "Settings.h"
 
 class ImageViewAtFull : public ImageView
 {
 	WinportGraphicsInfo _drag_wgi{};
 	COORD _drag_prev_pos{}, _drag_pending{};
 	bool _dragging{false};
+	HANDLE _dlg{NULL};
+
+protected:
+	virtual void DenoteInfoAndPan(const std::string &info, const std::string &pan)
+	{
+		const int visible_box_dlgid = CurFileSelected() ? 1 : 0;
+		const int invisible_box_dlgid = CurFileSelected() ? 0 : 1;
+		const int hint_text_dlgid = 3;
+		const int pan_text_dlgid = 4;
+		const int info_text_dlgid = 5;
+
+		ConsoleRepaintsDeferScope crds(NULL);
+		std::wstring ws_title = CurFileSelected() ? L"* " : L"  ";
+		StrMB2Wide(CurFile(), ws_title, true);
+		FarDialogItemData dd_title = { ws_title.size(), (wchar_t*)ws_title.c_str() };
+
+		// update pan and info lengthes before title, so title will paint over previous one
+		// but texts  - after title, so text it will get drawn after title, and due to that - will remain visible
+		const auto &ws_pan = StrMB2Wide(pan);
+		FarDialogItem di{};
+		if (g_far.SendDlgMessage(_dlg, DM_GETDLGITEMSHORT, pan_text_dlgid, (LONG_PTR)&di)) {
+			di.X2 = di.X1 + (ws_pan.empty() ? 0 : ws_pan.size() - 1);
+			g_far.SendDlgMessage(_dlg, DM_SETDLGITEMSHORT, pan_text_dlgid, (LONG_PTR)&di);
+		}
+		const auto &ws_info = StrMB2Wide(info);
+		if (g_far.SendDlgMessage(_dlg, DM_GETDLGITEMSHORT, info_text_dlgid, (LONG_PTR)&di)) {
+			di.X1 = di.X2 - (ws_info.empty() ? 0 : ws_info.size() - 1);
+			g_far.SendDlgMessage(_dlg, DM_SETDLGITEMSHORT, info_text_dlgid, (LONG_PTR)&di);
+		}
+
+		g_far.SendDlgMessage(_dlg, DM_SHOWITEM, invisible_box_dlgid, 0);
+		g_far.SendDlgMessage(_dlg, DM_SHOWITEM, visible_box_dlgid, 1);
+
+		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 0, (LONG_PTR)&dd_title);
+		g_far.SendDlgMessage(_dlg, DM_SETTEXT, 1, (LONG_PTR)&dd_title);
+
+		if (g_far.SendDlgMessage(_dlg, DM_GETDLGITEMSHORT, visible_box_dlgid, (LONG_PTR)&di)) {
+			int X1 = di.X1, X2 = di.X2;
+			const int hint_length = g_far.SendDlgMessage(_dlg, DM_GETTEXTPTR, hint_text_dlgid, 0);
+			if (g_far.SendDlgMessage(_dlg, DM_GETDLGITEMSHORT, hint_text_dlgid, (LONG_PTR)&di)) {
+				di.X1 = std::max(X1, int(X1 + X2 + 1 - hint_length) / 2);
+				di.X2 = std::min(X2, int(di.X1 + hint_length - 1));
+				g_far.SendDlgMessage(_dlg, DM_SETDLGITEMSHORT, hint_text_dlgid, (LONG_PTR)&di);
+			}
+		}
+
+		FarDialogItemData dd_pan = { ws_pan.size(), (wchar_t*)ws_pan.c_str() };
+		g_far.SendDlgMessage(_dlg, DM_SETTEXT, pan_text_dlgid, (LONG_PTR)&dd_pan);
+
+		FarDialogItemData dd_info = { ws_info.size(), (wchar_t*)ws_info.c_str() };
+		g_far.SendDlgMessage(_dlg, DM_SETTEXT, info_text_dlgid, (LONG_PTR)&dd_info);
+
+		ImageView::DenoteInfoAndPan(info, pan);
+	}
 
 public:
+	bool may_select{false};
+	bool full_size{false};
+
 	ImageViewAtFull(size_t initial_file, const std::vector<std::pair<std::string, bool> > &all_files)
 		: ImageView(initial_file, all_files)
 	{
+	}
+
+	bool Setup(SMALL_RECT &rc, HANDLE dlg)
+	{
+		_dlg = dlg;
+		return ImageView::Setup(rc);
 	}
 
 	void DraggingMove(COORD pos)
@@ -82,10 +146,13 @@ static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 
 			SMALL_RECT rc;
 			g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &rc, 0);
-			RectReduce(rc);
 
 			ImageViewAtFull *iv = (ImageViewAtFull *)Param2;
-			if (iv->SetupFull(rc, hDlg)) {
+			if (!iv->full_size) {
+				RectReduce(rc);
+			}
+
+			if (iv->Setup(rc, hDlg)) {
 				g_far.SendDlgMessage(hDlg, DM_SETMOUSEEVENTNOTIFY, 1, 0);
 			} else {
 				g_far.SendDlgMessage(hDlg, DM_CLOSE, EXITED_DUE_ERROR, 0);
@@ -125,9 +192,18 @@ static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 				case KEY_NUMPAD3: iv->Shift(delta, delta); break;
 				case KEY_NUMPAD7: iv->Shift(-delta, -delta); break;
 				case KEY_TAB: iv->Rotate( (delta == 1) ? -90 : 90); break;
-				case KEY_INS: case KEY_NUMPAD0: iv->ToggleSelection(); break;
-				case KEY_SPACE: iv->Select(); break;
-				case KEY_BS: iv->Deselect(); break;
+				case KEY_INS: case KEY_NUMPAD0:
+					if (iv->may_select)
+						iv->ToggleSelection();
+					break;
+				case KEY_SPACE:
+					if (iv->may_select)
+						iv->Select();
+					break;
+				case KEY_BS:
+					if (iv->may_select)
+						iv->Deselect();
+					break;
 				case KEY_HOME: iv->Home(); break;
 				case KEY_PGDN: iv->Iterate(true); break;
 				case KEY_PGUP: iv->Iterate(false); break;
@@ -136,6 +212,10 @@ static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 					break;
 				case KEY_ESC: case KEY_F10:
 					g_far.SendDlgMessage(hDlg, DM_CLOSE, EXITED_DUE_ESCAPE, 0);
+					break;
+				case KEY_F9:
+					iv->full_size = !iv->full_size;
+					g_far.SendDlgMessage(hDlg, DM_CLOSE, EXITED_DUE_RESIZE, 0);
 					break;
 			}
 			return TRUE;
@@ -156,19 +236,37 @@ static LONG_PTR WINAPI DlgProcAtMax(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 	return g_far.DefDlgProc(hDlg, Msg, Param1, Param2);
 }
 
-bool ShowImageAtFull(size_t initial_file, std::vector<std::pair<std::string, bool> > &all_files, std::unordered_set<std::string> &selection)
+static EXITED_DUE ShowImageAtFullInternal(size_t initial_file, std::vector<std::pair<std::string, bool> > &all_files, std::unordered_set<std::string> *selection, bool silent_exit_on_error)
 {
 	ImageViewAtFull iv(initial_file, all_files);
+	if (selection) {
+		iv.may_select = true;
+	}
 
 	for (;;) {
 		SMALL_RECT Rect;
 		g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &Rect, 0);
 
+		std::wstring hint;
+		hint+= L' ';
+		if (all_files.size() > 1) {
+			hint+= g_settings.Msg(M_HINT_NAVIGATE);
+			hint+= L" | ";
+		}
+		hint+= g_settings.Msg(M_HINT_PAN);
+		hint+= L" | ";
+		if (selection) {
+			hint+= g_settings.Msg(M_HINT_SELECTION);
+			hint+= L" | ";
+		}
+		hint+= g_settings.Msg(M_HINT_OTHER);
+		hint+= L' ';
+
 		FarDialogItem DlgItems[] = {
 			{ DI_SINGLEBOX, 0, 0, Rect.Right, Rect.Bottom, FALSE, {}, DIF_SHOWAMPERSAND, 0, L"???", 0 },
 			{ DI_DOUBLEBOX, 0, 0, Rect.Right, Rect.Bottom, FALSE, {}, DIF_HIDDEN | DIF_SHOWAMPERSAND, 0, L"???", 0 },
 			{ DI_USERCONTROL, 1, 1, Rect.Right - 1, Rect.Bottom - 1, 0, {COL_DIALOGBOX}, 0, 0, L"", 0},
-			{ DI_TEXT, 0, Rect.Bottom, Rect.Right, Rect.Bottom, 0, {}, DIF_CENTERTEXT | DIF_SHOWAMPERSAND, 0, L"", 0},
+			{ DI_TEXT, 0, Rect.Bottom, Rect.Right, Rect.Bottom, 0, {}, DIF_CENTERTEXT | DIF_SHOWAMPERSAND, 0, hint.c_str(), 0},
 			{ DI_TEXT, Rect.Left + 1, Rect.Top, Rect.Left + 1, Rect.Top, 0, {}, DIF_SHOWAMPERSAND, 0, L"", 0},
 			{ DI_TEXT, Rect.Right - 1, Rect.Top, Rect.Right - 1, Rect.Top, 0, {}, DIF_SHOWAMPERSAND, 0, L"", 0},
 		};
@@ -178,18 +276,40 @@ bool ShowImageAtFull(size_t initial_file, std::vector<std::pair<std::string, boo
 							 0, FDLG_NODRAWSHADOW|FDLG_NODRAWPANEL, DlgProcAtMax, (LONG_PTR)&iv);
 
 		if (hDlg == INVALID_HANDLE_VALUE) {
-			return false;
+			return EXITED_DUE_ERROR;
 		}
 
-		int exit_code = g_far.DialogRun(hDlg);
+		const auto exit_code = (EXITED_DUE)g_far.DialogRun(hDlg);
 		g_far.DialogFree(hDlg);
 
 		if (exit_code != EXITED_DUE_RESIZE) {
-			if (exit_code != EXITED_DUE_ENTER) {
-				return false;
+			if (exit_code == EXITED_DUE_ENTER) {
+				if (selection) {
+					*selection = std::move(iv.GetSelection());
+				}
+			} else if (exit_code == EXITED_DUE_ERROR && !silent_exit_on_error) {
+				std::wstring ws_cur_file = L"\"" + StrMB2Wide(all_files[initial_file].first) + L"\"";
+				std::wstring werr_str = StrMB2Wide(iv.ErrorString());
+				const wchar_t *MsgItems[] = {g_settings.Msg(M_TITLE),
+					L"Failed to load image file:",
+					ws_cur_file.c_str(),
+					werr_str.c_str(),
+					L"Ok"
+				};
+				g_far.Message(g_far.ModuleNumber, FMSG_WARNING, nullptr, MsgItems, ARRAYSIZE(MsgItems), 1);
 			}
-			selection = std::move(iv.GetSelection());
-			return true;
+			return exit_code;
 		}
 	}
+}
+
+EXITED_DUE ShowImageAtFull(size_t initial_file, std::vector<std::pair<std::string, bool> > &all_files, std::unordered_set<std::string> &selection, bool silent_exit_on_error)
+{
+	return ShowImageAtFullInternal(initial_file, all_files, &selection, silent_exit_on_error);
+}
+
+EXITED_DUE ShowImageAtFull(const std::string &file, bool silent_exit_on_error)
+{
+	std::vector<std::pair<std::string, bool> > all_files{{file, false}};
+	return ShowImageAtFullInternal(0, all_files, nullptr, silent_exit_on_error);
 }

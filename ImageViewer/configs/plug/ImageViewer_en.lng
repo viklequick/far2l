@@ -6,10 +6,11 @@
 "Cancel"
 
 "Navigate: PGUP PGDN HOME"
-"Pan: TAB CURSORS NUMPAD DEL + - * / = F9"
+"Pan: TAB CURSORS NUMPAD DEL + - * / = F7 F8 F9"
 "Selection: SPACE BS INS"
 "ENTER | ESC"
 
+"Respect EXIF &orientation info"
 "Open by &Enter on file"
 "Open by Ctrl+Pg&Dn on file"
 "Open automatically in &Quick View panel"

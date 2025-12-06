@@ -3734,11 +3734,13 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	if (isDraggingSelection && MouseEvent->dwMousePosition.Y < Y1 && (MouseEvent->dwButtonState & 3)) {
 		while (IsMouseButtonPressed() && MouseY < Y1) Up();
 		// Обновление выделения произойдет при следующем событии MOUSE_MOVED
+		Show();
 		return TRUE;
 	}
 	if (isDraggingSelection && MouseEvent->dwMousePosition.Y > Y2 && (MouseEvent->dwButtonState & 3)) {
 		while (IsMouseButtonPressed() && MouseY > Y2) Down();
 		// Обновление выделения произойдет при следующем событии MOUSE_MOVED
+		Show();
 		return TRUE;
 	}
 

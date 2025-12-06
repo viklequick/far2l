@@ -31,6 +31,7 @@ class ImageView
 	signed char _rotate{0}, _rotated{0}; // [-3..3]: 0 - not rotated, 1 - rotated by 90, 2 - by 180, -1 - by -90 etc
 	bool _mirror_h{false}, _mirrored_h{false};
 	bool _mirror_v{false}, _mirrored_v{false};
+	bool _force_render{false};
 
 	bool IterateFile(bool forward);
 	bool PrepareImage();
@@ -39,8 +40,8 @@ class ImageView
 
 	bool RefreshWGI();
 	void SetupInitialScale(const int canvas_w, const int canvas_h);
-	bool EnsureReadyScaledMirrored();
-	unsigned int EnsureRotated();
+	bool EnsureReadyAndScaled();
+	uint16_t EnsureTransformed();
 
 	bool SendWholeImage(const SMALL_RECT *area, const Image &img);
 	bool SendWholeViewport(const SMALL_RECT *area, int src_left, int src_top, int viewport_w, int viewport_h);
@@ -48,7 +49,7 @@ class ImageView
 	bool SendScrollAttachV(const SMALL_RECT *area, int src_left, int src_top, int viewport_w, int viewport_h, int delta);
 	bool RenderImage();
 	void DenoteState(const char *stage = NULL);
-	void JustReset();
+	void JustReset(bool keep_rotmir = false);
 
 protected:
 	virtual void DenoteInfoAndPan(const std::string &info, const std::string &pan);
@@ -74,9 +75,10 @@ public:
 	COORD ShiftByPixels(COORD delta);
 	void MirrorH();
 	void MirrorV();
-	void Reset(bool keep_rotation);
+	void Reset(bool keep_rotmir);
 	void Select();
 	void Deselect();
 	void ToggleSelection();
+	void RunProcessingCommand();
 };
 

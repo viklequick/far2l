@@ -226,36 +226,40 @@ void ImageView::SetupInitialScale(const int canvas_w, const int canvas_h)
 	fprintf(stderr, "%s: min=%f fit=%f max=%f\n", __FUNCTION__, _scale_min, _scale_fit, _scale_max);
 }
 
-bool ImageView::EnsureReadyScaledMirrored()
-{ // return true if ready image was re-scaled or re-mirrored, return false if it wasn't changed by this function
-	bool out = false;
+bool ImageView::EnsureReadyAndScaled()
+{ // return true if ready image was re-scaled, return false if it wasn't changed by this function
 	assert(_scale > 0);
-	if (_ready_image_scale <= 0 || fabs(_scale -_ready_image_scale) > 0.001) {
-		auto msec = GetProcessUptimeMSec();
-		_orig_image.Scale(_ready_image, _scale);
-		msec = GetProcessUptimeMSec() - msec;
-		fprintf(stderr, "%s: scaled by %f - %d x %d -> %d x %d in %u msec\n", __FUNCTION__, _scale,
-			_orig_image.Width(), _orig_image.Height(), _ready_image.Width(), _ready_image.Height(), (unsigned int)msec);
-		_ready_image_scale = _scale;
-		_rotated = 0;
-		_mirrored_h = _mirrored_v = false;
-		out = true;
+	if (!_force_render && _ready_image_scale > 0 && fabs(_scale -_ready_image_scale) < 0.001) {
+		return false;
 	}
+	auto msec = GetProcessUptimeMSec();
+	_orig_image.Scale(_ready_image, _scale);
+	msec = GetProcessUptimeMSec() - msec;
+	fprintf(stderr, "%s: scaled by %f - %d x %d -> %d x %d in %u msec\n", __FUNCTION__, _scale,
+		_orig_image.Width(), _orig_image.Height(), _ready_image.Width(), _ready_image.Height(), (unsigned int)msec);
+	_ready_image_scale = _scale;
+	_rotated = 0;
+	_mirrored_h = _mirrored_v = false;
+	_force_render = false;
+	return true;
+}
+
+uint16_t ImageView::EnsureTransformed()
+{
+	static_assert(0 == WP_IMGTF_ROTATE0);
+	uint16_t out = 0;
+
 	if (_mirrored_h != _mirror_h) {
 		_mirrored_h = _mirror_h;
 		_ready_image.MirrorH();
-		out = true;
+		out|= WP_IMGTF_MIRROR_H;
 	}
 	if (_mirrored_v != _mirror_v) {
 		_mirrored_v = _mirror_v;
 		_ready_image.MirrorV();
-		out = true;
+		out|= WP_IMGTF_MIRROR_V;
 	}
-	return out;
-}
 
-unsigned int ImageView::EnsureRotated()
-{
 	int rotated_angle = 0;
 	for (;_rotated < _rotate; ++_rotated) {
 		_ready_image.Rotate(_tmp_image, true);
@@ -273,7 +277,12 @@ unsigned int ImageView::EnsureRotated()
 	while (rotated_angle < 0) {
 		rotated_angle+= 4;
 	}
-	return rotated_angle;
+	switch (rotated_angle) {
+		case 1: out|= WP_IMGTF_ROTATE90; break;
+		case 2: out|= WP_IMGTF_ROTATE180; break;
+		case 3: out|= WP_IMGTF_ROTATE270; break;
+	}
+	return out;
 }
 
 bool ImageView::SendWholeImage(const SMALL_RECT *area, const Image &img)
@@ -316,7 +325,7 @@ bool ImageView::SendWholeImage(const SMALL_RECT *area, const Image &img)
 	}
 	msec = GetProcessUptimeMSec() - msec;
 	if (img.Size() >= SETIMG_ESTIMATION_SIZE_THRESHOLD && msec >= 1) {
-		const size_t cur_speed = std::max(img.Size() / msec, size_t(1));
+		const size_t cur_speed = std::max(size_t(img.Size() / msec), size_t(1));
 		size_t speed = s_avg_speed;
 		if (speed < cur_speed || (speed - cur_speed > speed / 4) || speed == 0) {
 			speed+= cur_speed;
@@ -429,8 +438,8 @@ bool ImageView::RenderImage()
 		SetupInitialScale(canvas_w, canvas_h);
 	}
 
-	const bool scaled_mirrored = EnsureReadyScaledMirrored();
-	unsigned int rotated_angle = EnsureRotated();
+	const auto scaled = EnsureReadyAndScaled();
+	const auto tformed = EnsureTransformed();
 
 	SMALL_RECT area = {_pos.X, _pos.Y, 0, 0};
 	int viewport_w = canvas_w, viewport_h = canvas_h;
@@ -459,15 +468,17 @@ bool ImageView::RenderImage()
 	}
 
 	bool out = true;
-	if (!scaled_mirrored && rotated_angle != 0                       // if image only rotated
-			&& _ready_image.Width() <= std::min(canvas_w, canvas_h)  // and fits screen at any
-			&& _ready_image.Height() <= std::min(canvas_w, canvas_h) // orientaion and if
-			&& (_wgi.Caps & WP_IMGCAP_ROTATE) != 0) {                // backend supports rotation:
-		// rotate image remotely without any bitmap transfer
-		fprintf(stderr, "ImageView: rotating remote image\n");
-		out = WINPORT(RotateConsoleImage)(NULL, WINPORT_IMAGE_ID, &area, rotated_angle) != FALSE;
+	if (!scaled && _prev_left == src_left && _prev_top == src_top          // if image wasnt rescaled and
+			&& _dx == 0 && _dx == 0 && tformed != 0                        // centered but was mirrored or
+			&& ((tformed & WP_IMGTF_MASK_ROTATE) == WP_IMGTF_ROTATE0 ||    // rotated and if rotated it
+				(_ready_image.Width() <= std::min(canvas_w, canvas_h)      //             also fits screen
+				&& _ready_image.Height() <= std::min(canvas_w, canvas_h))) //             at any orientaion
+			&& (_wgi.Caps & WP_IMGCAP_ROTMIR) != 0) {                      // and backend supports transforms:
+		// transform image remotely without any bitmap transfer
+		fprintf(stderr, "ImageView: transform remote image (0x%x)\n", tformed);
+		out = WINPORT(TransformConsoleImage)(NULL, WINPORT_IMAGE_ID, &area, tformed) != FALSE;
 
-	} else if (!scaled_mirrored && rotated_angle == 0  // if image only shifted
+	} else if (!scaled && tformed == 0                 // if image only shifted
 			&& abs(_prev_left - src_left) < viewport_w // and shifted-in area is
 			&& abs(_prev_top - src_top) < viewport_h   // smaller than viewport
 			&& (_wgi.Caps & WP_IMGCAP_ATTACH) != 0     // and if backend supports
@@ -479,7 +490,7 @@ bool ImageView::RenderImage()
 			out = SendScrollAttachV(&area, src_left, src_top, viewport_w, viewport_h, _prev_top - src_top);
 		}
 
-	} else if (scaled_mirrored || rotated_angle != 0 || _prev_left != src_left || _prev_top != src_top) {
+	} else if (scaled || tformed != 0 || _prev_left != src_left || _prev_top != src_top) {
 		// otherwise send all visible image area, if it was changed anyhow
 		out = SendWholeViewport(&area, src_left, src_top, viewport_w, viewport_h);
 	}
@@ -519,6 +530,9 @@ void ImageView::DenoteState(const char *stage)
 	} else if (_mirrored_v && _mirrored_h) {
 		pan+= "🮽 ";
 	}
+	if (_rotate != 0) {
+		pan+= StrPrintf("%d° ", _rotate * 90);
+	}
 	if (_scale > 0) {
 		const char c1 = (_scale - _scale_fit > 0.01) ? '>' : ((_scale - _scale_fit < -0.01) ? '<' : '[');
 		const char c2 = (_scale - _scale_fit > 0.01) ? '<' : ((_scale - _scale_fit < -0.01) ? '>' : ']');
@@ -526,9 +540,6 @@ void ImageView::DenoteState(const char *stage)
 	}
 	if (_dx != 0 || _dy != 0) {
 		pan+= StrPrintf("%s%d:%s%d ", (_dx > 0) ? "+" : "", _dx, (_dy > 0) ? "+" : "", _dy);
-	}
-	if (_rotate != 0) {
-		pan+= StrPrintf("%d° ", _rotate * 90);
 	}
 	if (!pan.empty()) {
 		pan.insert(0, 1, ' ');
@@ -543,11 +554,14 @@ void ImageView::DenoteInfoAndPan(const std::string &info, const std::string &pan
 		CurFileSelected() ? "*" : "", CurFile().c_str(), info.c_str(), pan.c_str());
 }
 
-void ImageView::JustReset()
+void ImageView::JustReset(bool keep_rotmir)
 {
 	_dx = _dy = 0;
 	_scale = -1;
-	_rotate = 0;
+	if (!keep_rotmir) {
+		_rotate = 0;
+		_mirror_h = _mirror_v = false;
+	}
 }
 
 ///////////////////// ImageView PUBLICs
@@ -720,13 +734,9 @@ void ImageView::MirrorV()
 	DenoteState();
 }
 
-void ImageView::Reset(bool keep_rotation)
+void ImageView::Reset(bool keep_rotmir)
 {
-	int saved_rotate = _rotate;
-	JustReset();
-	if (keep_rotation) {
-		_rotate = saved_rotate;
-	}
+	JustReset(keep_rotmir);
 	RenderImage();
 	DenoteState();
 }
@@ -750,5 +760,59 @@ void ImageView::Deselect()
 void ImageView::ToggleSelection()
 {
 	_all_files[_cur_file].second = !_all_files[_cur_file].second;
+	DenoteState();
+}
+
+static bool CmdFindAndReplace(std::string &cmd, const char *pattern, const std::string &value)
+{
+	size_t p = cmd.find(pattern);
+	if (p == std::string::npos) {
+		return false;
+	}
+	cmd.replace(p, strlen(pattern), value);
+	return true;
+}
+
+static bool CmdFindAndReplace(std::string &cmd, const char *pattern, int value)
+{
+	return CmdFindAndReplace(cmd, pattern, StrPrintf("%d", value));
+}
+
+void ImageView::RunProcessingCommand()
+{
+	WINPORT(DeleteConsoleImage)(NULL, WINPORT_IMAGE_ID);
+	auto cmd = g_settings.ExtraCommandsMenu();
+	if (!cmd.empty()) {
+		while (CmdFindAndReplace(cmd, "{W}", _orig_image.Width())
+			|| CmdFindAndReplace(cmd, "{H}", _orig_image.Height())) {
+		}
+
+		ToolExec cmd_exec(_cancel);
+		Environment::ExplodeCommandLine ecl(cmd);
+		for (const auto &a : ecl) {
+			cmd_exec.AddArguments(a);
+		}
+
+		std::vector<char> image_data(_orig_image.Size());
+		memcpy(image_data.data(), _orig_image.Ptr(0, 0), image_data.size());
+		cmd_exec.Stdin(image_data);
+		if (cmd_exec.Run(_render_file, _file_size_str, "", "Running custom command")) {
+			image_data.clear();
+			cmd_exec.FetchStdout(image_data);
+			if (_orig_image.Size() == image_data.size()) {
+				fprintf(stderr, "%s: image data looks OK\n", __FUNCTION__);
+				memcpy(_orig_image.Ptr(0, 0), image_data.data(), image_data.size());
+			} else {
+				fprintf(stderr, "%s: image data size changed - %lu -> %lu\n",
+					__FUNCTION__, (unsigned long)_orig_image.Size(), (unsigned long)image_data.size());
+				// TODO: msgbox
+			}
+		} else {
+			fprintf(stderr, "%s: command failed\n", __FUNCTION__);
+			// TODO: msgbox
+		}
+	}
+	_force_render = true;
+	RenderImage();
 	DenoteState();
 }

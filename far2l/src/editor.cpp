@@ -3678,12 +3678,26 @@ case KEY_CTRLNUMPAD3: {
 	}
 }
 
+int Editor::AutoGrabToClipboard () 
+{
+	int status = 0;
+	Clipboard clip;
+	clip.SetUseSelectionWhenPossible(1);
+	if (clip.Open()) {
+		wchar_t *CopyData = nullptr;
+		if ((CopyData = Block2Text(CopyData))) {
+			clip.Copy(CopyData);
+			free(CopyData);
+			status = 1;
+		}
+		clip.Close();
+	}
+	clip.SetUseSelectionWhenPossible(0);
+	return status;
+}
+
 int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
-	static bool isDraggingSelection = false;
-	static Edit* selectionAnchorLine = nullptr;
-	static int selectionAnchorPos = 0;
-	static int selectionAnchorLineNum = 0;
 	m_MouseButtonIsHeld = MouseEvent->dwButtonState & 3;
 
 	// Shift + Mouse click -> adhoc quick edit
@@ -3695,6 +3709,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 	if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
 		// VK: TODO: grab selection and copy to selection buffer
+		AutoGrabToClipboard();
 		MouseSelStartingLine = -1;
 	}
 
@@ -3725,30 +3740,24 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				while (IsMouseButtonPressed())
 					GoToLine((NumLastLine - 1) * (MouseY - Y1) / (Y2 - Y1));
 			}
-			isDraggingSelection = false; // Скроллбар отменяет выделение
 		}
 		return TRUE;
 	}
 
-	// Автопрокрутка при выделении мышью за пределами окна редактора
-	if (isDraggingSelection && MouseEvent->dwMousePosition.Y < Y1 && (MouseEvent->dwButtonState & 3)) {
-		while (IsMouseButtonPressed() && MouseY < Y1) Up();
-		// Обновление выделения произойдет при следующем событии MOUSE_MOVED
-		Show();
+	// scroll up/down by dragging outside editor window
+	if (MouseEvent->dwMousePosition.Y < Y1 && (MouseEvent->dwButtonState & 3)) {
+		while (IsMouseButtonPressed() && MouseY < Y1) ProcessKey(KEY_UP);
 		return TRUE;
 	}
-	if (isDraggingSelection && MouseEvent->dwMousePosition.Y > Y2 && (MouseEvent->dwButtonState & 3)) {
-		while (IsMouseButtonPressed() && MouseY > Y2) Down();
-		// Обновление выделения произойдет при следующем событии MOUSE_MOVED
-		Show();
+	if (MouseEvent->dwMousePosition.Y > Y2 && (MouseEvent->dwButtonState & 3)) {
+		while (IsMouseButtonPressed() && MouseY > Y2) ProcessKey(KEY_DOWN);
 		return TRUE;
 	}
 
-	// Основная логика обработки кликов и выделения внутри окна редактора
+	// For any click inside the editor window, first position the cursor
 	if (MouseEvent->dwMousePosition.X >= X1 && MouseEvent->dwMousePosition.X <= XX2
 		&& MouseEvent->dwMousePosition.Y >= Y1 && MouseEvent->dwMousePosition.Y <= Y2)
 	{
-		// Перемещение курсора в точку клика/движения
 		if((MouseEvent->dwButtonState & 3))
 		{
 			// Calculate line number width if needed
@@ -3836,8 +3845,6 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		// --- Common logic for click/double-click/triple-click ---
 		if (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 		{
-			bool multiClickHandled = false;
-
 			// --- Сначала обрабатываем двойные/тройные клики ---
 			static int EditorPrevClickCount = 0;
 			static DWORD EditorPrevClickTime = 0;
@@ -3855,19 +3862,15 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				EditorPrevClickCount = 1;
 			}
 
-			// Только обновляем, если это начало новой последовательности кликов
-			if (EditorPrevClickCount == 1) {
-				EditorPrevClickTime = WINPORT(GetTickCount)();
-				EditorPrevPosition = MouseEvent->dwMousePosition;
-			}
+			EditorPrevClickTime = WINPORT(GetTickCount)();
+			EditorPrevPosition = MouseEvent->dwMousePosition;
 
 			if (EditorPrevClickCount == 2) // Double-click
 			{
 				ProcessKey(KEY_OP_SELWORD);
-				multiClickHandled = true;
-				isDraggingSelection = false; // Двойной клик - это атомарное действие, а не начало выделения
 
 				// VK: TODO: grab selection and copy to selection buffer
+				AutoGrabToClipboard();
 			}
 			else if (EditorPrevClickCount >= 3) // Triple-click (and more)
 			{
@@ -3877,84 +3880,14 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 					BlockStart = CurLine;
 					BlockStartLine = NumLine;
 				}
-				multiClickHandled = true;
-				isDraggingSelection = false; // Тройной клик - тоже
-				EditorPrevClickCount = 0; // Сбрасываем, чтобы следующий клик был одинарным
+
+				EditorPrevClickCount = 0; // Reset to avoid re-triggering
 
 				// VK: TODO: grab selection and copy to selection buffer
+				AutoGrabToClipboard();
 			}
-
-			// --- Затем, если это не был мульти-клик, обрабатываем выделение перетаскиванием ---
-
-			// НАЧАЛО ВЫДЕЛЕНИЯ (первый клик)
-			if (!multiClickHandled && !isDraggingSelection && !(MouseEvent->dwEventFlags & MOUSE_MOVED))
-			{
-				isDraggingSelection = true;
-				selectionAnchorLine = CurLine;
-				selectionAnchorPos = CurLine->GetCurPos();
-				selectionAnchorLineNum = NumLine;
-
-				// Устанавливаем состояние, совместимое с клавиатурным выделением
-				Flags.Set(FEDITOR_MARKINGBLOCK);
-				BlockStart = CurLine;
-				BlockStartLine = NumLine;
-				// Начинаем с выделения нулевой длины в точке клика
-				CurLine->Select(selectionAnchorPos, selectionAnchorPos);
-			}
-			// ПРОЦЕСС ВЫДЕЛЕНИЯ (движение мышью с зажатой кнопкой)
-			else if (isDraggingSelection && (MouseEvent->dwEventFlags & MOUSE_MOVED))
-			{
-				// Курсор уже перемещен в нужную позицию кодом выше
-				Edit *startLine, *endLine;
-				int startPos, endPos, startLineNum;
-
-				// Определяем, где начало и где конец выделения (якорь и текущая позиция)
-				if (NumLine < selectionAnchorLineNum || (NumLine == selectionAnchorLineNum && CurLine->GetCurPos() < selectionAnchorPos)) {
-					startLine = CurLine;
-					startPos = CurLine->GetCurPos();
-					startLineNum = NumLine;
-					endLine = selectionAnchorLine;
-					endPos = selectionAnchorPos;
-				} else {
-					startLine = selectionAnchorLine;
-					startPos = selectionAnchorPos;
-					startLineNum = selectionAnchorLineNum;
-					endLine = CurLine;
-					endPos = CurLine->GetCurPos();
-				}
-
-				// Применяем выделение: сначала всё снимаем, потом выставляем заново
-				UnmarkBlock();
-
-				BlockStart = startLine;
-				BlockStartLine = startLineNum;
-				Flags.Set(FEDITOR_MARKINGBLOCK);
-
-				if (startLine == endLine) {
-					// Выделение в пределах одной строки
-					startLine->Select(startPos, endPos);
-				} else {
-					// Выделение охватывает несколько строк
-					Edit* p = startLine;
-
-					// Первая строка: от начальной позиции до конца
-					p->Select(startPos, -1);
-					p = p->m_next;
-
-					// Средние строки: выделяем полностью
-					while(p && p != endLine) {
-						p->Select(0, -1);
-						p = p->m_next;
-					}
-
-					// Последняя строка: от начала до конечной позиции
-					if (p == endLine) {
-						p->Select(0, endPos);
-					}
-				}
-			}
+			Show();
 		}
-		Show();
 	}
 
 	if (MouseEvent->dwButtonState == FROM_LEFT_2ND_BUTTON_PRESSED

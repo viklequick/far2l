@@ -348,3 +348,11 @@ UINT wxClipboardBackend::OnClipboardRegisterFormat(const wchar_t *lpszFormat)
 
 	return g_wx_custom_formats.Register(lpszFormat);
 }
+
+void wxClipboardBackend::ChooseClipboard(UINT format)
+{
+	bool now = wxTheClipboard->IsUsingPrimarySelection();
+	bool need = format > 0;
+	if (now != need) wxTheClipboard->UsePrimarySelection(need);	
+}
+

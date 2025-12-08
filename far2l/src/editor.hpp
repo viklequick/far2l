@@ -446,6 +446,8 @@ public:
 	void SetObjectColor(uint64_t Color, uint64_t SelColor, uint64_t ColorUnChanged);
 	void DrawScrollbar();
 
+	int AutoGrabToClipboard();
+
 	virtual void SetPosition(int X1, int Y1, int X2, int Y2);
 };
 

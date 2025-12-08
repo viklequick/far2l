@@ -127,3 +127,5 @@ UINT FSClipboardBackend::OnClipboardRegisterFormat(const wchar_t *lpszFormat)
 
 	return (UINT)id;
 }
+
+void FSClipboardBackend::ChooseClipboard(UINT format) {}

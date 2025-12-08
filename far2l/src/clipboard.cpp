@@ -301,3 +301,9 @@ BOOL EmptyInternalClipboard()
 
 	return ret;
 }
+
+void Clipboard::SetUseSelectionWhenPossible(int option) 
+{ 
+	UseSelectionWhenPossible = option; 
+	WINPORT(ChooseClipboard)(option);
+}

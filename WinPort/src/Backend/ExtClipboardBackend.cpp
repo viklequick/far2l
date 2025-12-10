@@ -125,4 +125,4 @@ UINT ExtClipboardBackend::OnClipboardRegisterFormat(const wchar_t *lpszFormat)
 	return 0;
 }
 
-void ExtClipboardBackend::ChooseClipboard(UINT format) {}
+INT ExtClipboardBackend::ChooseClipboard(INT format) { return -1; }

@@ -117,11 +117,10 @@ extern "C" {
 		return out;
 	}
 
-	WINPORT_DECL(ChooseClipboard, VOID, (UINT format))
+	WINPORT_DECL(ChooseClipboard, INT, (INT format))
 	{
 		std::lock_guard<std::mutex> lock(g_clipboard_backend_mutex);
-		if (g_clipboard_backend) g_clipboard_backend->ChooseClipboard(format);
-		return;
+		return (g_clipboard_backend) ? g_clipboard_backend->ChooseClipboard(format) : -1;
 	}
 
 	WINPORT_DECL(SetClipboardData, HANDLE, (UINT format, HANDLE mem))

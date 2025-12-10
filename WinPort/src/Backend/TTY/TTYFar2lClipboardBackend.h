@@ -34,8 +34,6 @@ class TTYFar2lClipboardBackend : public IClipboardBackend
 		bool Pending() const { return _pending; }
 		UINT Format() const { return _format; }
 		const std::vector<unsigned char> &Data() const { return _data; }
-		
-		virtual void ChooseClipboard(UINT format) {}
 	};
 
 	struct CachedData
@@ -74,4 +72,5 @@ public:
 	virtual void *OnClipboardSetData(UINT format, void *data);
 	virtual void *OnClipboardGetData(UINT format);
 	virtual UINT OnClipboardRegisterFormat(const wchar_t *lpszFormat);
+	virtual INT ChooseClipboard(INT format) { return -1; }
 };

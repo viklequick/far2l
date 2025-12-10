@@ -360,4 +360,4 @@ UINT TTYXClipboard::OnClipboardRegisterFormat(const wchar_t *lpszFormat)
 	}
 }
 
-void TTYXClipboard::ChooseClipboard(UINT format) = 0;
+INT TTYXClipboard::ChooseClipboard(INT format) { return -1; }

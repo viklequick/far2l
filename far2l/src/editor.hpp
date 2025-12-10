@@ -409,6 +409,9 @@ public:
 	int GetShowLineNumbers() const { return EdOpt.ShowLineNumbers; }
 	void SetShowLineNumbers(int NewMode);
 
+	int GetEditCopyToPrimarySelection() const { return EdOpt.EditCopyToPrimarySelection; }
+	void SetEditCopyToPrimarySelection(int NewMode);
+
 	void GetSavePosMode(int &SavePos, int &SaveShortPos);
 
 	// передавайте в качестве значения параметра "-1" для параметра,

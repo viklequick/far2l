@@ -45,6 +45,7 @@ UINT Clipboard::uInternalClipboardFormat[5] = {0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0
 
 bool Clipboard::UseInternalClipboard = false;
 bool Clipboard::InternalClipboardOpen = false;
+int  Clipboard::UseSelectionWhenPossible = -1;
 
 // Sets UseInternalClipboard to State, and returns previous state
 bool Clipboard::SetUseInternalClipboardState(bool State)
@@ -302,8 +303,8 @@ BOOL EmptyInternalClipboard()
 	return ret;
 }
 
-void Clipboard::SetUseSelectionWhenPossible(int option) 
+int Clipboard::SetUseSelectionWhenPossible(int option) 
 { 
 	UseSelectionWhenPossible = option; 
-	WINPORT(ChooseClipboard)(option);
+	return (int)WINPORT(ChooseClipboard)((INT)option);
 }

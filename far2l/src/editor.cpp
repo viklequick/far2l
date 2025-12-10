@@ -3681,18 +3681,24 @@ case KEY_CTRLNUMPAD3: {
 int Editor::AutoGrabToClipboard () 
 {
 	int status = 0;
-	Clipboard clip;
-	clip.SetUseSelectionWhenPossible(1);
-	if (clip.Open()) {
-		wchar_t *CopyData = nullptr;
-		if ((CopyData = Block2Text(CopyData))) {
-			clip.Copy(CopyData);
-			free(CopyData);
-			status = 1;
-		}
-		clip.Close();
+
+	if (!EdOpt.EditCopyToPrimarySelection) {
+		return status;
 	}
-	clip.SetUseSelectionWhenPossible(0);
+
+	Clipboard clip;
+	if(clip.SetUseSelectionWhenPossible(1) > 0) {
+    	if (clip.Open()) {
+    		wchar_t *CopyData = nullptr;
+    		if ((CopyData = Block2Text(CopyData))) {
+    			clip.Copy(CopyData);
+    			free(CopyData);
+    			status = 1;
+    		}
+    		clip.Close();
+    	}
+    	clip.SetUseSelectionWhenPossible(0);
+	}
 	return status;
 }
 
@@ -7666,6 +7672,11 @@ void Editor::SetShowWhiteSpace(int NewMode)
 			CurPtr->SetShowWhiteSpace(NewMode);
 		}
 	}
+}
+
+void Editor::SetEditCopyToPrimarySelection(int newMode) {
+	if (EdOpt.EditCopyToPrimarySelection != newMode)
+		EdOpt.EditCopyToPrimarySelection = newMode;
 }
 
 void Editor::SetShowLineNumbers(int NewMode)

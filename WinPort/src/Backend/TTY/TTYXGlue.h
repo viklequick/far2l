@@ -38,7 +38,7 @@ protected:
 	virtual void *OnClipboardSetData(UINT format, void *data);
 	virtual void *OnClipboardGetData(UINT format);
 	virtual UINT OnClipboardRegisterFormat(const wchar_t *lpszFormat);
-	virtual void ChooseClipboard(UINT format);
+	virtual INT ChooseClipboard(INT format);
 
 
 public:

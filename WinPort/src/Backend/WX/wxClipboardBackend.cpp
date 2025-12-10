@@ -349,10 +349,15 @@ UINT wxClipboardBackend::OnClipboardRegisterFormat(const wchar_t *lpszFormat)
 	return g_wx_custom_formats.Register(lpszFormat);
 }
 
-void wxClipboardBackend::ChooseClipboard(UINT format)
+INT wxClipboardBackend::ChooseClipboard(INT format)
 {
+	if (!wxIsMainThread()) {
+		auto fn = std::bind(&wxClipboardBackend::ChooseClipboard, this, format);
+		return CallInMain<INT>(fn);
+	}
+
 	bool now = wxTheClipboard->IsUsingPrimarySelection();
 	bool need = format > 0;
-	if (now != need) wxTheClipboard->UsePrimarySelection(need);	
+	if (now != need) wxTheClipboard->UsePrimarySelection(need);
+	return need ? 1 : 0;
 }
-

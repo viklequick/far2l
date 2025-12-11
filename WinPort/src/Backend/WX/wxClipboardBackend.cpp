@@ -7,12 +7,6 @@
 #include <utils.h>
 #include <dlfcn.h>
 
-#ifdef __WXGTK__
-#include <gtk/gtk.h>
-#include <gdk/gdk.h>
-#endif
-
-
 // #698: Mac: Copying to clipboard stopped working in wx 3.1 (not 100% sure about exact version).
 // The fix is submitted, supposedly, into 3.2: https://github.com/wxWidgets/wxWidgets/pull/1623/files
 // Guess the problem is only present in 3.1.
@@ -199,7 +193,7 @@ public:
 	}
 };
 
-#ifdef __WXGTK__
+#if defined(__WXGTK__) && defined(__WXGTK3__)
 
 enum WxBackendType {
     NativeWayland,
@@ -218,11 +212,75 @@ enum WxClipboardType = {
 static WxBackendType wxBackendType = WxBackendType::Undefined;
 static WxClipboardType wxClipboardType = WxClipboardType::Clipboard;
 
+/* Now this is a minimnal set from Gtk/Gtk */
+
+typedef struct s_GTypeInstance { void *g_class; } GTypeInstance;
+typedef unsigned long GType;
+typedef int gboolean;
+typedef char gchar;
+typedef void* gpointer;
+typedef int gint;
+
+typedef GType (*gdk_wayland_display_get_type_t)(void);
+typedef GType (*gdk_x11_display_get_type_t)(void);
+typedef gboolean (*g_type_check_instance_is_a_t)(GTypeInstance*, GType);
+typedef void* (*gdk_display_get_default_t)(void);
+
+#define G_TYPE_CHECK_INSTANCE_TYPE(instance, type)	(g_type_check_instance_is_a( (instance), (type) ))
+
+#define GDK_TYPE_WAYLAND_DISPLAY            (gdk_wayland_display_get_type())
+#define GDK_TYPE_X11_DISPLAY                (gdk_x11_display_get_type())
+#define GDK_IS_WAYLAND_DISPLAY(object)      (G_TYPE_CHECK_INSTANCE_TYPE ((object), GDK_TYPE_WAYLAND_DISPLAY))
+#define GDK_IS_X11_DISPLAY(object)        	(G_TYPE_CHECK_INSTANCE_TYPE ((object), GDK_TYPE_X11_DISPLAY))
+
+struct _GdkAtom;
+struct _GtkClipboard;
+typedef struct _GdkAtom *GdkAtom;
+typedef struct _GtkClipboard GtkClipboard;
+
+#define GUINT_TO_POINTER(x) ((void*)(x))
+#define _GDK_MAKE_ATOM(val) ((GdkAtom)GUINT_TO_POINTER(val))
+#define GDK_SELECTION_PRIMARY 		_GDK_MAKE_ATOM (1)
+
+typedef void (*gtk_clipboard_set_text_t)(GtkClipboard *clipboard, const gchar *text, gint len);
+typedef GtkClipboard* (*gtk_clipboard_get_t)(GdkAtom selection);
+typedef void (*gtk_clipboard_store_t)(GtkClipboard *clipboard);
+
+typedef void (* GtkClipboardTextReceivedFunc)(GtkClipboard *clipboard, const gchar *text, gpointer data);
+typedef void (*gtk_clipboard_request_text_t)(GtkClipboard *clipboard, GtkClipboardTextReceivedFunc callback, gpointer user_data);
+
+// the "functions" I'm using
+
+static gdk_wayland_display_get_type_t gdk_wayland_display_get_type = 0;
+static gdk_x11_display_get_type_t gdk_x11_display_get_type = 0;
+static g_type_check_instance_is_a_t g_type_check_instance_is_a = 0;
+static gdk_display_get_default_t gdk_display_get_default = 0;
+static gtk_clipboard_request_text_t gtk_clipboard_request_text = 0;
+static gtk_clipboard_set_text_t gtk_clipboard_request_text = 0;
+static gtk_clipboard_get_t gtk_clipboard_get = 0;
+static gtk_clipboard_store_t gtk_clipboard_store = 0;
+static int gtk_loaded = 0;
+
+static void assumeLazyLoadIsComplete() {
+	if (gtk_loaded || g_type_check_instance_is_a) return;
+
+	gdk_wayland_display_get_type = (gdk_wayland_display_get_type_t)dlsym(RTLD_DEFAULT, "gdk_wayland_display_get_type");
+	gdk_x11_display_get_type = (gdk_x11_display_get_type_t)dlsym(RTLD_DEFAULT, "gdk_x11_display_get_type");
+	g_type_check_instance_is_a = (g_type_check_instance_is_a_t)dlsym(RTLD_DEFAULT, "g_type_check_instance_is_a");
+	gdk_display_get_default = (gdk_display_get_default_t)dlsym(RTLD_DEFAULT, "gdk_display_get_default");
+	gtk_clipboard_request_text = (gtk_clipboard_request_text_t)dlsym(RTLD_DEFAULT, "gtk_clipboard_request_text");
+	gtk_clipboard_set_text = (gtk_clipboard_set_text_t)dlsym(RTLD_DEFAULT, "gtk_clipboard_set_text");
+	gtk_clipboard_store = (gtk_clipboard_store_t)dlsym(RTLD_DEFAULT, "gtk_clipboard_store");
+	gtk_clipboard_get = (gtk_clipboard_get_t)dlsym(RTLD_DEFAULT, "gtk_clipboard_get");
+}
+
 static WxBackendType detectWxBackend()
 {
 	if (wxBackendType == WxBackendType::Undefined) 
 	{
-        GdkDisplay* display = gdk_display_get_default();
+		assumeLazyLoadIsComplete();
+
+        void* display = gdk_display_get_default();
 
         const bool isWayland = GDK_IS_WAYLAND_DISPLAY(display);
         const bool isX11     = GDK_IS_X11_DISPLAY(display);

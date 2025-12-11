@@ -1342,6 +1342,19 @@ void Editor::ProcessPasteEvent()
 	Show();
 }
 
+void Editor::ProcessPasteEventFromPrimary()
+{
+	if (!EdOpt.EditPasteFromPrimarySelection) {
+		return;
+	}
+
+	Clipboard clip;
+	if(clip.SetUseSelectionWhenPossible(1) > 0) {
+		ProcessPasteEvent();
+    	clip.SetUseSelectionWhenPossible(0);
+	}
+}
+
 int Editor::ProcessKey(FarKey Key)
 {
 	if (Key == KEY_IDLE) {
@@ -3900,7 +3913,10 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			&& (MouseEvent->dwEventFlags & (DOUBLE_CLICK | MOUSE_MOVED | MOUSE_HWHEELED | MOUSE_WHEELED)) == 0) {
 		// VK: TODO: hande paste from selection here
 		// VK: now it uses clipboard instead
-		ProcessPasteEvent();
+		if (EdOpt.EditPasteFromPrimarySelection)
+			ProcessPasteEventFromPrimary();
+		else
+			ProcessPasteEvent();
 	}
 
 	return TRUE;
@@ -7677,6 +7693,11 @@ void Editor::SetShowWhiteSpace(int NewMode)
 void Editor::SetEditCopyToPrimarySelection(int newMode) {
 	if (EdOpt.EditCopyToPrimarySelection != newMode)
 		EdOpt.EditCopyToPrimarySelection = newMode;
+}
+
+void Editor::SetEditPasteFromPrimarySelection(int newMode) {
+	if (EdOpt.EditPasteFromPrimarySelection != newMode)
+		EdOpt.EditPasteFromPrimarySelection = newMode;
 }
 
 void Editor::SetShowLineNumbers(int NewMode)

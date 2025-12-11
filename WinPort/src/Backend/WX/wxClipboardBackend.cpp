@@ -7,6 +7,12 @@
 #include <utils.h>
 #include <dlfcn.h>
 
+#ifdef __WXGTK__
+#include <gtk/gtk.h>
+#include <gdk/gdk.h>
+#endif
+
+
 // #698: Mac: Copying to clipboard stopped working in wx 3.1 (not 100% sure about exact version).
 // The fix is submitted, supposedly, into 3.2: https://github.com/wxWidgets/wxWidgets/pull/1623/files
 // Guess the problem is only present in 3.1.
@@ -193,12 +199,109 @@ public:
 	}
 };
 
+#ifdef __WXGTK__
+
+enum WxBackendType {
+    NativeWayland,
+    XWayland,
+    NativeX11,
+    Unknown,
+    Undefined
+};
+
+enum WxClipboardType = {
+	Clipboard,
+	Primary,
+	Unknown
+};
+
+static WxBackendType wxBackendType = WxBackendType::Undefined;
+static WxClipboardType wxClipboardType = WxClipboardType::Clipboard;
+
+static WxBackendType detectWxBackend()
+{
+	if (wxBackendType == WxBackendType::Undefined) 
+	{
+        GdkDisplay* display = gdk_display_get_default();
+
+        const bool isWayland = GDK_IS_WAYLAND_DISPLAY(display);
+        const bool isX11     = GDK_IS_X11_DISPLAY(display);
+        const bool hasWaylandEnv = getenv("WAYLAND_DISPLAY") != NULL;
+
+        if (isWayland)
+            wxBackendType = WxBackendType::NativeWayland;
+        else if (isX11 && hasWaylandEnv)
+            wxBackendType = WxBackendType::XWayland;
+        else if (isX11)
+            wxBackendType = WxBackendType::NativeX11;
+        else 
+        	wxBackendType = WxBackendType::Unknown;
+    }
+    return wxBackendType;
+}
+
+static void setTextAsPrimarySelection(const wxString& text)
+{
+    GtkClipboard* primary = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
+    gtk_clipboard_set_text(primary, text.utf8_str(), -1);
+    gtk_clipboard_store(primary);
+}
+
+static void getTextFromPrimarySelectionStart(std::function<void(const wxString&)> callback)
+{
+    GtkClipboard* primary = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
+
+    // Allocate callback on heap so GTK can call it later
+    auto* cb = new std::function<void(const wxString&)>(callback);
+
+    gtk_clipboard_request_text(
+        primary,
+        [](GtkClipboard* clipboard, const gchar* text, gpointer user_data)
+        {
+            auto* cb = static_cast<std::function<void(const wxString&)>*>(user_data);
+            if (text)
+                (*cb)(wxString::FromUTF8(text));
+            else
+                (*cb)(wxString());
+            delete cb;
+        },
+        cb
+    );
+}
+
+static wxString getTextFromPrimarySelection()
+{
+    wxString result;
+    bool done = false;
+
+    getTextFromPrimarySelectionStart([&](const wxString& text) {
+        result = text;
+        done = true;
+    });
+
+    wxEventLoop loop;
+    while (!done)
+        loop.Dispatch();
+
+    return result;
+}
+
+#endif
+
 void *wxClipboardBackend::OnClipboardSetData(UINT format, void *data)
 {
 	if (!wxIsMainThread()) {
 		auto fn = std::bind(&wxClipboardBackend::OnClipboardSetData, this, format, data);
 		return CallInMain<void *>(fn);
 	}
+
+#ifdef __WXGTK__
+	if (wxClipboardType == WxClipboardType::Primary && detectWxBackend() == WxBackendType::NativeWayland) {
+		wxString wx_str((const wchar_t *)data);
+		setTextAsPrimarySelection(wx_str);
+		return data;
+	}
+#endif
 
 	size_t len = WINPORT(ClipboardSize)(data);
 	fprintf(stderr, "SetClipboardData: format=%u len=%lu\n", format, (unsigned long)len);
@@ -256,6 +359,14 @@ void *wxClipboardBackend::OnClipboardGetData(UINT format)
 		auto fn = std::bind(&wxClipboardBackend::OnClipboardGetData, this, format);
 		return CallInMain<void *>(fn);
 	}
+
+#ifdef __WXGTK__
+	if (wxClipboardType == WxClipboardType::Primary && detectWxBackend() == WxBackendType::NativeWayland) {
+		wxString wx_str = getTextFromPrimarySelection();
+		const auto &wc = wx_str.wc_str();
+		return ClipboardAllocFromZeroTerminatedString<wchar_t>(wc);
+	}
+#endif
 
 	PVOID p = nullptr;
 	if (format==CF_UNICODETEXT || format==CF_TEXT) {
@@ -359,5 +470,9 @@ INT wxClipboardBackend::ChooseClipboard(INT format)
 	bool now = wxTheClipboard->IsUsingPrimarySelection();
 	bool need = format > 0;
 	if (now != need) wxTheClipboard->UsePrimarySelection(need);
+
+#ifdef __WXGTK__
+	::wxClipboardType == need ? WxClipboardType::Primary : WxClipboardType::Clipboard;
+#endif
 	return need ? 1 : 0;
 }

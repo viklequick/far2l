@@ -287,6 +287,7 @@ void GoToVisualLine(int VisualLine);
 	void UnmarkMacroBlock();
 
 	void ProcessPasteEvent();
+	void ProcessPasteEventFromPrimary();
 
 	void AddUndoData(int Type, const wchar_t *Str = nullptr, const wchar_t *Eol = nullptr, int StrNum = 0,
 			int StrPos = 0, int Length = -1);
@@ -411,6 +412,9 @@ public:
 
 	int GetEditCopyToPrimarySelection() const { return EdOpt.EditCopyToPrimarySelection; }
 	void SetEditCopyToPrimarySelection(int NewMode);
+
+	int GetEditPasteFromPrimarySelection() const { return EdOpt.EditPasteFromPrimarySelection; }
+	void SetEditPasteFromPrimarySelection(int NewMode);
 
 	void GetSavePosMode(int &SavePos, int &SaveShortPos);
 

@@ -4,6 +4,7 @@
 #include <wx/wx.h>
 #include <wx/display.h>
 #include <wx/clipbrd.h>
+#include "wx/evtloop.h"
 #include <utils.h>
 #include <dlfcn.h>
 
@@ -203,10 +204,9 @@ enum WxBackendType {
     Undefined
 };
 
-enum WxClipboardType = {
+enum WxClipboardType {
 	Clipboard,
-	Primary,
-	Unknown
+	Primary
 };
 
 static WxBackendType wxBackendType = WxBackendType::Undefined;
@@ -226,7 +226,7 @@ typedef GType (*gdk_x11_display_get_type_t)(void);
 typedef gboolean (*g_type_check_instance_is_a_t)(GTypeInstance*, GType);
 typedef void* (*gdk_display_get_default_t)(void);
 
-#define G_TYPE_CHECK_INSTANCE_TYPE(instance, type)	(g_type_check_instance_is_a( (instance), (type) ))
+#define G_TYPE_CHECK_INSTANCE_TYPE(instance, type)	(g_type_check_instance_is_a( (GTypeInstance*)(instance), (type) ))
 
 #define GDK_TYPE_WAYLAND_DISPLAY            (gdk_wayland_display_get_type())
 #define GDK_TYPE_X11_DISPLAY                (gdk_x11_display_get_type())
@@ -256,7 +256,7 @@ static gdk_x11_display_get_type_t gdk_x11_display_get_type = 0;
 static g_type_check_instance_is_a_t g_type_check_instance_is_a = 0;
 static gdk_display_get_default_t gdk_display_get_default = 0;
 static gtk_clipboard_request_text_t gtk_clipboard_request_text = 0;
-static gtk_clipboard_set_text_t gtk_clipboard_request_text = 0;
+static gtk_clipboard_set_text_t gtk_clipboard_set_text = 0;
 static gtk_clipboard_get_t gtk_clipboard_get = 0;
 static gtk_clipboard_store_t gtk_clipboard_store = 0;
 static int gtk_loaded = 0;
@@ -272,6 +272,8 @@ static void assumeLazyLoadIsComplete() {
 	gtk_clipboard_set_text = (gtk_clipboard_set_text_t)dlsym(RTLD_DEFAULT, "gtk_clipboard_set_text");
 	gtk_clipboard_store = (gtk_clipboard_store_t)dlsym(RTLD_DEFAULT, "gtk_clipboard_store");
 	gtk_clipboard_get = (gtk_clipboard_get_t)dlsym(RTLD_DEFAULT, "gtk_clipboard_get");
+
+	gtk_loaded = 1;
 }
 
 static WxBackendType detectWxBackend()

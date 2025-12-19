@@ -149,6 +149,7 @@ private:
 	int SaveAsTextFormat{0};
 	FileHolderPtr FHP;
 	std::unique_ptr<EditorConfigOrg> EdCfg;
+	int MenuBarVisible;
 
 	virtual void DisplayObject();
 	int ProcessQuitKey(int FirstSave, BOOL NeedQuestion = TRUE);

@@ -424,6 +424,7 @@ void FileEditor::Init(FileHolderPtr NewFileHolder, UINT codepage, const wchar_t 
 	SetTitle(Title);
 	EditNamesList = nullptr;
 	KeyBarVisible = Opt.EdOpt.ShowKeyBar;
+	MenuBarVisible = Opt.EdOpt.ShowMenuBar;
 	TitleBarVisible = Opt.EdOpt.ShowTitleBar;
 	// $ 17.08.2001 KM - Добавлено для поиска по AltF7. При редактировании найденного файла из архива для клавиши F2 сделать вызов ShiftF2.
 	Flags.Change(FFILEEDIT_SAVETOSAVEAS,
@@ -538,7 +539,9 @@ void FileEditor::Init(FileHolderPtr NewFileHolder, UINT codepage, const wchar_t 
 		}
 	}
 
-	m_editor->SetPosition(X1, Y1 + (TitleBarVisible ? 1 : 0), X2, Y2 - (KeyBarVisible ? 1 : 0));
+	int vGap = TitleBarVisible ? 1 : 0 + MenuBarVisible ? 1 : 0;
+
+	m_editor->SetPosition(X1, Y1 + vGap, X2, Y2 - (KeyBarVisible ? 1 : 0));
 	m_editor->SetStartPos(StartLine, StartChar);
 
 	int UserBreak;

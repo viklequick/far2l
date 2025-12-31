@@ -273,7 +273,7 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 	{
 		HMenu HOptMenu(MainMenu, ARRAYSIZE(MainMenu));
 		HOptMenu.SetHelp(L"Menus");
-		int gap = Opt.EdOpt.ShowTitleBar ? 1 : 0;
+		int gap = Opt.EdOpt.ShowTitleBar && Opt.EdOpt.ShowMenuBar ? 1 : 0;
 		HOptMenu.SetPosition(0, gap, ScrX, gap);
 
 		if (LastCommand) {

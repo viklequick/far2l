@@ -4204,17 +4204,6 @@ EditShowKeyBar
 "Показувати &лінійку клавіш"
 "Адлюстроўваць радок к&лавішаў"
 
-EditShowMenuBar
-"Показывать меню"
-"Show menu bar"
-"Zobrazovat menu"
-"Menu anzeigen"
-"Menu sora mutatva"
-"Wyświetl menu"
-"Mostrar menu"
-"Показувати menu"
-"Адлюстроўваць menu"
-
 EditorMenuFileTitle
 "Файл"
 "File"
@@ -4260,7 +4249,7 @@ upd:"View"
 upd:"View"
 
 EditorMenuFileOpen
-upd:"Open...                             Shift+F4"
+"Открыть...                          Shift+F4"
 "Open...                             Shift+F4"
 upd:"Open...                             Shift+F4"
 upd:"Open...                             Shift+F4"
@@ -4271,7 +4260,7 @@ upd:"Open...                             Shift+F4"
 upd:"Open...                             Shift+F4"
 
 EditorMenuFileSave
-upd:"Save                                F2"
+"Сохранить                           F2"
 "Save                                F2"
 upd:"Save                                F2"
 upd:"Save                                F2"
@@ -4282,7 +4271,7 @@ upd:"Save                                F2"
 upd:"Save                                F2"
 
 EditorMenuFileSaveAs
-upd:"Save as...                          Shift+F2"
+"Сохранить как...                    Shift+F2"
 "Save as...                          Shift+F2"
 upd:"Save as...                          Shift+F2"
 upd:"Save as...                          Shift+F2"
@@ -4293,7 +4282,7 @@ upd:"Save as...                          Shift+F2"
 upd:"Save as...                          Shift+F2"
 
 EditorMenuFileSaveQ
-upd:"Save quetly                         Shift+F10"
+"Соъранить безусловно                Shift+F10"
 "Save quetly                         Shift+F10"
 upd:"Save quetly                         Shift+F10"
 upd:"Save quetly                         Shift+F10"
@@ -4304,7 +4293,7 @@ upd:"Save quetly                         Shift+F10"
 upd:"Save quetly                         Shift+F10"
 
 EditorMenuFileHistory
-upd:"Recent list...                      Alt+F11"
+"Недавно использованные...           Alt+F11"
 "Recent list...                      Alt+F11"
 upd:"Recent list...                      Alt+F11"
 upd:"Recent list...                      Alt+F11"
@@ -4315,7 +4304,7 @@ upd:"Recent list...                      Alt+F11"
 upd:"Recent list...                      Alt+F11"
 
 EditorMenuFilePrint
-upd:"Print...                            Alt+F5"
+"Печать...                           Alt+F5"
 "Print...                            Alt+F5"
 upd:"Print...                            Alt+F5"
 upd:"Print...                            Alt+F5"
@@ -4326,7 +4315,7 @@ upd:"Print...                            Alt+F5"
 upd:"Print...                            Alt+F5"
 
 EditorMenuFilePrinter
-upd:"Printer settings..."
+"Настройки принтера..."
 "Printer settings..."
 upd:"Printer settings..."
 upd:"Printer settings..."
@@ -4337,7 +4326,7 @@ upd:"Printer settings..."
 upd:"Printer settings..."
 
 EditorMenuFileGoToPanel
-upd:"Go to file in Panel                 Ctrl+F10"
+"Перейти к файлу на панели           Ctrl+F10"
 "Go to file in Panel                 Ctrl+F10"
 upd:"Go to file in Panel                 Ctrl+F10"
 upd:"Go to file in Panel                 Ctrl+F10"
@@ -4348,7 +4337,7 @@ upd:"Go to file in Panel                 Ctrl+F10"
 upd:"Go to file in Panel                 Ctrl+F10"
 
 EditorMenuFileExit
-upd:"Exit                                F10"
+"Выйти из редактора                  F10"
 "Exit                                F10"
 upd:"Exit                                F10"
 upd:"Exit                                F10"
@@ -4359,7 +4348,7 @@ upd:"Exit                                F10"
 upd:"Exit                                F10"
 
 EditorMenuFileHelp
-upd:"Help                                F1"
+"Помощь                              F1"
 "Help                                F1"
 upd:"Help                                F1"
 upd:"Help                                F1"
@@ -4370,7 +4359,7 @@ upd:"Help                                F1"
 upd:"Help                                F1"
 
 EditorMenuFilePlugins
-upd:"Plugins...                          F11"
+"Плагины...                          F11"
 "Plugins...                          F11"
 upd:"Plugins...                          F11"
 upd:"Plugins...                          F11"
@@ -4381,7 +4370,7 @@ upd:"Plugins...                          F11"
 upd:"Plugins...                          F11"
 
 EditorMenuFileScreens
-upd:"Screen list...                      F12"
+"Список экранов...                   F12"
 "Screen list...                      F12"
 upd:"Screen list...                      F12"
 upd:"Screen list...                      F12"
@@ -4392,7 +4381,7 @@ upd:"Screen list...                      F12"
 upd:"Screen list...                      F12"
 
 EditorMenuFileOptions
-upd:"Configuration...                    Alt+Shift+F9"
+"Настройки...                        Alt+Shift+F9"
 "Configuration...                    Alt+Shift+F9"
 upd:"Configuration...                    Alt+Shift+F9"
 upd:"Configuration...                    Alt+Shift+F9"
@@ -4403,7 +4392,7 @@ upd:"Configuration...                    Alt+Shift+F9"
 upd:"Configuration...                    Alt+Shift+F9"
 
 EditorMenuFileExitFar
-upd:"Exit far2l                          Alt+F10"
+"Вывйти из far2l                     Alt+F10"
 "Exit far2l                          Alt+F10"
 upd:"Exit far2l                          Alt+F10"
 upd:"Exit far2l                          Alt+F10"
@@ -4414,7 +4403,7 @@ upd:"Exit far2l                          Alt+F10"
 upd:"Exit far2l                          Alt+F10"
 
 EditorMenuEditUndo
-upd:"Undo                                Ctrl+Z"
+"Отменить                            Ctrl+Z"
 "Undo                                Ctrl+Z"
 upd:"Undo                                Ctrl+Z"
 upd:"Undo                                Ctrl+Z"
@@ -4425,7 +4414,7 @@ upd:"Undo                                Ctrl+Z"
 upd:"Undo                                Ctrl+Z"
 
 EditorMenuEditRedo
-upd:"Redo                                Ctrl+Shift+Z"
+"Повторить                           Ctrl+Shift+Z"
 "Redo                                Ctrl+Shift+Z"
 upd:"Redo                                Ctrl+Shift+Z"
 upd:"Redo                                Ctrl+Shift+Z"
@@ -4436,7 +4425,7 @@ upd:"Redo                                Ctrl+Shift+Z"
 upd:"Redo                                Ctrl+Shift+Z"
 
 EditorMenuEditSelectAll
-upd:"Select all                          Ctrl+A"
+"Выделить все                        Ctrl+A"
 "Select all                          Ctrl+A"
 upd:"Select all                          Ctrl+A"
 upd:"Select all                          Ctrl+A"
@@ -4447,7 +4436,7 @@ upd:"Select all                          Ctrl+A"
 upd:"Select all                          Ctrl+A"
 
 EditorMenuEditSelectVertical
-upd:"Select vertical block               Alt+Shift+Down"
+"Выделить вертикальнывй блок         Alt+Shift+Down"
 "Select vertical block               Alt+Shift+Down"
 upd:"Select vertical block               Alt+Shift+Down"
 upd:"Select vertical block               Alt+Shift+Down"
@@ -4458,7 +4447,7 @@ upd:"Select vertical block               Alt+Shift+Down"
 upd:"Select vertical block               Alt+Shift+Down"
 
 EditorMenuEditCut
-upd:"Cut                                 Ctrl+X"
+"Вырезать                            Ctrl+X"
 "Cut                                 Ctrl+X"
 upd:"Cut                                 Ctrl+X"
 upd:"Cut                                 Ctrl+X"
@@ -4469,7 +4458,7 @@ upd:"Cut                                 Ctrl+X"
 upd:"Cut                                 Ctrl+X"
 
 EditorMenuEditCopy
-upd:"Copy                                Ctrl+C"
+"Копировать                          Ctrl+C"
 "Copy                                Ctrl+C"
 upd:"Copy                                Ctrl+C"
 upd:"Copy                                Ctrl+C"
@@ -4480,7 +4469,7 @@ upd:"Copy                                Ctrl+C"
 upd:"Copy                                Ctrl+C"
 
 EditorMenuEditPaste
-upd:"Paste                               Ctrl+V"
+"Вставить                            Ctrl+V"
 "Paste                               Ctrl+V"
 upd:"Paste                               Ctrl+V"
 upd:"Paste                               Ctrl+V"
@@ -4491,18 +4480,18 @@ upd:"Paste                               Ctrl+V"
 upd:"Paste                               Ctrl+V"
 
 EditorMenuEditDelete
-upd:"Delete                              Ctrl+Bs"
-"Delete                              Ctrl+Bs"
-upd:"Delete                              Ctrl+Bs"
-upd:"Delete                              Ctrl+Bs"
-upd:"Delete                              Ctrl+Bs"
-upd:"Delete                              Ctrl+Bs"
-upd:"Delete                              Ctrl+Bs"
-upd:"Delete                              Ctrl+Bs"
-upd:"Delete                              Ctrl+Bs"
+"Ужалить                             Ctrl+Backspace"
+"Delete                              Ctrl+Backspace"
+upd:"Delete                              Ctrl+Backspace"
+upd:"Delete                              Ctrl+Backspace"
+upd:"Delete                              Ctrl+Backspace"
+upd:"Delete                              Ctrl+Backspace"
+upd:"Delete                              Ctrl+Backspace"
+upd:"Delete                              Ctrl+Backspace"
+upd:"Delete                              Ctrl+Backspace"
 
 EditorMenuEditDelLine
-upd:"Вelete line                         Ctrl+Y"
+"Удалить строку                      Ctrl+Y"
 "Вelete line                         Ctrl+Y"
 upd:"Вelete line                         Ctrl+Y"
 upd:"Вelete line                         Ctrl+Y"
@@ -4513,7 +4502,7 @@ upd:"Вelete line                         Ctrl+Y"
 upd:"Вelete line                         Ctrl+Y"
 
 EditorMenuEditDeleteLeadSpaces
-upd:"Delete leading spaces from line     Ctrl+Del"
+"Удалить пробелы слева в строке      Ctrl+Del"
 "Delete leading spaces from line     Ctrl+Del"
 upd:"Delete leading spaces from line     Ctrl+Del"
 upd:"Delete leading spaces from line     Ctrl+Del"
@@ -4524,7 +4513,7 @@ upd:"Delete leading spaces from line     Ctrl+Del"
 upd:"Delete leading spaces from line     Ctrl+Del"
 
 EditorMenuEditDeleteEOL
-upd:"Delete to the end of line           Ctrl+K"
+"Удалить до конца строки             Ctrl+K"
 "Delete to the end of line           Ctrl+K"
 upd:"Delete to the end of line           Ctrl+K"
 upd:"Delete to the end of line           Ctrl+K"
@@ -4535,7 +4524,7 @@ upd:"Delete to the end of line           Ctrl+K"
 upd:"Delete to the end of line           Ctrl+K"
 
 EditorMenuEditFind
-upd:"Search...                           F7"
+"Поиск...                            F7"
 "Search...                           F7"
 upd:"Search...                           F7"
 upd:"Search...                           F7"
@@ -4546,7 +4535,7 @@ upd:"Search...                           F7"
 upd:"Search...                           F7"
 
 EditorMenuEditFindReplace
-upd:"Replace...                          Ctrl+F7"
+"Замена...                           Ctrl+F7"
 "Replace...                          Ctrl+F7"
 upd:"Replace...                          Ctrl+F7"
 upd:"Replace...                          Ctrl+F7"
@@ -4557,7 +4546,7 @@ upd:"Replace...                          Ctrl+F7"
 upd:"Replace...                          Ctrl+F7"
 
 EditorMenuEditFindNext
-upd:"Search next                         Shift+F7"
+"Поиск вперед                        Shift+F7"
 "Search next                         Shift+F7"
 upd:"Search next                         Shift+F7"
 upd:"Search next                         Shift+F7"
@@ -4568,7 +4557,7 @@ upd:"Search next                         Shift+F7"
 upd:"Search next                         Shift+F7"
 
 EditorMenuEditFindPrev
-upd:"Search previous                     Alt+F7"
+"Поиск назад                         Alt+F7"
 "Search previous                     Alt+F7"
 upd:"Search previous                     Alt+F7"
 upd:"Search previous                     Alt+F7"
@@ -4579,7 +4568,7 @@ upd:"Search previous                     Alt+F7"
 upd:"Search previous                     Alt+F7"
 
 EditorMenuEditShortFName
-upd:"Type short file name                Shift+Enter"
+"Вставить короткое имя файла         Shift+Enter"
 "Type short file name                Shift+Enter"
 upd:"Type short file name                Shift+Enter"
 upd:"Type short file name                Shift+Enter"
@@ -4590,7 +4579,7 @@ upd:"Type short file name                Shift+Enter"
 upd:"Type short file name                Shift+Enter"
 
 EditorMenuEditLongFName
-upd:"Type full file name                 Ctrl+F"
+"Вставить полное имя файла           Ctrl+F"
 "Type full file name                 Ctrl+F"
 upd:"Type full file name                 Ctrl+F"
 upd:"Type full file name                 Ctrl+F"
@@ -4601,7 +4590,7 @@ upd:"Type full file name                 Ctrl+F"
 upd:"Type full file name                 Ctrl+F"
 
 EditorMenuEditLeftPaneName
-upd:"Insert path from left panel         Ctrl+Alt+("
+"Встапвить путь из левой панели      Ctrl+Alt+("
 "Insert path from left panel         Ctrl+Alt+("
 upd:"Insert path from left panel         Ctrl+Alt+("
 upd:"Insert path from left panel         Ctrl+Alt+("
@@ -4612,7 +4601,7 @@ upd:"Insert path from left panel         Ctrl+Alt+("
 upd:"Insert path from left panel         Ctrl+Alt+("
 
 EditorMenuEditRightPanel
-upd:"Insert path from right panel        Ctrl+Alt+)"
+"Вставить путь из правой панели      Ctrl+Alt+)"
 "Insert path from right panel        Ctrl+Alt+)"
 upd:"Insert path from right panel        Ctrl+Alt+)"
 upd:"Insert path from right panel        Ctrl+Alt+)"
@@ -4623,7 +4612,7 @@ upd:"Insert path from right panel        Ctrl+Alt+)"
 upd:"Insert path from right panel        Ctrl+Alt+)"
 
 EditorMenuEditActivePanel
-upd:"Insert path from active panel       Alt+Shift+("
+"Вставить путь из активной панели    Alt+Shift+("
 "Insert path from active panel       Alt+Shift+("
 upd:"Insert path from active panel       Alt+Shift+("
 upd:"Insert path from active panel       Alt+Shift+("
@@ -4634,7 +4623,7 @@ upd:"Insert path from active panel       Alt+Shift+("
 upd:"Insert path from active panel       Alt+Shift+("
 
 EditorMenuEditInactivePanel
-upd:"Insert path from passive panel      Alt+Shift+)"
+"Вставить путь из неактивной панели  Alt+Shift+)"
 "Insert path from passive panel      Alt+Shift+)"
 upd:"Insert path from passive panel      Alt+Shift+)"
 upd:"Insert path from passive panel      Alt+Shift+)"
@@ -4645,7 +4634,7 @@ upd:"Insert path from passive panel      Alt+Shift+)"
 upd:"Insert path from passive panel      Alt+Shift+)"
 
 EditorMenuEditBlockIndent
-upd:"Block indent                        Alt+U"
+"Сдвинуть блок вправо                Alt+U"
 "Block indent                        Alt+U"
 upd:"Block indent                        Alt+U"
 upd:"Block indent                        Alt+U"
@@ -4656,7 +4645,7 @@ upd:"Block indent                        Alt+U"
 upd:"Block indent                        Alt+U"
 
 EditorMenuEditBlockUnindent
-upd:"Block unindent                      Alt+I"
+"Сдвинуть блок влево                 Alt+I"
 "Block unindent                      Alt+I"
 upd:"Block unindent                      Alt+I"
 upd:"Block unindent                      Alt+I"
@@ -4667,7 +4656,7 @@ upd:"Block unindent                      Alt+I"
 upd:"Block unindent                      Alt+I"
 
 EditorMenuNavigateGoToLine
-upd:"Go to line...                       Alt+F8"
+"Перейти на строку...                Alt+F8"
 "Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"
@@ -4678,7 +4667,7 @@ upd:"Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"
 
 EditorMenuNavigateTop
-upd:"Go to top                           Ctrl+N"
+"Перейти к началу экрана             Ctrl+N"
 "Go to top                           Ctrl+N"
 upd:"Go to top                           Ctrl+N"
 upd:"Go to top                           Ctrl+N"
@@ -4689,7 +4678,7 @@ upd:"Go to top                           Ctrl+N"
 upd:"Go to top                           Ctrl+N"
 
 EditorMenuNavigateBottom
-upd:"Go to bottom                        Ctrl+E"
+"Перейти к концу экрана              Ctrl+E"
 "Go to bottom                        Ctrl+E"
 upd:"Go to bottom                        Ctrl+E"
 upd:"Go to bottom                        Ctrl+E"
@@ -4700,7 +4689,7 @@ upd:"Go to bottom                        Ctrl+E"
 upd:"Go to bottom                        Ctrl+E"
 
 EditorMenuNavigateBegin
-upd:"Go to begin of file                 Ctrl+Home"
+"Перенйти в начало файла             Ctrl+Home"
 "Go to begin of file                 Ctrl+Home"
 upd:"Go to begin of file                 Ctrl+Home"
 upd:"Go to begin of file                 Ctrl+Home"
@@ -4711,7 +4700,7 @@ upd:"Go to begin of file                 Ctrl+Home"
 upd:"Go to begin of file                 Ctrl+Home"
 
 EditorMenuNavigateEnd
-upd:"Go to end of file                   Ctrl+End"
+"Перейти к концу файла               Ctrl+End"
 "Go to end of file                   Ctrl+End"
 upd:"Go to end of file                   Ctrl+End"
 upd:"Go to end of file                   Ctrl+End"
@@ -4722,7 +4711,7 @@ upd:"Go to end of file                   Ctrl+End"
 upd:"Go to end of file                   Ctrl+End"
 
 EditorMenuNavigateBm0
-upd:"Go to bookmark 0                    Ctrl+0"
+"Перейти к закладке 0                Ctrl+0"
 "Go to bookmark 0                    Ctrl+0"
 upd:"Go to bookmark 0                    Ctrl+0"
 upd:"Go to bookmark 0                    Ctrl+0"
@@ -4733,7 +4722,7 @@ upd:"Go to bookmark 0                    Ctrl+0"
 upd:"Go to bookmark 0                    Ctrl+0"
 
 EditorMenuNavigateBm1
-upd:"Go to bookmark 1                    Ctrl+1"
+"Перейти к закладке 1                Ctrl+1"
 "Go to bookmark 1                    Ctrl+1"
 upd:"Go to bookmark 1                    Ctrl+1"
 upd:"Go to bookmark 1                    Ctrl+1"
@@ -4744,7 +4733,7 @@ upd:"Go to bookmark 1                    Ctrl+1"
 upd:"Go to bookmark 1                    Ctrl+1"
 
 EditorMenuNavigateBm2
-upd:"Go to bookmark 2                    Ctrl+2"
+"Перейти к закладке 2                Ctrl+2"
 "Go to bookmark 2                    Ctrl+2"
 upd:"Go to bookmark 2                    Ctrl+2"
 upd:"Go to bookmark 2                    Ctrl+2"
@@ -4755,7 +4744,7 @@ upd:"Go to bookmark 2                    Ctrl+2"
 upd:"Go to bookmark 2                    Ctrl+2"
 
 EditorMenuNavigateBm3
-upd:"Go to bookmark 3                    Ctrl+3"
+"Перейти к закладке 3                Ctrl+3"
 "Go to bookmark 3                    Ctrl+3"
 upd:"Go to bookmark 3                    Ctrl+3"
 upd:"Go to bookmark 3                    Ctrl+3"
@@ -4766,7 +4755,7 @@ upd:"Go to bookmark 3                    Ctrl+3"
 upd:"Go to bookmark 3                    Ctrl+3"
 
 EditorMenuNavigateBm4
-upd:"Go to bookmark 4                    Ctrl+4"
+"Перейти к закладке 4                Ctrl+4"
 "Go to bookmark 4                    Ctrl+4"
 upd:"Go to bookmark 4                    Ctrl+4"
 upd:"Go to bookmark 4                    Ctrl+4"
@@ -4777,7 +4766,7 @@ upd:"Go to bookmark 4                    Ctrl+4"
 upd:"Go to bookmark 4                    Ctrl+4"
 
 EditorMenuNavigateBm5
-upd:"Go to bookmark 5                    Ctrl+5"
+"Перейти к закладке 5                Ctrl+5"
 "Go to bookmark 5                    Ctrl+5"
 upd:"Go to bookmark 5                    Ctrl+5"
 upd:"Go to bookmark 5                    Ctrl+5"
@@ -4788,7 +4777,7 @@ upd:"Go to bookmark 5                    Ctrl+5"
 upd:"Go to bookmark 5                    Ctrl+5"
 
 EditorMenuNavigateBm6
-upd:"Go to bookmark 6                    Ctrl+6"
+"Перейти к закладке 6                Ctrl+6"
 "Go to bookmark 6                    Ctrl+6"
 upd:"Go to bookmark 6                    Ctrl+6"
 upd:"Go to bookmark 6                    Ctrl+6"
@@ -4799,7 +4788,7 @@ upd:"Go to bookmark 6                    Ctrl+6"
 upd:"Go to bookmark 6                    Ctrl+6"
 
 EditorMenuNavigateBm7
-upd:"Go to bookmark 7                    Ctrl+7"
+"Перейти к закладке 7                Ctrl+7"
 "Go to bookmark 7                    Ctrl+7"
 upd:"Go to bookmark 7                    Ctrl+7"
 upd:"Go to bookmark 7                    Ctrl+7"
@@ -4810,7 +4799,7 @@ upd:"Go to bookmark 7                    Ctrl+7"
 upd:"Go to bookmark 7                    Ctrl+7"
 
 EditorMenuNavigateBm8
-upd:"Go to bookmark 8                    Ctrl+8"
+"Перейти к закладке 8                Ctrl+8"
 "Go to bookmark 8                    Ctrl+8"
 upd:"Go to bookmark 8                    Ctrl+8"
 upd:"Go to bookmark 8                    Ctrl+8"
@@ -4821,7 +4810,7 @@ upd:"Go to bookmark 8                    Ctrl+8"
 upd:"Go to bookmark 8                    Ctrl+8"
 
 EditorMenuNavigateBm9
-upd:"Go to bookmark 9                    Ctrl+9"
+"Перейти к закладке 9                Ctrl+9"
 "Go to bookmark 9                    Ctrl+9"
 upd:"Go to bookmark 9                    Ctrl+9"
 upd:"Go to bookmark 9                    Ctrl+9"
@@ -4832,7 +4821,7 @@ upd:"Go to bookmark 9                    Ctrl+9"
 upd:"Go to bookmark 9                    Ctrl+9"
 
 EditorMenuNavigatePin0
-upd:"Pin bookmark 0                      Ctrl+Shift+0"
+"Запомнить закладку 0                Ctrl+Shift+0"
 "Pin bookmark 0                      Ctrl+Shift+0"
 upd:"Pin bookmark 0                      Ctrl+Shift+0"
 upd:"Pin bookmark 0                      Ctrl+Shift+0"
@@ -4843,7 +4832,7 @@ upd:"Pin bookmark 0                      Ctrl+Shift+0"
 upd:"Pin bookmark 0                      Ctrl+Shift+0"
 
 EditorMenuNavigatePin1
-upd:"Pin bookmark 1                      Ctrl+Shift+1"
+"Запомнить закладку 1                Ctrl+Shift+1"
 "Pin bookmark 1                      Ctrl+Shift+1"
 upd:"Pin bookmark 1                      Ctrl+Shift+1"
 upd:"Pin bookmark 1                      Ctrl+Shift+1"
@@ -4854,7 +4843,7 @@ upd:"Pin bookmark 1                      Ctrl+Shift+1"
 upd:"Pin bookmark 1                      Ctrl+Shift+1"
 
 EditorMenuNavigatePin2
-upd:"Pin bookmark 2                      Ctrl+Shift+2"
+"Запомнить закладку 2                Ctrl+Shift+2"
 "Pin bookmark 2                      Ctrl+Shift+2"
 upd:"Pin bookmark 2                      Ctrl+Shift+2"
 upd:"Pin bookmark 2                      Ctrl+Shift+2"
@@ -4865,7 +4854,7 @@ upd:"Pin bookmark 2                      Ctrl+Shift+2"
 upd:"Pin bookmark 2                      Ctrl+Shift+2"
 
 EditorMenuNavigatePin3
-upd:"Pin bookmark 3                      Ctrl+Shift+3"
+"Запомнить закладку 3                Ctrl+Shift+3"
 "Pin bookmark 3                      Ctrl+Shift+3"
 upd:"Pin bookmark 3                      Ctrl+Shift+3"
 upd:"Pin bookmark 3                      Ctrl+Shift+3"
@@ -4876,7 +4865,7 @@ upd:"Pin bookmark 3                      Ctrl+Shift+3"
 upd:"Pin bookmark 3                      Ctrl+Shift+3"
 
 EditorMenuNavigatePin4
-upd:"Pin bookmark 4                      Ctrl+Shift+4"
+"Запомнить закладку 4                Ctrl+Shift+4"
 "Pin bookmark 4                      Ctrl+Shift+4"
 upd:"Pin bookmark 4                      Ctrl+Shift+4"
 upd:"Pin bookmark 4                      Ctrl+Shift+4"
@@ -4887,7 +4876,7 @@ upd:"Pin bookmark 4                      Ctrl+Shift+4"
 upd:"Pin bookmark 4                      Ctrl+Shift+4"
 
 EditorMenuNavigatePin5
-upd:"Pin bookmark 5                      Ctrl+Shift+5"
+"Запомнить закладку 5                Ctrl+Shift+5"
 "Pin bookmark 5                      Ctrl+Shift+5"
 upd:"Pin bookmark 5                      Ctrl+Shift+5"
 upd:"Pin bookmark 5                      Ctrl+Shift+5"
@@ -4898,7 +4887,7 @@ upd:"Pin bookmark 5                      Ctrl+Shift+5"
 upd:"Pin bookmark 5                      Ctrl+Shift+5"
 
 EditorMenuNavigatePin6
-upd:"Pin bookmark 6                      Ctrl+Shift+6"
+"Запомнить закладку 6                Ctrl+Shift+6"
 "Pin bookmark 6                      Ctrl+Shift+6"
 upd:"Pin bookmark 6                      Ctrl+Shift+6"
 upd:"Pin bookmark 6                      Ctrl+Shift+6"
@@ -4909,7 +4898,7 @@ upd:"Pin bookmark 6                      Ctrl+Shift+6"
 upd:"Pin bookmark 6                      Ctrl+Shift+6"
 
 EditorMenuNavigatePin7
-upd:"Pin bookmark 7                      Ctrl+Shift+7"
+"Запомнить закладку 7                Ctrl+Shift+7"
 "Pin bookmark 7                      Ctrl+Shift+7"
 upd:"Pin bookmark 7                      Ctrl+Shift+7"
 upd:"Pin bookmark 7                      Ctrl+Shift+7"
@@ -4920,7 +4909,7 @@ upd:"Pin bookmark 7                      Ctrl+Shift+7"
 upd:"Pin bookmark 7                      Ctrl+Shift+7"
 
 EditorMenuNavigatePin8
-upd:"Pin bookmark 8                      Ctrl+Shift+8"
+"Запомнить закладку 8                Ctrl+Shift+8"
 "Pin bookmark 8                      Ctrl+Shift+8"
 upd:"Pin bookmark 8                      Ctrl+Shift+8"
 upd:"Pin bookmark 8                      Ctrl+Shift+8"
@@ -4931,7 +4920,7 @@ upd:"Pin bookmark 8                      Ctrl+Shift+8"
 upd:"Pin bookmark 8                      Ctrl+Shift+8"
 
 EditorMenuNavigatePin9
-upd:"Pin bookmark 9                      Ctrl+Shift+9"
+"Запомнить закладку 9                Ctrl+Shift+9"
 "Pin bookmark 9                      Ctrl+Shift+9"
 upd:"Pin bookmark 9                      Ctrl+Shift+9"
 upd:"Pin bookmark 9                      Ctrl+Shift+9"
@@ -4942,7 +4931,7 @@ upd:"Pin bookmark 9                      Ctrl+Shift+9"
 upd:"Pin bookmark 9                      Ctrl+Shift+9"
 
 EditorMenuViewKeyBar
-upd:"Show/Hide key bar                   Ctrl+B"
+"Показать/скрыть линейку клавиш      Ctrl+B"
 "Show/Hide key bar                   Ctrl+B"
 upd:"Show/Hide key bar                   Ctrl+B"
 upd:"Show/Hide key bar                   Ctrl+B"
@@ -4953,7 +4942,7 @@ upd:"Show/Hide key bar                   Ctrl+B"
 upd:"Show/Hide key bar                   Ctrl+B"
 
 EditorMenuViewTitleBar
-upd:"Show/Hide title bar                 Ctrl+Shift+B"
+"Показать/скрыть заголовок           Ctrl+Shift+B"
 "Show/Hide title bar                 Ctrl+Shift+B"
 upd:"Show/Hide title bar                 Ctrl+Shift+B"
 upd:"Show/Hide title bar                 Ctrl+Shift+B"
@@ -4964,7 +4953,7 @@ upd:"Show/Hide title bar                 Ctrl+Shift+B"
 upd:"Show/Hide title bar                 Ctrl+Shift+B"
 
 EditorMenuViewWordWrap
-upd:"Toggle word wrap                    F3"
+"Перенос по словам                   F3"
 "Toggle word wrap                    F3"
 upd:"Toggle word wrap                    F3"
 upd:"Toggle word wrap                    F3"
@@ -4975,7 +4964,7 @@ upd:"Toggle word wrap                    F3"
 upd:"Toggle word wrap                    F3"
 
 EditorMenuViewNumbers
-upd:"Toggle line numbers                 Ctrl+F3"
+"Номера строк                        Ctrl+F3"
 "Toggle line numbers                 Ctrl+F3"
 upd:"Toggle line numbers                 Ctrl+F3"
 upd:"Toggle line numbers                 Ctrl+F3"
@@ -4986,7 +4975,7 @@ upd:"Toggle line numbers                 Ctrl+F3"
 upd:"Toggle line numbers                 Ctrl+F3"
 
 EditorMenuViewSpaces
-upd:"Toggle white spaces                 F5"
+"Пробельные литеры                   F5"
 "Toggle white spaces                 F5"
 upd:"Toggle white spaces                 F5"
 upd:"Toggle white spaces                 F5"
@@ -4997,7 +4986,7 @@ upd:"Toggle white spaces                 F5"
 upd:"Toggle white spaces                 F5"
 
 EditorMenuViewTabs
-upd:"Toggle tabs to spaces conversion    Ctrl+F5"
+"Конвертировать табуляции в пробелы  Ctrl+F5"
 "Toggle tabs to spaces conversion    Ctrl+F5"
 upd:"Toggle tabs to spaces conversion    Ctrl+F5"
 upd:"Toggle tabs to spaces conversion    Ctrl+F5"
@@ -5008,7 +4997,7 @@ upd:"Toggle tabs to spaces conversion    Ctrl+F5"
 upd:"Toggle tabs to spaces conversion    Ctrl+F5"
 
 EditorMenuViewOvertype
-upd:"Toggle insert/overtype mode         Insert"
+"Режим вставки/замены                Insert"
 "Toggle insert/overtype mode         Insert"
 upd:"Toggle insert/overtype mode         Insert"
 upd:"Toggle insert/overtype mode         Insert"
@@ -5019,7 +5008,7 @@ upd:"Toggle insert/overtype mode         Insert"
 upd:"Toggle insert/overtype mode         Insert"
 
 EditorMenuViewFullScreen
-upd:"Toggle full screen                  Alt+F9"
+"На весь экран                       Alt+F9"
 "Toggle full screen                  Alt+F9"
 upd:"Toggle full screen                  Alt+F9"
 upd:"Toggle full screen                  Alt+F9"
@@ -5030,7 +5019,7 @@ upd:"Toggle full screen                  Alt+F9"
 upd:"Toggle full screen                  Alt+F9"
 
 EditorMenuViewLock
-upd:"Toggle lock mode                    Ctrl+L"
+"Режим блокировки                    Ctrl+L"
 "Toggle lock mode                    Ctrl+L"
 upd:"Toggle lock mode                    Ctrl+L"
 upd:"Toggle lock mode                    Ctrl+L"
@@ -5041,7 +5030,7 @@ upd:"Toggle lock mode                    Ctrl+L"
 upd:"Toggle lock mode                    Ctrl+L"
 
 EditorMenuViewConsole
-upd:"Toggle console                      Ctrl+O"
+"Показать консоль                    Ctrl+O"
 "Toggle console                      Ctrl+O"
 upd:"Toggle console                      Ctrl+O"
 upd:"Toggle console                      Ctrl+O"
@@ -5052,7 +5041,7 @@ upd:"Toggle console                      Ctrl+O"
 upd:"Toggle console                      Ctrl+O"
 
 EditorMenuViewTabSize
-upd:"Change tab size...                  Shift+F5"
+"Сменить размер табуляции...         Shift+F5"
 "Change tab size...                  Shift+F5"
 upd:"Change tab size...                  Shift+F5"
 upd:"Change tab size...                  Shift+F5"
@@ -5063,7 +5052,7 @@ upd:"Change tab size...                  Shift+F5"
 upd:"Change tab size...                  Shift+F5"
 
 EditorMenuViewOem
-upd:"Toggle code page UTF8-ANSI-OEM      F8"
+"Кодировки UTF8-ANSI-OEM             F8"
 "Toggle code page UTF8-ANSI-OEM      F8"
 upd:"Toggle code page UTF8-ANSI-OEM      F8"
 upd:"Toggle code page UTF8-ANSI-OEM      F8"
@@ -5074,7 +5063,7 @@ upd:"Toggle code page UTF8-ANSI-OEM      F8"
 upd:"Toggle code page UTF8-ANSI-OEM      F8"
 
 EditorMenuViewCodepage
-upd:"Change code page...                 Shift+F8"
+"Сменить кодировку...                Shift+F8"
 "Change code page...                 Shift+F8"
 upd:"Change code page...                 Shift+F8"
 upd:"Change code page...                 Shift+F8"
@@ -5085,7 +5074,7 @@ upd:"Change code page...                 Shift+F8"
 upd:"Change code page...                 Shift+F8"
 
 EditorMenuViewViewer
-upd:"Switch to viewer                    F6"
+"Перейти в режим просмотра           F6"
 "Switch to viewer                    F6"
 upd:"Switch to viewer                    F6"
 upd:"Switch to viewer                    F6"
@@ -5105,6 +5094,17 @@ upd:"S&how title bar"
 upd:"S&how title bar"
 "Показувати &заголовок"
 "Адлюстроўваць &загаловак"
+
+EditShowMenuBar
+"Показывать меню"
+"Show menu bar"
+"Zobrazovat menu"
+"Menu anzeigen"
+"Menu sora mutatva"
+"Wyświetl menu"
+"Mostrar menu"
+"Показувати menu"
+"Адлюстроўваць menu"
 
 EditConfigPickUpWord
 "Cлово под к&урсором"

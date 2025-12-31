@@ -73,6 +73,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "DlgGuid.hpp"
 #include "filelist.hpp"
 #include "printersupport.hpp"
+#include "fileedit2options.hpp"
 
 #include <algorithm> 
 #include <cmath>
@@ -2069,6 +2070,16 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 int FileEditor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	F4KeyOnly = false;
+
+	// Activate menu bar
+	if (MenuBarVisible) {
+		int pos = TitleBarVisible ? 1 : 0;
+		if (MouseEvent->dwMousePosition.Y == pos && (MouseEvent->dwButtonState & 3) && !MouseEvent->dwEventFlags) {
+			EditorShellOptions(0, MouseEvent, this);
+			return TRUE;
+		}
+	}
+
 	if (!EditKeyBar.ProcessMouse(MouseEvent))
 		if (!ProcessEditorInput(FrameManager->GetLastInputRecord()))
 			if (!m_editor->ProcessMouse(MouseEvent))

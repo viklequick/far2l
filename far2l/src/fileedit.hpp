@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "keybar.hpp"
 #include "fileholder.hpp"
 #include "EditorConfigOrg.hpp"
+#include "menubar.hpp"
 
 class NamesList;
 
@@ -125,9 +126,14 @@ public:
 	void SetPluginTitle(const wchar_t *PluginTitle);
 	static const FileEditor *CurrentEditor;
 
+	BOOL SendToPrinter(); // tries to print either selected block or whole text
+	void ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey);
+
 private:
 	Editor *m_editor;
 	KeyBar EditKeyBar;
+	EditorMenuBar* EditMenuBar;
+
 	NamesList *EditNamesList;
 	FARString strFileName;
 	FARString strFullFileName;

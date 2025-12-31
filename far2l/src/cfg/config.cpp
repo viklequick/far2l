@@ -1144,9 +1144,9 @@ void EditorConfig(EditorOptions &EdOpt, bool Local, int EdCfg_ExpandTabs, int Ed
 	Builder.AddTextAfter(TabSize, Msg::EditConfigTabSize);
 	Builder.AddCheckbox(Msg::EditShowWhiteSpace, &EdOpt.ShowWhiteSpace);
 	Builder.AddCheckbox(Msg::EditShowKeyBar, &EdOpt.ShowKeyBar);
-	// Builder.AddCheckbox(Msg::EditShowMenuBar, &EdOpt.ShowMenuBar);
 	Builder.AddCheckbox(Msg::EditShowLineNumbers, &EdOpt.ShowLineNumbers);
 	Builder.AddCheckbox(Msg::EditCopyToPrimarySelection, &EdOpt.EditCopyToPrimarySelection);
+	Builder.AddCheckbox(Msg::EditShowMenuBar, &EdOpt.ShowMenuBar);
 
 	Builder.ColumnBreak();
 	Builder.AddCheckbox(Msg::EditConfigDelRemovesBlocks, &EdOpt.DelRemovesBlocks);

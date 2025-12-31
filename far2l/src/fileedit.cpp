@@ -380,7 +380,7 @@ FileEditor::~FileEditor()
 
 	delete EditNamesList;
 
-	if (EditMenuBar) delete EditMenuBar;
+	// if (EditMenuBar) delete EditMenuBar;
 	EditMenuBar = nullptr;
 }
 
@@ -698,8 +698,7 @@ void FileEditor::Show()
 
 		if (MenuBarVisible) {
 			EditMenuBar->SetPosition(0, TitleBarVisible ? 1 : 0, ScrX, TitleBarVisible ? 1 : 0);
-				EditMenuBar->Show();
-
+			EditMenuBar->Show();
 		}
 	}
 
@@ -2895,6 +2894,13 @@ void FileEditor::ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey)
 {
 	if (accelKey) {
 		ProcessKey(accelKey);
+		return;
+	}
+
+	if (hMenu == MENU_VIEW && vMenu == MENU_VIEW_MENUBAR) {
+		MenuBarVisible = !MenuBarVisible;
+		Show();
+		return;
 	}
 
 	// todo: handle commands without accelerated keys
@@ -2905,4 +2911,33 @@ void FileEditor::ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey)
 		}
 		return;
 	}
+}
+
+int FileEditor::MenuBarPosition() {
+	return TitleBarVisible && MenuBarVisible ? 1 : 0;
+}
+
+int FileEditor::IsOptionActive(int hMenu, int vMenu) {
+	if (hMenu != MENU_VIEW) return FALSE;
+	switch (vMenu) {
+	case MENU_VIEW_KEYBAR:
+		return KeyBarVisible;
+	case MENU_VIEW_TITLEBAR:
+		return TitleBarVisible;
+	case MENU_VIEW_MENUBAR:
+		return MenuBarVisible;
+	case MENU_VIEW_WORDWRAP:
+		return m_editor->GetWordWrap();
+	case MENU_VIEW_NUMBERS:
+		return m_editor->GetShowLineNumbers();
+	case MENU_VIEW_SPACES:
+		return m_editor->GetShowWhiteSpace();
+	case MENU_VIEW_TABS_TO_SPACES:
+		return m_editor->GetConvertTabs() == EXPAND_NEWTABS;
+	case MENU_VIEW_OVERTYPE:
+		return m_editor->Flags.Check(FEDITLINE_OVERTYPE);
+	case MENU_VIEW_LOCK:
+		return m_editor->Flags.Check(FEDITOR_LOCKMODE);
+	}
+	return FALSE;
 }

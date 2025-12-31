@@ -128,6 +128,8 @@ public:
 
 	BOOL SendToPrinter(); // tries to print either selected block or whole text
 	void ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey);
+	int MenuBarPosition();
+	int IsOptionActive(int hMenu, int vMenu);
 
 private:
 	Editor *m_editor;

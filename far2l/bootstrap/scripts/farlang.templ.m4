@@ -4649,7 +4649,7 @@ EditorMenuNavigateGoToLine
 "Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"
-upd:"Go to line...                       Al	t+F8"
+upd:"Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"
 upd:"Go to line...                       Alt+F8"

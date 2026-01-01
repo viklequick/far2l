@@ -45,6 +45,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "interf.hpp"
 #include "manager.hpp"
 #include "ctrlobj.hpp"
+#include "macro.hpp"
+#include "manager.hpp"
+#include "ctrlobj.hpp"
 #include "fileedit.hpp"
 
 #include "fileedit2options.hpp"
@@ -64,9 +67,9 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		{Msg::EditorMenuFileExit,	0,	KEY_F10  },
 		{Msg::EditorMenuFileSaveQ,	0,	KEY_SHIFTF10  },
 		{L"", LIF_SEPARATOR, 0  },
-		{Msg::EditorMenuFileHelp,	0,	KEY_F1  },
-		{Msg::EditorMenuFilePlugins,	0,	KEY_F11  },
-		{Msg::EditorMenuFileScreens,	0,	KEY_F12  },
+		{Msg::EditorMenuFileHelp,	0,	0  },
+		{Msg::EditorMenuFilePlugins,	0,	0  },
+		{Msg::EditorMenuFileScreens,	0,	0  },
 		{Msg::EditorMenuFileExitFar,	0,	KEY_ALTF10  },
 	};
 
@@ -75,7 +78,7 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		{Msg::EditorMenuEditRedo,	0,	KEY_CTRLSHIFTZ  },
 		{L"", LIF_SEPARATOR, 0  },
 		{Msg::EditorMenuEditSelectAll,	0,	KEY_CTRLA  },
-		{Msg::EditorMenuEditSelectVertical,	0,	KEY_ALTSHIFTDOWN  },
+		{Msg::EditorMenuEditSelectVertical,	0,	KEY_ALTSHIFTRIGHT  },
 		{L"", LIF_SEPARATOR, 0  },
 		{Msg::EditorMenuEditCut,	0,	KEY_CTRLX  },
 		{Msg::EditorMenuEditCopy,	0,	KEY_CTRLC  },
@@ -152,11 +155,33 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		{Msg::EditorMenuFileOptions,	0,	KEY_ALTSHIFTF9  },
 	};
 
+	std::vector<FARString> v;
+	for(size_t i = 0; ; ++i) {
+		FARString keyName, description, s;
+		if (CtrlObject->Macro.GetMacroKeyInfo(true, MACRO_EDITOR, i, description, keyName)	== -1) 
+			break;
+		s = s.Format(L"%-35ls %ls", keyName.GetBuffer(), description.GetBuffer());
+		v.push_back(s);	
+	}
+
+	int MacroMenuSize = v.size() + 2;
+	MenuDataEx MacroMenu[MacroMenuSize] = {
+		{Msg::EditorMenuMacroRecord,	0,	KEY_CTRLB  },
+		{L"", LIF_SEPARATOR, 0  }
+	};
+
+	for(size_t i = 0; i < v.size(); ++i) {
+		MacroMenu[i+2].Name = v[i].GetBuffer();
+		MacroMenu[i+2].Flags = 0;
+		MacroMenu[i+2].AccelKey = 0;
+	}
+
 	HMenuData MainMenu[] = {
 		{Msg::EditorMenuFileTitle,     1, FileMenu,    ARRAYSIZE(FileMenu),    L"Editor"},
 		{Msg::EditorMenuEditTitle,    0, EditMenu,   ARRAYSIZE(EditMenu),   L"Editor" },
 		{Msg::EditorMenuNavigateTitle, 0, NavigateMenu,     ARRAYSIZE(NavigateMenu),     L"Editor" },
-		{Msg::EditorMenuViewTitle,  0, ViewMenu, ARRAYSIZE(ViewMenu), L"Editor" }
+		{Msg::EditorMenuViewTitle,  0, ViewMenu, ARRAYSIZE(ViewMenu), L"Editor" },
+		{Msg::EditorMenuMacroTitle, 0, MacroMenu, MacroMenuSize, L"Editor" }
 	};
 
 	static int LastHItem = -1, LastVItem = 0;
@@ -198,6 +223,17 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		HOptMenu.Process();
 
 		HOptMenu.GetExitCode(HItem, VItem);
+	}
+
+	if (HItem == MENU_FILE) {
+		switch(VItem) {
+		case MENU_FILE_PLUGINS:	// Plugin commands
+			FrameManager->ProcessKey(KEY_F11);
+			break;
+		case MENU_FILE_SCREEN_LIST:		// Screens list
+			FrameManager->ProcessKey(KEY_F12);
+			break;
+		}
 	}
 
 	if (HItem >= 0 && VItem >= 0) {

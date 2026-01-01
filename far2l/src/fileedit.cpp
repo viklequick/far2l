@@ -2896,15 +2896,19 @@ void FileEditor::ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey)
 		ProcessKey(accelKey);
 		return;
 	}
-
-	if (hMenu == MENU_VIEW && vMenu == MENU_VIEW_MENUBAR) {
+	else if (hMenu == MENU_VIEW && vMenu == MENU_VIEW_MENUBAR) {
 		MenuBarVisible = !MenuBarVisible;
 		Show();
 		return;
 	}
-
+	else if (hMenu == MENU_FILE) {
+		if (vMenu == MENU_FILE_HELP) {
+			ProcessKey(KEY_F1);
+		}
+		return;
+	}
 	// todo: handle commands without accelerated keys
-	if (hMenu == MENU_FILE && vMenu == MENU_FILE_PRINTER) {
+	else if (hMenu == MENU_FILE && vMenu == MENU_FILE_PRINTER) {
 		PrinterSupport ps;
 		if (ps.IsPrinterSetupDialogSupported()) {
 			ps.ShowPrinterSetupDialog();

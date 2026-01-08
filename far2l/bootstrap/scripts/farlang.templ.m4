@@ -5106,17 +5106,6 @@ upd:"&Record macro                        Ctrl+."
 upd:"&Record macro                        Ctrl+."
 upd:"&Record macro                        Ctrl+."
 
-SetMacroName
-"Задать имя макроса"
-"Macro name"
-upd:"Macro name"
-upd:"Macro name"
-upd:"Macro name"
-upd:"Macro name"
-upd:"Macro name"
-upd:"Macro name"
-upd:"Macro name"
-
 EditShowTitleBar
 "Показывать &заголовок"
 "S&how title bar"
@@ -21628,6 +21617,17 @@ l:
 "Завдання макрокоманди"
 "Задаць каманду макраса"
 
+DefineMacroDescription
+"Задать описание макроса"
+"Macro description"
+upd:"Macro description"
+upd:"Macro description"
+upd:"Macro description"
+upd:"Macro description"
+upd:"Macro description"
+upd:"Macro description"
+upd:"Macro description"
+
 DefineMacro
 "Нажмите желаемую клавишу"
 "Press the desired key"
@@ -28344,6 +28344,28 @@ upd:"Word wrap"
 upd:"Word wrap"
 upd:"Word wrap"
 upd:"Word wrap"
+
+ColorThemesUserSection
+"Темы пользователя"
+"User themes"
+upd:"User themes"
+upd:"User themes"
+upd:"User themes"
+upd:"User themes"
+upd:"User themes"
+upd:"User themes"
+upd:"User themes"
+
+ColorThemesPreinstalledSection
+"Темы предустановленные"
+"Preinstalled themes"
+upd:"Preinstalled themes"
+upd:"Preinstalled themes"
+upd:"Preinstalled themes"
+upd:"Preinstalled themes"
+upd:"Preinstalled themes"
+upd:"Preinstalled themes"
+upd:"Preinstalled themes"
 
 #Must be the last
 NewFileName

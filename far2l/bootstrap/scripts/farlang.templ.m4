@@ -28367,6 +28367,17 @@ upd:"Preinstalled themes"
 upd:"Preinstalled themes"
 upd:"Preinstalled themes"
 
+ColorThemesNoTheme
+"По умолчанию (встроенная)"
+"Default (built-in)"
+upd:"Default (built-in)"
+upd:"Default (built-in)"
+upd:"Default (built-in)"
+upd:"Default (built-in)"
+upd:"Default (built-in)"
+upd:"Default (built-in)"
+upd:"Default (built-in)"
+
 #Must be the last
 NewFileName
 l:

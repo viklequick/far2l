@@ -286,12 +286,14 @@ void FarColors::ResetToDefaultIndexRGB( uint8_t *indexes ) noexcept {
 	}
 }
 
-void FarColors::ResetToDefaultIndex( uint8_t *indexes ) noexcept {
+void FarColors::ResetToDefaultIndex( uint8_t *indexes, size_t length ) noexcept {
 
 	fprintf(stderr, "FarColors::ResetToDefaultIndex( )\n" );
 
+	if (length <= 0) length = SIZE_ARRAY_FARCOLORS;
+
 	if (!indexes) indexes = DefaultColorsIndex16;
-	for(size_t i = 0; i < SIZE_ARRAY_FARCOLORS; i++) {
+	for(size_t i = 0; i < length; i++) {
 		uint8_t color = indexes[i];
 		colors[i] = color;
 	}
@@ -332,24 +334,47 @@ void FarColors::InitFarColors( ) noexcept {
 	// Theme is not defined, fall back to colors
 	Palette::InitFarPalette();
 
-	std::string colors_file = InMyConfig(FARCOLORS_CONFIG);
+	std::string colors_file = InMyConfig(FARCOLORS_CONFIG, false);
 	if (!InitFarColorsFromFile(colors_file)) {
+
+		fprintf(stderr, "Legacy code: no themes or RGB\n");
 
     	ConfigReader cfg_reader("Colors");
     	if (cfg_reader.HasSection()) {
+
+        	fprintf(stderr, "Legacy code: Colors section detected\n");
+
     		const std::string strCurrentPaletteRGB = "CurrentPaletteRGB";
     		const std::string strCurrentPalette = "CurrentPalette";
     		if (cfg_reader.HasKey(strCurrentPaletteRGB)) {
+            	fprintf(stderr, "Legacy code: RGB palette found in Colors section\n");
     			if (cfg_reader.GetBytes((unsigned char*)FARColors.colors, SIZE_ARRAY_FARCOLORS * sizeof(uint64_t), strCurrentPaletteRGB) == SIZE_ARRAY_FARCOLORS * sizeof(uint64_t)) {
+	            	fprintf(stderr, "Legacy code: RGB palette found in Colors section and loaded\n");
     				FARColors.Set();
+	            	fprintf(stderr, "Legacy code: RGB palette found in Colors section and applied\n");
     				return;
     			}
     		}
     		if (cfg_reader.HasKey(strCurrentPalette)) {
+            	fprintf(stderr, "Legacy code: Low colors palette found in Colors section\n");
     			uint8_t indexes[SIZE_ARRAY_FARCOLORS];
-    			if (cfg_reader.GetBytes((unsigned char*)indexes, SIZE_ARRAY_FARCOLORS, strCurrentPalette) == SIZE_ARRAY_FARCOLORS) {
+
+                int loaded = cfg_reader.GetBytes((unsigned char*)indexes, SIZE_ARRAY_FARCOLORS, strCurrentPalette);
+            	fprintf(stderr, "Legacy code: Low colors palette found in Colors section: %d items / %d\n", loaded, (int)SIZE_ARRAY_FARCOLORS);
+
+                if (loaded > 0 && loaded < SIZE_ARRAY_FARCOLORS) {
+	            	fprintf(stderr, "Legacy code: Low colors palette found in Colors section and loaded\n");
+                	FARColors.ResetToDefaultIndexRGB(DefaultColorsIndex16);
+    				FARColors.ResetToDefaultIndex(indexes, loaded);
+    				FARColors.Set();
+	            	fprintf(stderr, "Legacy code: Low colors palette found in Colors section and applied\n");
+					return;
+                }
+    			else if (loaded >= SIZE_ARRAY_FARCOLORS) {
+	            	fprintf(stderr, "Legacy code: Low colors palette found in Colors section and loaded\n");
     				FARColors.ResetToDefaultIndex(indexes);
     				FARColors.Set();
+	            	fprintf(stderr, "Legacy code: Low colors palette found in Colors section and applied\n");
     				return;
     			}
     		}
@@ -446,6 +471,7 @@ FARString FarColors::SaveFarColorsAsUserTheme( FARString& base ) noexcept
 
 #include <dirent.h>
 #include <unistd.h>
+#include <algorithm>
 
 std::vector<std::string> FarColors::GetKnownUserThemes ()
 {
@@ -462,6 +488,7 @@ std::vector<std::string> FarColors::GetKnownUserThemes ()
 	    }
     	closedir(dir);
     }
+    std::sort(v.begin(), v.end());
     return v;
 }
 
@@ -489,5 +516,6 @@ std::vector<std::string> FarColors::GetKnownSystemThemes ()
 	    }
     	closedir(dir);
     }
+    std::sort(v.begin(), v.end());
     return v;
 }

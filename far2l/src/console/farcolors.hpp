@@ -75,7 +75,7 @@ public:
 
 	bool Load(KeyFileHelper &kfh) noexcept;
 	bool Save(KeyFileHelper &kfh) noexcept;
-	void ResetToDefaultIndex(uint8_t *indexes = nullptr) noexcept;
+	void ResetToDefaultIndex(uint8_t *indexes = nullptr, size_t length = 0) noexcept;
 	void ResetToDefaultIndexRGB(uint8_t *indexes = nullptr) noexcept;
 	void Reset(bool RGB = false) noexcept;
 

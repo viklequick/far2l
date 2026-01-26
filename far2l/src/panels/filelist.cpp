@@ -168,7 +168,7 @@ FileList::FileList()
 	NumericSort = 0;
 	CaseSensitiveSort = 0;
 	DirectoriesFirst = 1;
-	ExecutablesFirst = 0; // todo: from config
+	ExecutablesFirst = 0;
 	Columns = PreparePanelView(&ViewSettings);
 	PluginCommand = -1;
 
@@ -362,7 +362,6 @@ int _cdecl SortList(const void *el1, const void *el2)
 	}
 
 	if (ListExecutablesFirst) {
-		// todo -> do we need to call stat here?
 		if ((SPtr1->FileAttr & FILE_ATTRIBUTE_EXECUTABLE) < (SPtr2->FileAttr & FILE_ATTRIBUTE_EXECUTABLE))
 			return 1;
 

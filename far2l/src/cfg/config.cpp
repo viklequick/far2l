@@ -1101,6 +1101,7 @@ void ViewerConfig(ViewerOptions &ViOpt, bool Local)
 	Builder.AddCheckbox(Msg::ViewConfigScrollbar, &ViOpt.ShowScrollbar);
 	Builder.AddCheckbox(Msg::ViewShowTitleBar, &ViOpt.ShowTitleBar);
 	Builder.AddCheckbox(Msg::ViewShowMenuBar, &ViOpt.ShowMenuBar);
+	Builder.AddCheckbox(Msg::ViewClickableURLs, &ViOpt.ClickableURLs);
 	Builder.EndColumns();
 
 	if (!Local) {

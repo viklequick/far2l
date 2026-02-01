@@ -45,7 +45,7 @@ static void python_log(const char *function, unsigned int line, const char *form
         (unsigned long)GetProcessUptimeMSec(), function, line, (*format != '\n') ? " - " : "", format);
 
     va_start(args, format);
-    vfprintf(stderr, xformat, args);
+    // vfprintf(stderr, xformat, args);
     va_end(args);
 }
 

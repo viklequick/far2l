@@ -1344,8 +1344,25 @@ void Editor::ProcessPasteEventFromPrimary()
 	}
 
 	Clipboard clip;
+	if (clip.GetUseInternalClipboardState())
+		return;
+
 	if(clip.SetUseSelectionWhenPossible(1) > 0) {
-		ProcessPasteEvent();
+		Pasting++;
+		if (!EdOpt.PersistentBlocks && !VBlockStart)
+			DeleteBlock();
+
+		Paste();
+
+		Flags.Change(FEDITOR_MARKINGBLOCK, !VBlockStart);
+		Flags.Clear(FEDITOR_MARKINGVBLOCK);
+
+		if (!EdOpt.PersistentBlocks)
+			UnmarkBlock();
+
+		Pasting--;
+		Show();
+
     	clip.SetUseSelectionWhenPossible(0);
 	}
 }
@@ -3694,19 +3711,28 @@ int Editor::AutoGrabToClipboard ()
 		return status;
 	}
 
+	wchar_t *CopyData = Block2Text(nullptr);
+	if (!CopyData) return status;
+
+	if (wcslen(CopyData) < 1) {
+		free(CopyData);
+		return status;
+	}
+
 	Clipboard clip;
 	if(clip.SetUseSelectionWhenPossible(1) > 0) {
     	if (clip.Open()) {
-    		wchar_t *CopyData = nullptr;
-    		if ((CopyData = Block2Text(CopyData))) {
-    			clip.Copy(CopyData);
-    			free(CopyData);
-    			status = 1;
-    		}
+   			clip.Copy(CopyData);
     		clip.Close();
     	}
     	clip.SetUseSelectionWhenPossible(0);
 	}
+
+	if (CopyData) {
+		free(CopyData);
+		status = 1;
+	}
+
 	return status;
 }
 
@@ -3723,7 +3749,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 	if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
 		// VK: TODO: grab selection and copy to selection buffer
-		AutoGrabToClipboard();
+		if (MouseSelStartingLine != -1) AutoGrabToClipboard();
 		MouseSelStartingLine = -1;
 	}
 

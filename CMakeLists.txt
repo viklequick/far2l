@@ -584,11 +584,6 @@ if (DEFINED U_MTP AND U_MTP)
     add_subdirectory(mtp)
 endif()
 
-if (DEFINED TRUNCATE AND TRUNCATE)
-    message(STATUS "TRUNCATE plugin enabled")
-    add_subdirectory (truncate)
-endif()
-
 if (NOT DEFINED HEXITOR OR HEXITOR)
     message(STATUS "HEXITOR plugin enabled")
     add_subdirectory (hexitor)

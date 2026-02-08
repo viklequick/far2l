@@ -1,10 +1,8 @@
 #include <wx/wx.h>
 #include <wx/display.h>
-#include <wx/toplevel.h>
 
 #if defined(__APPLE__)
-// For now, we're playing with wxWidgets-based code for all platforms; later we'll switch to native path for macos
-// #define MAC_NATIVE_PRINTING
+#define MAC_NATIVE_PRINTING // comment this define if you want wxWidgets-aware dialogs
 #endif
 
 #ifndef MAC_NATIVE_PRINTING
@@ -21,7 +19,6 @@
 #include "Mac/printing.h"
 #endif
 
-// текст на русском
 
 wxPrinterSupportBackend::wxPrinterSupportBackend() {
 #ifndef MAC_NATIVE_PRINTING
@@ -32,30 +29,8 @@ wxPrinterSupportBackend::wxPrinterSupportBackend() {
 }
 wxPrinterSupportBackend::~wxPrinterSupportBackend() {
 #ifndef MAC_NATIVE_PRINTING
-//	delete html_printer;
+	delete html_printer;
 #endif
-}
-
-void wxPrinterSupportBackend::grabUserInputBackAfterPreview() {
-	if (!wxIsMainThread()) {
-		auto fn = std::bind(&wxPrinterSupportBackend::grabUserInputBackAfterPreview, this);
-		CallInMainNoRet(fn);
-		return;
-	}
-
-	wxTheApp->CallAfter([]{ 
-		wxWindow* top = wxTheApp->GetTopWindow(); 
-		// wxTopLevelWindow* mainw = (wxTopLevelWindow*)top;
-		// mainw->RequestUserAttention(wxUSER_ATTENTION_INFO);
-		// top->Raise();
-
-		wxWindow* panel = top->GetChildren().front();
-
-        /*
-		wxTheApp->CallAfter([panel]{ 
-			panel->SetFocus();
-		});*/
-	});
 }
 
 void wxPrinterSupportBackend::PrintText(const std::wstring& jobName, const std::wstring& text)
@@ -150,8 +125,6 @@ void wxPrinterSupportBackend::ShowPreviewForText(const std::wstring& jobName, co
 
 	wxRichTextPrinting rtf_printer(jobName, wxTheApp->GetTopWindow());
 	rtf_printer.PreviewBuffer(buffer);
-
-	grabUserInputBackAfterPreview();
 #else
 	wxString wxText(text); 
 	MacNativePrintPreviewText(wxText);
@@ -170,7 +143,6 @@ void wxPrinterSupportBackend::ShowPreviewForReducedHTML(const std::wstring& jobN
 	// wxHtmlEasyPrinting html_printer(jobName);
 	// html_printer.PreviewText(text);
 	html_printer->PreviewText(text);
-	grabUserInputBackAfterPreview();
 #else
 	wxString wxText(text); 
 	MacNativePrintPreviewHtml(wxText);
@@ -188,7 +160,6 @@ void wxPrinterSupportBackend::ShowPreviewForTextFile(const std::wstring& fileNam
 #ifndef MAC_NATIVE_PRINTING
 	wxRichTextPrinting rtf_printer(fileName, wxTheApp->GetTopWindow());
 	rtf_printer.PreviewFile(fileName);
-	grabUserInputBackAfterPreview();
 #else
 	wxString wxText(fileName); 
 	MacNativePrintPreviewTextFile(wxText);
@@ -207,7 +178,6 @@ void wxPrinterSupportBackend::ShowPreviewForHtmlFile(const std::wstring& fileNam
 	// wxHtmlEasyPrinting html_printer(fileName);
 	// html_printer.PreviewFile(fileName);
 	html_printer->PreviewFile(fileName);
-	grabUserInputBackAfterPreview();
 #else
 	wxString wxText(fileName); 
 	MacNativePrintPreviewHtmlFile(wxText);
@@ -226,7 +196,6 @@ void wxPrinterSupportBackend::ShowPrinterSetupDialog()
 	// wxHtmlEasyPrinting html_printer("Printer Setup");
 	// html_printer.PageSetup();
 	html_printer->PageSetup();
-	grabUserInputBackAfterPreview();
 #else
 	MacNativeShowPageSetupDialog();
 #endif

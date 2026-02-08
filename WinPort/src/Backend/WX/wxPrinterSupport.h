@@ -27,6 +27,5 @@ public:
 
 private:
 	wxHtmlEasyPrinting* html_printer;
-
-	void grabUserInputBackAfterPreview();
 };
+

@@ -149,7 +149,7 @@
 #include <locale.h>
 
 #ifdef __GNUC__
-  #if defined(__x86_64__)
+  #if defined(__i386__) || defined(__x86_64__)
     #include <x86intrin.h>
     
     #define USE_SSE

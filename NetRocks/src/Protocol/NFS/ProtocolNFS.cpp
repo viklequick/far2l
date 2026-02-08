@@ -521,12 +521,12 @@ public:
 
 	virtual void Write(const void *buf, size_t len)
 	{
-
 #if USE_OLD_NFSLIB
-#define BUF_TYPE_A	char*
+#define BUF_TYPE_A     char*
 #else
-#define BUF_TYPE_A	const char*
+#define BUF_TYPE_A     const char*
 #endif
+
 		if (len > 0) for (;;) {
 #ifdef LIBNFS_API_V2
 			const auto rc = nfs_write(_nfs->ctx, _file, (BUF_TYPE_A)buf, len);

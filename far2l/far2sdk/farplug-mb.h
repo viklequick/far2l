@@ -14,6 +14,7 @@ namespace oldfar
 #endif
 #endif
 	const int NM = MAX_PATH;
+	const size_t DLG_ITEM_MAX_CUST_COLORS = 5;
 
 	enum FARMESSAGEFLAGS
 	{
@@ -540,6 +541,7 @@ namespace oldfar
 		FILETIME ftCreationTime;
 		FILETIME ftLastAccessTime;
 		FILETIME ftLastWriteTime;
+		FILETIME ftChangeTime;
 		DWORD64  nPhysicalSize;
 		DWORD64  nFileSize;
 		DWORD    dwFileAttributes;
@@ -1240,6 +1242,7 @@ namespace oldfar
 		ECTL_SERVICEREGION,
 		ECTL_ADDTRUECOLOR,
 		ECTL_GETTRUECOLOR,
+		ECTL_GETRECT,
 	};
 
 	enum EDITOR_SETPARAMETER_TYPES
@@ -1313,6 +1316,10 @@ namespace oldfar
 		EOPT_AUTODETECTTABLE   = 0x00000020,
 		EOPT_CURSORBEYONDEOL   = 0x00000040,
 		EOPT_EXPANDONLYNEWTABS = 0x00000080,
+		EOPT_SHOWWHITESPACE    = 0x00000100,
+		EOPT_BOM               = 0x00000200,
+		EOPT_SHOWNUMBERS       = 0x00000400,
+		EOPT_SHOWGUTTER        = 0x00000800,
 	};
 
 
@@ -1897,4 +1904,3 @@ namespace oldfar
 }
 
 #endif // __FAR2SDK_FARPLUG_MB_H__
-

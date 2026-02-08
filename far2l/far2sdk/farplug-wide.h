@@ -151,6 +151,9 @@ typedef struct _CHAR_INFO    CHAR_INFO;
 typedef uint32_t FARMESSAGEFLAGS;
 typedef GUID UUID;
 
+FAR_INLINE_CONSTANT size_t
+	DLG_ITEM_MAX_CUST_COLORS = 5;
+
 FAR_INLINE_CONSTANT FARMESSAGEFLAGS
 	FMSG_WARNING             = 0x00000001,
 	FMSG_ERRORTYPE           = 0x00000002,
@@ -162,7 +165,6 @@ FAR_INLINE_CONSTANT FARMESSAGEFLAGS
 	FMSG_COLOURS             = 0x00000040,
 #endif // END FAR_USE_INTERNALS
 	FMSG_DISPLAYNOTIFY       = 0x00000080,
-	FMSG_ASYNC               = 0x00000100,
 
 	FMSG_MB_OK               = 0x00010000,
 	FMSG_MB_OKCANCEL         = 0x00020000,
@@ -356,14 +358,16 @@ enum FarMessagesProc
 
 //	DM_GETCOLOR,
 //	DM_SETCOLOR,
-	DM_GETDEFAULTCOLOR, // Param1 - Item ID, Param2 - uint64_t * -> uint64_t ItemColors[4]
+	DM_GETDEFAULTCOLOR, // Param1 - Item ID, Param2 - uint64_t * -> uint64_t ItemColors[DLG_ITEM_MAX_CUST_COLORS]
 
-	DM_GETTRUECOLOR,	// Param1 - Item ID, Param2 - uint64_t * -> uint64_t ItemColors[4]
+	DM_GETTRUECOLOR,	// Param1 - Item ID, Param2 - uint64_t * -> uint64_t ItemColors[DLG_ITEM_MAX_CUST_COLORS]
 	DM_GETCOLOR = DM_GETTRUECOLOR,
-	DM_SETTRUECOLOR,	// Param1 - Item ID, Param2 - uint64_t * -> uint64_t ItemColors[4]
+	DM_SETTRUECOLOR,	// Param1 - Item ID, Param2 - uint64_t * -> uint64_t ItemColors[DLG_ITEM_MAX_CUST_COLORS]
 	DM_SETCOLOR = DM_SETTRUECOLOR,
 
 	DM_SETTEXTPTRSILENT,
+	// Set tab size for dialog edit controls (Param1 = Item ID, Param2 = tab size).
+	DM_SETEDITTABSIZE = 0x3FF0,
 
 	DN_FIRST=0x1000,
 	DN_BTNCLICK,
@@ -748,6 +752,7 @@ struct FAR_FIND_DATA
 	FILETIME ftCreationTime;
 	FILETIME ftLastAccessTime;
 	FILETIME ftLastWriteTime;
+	FILETIME ftChangeTime;
 	uint64_t nPhysicalSize;
 	uint64_t nFileSize;
 	DWORD    dwFileAttributes;
@@ -877,12 +882,12 @@ enum FILE_CONTROL_COMMANDS
 	FCTL_ENDSELECTION,
 	FCTL_CLEARSELECTION,
 	FCTL_SETDIRECTORIESFIRST,
-	FCTL_SETEXECUTABLESFIRST,
 	FCTL_GETPANELFORMAT,
 	FCTL_GETPANELHOSTFILE,
 	FCTL_SETCASESENSITIVESORT,
 	FCTL_GETPANELPLUGINHANDLE, // Param2 points to value of type HANDLE, sets that value to handle of plugin that renders that panel or INVALID_HANDLE_VALUE
 	FCTL_SETPANELLOCATION, // Param2 points to FarPanelLocation
+	FCTL_SETEXECUTABLESFIRST,
 };
 
 typedef int (WINAPI *FARAPICONTROL)(
@@ -1621,6 +1626,8 @@ enum EDITOR_CONTROL_COMMANDS
 	ECTL_GETFILENAME,
 	ECTL_ADDTRUECOLOR,
 	ECTL_GETTRUECOLOR,
+	ECTL_SETGUTTERMARKS,
+	ECTL_GETRECT,
 };
 //#ifdef FAR_USE_INTERNALS
 //	ECTL_SERVICEREGION, // WTF
@@ -1640,6 +1647,7 @@ enum EDITOR_SETPARAMETER_TYPES
 	ESPT_GETWORDDIV,
 	ESPT_SHOWWHITESPACE,
 	ESPT_SETBOM,
+	ESPT_SHOWGUTTER,
 };
 
 #ifdef FAR_USE_INTERNALS
@@ -1724,6 +1732,8 @@ enum EDITOR_OPTIONS
 	EOPT_EXPANDONLYNEWTABS = 0x00000080,
 	EOPT_SHOWWHITESPACE    = 0x00000100,
 	EOPT_BOM               = 0x00000200,
+	EOPT_SHOWNUMBERS       = 0x00000400,
+	EOPT_SHOWGUTTER        = 0x00000800,
 };
 
 
@@ -1820,6 +1830,18 @@ struct EditorTrueColor
 {
 	struct EditorColor Base;
 	struct FarTrueColorForeAndBack TrueColor;
+};
+
+struct EditorGutterMark
+{
+	int Line; // 0-based logical line number
+	uint64_t Color; // Far color attributes
+};
+
+struct EditorGutterMarks
+{
+	size_t Count;
+	const struct EditorGutterMark *Marks;
 };
 
 struct EditorSaveFile
@@ -1937,7 +1959,7 @@ enum PROCESSNAME_FLAGS
 	PN_SHOWERRORMESSAGE = 0x02000000UL,
 	PN_RESERVED1        = 0x04000000UL,
 	PN_CASESENSITIVE    = 0x08000000UL,
-	PN_NONE             = 0,
+	PN_NONE             = 0
 };
 
 
@@ -2601,4 +2623,3 @@ extern "C"
 #define EXP_NAME(p) _export p ## W
 
 #endif /* __FAR2SDK_FARPLUG_WIDE_H__ */
-

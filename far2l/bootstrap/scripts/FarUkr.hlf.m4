@@ -19,6 +19,7 @@ $^#Програма управління файлами та архівами#
  ~Підтримка модулів, що підключаються~@Plugins@
  ~Огляд можливостей модулів , що підключаються~@PluginsReviews@
  ~Термінал~@Terminal@
+ ~External terminal: configuration~@ExternalTerminal@
 
  ~Панелі:~@Panels@ ~Панель файлів~@FilePanel@
  ~Дерево папок~@TreePanel@
@@ -1477,6 +1478,27 @@ You may return to background'ed command from ~Screens switching menu~@ScrSwitch@
 
   See also: ~pseudo-commands~@SpecCmd@
             ~Команда операційної системи~@OSCommands@
+
+@ExternalTerminal
+$ #External terminal: configuration#
+   To launch console applications in an external terminal emulator, far2l uses the helper script ~$FARHOME~@FAREnv@#/open.sh#.
+
+   #Default terminal selection logic.#
+
+   1. Checks for #/etc/alternatives/x-terminal-emulator#. On distributions using the alternatives mechanism (Debian, Ubuntu, Red Hat), this symbolic link points to the system's preferred terminal emulator. If valid, it is used.
+   2. Otherwise, #xterm# is used.
+
+
+   #Overriding the terminal.#
+
+   There are two main ways to change the emulator.
+   1. System-wide (for distributions with the alternatives mechanism).
+      You can change the global default terminal by running the command:
+         #sudo update-alternatives --config x-terminal-emulator#
+   2. User-defined (specific to far2l).
+      Create the executable file #~~/.config/far2l/open.sh#. Inside, define the #$EXEC_TERM# variable with your preferred terminal, for example:
+         #EXEC_TERM=kitty#
+      Note: The selected terminal must support the #-e# option.
 
 @UIBackends
 $ #Режими інтерфейсу#
@@ -4877,8 +4899,60 @@ $ #Макроси: макромова#
  #%var# - використання змінних
  та інші...
 
-Додати елементи макромови в ~макро~@KeyMacro@ можна тільки шляхом ручної
-правки реєстру або шляхом застосування спеціальних програм/плагінів.
+Текст макросу можна задавати напряму у файлі конфігурації
+#~~/.config/far2l/settings/key_macros.ini#. Кожен макрос — це секція:
+#KeyMacros/<Area>/<Key>#, де:
+- #Area# — одна з: #Common#, #Shell#, #Editor#, #Viewer#, #Dialog#, #Search#, #Tree#,
+  #Info#, #QView#, #MainMenu#, #UserMenu#, #Disks#, #Help#, #Menu#, #Other#;
+- #Key# — назва клавіші, наприклад #CtrlShiftF3#, #AltF1#, #F7# тощо.
+
+Основні поля секції:
+#Description# - короткий опис;
+#DisableOutput# - #0x1# щоб придушити перерисовку під час виконання;
+#Sequence# - текст макросу (може містити #$If#, #$Else#, #$End# тощо).
+
+Приклад (відкрити журнал внутрішнього термінала FAR2L у переглядачі;
+якщо активна панель видима, тимчасово сховати панелі):
+#[KeyMacros/Shell/CtrlShiftF3]#
+#DisableOutput=0x1#
+#Sequence=$If (APanel.Visible) CtrlO F3 $Else F3 $End#
+
+#Ключові слова (змінні / умови)#
+Загальні:
+  #Bof#, #Eof#, #Empty#, #Selected# - стан поточного об'єкта.
+  #Far.Width#, #Far.Height#, #Far.Title# - розмір / заголовок консолі.
+  #MacroArea# - назва поточної області макросів.
+  #ItemCount#, #CurPos#, #Title#, #Height#, #Width# - властивості об'єкта.
+
+Панелі (активна/пасивна):
+  #APanel.*# та #PPanel.*# — активна/пасивна панель.
+  #Empty#, #Bof#, #Eof#, #Root#, #Visible#, #Plugin#, #FilePanel#, #Folder#,
+  #Selected#, #Left#, #LFN#, #Filter# - прапори стану.
+  #Type#, #ItemCount#, #CurPos#, #Current#, #SelCount# - значення.
+  #Path#, #Path0#, #UNCPath# - шляхи панелі.
+  #Height#, #Width#, #OPIFlags#, #DriveType#, #ColumnCount# - геометрія / режим.
+  #HostFile#, #Prefix# - дані плагін-панелі.
+
+Командний рядок:
+  #CmdLine.Bof#, #CmdLine.Eof#, #CmdLine.Empty#, #CmdLine.Selected# - стан.
+  #CmdLine.ItemCount#, #CmdLine.CurPos#, #CmdLine.Value# - значення.
+
+Редактор:
+  #Editor.FileName#, #Editor.CurLine#, #Editor.Lines#, #Editor.CurPos#,
+  #Editor.RealPos#, #Editor.State#, #Editor.Value#, #Editor.SelValue#.
+
+Діалог:
+  #Dlg.ItemType#, #Dlg.ItemCount#, #Dlg.CurPos#, #Dlg.Info.Id#.
+
+Довідка:
+  #Help.FileName#, #Help.Topic#, #Help.SelTopic#.
+
+Переглядач / меню / інше:
+  #Viewer.FileName#, #Viewer.State#, #Menu.Value#,
+  #Drv.ShowPos#, #Drv.ShowMode#, #Fullscreen#, #IsUserAdmin#.
+
+Додати елементи макромови в ~макро~@KeyMacro@ можна лише шляхом ручного
+редагування файлу конфігурації або із застосуванням спеціальних програм/плагінів.
 
  Опис макромови можна знайти у супровідній документації.
 
@@ -5065,13 +5139,13 @@ $ #Індекс файлу допомоги#
 $ #Ways to run programs without blocking far2l#
   When running programs on the internal ~Command line~@CmdLineCmd@, ~File Associations~@FileAssoc@, ~User Menu~@UserMenu@ and actions ~Apply Command~@ApplyCmd@ far2l may be blocked. The following describes how to run without blocking far2l:
 
-  Launching programs in an external terminal from the far2l command line:
-  - #program#: to launch in an external terminal using Shift-Enter (using ~$FARHOME~@FAREnv@/open.sh to launch); 
-  - #$FARHOME/open.sh exec program#: to run in an external terminal using Enter, exec is required as the first parameter for open.sh;
+  Launching programs in an ~external terminal~@ExternalTerminal@ from the far2l command line:
+  - #program#: to launch in an external terminal using #Shift-Enter# (using ~$FARHOME~@FAREnv@/open.sh to launch); 
+  - #$FARHOME/open.sh exec program#: to run in an external terminal using #Enter#, exec is required as the first parameter for open.sh;
   - #$FARHOME/open.sh exec sh -c "ls;read k"#: in this case, the ls command will be executed in the external terminal, but the terminal will not close;
 
   Running programs from far2l:
-  - #program params &#: just add at the end & — will close the program after closing far2l;
+  - #program params &#: just add at the end & - will close the program after closing far2l;
   - #nohup program params &#: the launch is performed by the nohup program. A nohup.out file is created in the current directory with the program output. You can delete this file later. Such a launch will keep the program running after completing far2l;
   - #nohup program params >/dev/null 2>&1 &#: will leave the program running after completing far2l without unnecessary output;
   - #setsid program params >/dev/null 2>/dev/null#: when used in the examples above & some programs, when closed, output information about their termination to the current terminal - using setsid avoids such clogging of the output of the current program;

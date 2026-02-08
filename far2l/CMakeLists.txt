@@ -8,6 +8,7 @@ src/cache.cpp
 src/chattr.cpp
 src/clipboard.cpp
 src/printersupport.cpp
+src/fileedit2html.cpp
 src/cmdline.cpp
 src/copy.cpp
 src/ctrlobj.cpp
@@ -26,7 +27,6 @@ src/execute.cpp
 src/farwinapi.cpp
 src/fileattr.cpp
 src/fileedit.cpp
-src/fileedit2html.cpp
 src/fileedit2options.cpp
 src/filefilter.cpp
 src/filefilterparams.cpp
@@ -148,6 +148,7 @@ src/vt/vtshell_compose.cpp
 src/vt/vtshell_leader.cpp
 src/vt/vtshell_ioreaders.cpp
 src/vt/vtshell_mouse.cpp
+src/vt/VTShellBackend.cpp
 src/vt/vtlog.cpp
 src/vt/vtcompletor.cpp
 src/vt/VTFar2lExtensios.cpp
@@ -194,7 +195,9 @@ if(FAR2MACRO)
     list(APPEND SOURCES src/macro/macro.cpp)
     list(APPEND SOURCES src/macro/syntax.cpp)
     list(APPEND SOURCES src/macro/tvar.cpp)
+    list(APPEND SOURCES src/macro/macrobrowser.cpp)
 else()
+    message(STATUS "${ColorRed}Option -DFAR2MACRO is OFF, FAR2L will disable building macro subsystem completely${ColorNormal}")
     if(FAR2TVAR)
         list(APPEND SOURCES src/macro/tvar.cpp)
         add_compile_definitions(FAR2TVAR)

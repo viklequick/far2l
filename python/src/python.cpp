@@ -38,6 +38,7 @@ static WINPORTDECL winportvar = {
 
 static void python_log(const char *function, unsigned int line, const char *format, ...)
 {
+#ifdef _DEBUG
     va_list args;
     auto str_size = strlen(format) + strlen(function) + 64;
     char *xformat = (char *)alloca(str_size);
@@ -45,8 +46,9 @@ static void python_log(const char *function, unsigned int line, const char *form
         (unsigned long)GetProcessUptimeMSec(), function, line, (*format != '\n') ? " - " : "", format);
 
     va_start(args, format);
-    // vfprintf(stderr, xformat, args);
+    vfprintf(stderr, xformat, args);
     va_end(args);
+#endif
 }
 
 #define PYTHON_LOG(args...)  python_log(__FUNCTION__, __LINE__, args)
@@ -122,7 +124,7 @@ static bool init_python()
     PyConfig config;
     PyConfig_InitIsolatedConfig(&config);
 
-    //config.utf8_mode = 1;
+    // config.utf8_mode = 1;
     config.user_site_directory = 1;
     config.install_signal_handlers = 1;
 

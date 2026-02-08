@@ -495,6 +495,17 @@ MultilinePaste
 "Вставка багаторядкового тексту"
 "Устаўка шматрадковага тэксту"
 
+EditCommand
+"Редактирование команды"
+"Edit command"
+"Upravit příkaz"
+"Befehl bearbeiten"
+"Parancs szerkesztése"
+"Edytuj polecenie"
+"Editar comando"
+"Редагування команди"
+"Рэдагаванне каманды"
+
 F1
 l:
 l://functional keys - 6 characters max
@@ -4907,6 +4918,28 @@ upd:"Show line &numbers"
 "Номери рядкі&в"
 upd:"Show line &numbers"
 
+EditCopyToPrimarySelection
+"Выделенный мышью текст помещать в PRIMARY"
+"Auto-copy mouse selection to PRIMARY"
+upd:"Auto-copy mouse selection to PRIMARY"
+upd:"Auto-copy mouse selection to PRIMARY"
+upd:"Auto-copy mouse selection to PRIMARY"
+upd:"Auto-copy mouse selection to PRIMARY"
+upd:"Auto-copy mouse selection to PRIMARY"
+upd:"Auto-copy mouse selection to PRIMARY"
+upd:"Auto-copy mouse selection to PRIMARY"
+
+EditPasteFromPrimarySelection
+"Вставлять по средней кнопке мыши из PRIMARY"
+"Paste from PRIMARY by 2nd mouse button"
+upd:"Paste from PRIMARY by 2nd mouse button"
+upd:"Paste from PRIMARY by 2nd mouse button"
+upd:"Paste from PRIMARY by 2nd mouse button"
+upd:"Paste from PRIMARY by 2nd mouse button"
+upd:"Paste from PRIMARY by 2nd mouse button
+upd:"Paste from PRIMARY by 2nd mouse button"
+upd:"Paste from PRIMARY by 2nd mouse button"
+
 EditShowKeyBar
 "Показывать &линейку клавиш"
 "Show &key bar"
@@ -5161,15 +5194,15 @@ upd:"Select &all                          Ctrl+A"
 upd:"Select &all                          Ctrl+A"
 
 EditorMenuEditSelectVertical
-"Выделить &вертикальный блок          Alt+Shift+Right"
-"Select &vertical block               Alt+Shift+Right"
-upd:"Select &vertical block               Alt+Shift+Right"
-upd:"Select &vertical block               Alt+Shift+Right"
-upd:"Select &vertical block               Alt+Shift+Right"
-upd:"Select &vertical block               Alt+Shift+Right"
-upd:"Select &vertical block               Alt+Shift+Right"
-upd:"Select &vertical block               Alt+Shift+Right"
-upd:"Select &vertical block               Alt+Shift+Right"
+"Выделить &вертикальный блок          Alt+Shift+Cursor keys"
+"Select &vertical block               Alt+Shift+Cursor keys"
+upd:"Select &vertical block               Alt+Shift+Cursor keys"
+upd:"Select &vertical block               Alt+Shift+Cursor keys"
+upd:"Select &vertical block               Alt+Shift+Cursor keys"
+upd:"Select &vertical block               Alt+Shift+Cursor keys"
+upd:"Select &vertical block               Alt+Shift+Cursor keys"
+upd:"Select &vertical block               Alt+Shift+Cursor keys"
+upd:"Select &vertical block               Alt+Shift+Cursor keys"
 
 EditorMenuEditCut
 "&Вырезать                            Ctrl+X"
@@ -5853,28 +5886,6 @@ upd:"S&how title bar"
 "Показувати &заголовок"
 "Адлюстроўваць &загаловак"
 
-EditCopyToPrimarySelection
-"Выделенный мышью текст помещать в PRIMARY"
-"Auto-copy mouse selection to PRIMARY"
-upd:"Auto-copy mouse selection to PRIMARY"
-upd:"Auto-copy mouse selection to PRIMARY"
-upd:"Auto-copy mouse selection to PRIMARY"
-upd:"Auto-copy mouse selection to PRIMARY"
-upd:"Auto-copy mouse selection to PRIMARY"
-upd:"Auto-copy mouse selection to PRIMARY"
-upd:"Auto-copy mouse selection to PRIMARY"
-
-EditPasteFromPrimarySelection
-"Вставлять по средней кнопке мыши из PRIMARY"
-"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-
 EditShowMenuBar
 "Показывать меню"
 "Show menu bar"
@@ -6143,15 +6154,15 @@ LinkTypeJunction
 "&сувязь каталогаў"
 
 LinkTypeHardlink
-"&жёсткая ссылка"
-"&hard link"
-"&pevný link"
+"&Жёсткая ссылка"
+"&Hard link"
+"&Pevný link"
 "&Hardlink"
 "&Hardlink"
-"link &trwały"
-"enlace duro"
-"&жорстке посилання"
-"&жорсткі спасылак"
+"Link &trwały"
+"Enlace duro"
+"&Жорстке посилання"
+"&Жорсткі спасылак"
 
 LinkTypeSymlink
 "си&мволическая ссылка"
@@ -16760,6 +16771,17 @@ MenuFarConfig
 "Editor de confi&guración"
 "Р&едактор конфігурації"
 "Р&эдактар канфігурацыі"
+
+MenuMacroBrowser
+"Макрокоманды"
+"Macro Browser"
+upd:"Macro Browser"
+upd:"Macro Browser"
+upd:"Macro Browser"
+upd:"Macro Browser"
+upd:"Macro Browser"
+upd:"Macro Browser"
+upd:"Macro Browser"
 
 MenuAboutFar
 "Св&едения о FAR"
@@ -28376,15 +28398,37 @@ FileFilterAttrSparse
 "Разрэджаны"
 
 FileFilterAttrHardLinks
-"Болee одной жёсткой ссылки"
-"Has more than one hard &link"
-"Má více než jeden pevný link"
-"Mehr als ein harder Link"
-upd:"Has more than one hardlink"
-"Ma &więcej niż jeden link"
-"Tiene mas de un enlace duro"
-"Понад одне жорстке посилання"
-"Больш адной жорсткай спасылкі"
+"Жёсткая ссылка"
+"Hard link"
+"Pevný link"
+"Hardlink"
+"Hardlink"
+"Link trwały"
+"Enlace duro"
+"Жорстке посилання"
+"Жорсткі спасылак"
+
+FileFilterAttrAppend
+"Добавочный"
+"Append"
+"Pridávací"
+"Anhängend"
+"À ajouter"
+"Dołączanie"
+"Añadir"
+"&Додатковий"
+"&Дадатак"
+
+FileFilterAttrImmutable
+"Неизменяемый"
+"Immutable"
+"Nemenný"
+"Unveränderlich"
+"Immuable"
+"Niezmienny"
+"Inmutable"
+"&Незмінний"
+"&Нязменны"
 
 FileFilterAttrT
 "&Временный"

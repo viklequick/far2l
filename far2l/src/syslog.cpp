@@ -339,6 +339,7 @@ FARString __ECTL_ToName(int Command)
 			DEF_ECTL_(SAVEFILE),
 			DEF_ECTL_(QUIT),
 			DEF_ECTL_(SETKEYBAR),
+			DEF_ECTL_(GETRECT),
 			DEF_ECTL_(PROCESSKEY),
 			DEF_ECTL_(SETPARAM),
 			DEF_ECTL_(GETBOOKMARKS),
@@ -459,7 +460,6 @@ FARString __FCTL_ToName(int Command)
 			DEF_FCTL_(ENDSELECTION),
 			DEF_FCTL_(CLEARSELECTION),
 			DEF_FCTL_(SETDIRECTORIESFIRST),
-			DEF_FCTL_(SETEXECUTABLESFIRST),
 			DEF_FCTL_(GETPANELFORMAT),
 			DEF_FCTL_(GETPANELHOSTFILE),
 			DEF_FCTL_(SETEXECUTABLESFIRST),
@@ -1273,6 +1273,9 @@ void WIN32_FIND_DATA_Dump(const wchar_t *Title, const WIN32_FIND_DATA &wfd, FILE
 		ConvertDate(wfd.ftLastWriteTime, D, T, 8, FALSE, FALSE, TRUE);
 		fwprintf(fp, L"%*s %ls  ftLastWriteTime       =0x%08X 0x%08X\n", 12, L"", space,
 				wfd.ftLastWriteTime.dwHighDateTime, wfd.ftLastWriteTime.dwLowDateTime);
+		fwprintf(fp, L"%*s %ls  ftChangeTime       =0x%08X 0x%08X\n", 12, L"", space,
+				wfd.ftChangeTime.dwHighDateTime, wfd.ftChangeTime.dwLowDateTime);
+
 		LARGE_INTEGER Number;
 		Number.QuadPart = wfd.nFileSize;
 		fwprintf(fp, L"%*s %ls  nFileSize             =0x%08X, 0x%08X (%llu)\n", 12, L"", space,

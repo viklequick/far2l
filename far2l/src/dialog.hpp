@@ -47,8 +47,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CriticalSections.hpp"
 
 class History;
-
-constexpr size_t DLG_ITEM_MAX_CUST_COLORS = 5;
 // Флаги текущего режима диалога
 enum DIALOG_MODES
 {
@@ -71,7 +69,6 @@ enum DIALOG_MODES
 	DMODE_NODRAWPANEL      = 0x00200000,	// не рисовать подложку?
 	DMODE_FULLSHADOW       = 0x00400000,
 	DMODE_NOPLUGINS        = 0x00800000,
-	DMODE_ASYNC            = 0x08000000,
 	DMODE_KEEPCONSOLETITLE = 0x10000000,	// не изменять заголовок консоли
 	DMODE_CLICKOUTSIDE     = 0x20000000,	// было нажатие мыши вне диалога?
 	DMODE_MSGINTERNAL      = 0x40000000,	// Внутренняя Message?

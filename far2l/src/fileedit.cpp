@@ -75,9 +75,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "printersupport.hpp"
 #include "fileedit2options.hpp"
 
-#include <algorithm> 
-#include <cmath>
-
 enum enumOpenEditor
 {
 	ID_OE_TITLE,
@@ -380,7 +377,7 @@ FileEditor::~FileEditor()
 
 	delete EditNamesList;
 
-	// if (EditMenuBar) delete EditMenuBar;
+	if (EditMenuBar) delete EditMenuBar;
 	EditMenuBar = nullptr;
 }
 
@@ -1528,6 +1525,9 @@ int FileEditor::LoadFile(const wchar_t *Name, int &UserBreak)
 	EditFile.GetSize(FileSize);
 	DWORD StartTime = WINPORT(GetTickCount)();
 
+	// Enable bulk loading mode for faster file loading
+	m_editor->BeginBulkLoad();
+
 	while ((GetCode = GetStr.GetString(&Str, m_codepage, StrLength))) {
 		if (GetCode == -1) {
 			EditFile.Close();
@@ -1558,6 +1558,7 @@ int FileEditor::LoadFile(const wchar_t *Name, int &UserBreak)
 			if (CheckForEscSilent()) {
 				if (ConfirmAbortOp()) {
 					UserBreak = 1;
+					m_editor->EndBulkLoad();
 					EditFile.Close();
 					return FALSE;
 				}
@@ -1581,6 +1582,9 @@ int FileEditor::LoadFile(const wchar_t *Name, int &UserBreak)
 			return FALSE;
 		}
 	}
+
+	// End bulk loading mode
+	m_editor->EndBulkLoad();
 
 	BadConversion = !GetStr.IsConversionValid();
 	if (BadConversion) {
@@ -2901,13 +2905,14 @@ void FileEditor::ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey)
 		Show();
 		return;
 	}
+	// mwenu has strange effects if F1 defined as accelerator
 	else if (hMenu == MENU_FILE) {
 		if (vMenu == MENU_FILE_HELP) {
 			ProcessKey(KEY_F1);
 		}
 		return;
 	}
-	// todo: handle commands without accelerated keys
+	// handle commands without accelerated keys
 	else if (hMenu == MENU_FILE && vMenu == MENU_FILE_PRINTER) {
 		PrinterSupport ps;
 		if (ps.IsPrinterSetupDialogSupported()) {

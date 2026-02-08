@@ -1535,6 +1535,7 @@ static int FarGetDirListSynched(const wchar_t *Dir, FAR_FIND_DATA **pPanelItem, 
 			ItemsList[ItemsNumber].ftCreationTime = FindData.ftCreationTime;
 			ItemsList[ItemsNumber].ftLastAccessTime = FindData.ftLastAccessTime;
 			ItemsList[ItemsNumber].ftLastWriteTime = FindData.ftLastWriteTime;
+			ItemsList[ItemsNumber].ftChangeTime = FindData.ftChangeTime;
 			ItemsList[ItemsNumber].dwUnixMode = FindData.dwUnixMode;
 			ItemsList[ItemsNumber].lpwszFileName = wcsdup(strFullName.CPtr());
 			ItemsNumber++;
@@ -1676,8 +1677,14 @@ static void CopyPluginDirItem(PluginPanelItem *CurPanelItem)
 
 	if (CurPanelItem->UserData && (CurPanelItem->Flags & PPIF_USERDATA)) {
 		DWORD Size = *(DWORD *)CurPanelItem->UserData;
-		DestItem->UserData = (DWORD_PTR)malloc(Size);
-		memcpy((void *)DestItem->UserData, (void *)CurPanelItem->UserData, Size);
+		void *userData = malloc(Size);
+		if (userData) {
+			memcpy(userData, (void *)CurPanelItem->UserData, Size);
+			DestItem->UserData = (DWORD_PTR)userData;
+		} else {
+			DestItem->UserData = 0;
+			DestItem->Flags &= ~PPIF_USERDATA;
+		}
 	}
 
 	DestItem->FindData.lpwszFileName = wcsdup(strFullName);
@@ -2036,6 +2043,9 @@ static int FarEditorControlSynched(int Command, void *Param)
 	if (FrameManager->ManagerIsDown())
 		return 0;
 
+	if (CtrlObject->Plugins.CurDialogEditor && !CtrlObject->Plugins.CurEditor) {
+		return (CtrlObject->Plugins.CurDialogEditor->EditorControl(Command, Param));
+	}
 	if (CtrlObject->Plugins.CurEditor)
 		return (CtrlObject->Plugins.CurEditor->EditorControl(Command, Param));
 	if (CtrlObject->Plugins.CurDialogEditor)

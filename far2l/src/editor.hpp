@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "poscache.hpp"
 #include "bitflags.hpp"
 #include "config.hpp"
+#include <unordered_map>
 #include "DList.hpp"
 #include "noncopyable.hpp"
 #include "FARString.hpp"
@@ -116,7 +117,7 @@ struct EditorUndoData
 	    delete[] this->Str;
 
 		if (Str) {
-			this->Str = new wchar_t[Length + 1];
+			this->Str = new (std::nothrow) wchar_t[Length + 1];
 
 			if (this->Str)
 				wmemmove(this->Str, Str, Length);
@@ -249,11 +250,14 @@ private:
 	bool m_bWordWrap;
 	int m_WrapMaxVisibleLineLength;
 	bool m_MouseButtonIsHeld;
+
+	std::unordered_map<int, uint64_t> m_gutterMarks;
 	
 	// Line number caching for performance
 	int m_CachedTotalLines;
 	int m_CachedLineNumWidth;
 	bool m_LineCountDirty;
+	bool m_BulkLoadMode;  // Skip expensive operations during file loading
 	bool m_showCursor;
 	FARString m_virtualFileName;
 
@@ -301,6 +305,7 @@ void GoToVisualLine(int VisualLine);
 	void HighlightAsWrapped(int Y, Edit &ShowString); // new helper function
 	int CalculateTotalLines();  // Helper to count total lines
 	int CalculateLineNumberWidth();  // Helper to calculate line number display width
+	void DrawGutterMark(int logical_line, int y, int line_num_x1);
 	// void SetStringsTable();
 	void BlockLeft();
 	void BlockRight();
@@ -415,6 +420,8 @@ public:
 
 	int GetShowLineNumbers() const { return EdOpt.ShowLineNumbers; }
 	void SetShowLineNumbers(int NewMode);
+	int GetShowGutterMarks() const { return EdOpt.ShowGutterMarks; }
+	void SetShowGutterMarks(int NewMode);
 
 	int GetEditCopyToPrimarySelection() const { return EdOpt.EditCopyToPrimarySelection; }
 	void SetEditCopyToPrimarySelection(int NewMode);
@@ -445,6 +452,10 @@ public:
 	void SetDialogParent(DWORD Sets);
 	void SetReadOnly(int NewReadOnly) { Flags.Change(FEDITOR_LOCKMODE, NewReadOnly); };
 	int GetReadOnly() { return Flags.Check(FEDITOR_LOCKMODE); };
+
+	// Bulk load mode - skips expensive per-line operations during file loading
+	void BeginBulkLoad() { m_BulkLoadMode = true; }
+	void EndBulkLoad() { m_BulkLoadMode = false; m_LineCountDirty = true; };
 	void SetOvertypeMode(int Mode);
 	int GetOvertypeMode();
 	void SetEditBeyondEnd(int Mode);

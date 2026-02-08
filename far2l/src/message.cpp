@@ -357,15 +357,8 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 			if (!WinPortTesting())
 				FlushInputBuffer();
 
-
-			if (Flags & MSG_ASYNC) {
-				Dlg.SetDialogMode(DMODE_ASYNC);
-			}
-
-			if (Flags & MSG_KILLSAVESCREEN) {
-
+			if (Flags & MSG_KILLSAVESCREEN)
 				SendDlgMessage((HANDLE)&Dlg, DM_KILLSAVESCREEN, 0, 0);
-			}
 
 			Dlg.Process();
 			RetCode = Dlg.GetExitCode();
@@ -433,20 +426,31 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 		wchar_t *lpwszTemp = nullptr;
 
 		if (Flags & MSG_LEFTALIGN) {
-			lpwszTemp = (wchar_t *)malloc((Width - 10 + 1) * sizeof(wchar_t));
-			swprintf(lpwszTemp, Width - 10 + 1, L"%.*ls", Width - 10, CPtrStr);
+			int tempLen = Width - 10 + 1;
+			if (tempLen > 0) {
+				lpwszTemp = (wchar_t *)malloc(tempLen * sizeof(wchar_t));
+				if (lpwszTemp) {
+					swprintf(lpwszTemp, tempLen, L"%.*ls", Width - 10, CPtrStr);
+				}
+			}
 			GotoXY(X1 + 5, Y1 + I + 2);
 		} else {
 			PosX = X1 + (Width - Length) / 2;
-			lpwszTemp = (wchar_t *)malloc(
-					(PosX - X1 - 4 + Length + X2 - PosX - Length - 3 + 1) * sizeof(wchar_t));
-			swprintf(lpwszTemp, PosX - X1 - 4 + Length + X2 - PosX - Length - 3 + 1, L"%*ls%.*ls%*ls",
-					PosX - X1 - 4, L"", Length, CPtrStr, X2 - PosX - Length - 3, L"");
+			int tempLen = PosX - X1 - 4 + Length + X2 - PosX - Length - 3 + 1;
+			if (tempLen > 0) {
+				lpwszTemp = (wchar_t *)malloc(tempLen * sizeof(wchar_t));
+				if (lpwszTemp) {
+					swprintf(lpwszTemp, tempLen, L"%*ls%.*ls%*ls",
+							PosX - X1 - 4, L"", Length, CPtrStr, X2 - PosX - Length - 3, L"");
+				}
+			}
 			GotoXY(X1 + 4, Y1 + I + 2);
 		}
 
-		Text(lpwszTemp);
-		free(lpwszTemp);
+		if (lpwszTemp) {
+			Text(lpwszTemp);
+			free(lpwszTemp);
+		}
 	}
 
 	/*
@@ -471,12 +475,8 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 static int ShowMessage(DWORD Flags, int Buttons, const wchar_t *Title, const wchar_t *const *Items,
 		int ItemsNumber, INT_PTR PluginNumber)
 {
-	if (Flags & MSG_ASYNC) {
-		return ShowMessageSynched(Flags, Buttons, Title, Items, ItemsNumber, PluginNumber);
-	}
-	else {
-		return InterThreadCall<int, 0>(std::bind(ShowMessageSynched, Flags, Buttons, Title, Items, ItemsNumber, PluginNumber));
-	}
+	return InterThreadCall<int, 0>(
+			std::bind(ShowMessageSynched, Flags, Buttons, Title, Items, ItemsNumber, PluginNumber));
 }
 
 FN_NOINLINE Messager::Messager(FarLangMsg title)

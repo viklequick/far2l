@@ -121,6 +121,8 @@ void SetColors()
 	std::vector<std::string> v   = FarColors::GetKnownUserThemes ();
 	std::vector<std::string> v2  = FarColors::GetKnownSystemThemes ();
 
+	std::vector<std::wstring> stringBuffer;
+
 	MenuDataEx BaseGroups[] = {
 		{(const wchar_t *)Msg::SetColorPanel,       LIF_SELECTED,  0},
 		{(const wchar_t *)Msg::SetColorDialog,      0,             0},
@@ -133,7 +135,7 @@ void SetColors()
 		{(const wchar_t *)Msg::SetColorViewer,      0,             0},
 		{(const wchar_t *)Msg::SetColorEditor,      0,             0},
 		{(const wchar_t *)Msg::SetColorHelp,        0,             0},
-		{L"",       								LIF_SEPARATOR, 0},
+		{L"",                                       LIF_SEPARATOR, 0},
 		{(const wchar_t *)Msg::SetDefaultColors,    0,             0},
 		{(const wchar_t *)Msg::SetDefaultColorsRGB, 0,             0},
 		{(const wchar_t *)Msg::SetBW,               0,             0},
@@ -144,7 +146,7 @@ void SetColors()
 	size_t BaseGroupLen = ARRAYSIZE(BaseGroups);
 	size_t GroupsLen = BaseGroupLen + 
 		(v.size() > 0 ? v.size() + 1 : 0) +   		/* user themes */
-		(v2.size() > 0 ? v2.size() + 1: 0); 	/* system themes */
+		(v2.size() > 0 ? v2.size() + 1 : 0); 	/* system themes */
 	MenuDataEx Groups[GroupsLen];
 
     /* copy from temnplate */
@@ -172,7 +174,8 @@ void SetColors()
     	    int Length = v[j].length();
     	   	std::wstring _tmpwstr;
     	    MB2Wide(v[j].c_str(), Length, _tmpwstr);
-			Groups[ptr].Name = wcsdup(_tmpwstr.c_str());
+            stringBuffer.push_back(_tmpwstr);
+			Groups[ptr].Name = stringBuffer[stringBuffer.size() - 1].c_str();
 			Groups[ptr].Flags = 0;
 			Groups[ptr].AccelKey = 0;
 
@@ -193,8 +196,10 @@ void SetColors()
     	    int Length = v2[j].length();
     	   	std::wstring _tmpwstr;
     	    MB2Wide(v2[j].c_str(), Length, _tmpwstr);
+
+            stringBuffer.push_back(_tmpwstr);
+			Groups[ptr].Name = stringBuffer[stringBuffer.size() - 1].c_str();
 			
-			Groups[ptr].Name = wcsdup(_tmpwstr.c_str());
 			Groups[ptr].Flags = 0;
 			Groups[ptr].AccelKey = 0;
 

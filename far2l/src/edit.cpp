@@ -423,7 +423,12 @@ void Edit::FastShow()
 				case 0x2066 ... 0x206F:
 					wc = L'\x2194'; // ↔
 					break;
+				case 0x000A: //line feed
+					wc = L'\x240A'; // ␊
+					break;
 			}
+		} else if (wc == L'\n') {
+			wc = L'\x21B5'; // ↵
 		}
 
 		if (wc == L'\t') {
@@ -872,6 +877,17 @@ int Edit::ProcessKey(FarKey Key)
 	}
 
 	switch (Key) {
+		case KEY_CTRLA:
+			Select(0, StrSize);
+			Show();
+			return FALSE;
+
+		case KEY_CTRLU:
+			SetClearFlag(0);
+			Select(-1, 0);
+			Show();
+			return FALSE;
+
 		case KEY_SHIFTLEFT:
 		case KEY_SHIFTNUMPAD4: {
 			if (CurPos > 0) {
@@ -1172,7 +1188,9 @@ int Edit::ProcessKey(FarKey Key)
 			LeftPos = CurPos = 0;
 			*Str = 0;
 			StrSize = 0;
-			Str = (wchar_t *)realloc(Str, 1 * sizeof(wchar_t));
+			wchar_t *NewStr = (wchar_t *)realloc(Str, 1 * sizeof(wchar_t));
+			if (NewStr)
+				Str = NewStr;
 			Select(-1, 0);
 			Changed();
 			Show();
@@ -2185,9 +2203,12 @@ void Edit::InsertTab()
 	}
 
 	int PrevStrSize = StrSize;
+	wchar_t *NewStr = (wchar_t *)realloc(Str, (StrSize + S + 1) * sizeof(wchar_t));
+	if (!NewStr)
+		return;
+	Str = NewStr;
 	StrSize+= S;
 	CurPos+= S;
-	Str = (wchar_t *)realloc(Str, (StrSize + 1) * sizeof(wchar_t));
 	TabPtr = Str + Pos;
 	wmemmove(TabPtr + S, TabPtr, PrevStrSize - Pos);
 	wmemset(TabPtr, L' ', S);
@@ -2221,12 +2242,15 @@ void Edit::ExpandTabs()
 		}
 
 		int PrevStrSize = StrSize;
+		wchar_t *NewStr = (wchar_t *)realloc(Str, (StrSize + S) * sizeof(wchar_t));
+		if (!NewStr)
+			break;
+		Str = NewStr;
 		StrSize+= S - 1;
 
 		if (CurPos > Pos)
 			CurPos+= S - 1;
 
-		Str = (wchar_t *)realloc(Str, (StrSize + 1) * sizeof(wchar_t));
 		TabPtr = Str + Pos;
 		wmemmove(TabPtr + S, TabPtr + 1, PrevStrSize - Pos);
 		wmemset(TabPtr, L' ', S);
@@ -2497,7 +2521,9 @@ void Edit::DeleteBlock()
 				CurPos-= To - From;
 		}
 
-		Str = (wchar_t *)realloc(Str, (StrSize + 1) * sizeof(wchar_t));
+		wchar_t *NewStr = (wchar_t *)realloc(Str, (StrSize + 1) * sizeof(wchar_t));
+		if (NewStr)
+			Str = NewStr;
 	}
 
 	SelStart = -1;

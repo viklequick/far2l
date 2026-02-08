@@ -186,7 +186,7 @@ enum CopyMode
 	CM_RESUME,
 	CM_ONLYNEWER,
 	CM_SEPARATOR,
-	CM_ASKRO
+	CM_ASKRO,
 };
 
 // CopyProgress start
@@ -2515,8 +2515,6 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 
 	FAR_FIND_DATA_EX DstData;
 	if (Resume) {
-		fprintf(stderr, "resume: %s\n", strDestName.GetMB().c_str());
-
 		DstData.Clear();
 		_AppendPos = 0;
 		Append = false;
@@ -2527,18 +2525,12 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 				break;
 			}
 			INT64 nPos = (INT64)DstData.nFileSize;
-
-			fprintf(stderr, "resume: %s: dst size=%ld\n", strDestName.GetMB().c_str(), nPos);
-
 			if (!_SrcFile.SetPointer(nPos, nullptr, FILE_BEGIN)) {
 				_SrcFile.SetPointer(0, &_AppendPos, FILE_BEGIN);
 				nPos = _AppendPos;
 				Resume = false;
 				break;
 			}
-
-			fprintf(stderr, "resume: %ls: src ptr=%ld\n", SrcName, nPos);
-
 		} while (false);
 	}
 
@@ -2581,9 +2573,6 @@ ShellFileTransfer::ShellFileTransfer(const wchar_t *SrcName, const FAR_FIND_DATA
 
 	if (Append || Resume) {
 		_AppendPos = 0;
-
-		fprintf(stderr, "resume: %s: dst ptr=<EOF>\n", strDestName.GetMB().c_str());
-
 		if (!_DestFile.SetPointer(0, &_AppendPos, FILE_END)) {
 			ErrnoSaver ErSr;
 			_SrcFile.Close();

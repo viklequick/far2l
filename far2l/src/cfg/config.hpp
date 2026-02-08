@@ -230,6 +230,7 @@ struct EditorOptions
 	int ShowLineNumbers;
 	int EditCopyToPrimarySelection;
 	int EditPasteFromPrimarySelection;
+	int ShowGutterMarks;
 
 	int WordWrap;
 	FARString strWordDiv;

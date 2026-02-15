@@ -27400,6 +27400,17 @@ upd:"Word wrap"
 upd:"Word wrap"
 upd:"Word wrap"
 
+UseModernLook
+"Современный вид"
+"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+
 #Must be the last
 NewFileName
 l:

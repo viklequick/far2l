@@ -743,7 +743,7 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 			добавим энти самые скобки
 		*/
 		if (Type == DI_BUTTON && !(ItemFlags & DIF_NOBRACKETS)) {
-			LPCWSTR Brackets[] = {L"[ ", L" ]", L"{ ", L" }"};
+			LPCWSTR Brackets[] = {L"⟦ ", L" ⟧", L"⟪ ", L" ⟫"};
 			int Start = (CurItem->DefaultButton ? 2 : 0);
 			if (CurItem->strData.At(0) != *Brackets[Start]) {
 				CurItem->strData = Brackets[Start] + CurItem->strData + Brackets[Start + 1];
@@ -2164,24 +2164,24 @@ void Dialog::ShowDialog(unsigned ID)
 				GotoXY(X1 + CX1, Y1 + CY1);
 
 				if (CurItem->Type == DI_CHECKBOX) {
-					const wchar_t Check[] = {L'[',
+					const wchar_t Check[] = {L' ', // [
 							(CurItem->Selected ? (((CurItem->Flags & DIF_3STATE) && CurItem->Selected == 2)
 												? *Msg::CheckBox2State
-												: L'x')
-												: L' '),
-							L']', L'\0'};
+												: L'✔')
+												: L'⧠'),
+							L' ', /* ] */ L'\0'};
 					strStr = Check;
 
 					if (CurItem->strData.GetLength())
 						strStr+= L" ";
 				} else {
-					wchar_t Dot[] = {L' ', CurItem->Selected ? L'\x2022' : L' ', L' ', L'\0'};
+					wchar_t Dot[] = {L' ', CurItem->Selected ? L'⦿' : L'◯', L' ', L'\0'};
 
 					if (CurItem->Flags & DIF_MOVESELECT) {
 						strStr = Dot;
 					} else {
-						Dot[0] = L'(';
-						Dot[2] = L')';
+						Dot[0] = L' '; // (
+						Dot[2] = L' '; // )
 						strStr = Dot;
 
 						if (CurItem->strData.GetLength())

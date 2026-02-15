@@ -1973,9 +1973,16 @@ void Dialog::ShowDialog(unsigned ID)
 						&& (CurItem->Flags & DIF_CENTERTEXT) && CX1 != -1)
 					LenText = LenStrItem(I, CenterStr(strStr, strStr, CX2 - CX1 + 1));
 
-				X = (CX1 == -1 || (CurItem->Flags & (DIF_SEPARATOR | DIF_SEPARATOR2)))
-						? ( Opt.Dialogs.UseModernLook ? CX1 + 1 : (X2 - X1 + 1 - LenText) / 2 )
-						: CX1;
+				X = (CX1 == -1) ? (X2 - X1 + 1 - LenText) / 2 : CX1;
+
+				if (CurItem->Flags & (DIF_SEPARATOR | DIF_SEPARATOR2)) {
+					X = (X2 - X1 + 1 - LenText) / 2;
+
+					if (Opt.Dialogs.UseModernLook && CX1 >= 0)
+						X = CX1 + 1;
+
+				}
+
 				Y = (CY1 == -1) ? (Y2 - Y1 + 1) / 2 : CY1;
 
 				if (X < 0)

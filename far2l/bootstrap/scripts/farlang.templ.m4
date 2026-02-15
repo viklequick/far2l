@@ -19463,8 +19463,8 @@ SetDefaultColors
 "&Ужыць 16 колеры"
 
 SetDefaultColorsRGB
-"Cтандартные &цвета"
-"Def&ault theme"
+"Cтандартные RGB &цвета"
+"Def&ault RGB theme"
 "Výchozí &barvy"
 "Standardfarben"
 "Színek"
@@ -29168,6 +29168,17 @@ upd:"Word wrap"
 upd:"Word wrap"
 upd:"Word wrap"
 upd:"Word wrap"
+
+UseModernLook
+"Современный вид"
+"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
+upd:"Use Modern Look"
 
 #Must be the last
 NewFileName

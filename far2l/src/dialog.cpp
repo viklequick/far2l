@@ -1934,7 +1934,7 @@ void Dialog::ShowDialog(unsigned ID)
 							(CurItem->Type == DI_SINGLEBOX) ? SINGLE_BOX : DOUBLE_BOX);
 				}
 
-				if (!CurItem->strData.IsEmpty() /*&& IsDrawTitle*/) {
+				if (!CurItem->strData.IsEmpty() && IsDrawTitle) {
 					// ! Пусть диалог сам заботится о ширине собственного заголовка.
 					strStr = CurItem->strData;
 					TruncStrFromEnd(strStr, CW - 2);	// 5 ???
@@ -1986,12 +1986,19 @@ void Dialog::ShowDialog(unsigned ID)
 						&& (CurItem->Flags & DIF_CENTERTEXT) && CX1 != -1)
 					LenText = LenStrItem(I, CenterStr(strStr, strStr, CX2 - CX1 + 1));
 
-				X = (CX1 == -1 || (CurItem->Flags & (DIF_SEPARATOR | DIF_SEPARATOR2)))
-						? ( Opt.Dialogs.UseModernLook ? CX1 + 1 : (X2 - X1 + 1 - LenText) / 2 )
-						: CX1;
+				X = (CX1 == -1) ? (X2 - X1 + 1 - LenText) / 2 : CX1;
+
+				if (CurItem->Flags & (DIF_SEPARATOR | DIF_SEPARATOR2)) {
+					X = (X2 - X1 + 1 - LenText) / 2;
+
+					if (Opt.Dialogs.UseModernLook && CX1 >= 0)
+						X = CX1 + 1;
+
+				}
+
 				Y = (CY1 == -1) ? (Y2 - Y1 + 1) / 2 : CY1;
 
-				if (X < 0)
+				if (X < 0) 
 					X = 0;
 
 				if ((CX2 <= 0) || (CX2 < CX1))
@@ -2185,8 +2192,8 @@ void Dialog::ShowDialog(unsigned ID)
 						(Opt.Dialogs.UseModernLook ? L' ' : L'['),
 							(CurItem->Selected ? (((CurItem->Flags & DIF_3STATE) && CurItem->Selected == 2)
 												? *Msg::CheckBox2State
-												: ( Opt.Dialogs.UseModernLook ? L'✔' : L'x'))
-												: ( Opt.Dialogs.UseModernLook ? L'⧠' : L' ')),
+												: ( Opt.Dialogs.UseModernLook ? L'✔' /* ☑️ ☒ ✔️✓ ✅ */ : L'x'))
+												: ( Opt.Dialogs.UseModernLook ? L'☐' /* L'✘' 🔲 🔳 ▢ ☐ ⧠ ✖️ X ✘ X ❌ ❎ */ : L' ')),
 						(Opt.Dialogs.UseModernLook ? L' ' : L']'), L'\0'};
 					strStr = Check;
 

@@ -662,6 +662,9 @@ static inline unsigned char CalcExtraFadeColor(unsigned char bg, unsigned char f
 
 // #define DEBUG_FADED_EDGES
 
+WinPortRGB ComputeEmbossColor_HSL(const WinPortRGB& xbg, const WinPortRGB& xline);
+WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline);
+
 struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 {
 	ConsolePainter &_painter;
@@ -704,10 +707,44 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter.SetFillColor(clr_fade);
 	}
 
+	inline void SetColorEmbossImpl()
+	{
+		WinPortRGB clr_fade;
+		if (_clr_back.r + _clr_back.g + _clr_back.b < 0x5f) /* near to black background */
+			clr_fade = ComputeEmbossColor_LAB(_clr_back, _clr_text);
+		else
+			clr_fade = ComputeEmbossColor_HSL(_clr_back, _clr_text);
+		_painter.SetFillColor(clr_fade);
+	}
+
+	inline void SetColorRedImpl()
+	{
+		WinPortRGB clr_fade(0xff, 0, 0);
+		_painter.SetFillColor(clr_fade);
+	}
+
+	inline int GetFontAscentImpl()
+	{
+		int w, h, descent, externalLeading; 
+		_painter._dc.GetTextExtent("Ag", &w, &h, &descent, &externalLeading);
+		return _painter._dc.GetCharHeight() - descent;
+	}
 
 	inline void FillRectangleImpl(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 	{
 		_painter._dc.DrawRectangle(left, top, right + 1 - left , bottom + 1 - top);
+	}
+
+	inline void DrawEllipticArcImpl(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end) {
+		wxBrush oldBrush = _painter._dc.GetBrush(); 
+		wxColour brushColor = oldBrush.GetColour();
+		wxPen oldPen = _painter._dc.GetPen(); 
+		_painter._dc.SetPen(wxPen(brushColor, 1));
+
+		_painter._dc.SetBrush(*wxTRANSPARENT_BRUSH);
+		_painter._dc.DrawEllipticArc(left, top, width, height, start, end);
+		_painter._dc.SetBrush(oldBrush);
+		_painter._dc.SetPen(oldPen);
 	}
 };
 
@@ -727,9 +764,29 @@ void WXCustomDrawChar::Painter::SetColorExtraFaded()
 	((WXCustomDrawCharPainter *)this)->SetColorExtraFadedImpl();
 }
 
+void WXCustomDrawChar::Painter::SetColorEmboss()
+{
+	((WXCustomDrawCharPainter *)this)->SetColorEmbossImpl();
+}
+
+void WXCustomDrawChar::Painter::SetColorRed()
+{
+	((WXCustomDrawCharPainter *)this)->SetColorRedImpl();
+}
+
+int WXCustomDrawChar::Painter::GetFontAscent()
+{
+	return ((WXCustomDrawCharPainter *)this)->GetFontAscentImpl();
+}
+
 void WXCustomDrawChar::Painter::FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 {
 	((WXCustomDrawCharPainter *)this)->FillRectangleImpl(left, top, right, bottom);
+}
+
+void WXCustomDrawChar::Painter::DrawEllipticArc(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end)
+{
+	((WXCustomDrawCharPainter *)this)->DrawEllipticArcImpl(left, top, width, height, start, end);
 }
 
 void WXCustomDrawChar::Painter::FillPixel(wxCoord left, wxCoord top)
@@ -807,3 +864,228 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 		_context->ApplyFont(_dc);
 	}
 }
+
+#include <algorithm>
+#include <cmath>
+
+struct RGB { double r, g, b; }; // 0..1
+struct LAB { double L, a, b; };
+
+static WinPortRGB RGBtoFar(const RGB& rgb) 
+{
+	return WinPortRGB((int)(rgb.r*255), (int)(rgb.g*255), (int)(rgb.b*255));
+}
+
+static RGB FarToRGB(const WinPortRGB& c) 
+{
+	RGB rgb{c.r/255.0, c.g/255.0, c.b/255.0};
+	return rgb;
+}
+
+// Convert RGB → HSL
+static void RGBtoHSL(const RGB& c, double& h, double& s, double& l)
+{
+    double maxv = std::max({c.r, c.g, c.b});
+    double minv = std::min({c.r, c.g, c.b});
+    l = (maxv + minv) * 0.5;
+
+    if (maxv == minv) {
+        h = s = 0.0;
+        return;
+    }
+
+    double d = maxv - minv;
+    s = (l > 0.5) ? d / (2.0 - maxv - minv) : d / (maxv + minv);
+
+    if (maxv == c.r)
+        h = (c.g - c.b) / d + (c.g < c.b ? 6.0 : 0.0);
+    else if (maxv == c.g)
+        h = (c.b - c.r) / d + 2.0;
+    else
+        h = (c.r - c.g) / d + 4.0;
+
+    h /= 6.0;
+}
+
+// Helper for HSL → RGB
+static double HueToRGB(double p, double q, double t)
+{
+    if (t < 0.0) t += 1.0;
+    if (t > 1.0) t -= 1.0;
+    if (t < 1.0/6.0) return p + (q - p) * 6.0 * t;
+    if (t < 1.0/2.0) return q;
+    if (t < 2.0/3.0) return p + (q - p) * (2.0/3.0 - t) * 6.0;
+    return p;
+}
+
+// Convert HSL → RGB
+static RGB HSLtoRGB(double h, double s, double l)
+{
+    RGB out;
+    if (s == 0.0) {
+        out.r = out.g = out.b = l;
+        return out;
+    }
+
+    double q = (l < 0.5) ? l * (1.0 + s) : (l + s - l * s);
+    double p = 2.0 * l - q;
+
+    out.r = HueToRGB(p, q, h + 1.0/3.0);
+    out.g = HueToRGB(p, q, h);
+    out.b = HueToRGB(p, q, h - 1.0/3.0);
+
+    return out;
+}
+
+// Compute raise color using HSL
+static RGB ComputeRaiseColor_HSL(const RGB& bg, const RGB& line)
+{
+    double hb, sb, lb;
+    double hl, sl, ll;
+
+    RGBtoHSL(bg, hb, sb, lb);
+    RGBtoHSL(line, hl, sl, ll);
+
+    // Opposite lightness shift
+    double shift = 0.20; // 20% is a good UI default
+
+    double newL = (ll < lb) ? ll + shift : ll - shift;
+    newL = std::clamp(newL, 0.0, 1.0);
+
+    return HSLtoRGB(hl, sl, newL);
+}
+
+// Gamma correction
+static double InvGamma(double x)
+{
+    return (x <= 0.04045) ? (x / 12.92) : std::pow((x + 0.055) / 1.055, 2.4);
+}
+
+static double Gamma(double x)
+{
+    return (x <= 0.0031308) ? (12.92 * x) : (1.055 * std::pow(x, 1.0/2.4) - 0.055);
+}
+
+// RGB → LAB
+static LAB RGBtoLAB(const RGB& c)
+{
+    double r = InvGamma(c.r);
+    double g = InvGamma(c.g);
+    double b = InvGamma(c.b);
+
+    // RGB → XYZ (D65)
+    double X = r*0.4124 + g*0.3576 + b*0.1805;
+    double Y = r*0.2126 + g*0.7152 + b*0.0722;
+    double Z = r*0.0193 + g*0.1192 + b*0.9505;
+
+    // Normalize by D65 white point
+    X /= 0.95047;
+    Y /= 1.00000;
+    Z /= 1.08883;
+
+    auto f = [](double t) {
+        return (t > 0.008856) ? std::cbrt(t) : (7.787 * t + 16.0/116.0);
+    };
+
+    LAB out;
+    out.L = 116.0 * f(Y) - 16.0;
+    out.a = 500.0 * (f(X) - f(Y));
+    out.b = 200.0 * (f(Y) - f(Z));
+    return out;
+}
+
+// LAB → RGB
+static RGB LABtoRGB(const LAB& lab)
+{
+    double fy = (lab.L + 16.0) / 116.0;
+    double fx = fy + lab.a / 500.0;
+    double fz = fy - lab.b / 200.0;
+
+    auto invf = [](double t) {
+        double t3 = t*t*t;
+        return (t3 > 0.008856) ? t3 : ((t - 16.0/116.0) / 7.787);
+    };
+
+    double X = invf(fx) * 0.95047;
+    double Y = invf(fy);
+    double Z = invf(fz) * 1.08883;
+
+    // XYZ → RGB
+    double r =  3.2406*X - 1.5372*Y - 0.4986*Z;
+    double g = -0.9689*X + 1.8758*Y + 0.0415*Z;
+    double b =  0.0557*X - 0.2040*Y + 1.0570*Z;
+
+    // Gamma correction
+    r = Gamma(r);
+    g = Gamma(g);
+    b = Gamma(b);
+
+    return { std::clamp(r,0.0,1.0), std::clamp(g,0.0,1.0), std::clamp(b,0.0,1.0) };
+}
+
+// Compute raise color using LAB
+static RGB ComputeRaiseColor_LAB(const RGB& bg, const RGB& line)
+{
+    LAB Lbg = RGBtoLAB(bg);
+    LAB Lln = RGBtoLAB(line);
+
+    LAB out = Lln;
+
+    // Opposite lightness shift
+    double shift = 12.0; // LAB L is 0..100, so 12 is ~12%
+    out.L = (Lln.L < Lbg.L) ? (Lln.L + shift) : (Lln.L - shift);
+    out.L = std::clamp(out.L, 0.0, 100.0);
+
+    return LABtoRGB(out);
+}
+
+struct ColorsCache {
+	WinPortRGB bg;
+	WinPortRGB fg;
+	WinPortRGB rg;
+	int raised;
+};
+
+static ColorsCache _last_colors;
+
+static bool ColorEq(const WinPortRGB& c1, const WinPortRGB& c2)
+{
+	return c1.r == c2.r && c1.g == c2.g && c1.b == c2.b;
+}
+
+WinPortRGB ComputeEmbossColor_HSL(const WinPortRGB& xbg, const WinPortRGB& xline) 
+{
+	if (_last_colors.raised && ColorEq(_last_colors.bg, xbg) && ColorEq(_last_colors.fg, xline)) {
+		return _last_colors.rg;
+	}
+
+	RGB bg = FarToRGB(xbg);
+	RGB fg = FarToRGB(xline);
+	RGB r = ComputeRaiseColor_HSL(bg, fg);
+
+	_last_colors.bg = xbg;
+	_last_colors.fg = xline;
+	_last_colors.rg = RGBtoFar(r);
+	_last_colors.raised = 1;
+
+	return _last_colors.rg;
+}
+
+WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline) 
+{
+	if (_last_colors.raised && ColorEq(_last_colors.bg, xbg) && ColorEq(_last_colors.fg, xline)) {
+		return _last_colors.rg;
+	}
+
+	RGB bg = FarToRGB(xbg);
+	RGB fg = FarToRGB(xline);
+	RGB r = ComputeRaiseColor_LAB(bg, fg);
+
+	_last_colors.bg = xbg;
+	_last_colors.fg = xline;
+	_last_colors.rg = RGBtoFar(r);
+	_last_colors.raised = 1;
+
+	return _last_colors.rg;
+}
+

@@ -4,6 +4,9 @@
 namespace WXCustomDrawChar
 {
 
+	static bool modernLook = true;
+	static bool roundedBorders = true;
+
 	struct CharMetrics
 	{
 		inline CharMetrics(Painter &p, unsigned int start_y, unsigned int cx) :
@@ -18,6 +21,9 @@ namespace WXCustomDrawChar
 		wxCoord right;
 		wxCoord top;
 		wxCoord bottom;
+
+		inline wxCoord height() { return bottom - top; }
+		inline wxCoord width() { return right - left; }
 	};
 
 	struct SingleLineBoxMetrics : CharMetrics
@@ -178,6 +184,8 @@ namespace WXCustomDrawChar
 		}
 	}
 
+    /* single lines */
+
 	static void Draw_2500(Painter &p, unsigned int start_y, unsigned int cx) /* ─ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
@@ -330,6 +338,169 @@ namespace WXCustomDrawChar
 		}
 	}
 
+    /* single lines modern look */
+
+	static void Draw_2500_new(Painter &p, unsigned int start_y, unsigned int cx) /* ─ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+	}
+
+	static void Draw_2502_new(Painter &p, unsigned int start_y, unsigned int cx) /* │ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.bottom);
+	}
+
+	static inline void DrawSingleEllipse(Painter &p, SingleLineBoxMetrics &m, double start, double end, bool left, bool top)
+	{
+		p.DrawEllipticArc(
+			(left ? m.left : m.middle_x), 
+			(top ? m.top : m.middle_y), 
+			m.right - m.middle_x, 
+			m.bottom - m.middle_y, 
+			start, 
+			end);
+	}
+
+	static inline void DrawSingleEllipseEmboss(Painter &p, SingleLineBoxMetrics &m, double start, double end, bool left, bool top)
+	{
+		p.DrawEllipticArc(
+			(left ? m.left : m.middle_x + p.thickness), 
+			(top ? m.top : m.middle_y + p.thickness), 
+			m.right - m.middle_x - p.thickness, 
+			m.bottom - m.middle_y - p.thickness, 
+			start, 
+			end);
+	}
+
+	static void Draw_250C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┌ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawSingleEllipse(p, m, 90, 180, false, false);
+			p.SetColorEmboss();
+			DrawSingleEllipseEmboss(p, m, 90, 180, false, false);
+		}
+		else {
+			p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+			p.FillRectangle(m.middle_x, m.middle_y, m.middle_x + p.thickness - 1, m.bottom);
+			p.SetColorEmboss();
+			p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+			p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.middle_x + p.thickness, m.bottom);
+		}
+	}
+
+	static void Draw_2510_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┐ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawSingleEllipse(p, m, 0, 90, true, false);
+			p.SetColorEmboss();
+			DrawSingleEllipseEmboss(p, m, 0, 90, true, false);
+		}
+		else {
+			p.FillRectangle(m.left, m.middle_y, m.middle_x, m.middle_y + p.thickness - 1);
+			p.FillRectangle(m.middle_x, m.middle_y, m.middle_x + p.thickness - 1, m.bottom);
+			p.SetColorEmboss();
+			p.FillRectangle(m.left, m.middle_y + p.thickness, m.middle_x + p.thickness, m.middle_y + p.thickness);
+			p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.middle_x + p.thickness, m.bottom);
+		}
+	}
+
+	static void Draw_2514_new(Painter &p, unsigned int start_y, unsigned int cx) /* └ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawSingleEllipse(p, m, 180, 270, false, true);
+			p.SetColorEmboss();
+			DrawSingleEllipseEmboss(p, m, 180, 270, false, true);
+		}
+		else {
+			p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+			p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle_y);
+			p.SetColorEmboss();
+			p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+			p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y + p.thickness);
+		}
+	}
+
+	static void Draw_2518_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┘ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawSingleEllipse(p, m, 270, 360, true, true);
+			p.SetColorEmboss();
+			DrawSingleEllipseEmboss(p, m, 270, 360, true, true);
+		}
+		else {
+			p.FillRectangle(m.left, m.middle_y, m.middle_x + p.thickness - 1, m.middle_y + p.thickness - 1);
+			p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle_y);
+			p.SetColorEmboss();
+			p.FillRectangle(m.left, m.middle_y + p.thickness, m.middle_x + p.thickness, m.middle_y + p.thickness);
+			p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y + p.thickness);
+		}
+	}
+
+	static void Draw_251C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ├ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.middle_x + 1, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness - 1, m.middle_x + p.thickness, m.middle_y + p.thickness);
+	}
+
+	static void Draw_2524_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┤ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.middle_x, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle_y + p.thickness, m.middle_x, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.bottom);
+	}
+
+	static void Draw_252C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┬ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.middle_y, m.middle_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle_y + p.thickness, m.middle_x - 1, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.middle_x + p.thickness, m.bottom);
+	}
+
+	static void Draw_2534_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┴ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle_y);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y - 1);
+	}
+
+	static void Draw_253C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┼ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle_y + p.thickness, m.middle_x - 1, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness - 1, m.right, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x - 1, m.middle_y - 1);
+		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.middle_x + p.thickness, m.bottom);
+	}
+
+    /* double lines */
 
 	static void Draw_2550(Painter &p, unsigned int start_y, unsigned int cx) /* ═ */
 	{
@@ -476,9 +647,6 @@ namespace WXCustomDrawChar
 			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.bottom);
 		}
 	}
-
-
-	///
 
 	static void Draw_2560(Painter &p, unsigned int start_y, unsigned int cx) /* ╠ */
 	{
@@ -781,7 +949,6 @@ namespace WXCustomDrawChar
 		}
 	}
 
-
 	static void Draw_255C(Painter &p, unsigned int start_y, unsigned int cx) /* ╜ */ // + thickness
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
@@ -799,7 +966,6 @@ namespace WXCustomDrawChar
 			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.middle_y - 2);
 		}
 	}
-
 
 	static void Draw_2559(Painter &p, unsigned int start_y, unsigned int cx) /* ╙ */
 	{
@@ -887,6 +1053,608 @@ namespace WXCustomDrawChar
 			p.FillRectangle(m.middle_x - 1, m.middle1_y + p.thickness, m.middle_x - 1, m.middle2_y - 2);
 		}
 	}
+
+    /* double lines modern look */
+
+	static void Draw_2550_new(Painter &p, unsigned int start_y, unsigned int cx) /* ═ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
+		p.FillRectangle(m.left, m.middle2_y + p.thickness, m.right, m.middle2_y + p.thickness);
+	}
+
+	static void Draw_2551_new(Painter &p, unsigned int start_y, unsigned int cx) /* ║ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.bottom);
+		p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.bottom);
+	}
+
+	static inline void DrawDoubleEllipseHiPart(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top, wxCoord thickness = 0)
+	{
+        wxCoord wx1 = m.right - m.middle1_x - thickness;
+        wxCoord wy1 = m.bottom - m.middle1_y - thickness;
+		p.DrawEllipticArc(
+			(left ? m.left - wx1 : m.middle1_x + thickness), 
+			(top ? m.top - wy1 : m.middle1_y + thickness), 
+			wx1 * 2,
+			wy1 * 2, 
+			start, 
+			end);
+	}
+
+	static inline void DrawDoubleEllipseLoPart(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top, wxCoord thickness = 0)
+	{
+        wxCoord wx2 = m.right - m.middle2_x - thickness;
+        wxCoord wy2 = m.bottom - m.middle2_y - thickness;
+		p.DrawEllipticArc(
+			(left ? m.left - wx2 : m.middle2_x + thickness), 
+			(top ? m.top - wy2 : m.middle2_y + thickness), 
+			wx2 * 2,
+			wy2 * 2, 
+			start, 
+			end);
+	}
+
+	static inline void DrawDoubleEllipse(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top)
+	{
+		DrawDoubleEllipseHiPart(p, m, start, end, left, top);
+		DrawDoubleEllipseLoPart(p, m, start, end, left, top);
+	}
+
+	static inline void DrawDoubleEllipseHiPartEmboss(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top)
+	{
+		DrawDoubleEllipseHiPart(p, m, start, end, left, top, p.thickness);
+	}
+
+	static inline void DrawDoubleEllipseLoPartEmboss(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top)
+	{
+		DrawDoubleEllipseLoPart(p, m, start, end, left, top, p.thickness);
+	}
+
+	static inline void DrawDoubleEllipseEmboss(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top)
+	{
+		DrawDoubleEllipseHiPartEmboss(p, m, start, end, left, top);
+		DrawDoubleEllipseLoPartEmboss(p, m, start, end, left, top);
+	}
+
+	static void Draw_2554_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╔ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawDoubleEllipse(p, m, 90, 180, false, false);
+			p.SetColorEmboss();
+			DrawDoubleEllipseEmboss(p, m, 90, 180, false, false);
+		}
+		else {
+			p.SetColorEmboss();
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.right, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle1_y + p.thickness, m.middle1_x + p.thickness, m.bottom);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.middle2_x + p.thickness , m.bottom);
+		}
+	}
+
+	static void Draw_2557_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╗ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawDoubleEllipse(p, m, 0, 90, true, false);
+			p.SetColorEmboss();
+			DrawDoubleEllipseEmboss(p, m, 0, 90, true, false);
+		}
+		else {
+			p.FillRectangle(m.left, m.middle1_y, m.middle2_x, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.left, m.middle2_y, m.middle1_x, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle2_x, m.middle1_y, m.middle2_x + p.thickness - 1, m.bottom);
+			p.FillRectangle(m.middle1_x, m.middle2_y, m.middle1_x + p.thickness - 1, m.bottom);
+			p.SetColorEmboss();
+			p.FillRectangle(m.left, m.middle1_y + p.thickness, m.middle2_x + p.thickness, m.middle1_y + p.thickness);
+			p.FillRectangle(m.left, m.middle2_y + p.thickness, m.middle1_x + p.thickness, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle1_y + p.thickness, m.middle2_x + p.thickness, m.bottom);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle2_y + p.thickness, m.middle1_x + p.thickness, m.bottom);
+		}
+	}
+
+	static void Draw_255A_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╚ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawDoubleEllipse(p, m, 180, 270, false, true);
+			p.SetColorEmboss();
+			DrawDoubleEllipseEmboss(p, m, 180, 270, false, true);
+		}
+		else {
+			p.FillRectangle(m.middle2_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.middle1_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle2_y);
+			p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle1_y);
+			p.SetColorEmboss();
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle2_y + p.thickness, m.right, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.middle1_y + p.thickness);
+		}
+	}
+
+	static void Draw_255D_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╝ */ // + thickness
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			DrawDoubleEllipse(p, m, 270, 360, true, true);
+			p.SetColorEmboss();
+			DrawDoubleEllipseEmboss(p, m, 270, 360, true, true);
+		}
+		else {
+			p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.left, m.middle2_y, m.middle2_x + p.thickness - 1, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle1_y);
+			p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle2_y);
+			p.SetColorEmboss();
+			p.FillRectangle(m.left, m.middle1_y + p.thickness, m.middle1_x + p.thickness, m.middle1_y + p.thickness);
+			p.FillRectangle(m.left, m.middle2_y + p.thickness, m.middle2_x + p.thickness, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.middle1_y + p.thickness);
+			p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.middle2_y + p.thickness);
+		}
+	}
+
+	static void Draw_255F_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╟ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle2_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.bottom);
+		p.FillRectangle(m.middle2_x + p.thickness, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.middle2_y - 1);
+		p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.middle2_x + p.thickness, m.bottom);
+	}
+
+	static void Draw_2562_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╢ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.middle1_x, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle_y + p.thickness, m.middle1_x - 1, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.bottom);
+		p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.bottom);
+	}
+
+	static void Draw_2560_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╠ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
+			DrawDoubleEllipseLoPart(p, m, 180, 270, false, true);
+			DrawDoubleEllipseLoPart(p, m, 90, 180, false, false);
+			p.SetColorEmboss();
+			p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.bottom);
+			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
+			DrawDoubleEllipseLoPartEmboss(p, m, 90, 180, false, false);
+		}
+		else {
+			p.FillRectangle(m.middle2_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.middle2_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
+			p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle1_y);
+			p.FillRectangle(m.middle2_x, m.middle2_y, m.middle2_x + p.thickness - 1, m.bottom);
+			p.SetColorEmboss();
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.right, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.bottom);
+			p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.middle1_y + p.thickness);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.middle2_x + p.thickness, m.bottom);
+		}
+	}
+
+	static void Draw_2563_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╣ */ // + thickness
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
+			DrawDoubleEllipseLoPart(p, m, 270, 360, true, true);
+			DrawDoubleEllipseLoPart(p, m, 0, 90, true, false);
+			p.SetColorEmboss();
+			p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.bottom);
+			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);
+			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
+		}
+		else {
+			p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.left, m.middle2_y, m.middle1_x, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle1_y);
+			p.FillRectangle(m.middle1_x, m.middle2_y, m.middle1_x + p.thickness - 1, m.bottom);
+			p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
+			p.SetColorEmboss();
+			p.FillRectangle(m.left, m.middle1_y + p.thickness, m.middle1_x + p.thickness, m.middle1_y + p.thickness);
+			p.FillRectangle(m.left, m.middle2_y + p.thickness, m.middle1_x + p.thickness, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.middle1_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle2_y + p.thickness, m.middle1_x + p.thickness, m.bottom);
+			p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.bottom);
+		}
+	}
+
+	static void Draw_2565_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╥ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.middle_y, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.middle_y, m.middle2_x + p.thickness - 1, m.bottom);
+		p.SetColorEmboss();
+		p.FillRectangle(m.left, m.middle_y + p.thickness, m.middle1_x - 1, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle2_x + p.thickness, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle1_x + p.thickness, m.middle_y + p.thickness, m.middle1_x + p.thickness, m.bottom);
+		p.FillRectangle(m.middle2_x + p.thickness, m.middle_y + p.thickness, m.middle2_x + p.thickness, m.bottom);
+	}
+
+	static void Draw_2566_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╦ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		if (roundedBorders) {
+			p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+			DrawDoubleEllipseLoPart(p, m, 0, 90, true, false);
+			DrawDoubleEllipseLoPart(p, m, 90, 180, false, false);
+			p.SetColorEmboss();
+			p.FillRectangle(m.left, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
+			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
+			DrawDoubleEllipseLoPartEmboss(p, m, 90, 180, false, false);
+		}
+		else {
+			p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.left, m.middle2_y, m.middle1_x, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle2_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle1_x, m.middle2_y, m.middle1_x + p.thickness - 1, m.bottom);
+			p.FillRectangle(m.middle2_x, m.middle2_y, m.middle2_x + p.thickness - 1, m.bottom);
+			p.SetColorEmboss();
+			p.FillRectangle(m.left, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
+			p.FillRectangle(m.left, m.middle2_y + p.thickness, m.middle1_x + p.thickness, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.right, m.middle2_y + p.thickness);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle2_y + p.thickness, m.middle1_x + p.thickness, m.bottom);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.middle2_x + p.thickness, m.bottom);
+		}
+	}
+
+    /* todo mixed new look */
+
+	static void Draw_2567_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╧ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle1_y);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle_x - 1, m.middle1_y - 1);
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.middle_x - 2, m.middle1_y - 1);
+			p.FillRectangle(m.middle_x + p.thickness, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.right, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.top, m.middle_x - 1, m.middle1_y - 2);
+		}
+	}
+
+	static void Draw_2569_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╩ */ // + thickness
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.middle2_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle1_y);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle1_y);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle1_x - 1, m.middle1_y - 1);
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.middle1_x - 2, m.middle1_y - 1);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.right, m.middle2_y - 1);
+			p.FillRectangle(m.middle1_x - 1, m.top, m.middle1_x - 1, m.middle1_y - 2);
+			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.middle1_y + p.thickness - 1);
+		}
+	}
+
+
+	static void Draw_256C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╬ */ // + thickness
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.middle2_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.middle1_x, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle2_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle1_y);
+		p.FillRectangle(m.middle1_x, m.middle2_y, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle1_y);
+		p.FillRectangle(m.middle2_x, m.middle2_y, m.middle2_x + p.thickness - 1, m.bottom);
+
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle1_x - 1, m.middle1_y - 1);
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.middle1_x - 2, m.middle1_y - 1); // don't overlap compensation pixel
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.middle1_x + p.thickness - 1, m.middle2_y - 1);
+			p.FillRectangle(m.middle2_x, m.middle2_y - 1, m.right, m.middle2_y - 1);
+
+			p.FillRectangle(m.middle1_x - 1, m.top, m.middle1_x - 1, m.middle1_y - 2); // don't overlap compensation pixel
+			p.FillRectangle(m.middle1_x - 1, m.middle2_y + p.thickness, m.middle1_x - 1, m.bottom);
+			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.middle2_x - 1, m.middle2_y, m.middle2_x - 1, m.bottom);
+
+			p.SetColorExtraFaded();
+			p.FillPixel(m.middle2_x - 1, m.middle2_y - 1);
+		}
+	}
+
+
+	static void Draw_2564_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╤ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.middle2_y, m.middle_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.right, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.middle2_y + p.thickness, m.middle_x - 1, m.bottom);
+		}
+	}
+
+	static void Draw_256A_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╪ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle_x - 1, m.middle1_y - 1); // special pixel
+			p.FillPixel(m.middle_x - 1, m.middle2_y - 1); // special pixel
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.middle_x - 2, m.middle1_y - 1);
+			p.FillRectangle(m.middle_x + p.thickness, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.middle_x - 2, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x + p.thickness, m.middle2_y - 1, m.right, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.top, m.middle_x - 1, m.middle1_y - 2);
+			p.FillRectangle(m.middle_x - 1, m.middle1_y + p.thickness, m.middle_x - 1, m.middle2_y - 2);
+			p.FillRectangle(m.middle_x - 1, m.middle2_y + p.thickness, m.middle_x - 1, m.bottom);
+		}
+	}
+
+
+	static void Draw_256B_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╫ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle1_x - 1, m.middle_y - 1); // special pixel
+			p.FillPixel(m.middle2_x - 1, m.middle_y - 1); // special pixel
+
+			p.SetColorFaded();
+
+			p.FillRectangle(m.left, m.middle_y - 1, m.middle1_x - 2, m.middle_y - 1);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle_y - 1, m.middle2_x - 2, m.middle_y - 1);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle_y - 1, m.right, m.middle_y - 1);
+
+			p.FillRectangle(m.middle1_x - 1, m.top, m.middle1_x - 1, m.middle_y - 2);
+			p.FillRectangle(m.middle1_x - 1, m.middle_y + p.thickness, m.middle1_x - 1, m.bottom);
+
+			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.middle_y - 2);
+			p.FillRectangle(m.middle2_x - 1, m.middle_y + p.thickness, m.middle2_x - 1, m.bottom);
+		}
+	}
+
+
+	static void Draw_2561_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╡ */ // + p.thickness - 1
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.middle_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.middle_x, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle1_y);
+		p.FillRectangle(m.middle_x, m.middle2_y, m.middle_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle_x - 1, m.middle1_y - 1); // special pixel
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.middle_x - 2, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.middle_x + p.thickness - 1, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.top, m.middle_x - 1, m.middle1_y - 2);
+			p.FillRectangle(m.middle_x - 1, m.middle2_y + p.thickness, m.middle_x - 1, m.bottom);
+		}
+	}
+
+
+	static void Draw_255E_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╞ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle1_y);
+		p.FillRectangle(m.middle_x, m.middle2_y, m.middle_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.SetColorFaded();
+			p.FillRectangle(m.middle_x + p.thickness, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.middle_x, m.middle2_y - 1, m.right, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.top, m.middle_x - 1, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.middle_x - 1, m.middle2_y, m.middle_x - 1, m.bottom);
+
+			p.SetColorExtraFaded();
+			p.FillPixel(m.middle_x - 1, m.middle2_y - 1);
+		}
+	}
+
+
+	static void Draw_2556_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╖ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.middle2_x, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.middle_y, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.middle_y, m.middle2_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle_y - 1, m.middle2_x + p.thickness - 1, m.middle_y - 1);
+			p.FillRectangle(m.middle1_x - 1, m.middle_y + p.thickness, m.middle1_x - 1, m.bottom);
+			p.FillRectangle(m.middle2_x - 1, m.middle_y + p.thickness, m.middle2_x - 1, m.bottom);
+		}
+	}
+
+
+	static void Draw_2555_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╕ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.middle_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.middle_x, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.middle1_y, m.middle_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle_x - 1, m.middle2_y - 1); // special pixel
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.middle_x + p.thickness - 1, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.middle_x - 2, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.middle1_y + p.thickness, m.middle_x - 1, m.middle2_y - 2);
+			p.FillRectangle(m.middle_x - 1, m.middle2_y + p.thickness, m.middle_x - 1, m.bottom);
+		}
+	}
+
+
+	static void Draw_2568_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╨ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle_y);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle_y);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle1_x - 1, m.middle_y - 1);
+			p.FillPixel(m.middle2_x - 1, m.middle_y - 1);
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle_y - 1, m.middle1_x - 2, m.middle_y - 1);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle_y - 1, m.middle2_x - 2, m.middle_y - 1);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle_y - 1, m.right, m.middle_y - 1);
+			p.FillRectangle(m.middle1_x - 1, m.top, m.middle1_x - 1, m.middle_y - 2);
+			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.middle_y - 2);
+		}
+	}
+
+
+	static void Draw_255C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╜ */ // + thickness
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle_y, m.middle2_x + p.thickness - 1, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle_y);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle_y);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle1_x - 1, m.middle_y - 1);
+			p.FillPixel(m.middle2_x - 1, m.middle_y - 1);
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle_y - 1, m.middle1_x - 2, m.middle_y - 1);
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle_y - 1, m.middle2_x - 2, m.middle_y - 1);
+			p.FillRectangle(m.middle1_x - 1, m.top, m.middle1_x - 1, m.middle_y - 2);
+			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.middle_y - 2);
+		}
+	}
+
+
+	static void Draw_2559_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╙ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle1_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle_y);
+		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.middle_y);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle2_x - 1, m.middle_y - 1);
+
+			p.SetColorFaded();
+			p.FillRectangle(m.middle1_x + p.thickness, m.middle_y - 1, m.middle2_x - 2, m.middle_y - 1);
+			p.FillRectangle(m.middle2_x + p.thickness, m.middle_y - 1, m.right, m.middle_y - 1);
+
+			p.FillRectangle(m.middle1_x - 1, m.top, m.middle1_x - 1, m.middle_y + p.thickness - 1);
+			p.FillRectangle(m.middle2_x - 1, m.top, m.middle2_x - 1, m.middle_y - 2);
+		}
+	}
+
+
+	static void Draw_2558_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╘ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle2_y);
+		if (p.MayDrawFadedEdges()) {
+			p.SetColorFaded();
+			p.FillRectangle(m.middle_x + p.thickness, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.middle_x + p.thickness, m.middle2_y - 1, m.right, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.top, m.middle_x - 1, m.middle2_y + p.thickness - 1);
+		}
+	}
+
+
+	static void Draw_2552_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╒ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.middle1_y, m.middle_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.SetColorFaded();
+			p.FillRectangle(m.middle_x, m.middle1_y - 1, m.right, m.middle1_y - 1);
+			p.FillRectangle(m.middle_x + p.thickness, m.middle2_y - 1, m.right, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.middle1_y, m.middle_x - 1, m.bottom);
+
+			p.SetColorExtraFaded();
+			p.FillPixel(m.middle_x - 1, m.middle1_y - 1);
+		}
+	}
+
+
+	static void Draw_2553_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╓ */
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.middle1_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
+		p.FillRectangle(m.middle1_x, m.middle_y, m.middle1_x + p.thickness - 1, m.bottom);
+		p.FillRectangle(m.middle2_x, m.middle_y, m.middle2_x + p.thickness - 1, m.bottom);
+		if (p.MayDrawFadedEdges()) {
+			p.SetColorFaded();
+			p.FillRectangle(m.middle1_x, m.middle_y - 1, m.right, m.middle_y - 1);
+			p.FillRectangle(m.middle1_x - 1, m.middle_y, m.middle1_x - 1, m.bottom);
+			p.FillRectangle(m.middle2_x - 1, m.middle_y + p.thickness, m.middle2_x - 1, m.bottom);
+
+			p.SetColorExtraFaded();
+			p.FillPixel(m.middle1_x - 1, m.middle_y - 1);
+		}
+	}
+
+	static void Draw_255B_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╛*/ // + thickness
+	{
+		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.FillRectangle(m.left, m.middle1_y, m.middle_x, m.middle1_y + p.thickness - 1);
+		p.FillRectangle(m.left, m.middle2_y, m.middle_x, m.middle2_y + p.thickness - 1);
+		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle2_y + p.thickness - 1);
+		if (p.MayDrawFadedEdges()) {
+			p.FillPixel(m.middle_x - 1, m.middle1_y - 1);
+			p.FillPixel(m.middle_x - 1, m.middle2_y - 1);
+
+			p.SetColorFaded();
+			p.FillRectangle(m.left, m.middle1_y - 1, m.middle_x - 2, m.middle1_y - 1);
+			p.FillRectangle(m.left, m.middle2_y - 1, m.middle_x - 2, m.middle2_y - 1);
+			p.FillRectangle(m.middle_x - 1, m.top, m.middle_x - 1, m.middle1_y - 2);
+			p.FillRectangle(m.middle_x - 1, m.middle1_y + p.thickness, m.middle_x - 1, m.middle2_y - 2);
+		}
+	}
+
+    /* other characters */
 
 	static void Draw_2580(Painter &p, unsigned int start_y, unsigned int cx) /* ▀ */
 	{
@@ -1046,6 +1814,51 @@ namespace WXCustomDrawChar
 		}
 	}
 
+	static void Draw_unchecked_box(Painter &p, unsigned int start_y, unsigned int cx) /* ☐ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+
+		wxCoord wx = m.right - m.left;
+		wxCoord wy = m.bottom - m.top;
+		wxCoord r = (wx > wy ? wy : wx) / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X1 = m.middle_x - r, X2 = m.middle_x + r, Y1 = m.top + ascent - 2 * r - 1, Y2 = m.top + ascent - 1;
+
+		p.FillRectangle(X1, Y1, X1, Y2);
+		p.FillRectangle(X1, Y1, X2, Y1);
+		p.FillRectangle(X2, Y1, X2, Y2);
+		p.FillRectangle(X1, Y2, X2, Y2);
+	}
+	
+	static void Draw_checked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ⦿ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		wxCoord wx = m.right - m.left;
+		wxCoord wy = m.bottom - m.top;
+		wxCoord r = (wx > wy ? wy : wx) / 2;
+		wxCoord r2 = r / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X1 = m.middle_x - r,  Y1 = m.top + ascent - 2*r - 1;
+		wxCoord X2 = m.middle_x - r2, Y2 = m.top + ascent - 2*r + r2 - 1;
+
+		p.DrawEllipticArc(X1, Y1, 2*r, 2*r, 0, 0);
+		p.DrawEllipticArc(X2, Y2, 2*r2, 2*r2, 0, 0);
+	}
+
+	static void Draw_unchecked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ◯ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		wxCoord wx = m.right - m.left;
+		wxCoord wy = m.bottom - m.top;
+		wxCoord r = (wx > wy ? wy : wx) / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X = m.middle_x - r, Y = m.top + ascent - 2*r - 1;
+		p.DrawEllipticArc(X, Y, 2*r, 2*r, 0, 0);
+	}
+
 	////////////////////////////////////////////////////////////////
 
 	DrawT Get(const wchar_t c)
@@ -1055,10 +1868,10 @@ namespace WXCustomDrawChar
 			case 0x2191: return Draw_VerticalArrow<false>; 			/* ↑ */
 			case 0x2192: return Draw_HorizontalArrow<true>; 		/* → */
 			case 0x2193: return Draw_VerticalArrow<true>; 			/* ↓ */
-			case 0x2500: return Draw_2500; 			/* ─ */
-			case 0x2501: return Draw_Thicker<Draw_2500>;	/* ━ */
-			case 0x2502: return Draw_2502; 			/* │ */
-			case 0x2503: return Draw_Thicker<Draw_2502>;	/* ┃ */
+			case 0x2500: return modernLook ? Draw_2500_new : Draw_2500; 			/* ─ */
+			case 0x2501: return modernLook ? Draw_Thicker<Draw_2500_new> : Draw_Thicker<Draw_2500>;	/* ━ */
+			case 0x2502: return modernLook ? Draw_2502_new: Draw_2502; 			/* │ */
+			case 0x2503: return modernLook ? Draw_Thicker<Draw_2502_new> : Draw_Thicker<Draw_2502>;	/* ┃ */
 			case 0x2504: return Draw_DashesH<3>;			/* ┄ */
 			case 0x2505: return Draw_Thicker<Draw_DashesH<3>>;	/* ┅ */
 			case 0x2506: return Draw_DashesV<3>;			/* ┆ */
@@ -1071,54 +1884,58 @@ namespace WXCustomDrawChar
 			case 0x254d: return Draw_Thicker<Draw_DashesH<2>>;	/* ╍ */
 			case 0x254e: return Draw_DashesV<2>;			/* ╎ */
 			case 0x254f: return Draw_Thicker<Draw_DashesV<2>>;	/* ╏ */
-			case 0x250c: return Draw_250C;			/* ┌ */
-			case 0x250f: return Draw_Thicker<Draw_250C>;	/* ┏ */
-			case 0x2510: return Draw_2510;			/* ┐ */
-			case 0x2513: return Draw_Thicker<Draw_2510>;	/* ┓ */
-			case 0x2514: return Draw_2514;			/* └ */
-			case 0x2517: return Draw_Thicker<Draw_2514>;	/* ┗ */
-			case 0x2518: return Draw_2518;			/* ┘ */
-			case 0x251b: return Draw_Thicker<Draw_2518>;	/* ┛ */
-			case 0x251c: return Draw_251C;			/* ├ */
-			case 0x2523: return Draw_Thicker<Draw_251C>;	/* ┣ */
-			case 0x2524: return Draw_2524;			/* ┤ */
-			case 0x252b: return Draw_Thicker<Draw_2524>;	/* ┫ */
-			case 0x252c: return Draw_252C;			/* ┬ */
-			case 0x2533: return Draw_Thicker<Draw_252C>;	/* ┳ */
-			case 0x2534: return Draw_2534;			/* ┴ */
-			case 0x253b: return Draw_Thicker<Draw_2534>;	/* ┻ */
-			case 0x253c: return Draw_253C;			/* ┼ */
-			case 0x254b: return Draw_Thicker<Draw_253C>;	/* ╋ */
-			case 0x2550: return Draw_2550;			/* ═ */
-			case 0x2551: return Draw_2551;			/* ║ */
-			case 0x2552: return Draw_2552; 			/* ╒ */
-			case 0x2553: return Draw_2553; 			/* ╓ */
-			case 0x2554: return Draw_2554;
-			case 0x2555: return Draw_2555; 			/* ╕ */
-			case 0x2556: return Draw_2556; 			/* ╖ */
-			case 0x2557: return Draw_2557;
-			case 0x2558: return Draw_2558; 			/* ╘ */
-			case 0x2559: return Draw_2559; 			/* ╙ */
-			case 0x255a: return Draw_255A;
-			case 0x255B: return Draw_255B; /* ╛*/ // + thickness
-			case 0x255C: return Draw_255C; /* ╜ */ // + thickness
-			case 0x255d: return Draw_255D;
-			case 0x255E: return Draw_255E; /* ╞ */
-			case 0x255f: return Draw_255F;
-			case 0x2560: return Draw_2560; /* ╠ */
-			case 0x2561: return Draw_2561; /* ╡ */ // + p.thickness - 1
-			case 0x2562: return Draw_2562;
-			case 0x2563: return Draw_2563; /* ╣ */ // + thickness
-			case 0x2564: return Draw_2564; /* ╤ */
-			case 0x2565: return Draw_2565; /* ╥ */
-			case 0x2566: return Draw_2566; /* ╦ */
-			case 0x2567: return Draw_2567; /* ╧ */
-			case 0x2568: return Draw_2568; /* ╨ */
-			case 0x2569: return Draw_2569; /* ╩ */ // + thickness
-			case 0x256A: return Draw_256A; /* ╪ */
-			case 0x256B: return Draw_256B; /* ╫ */
-			case 0x256C: return Draw_256C; /* ╬ */ // + thickness
+			case 0x250c: return modernLook ? Draw_250C_new : Draw_250C;			/* ┌ */
+			case 0x250f: return modernLook ? Draw_Thicker<Draw_250C_new> : Draw_Thicker<Draw_250C>;	/* ┏ */
+			case 0x2510: return modernLook ? Draw_2510_new : Draw_2510;			/* ┐ */
+			case 0x2513: return modernLook ? Draw_Thicker<Draw_2510_new> : Draw_Thicker<Draw_2510>;	/* ┓ */
+			case 0x2514: return modernLook ? Draw_2514_new : Draw_2514;			/* └ */
+			case 0x2517: return modernLook ? Draw_Thicker<Draw_2514_new> : Draw_Thicker<Draw_2514>;	/* ┗ */
+			case 0x2518: return modernLook ? Draw_2518_new : Draw_2518;			/* ┘ */
+			case 0x251b: return modernLook ? Draw_Thicker<Draw_2518_new> : Draw_Thicker<Draw_2518>;	/* ┛ */
+			case 0x251c: return modernLook ? Draw_251C_new : Draw_251C;			/* ├ */
+			case 0x2523: return modernLook ? Draw_Thicker<Draw_251C_new> : Draw_Thicker<Draw_251C>;	/* ┣ */
+			case 0x2524: return modernLook ? Draw_2524_new : Draw_2524;			/* ┤ */
+			case 0x252b: return modernLook ? Draw_Thicker<Draw_2524_new> : Draw_Thicker<Draw_2524>;	/* ┫ */
+			case 0x252c: return modernLook ? Draw_252C_new : Draw_252C;			/* ┬ */
+			case 0x2533: return modernLook ? Draw_Thicker<Draw_252C_new> : Draw_Thicker<Draw_252C>;	/* ┳ */
+			case 0x2534: return modernLook ? Draw_2534_new : Draw_2534;			/* ┴ */
+			case 0x253b: return modernLook ? Draw_Thicker<Draw_2534_new> : Draw_Thicker<Draw_2534>;	/* ┻ */
+			case 0x253c: return modernLook ? Draw_253C_new : Draw_253C;			/* ┼ */
+			case 0x254b: return modernLook ? Draw_Thicker<Draw_253C_new> : Draw_Thicker<Draw_253C>;	/* ╋ */
+			case 0x2550: return modernLook ? Draw_2550_new : Draw_2550;			/* ═ */
+			case 0x2551: return modernLook ? Draw_2551_new : Draw_2551;			/* ║ */
+			case 0x2552: return modernLook ? Draw_2552_new : Draw_2552; 			/* ╒ */
+			case 0x2553: return modernLook ? Draw_2553_new : Draw_2553; 			/* ╓ */
+			case 0x2554: return modernLook ? Draw_2554_new : Draw_2554;
+			case 0x2555: return modernLook ? Draw_2555_new : Draw_2555; 			/* ╕ */
+			case 0x2556: return modernLook ? Draw_2556_new : Draw_2556; 			/* ╖ */
+			case 0x2557: return modernLook ? Draw_2557_new : Draw_2557;
+			case 0x2558: return modernLook ? Draw_2558_new : Draw_2558; 			/* ╘ */
+			case 0x2559: return modernLook ? Draw_2559_new : Draw_2559; 			/* ╙ */
+			case 0x255a: return modernLook ? Draw_255A_new : Draw_255A;
+			case 0x255B: return modernLook ? Draw_255B_new : Draw_255B; /* ╛*/ // + thickness
+			case 0x255C: return modernLook ? Draw_255C_new : Draw_255C; /* ╜ */ // + thickness
+			case 0x255d: return modernLook ? Draw_255D_new : Draw_255D;
+			case 0x255E: return modernLook ? Draw_255E_new : Draw_255E; /* ╞ */
+			case 0x255f: return modernLook ? Draw_255F_new : Draw_255F;
+			case 0x2560: return modernLook ? Draw_2560_new : Draw_2560; /* ╠ */
+			case 0x2561: return modernLook ? Draw_2561_new : Draw_2561; /* ╡ */ // + p.thickness - 1
+			case 0x2562: return modernLook ? Draw_2562_new : Draw_2562;
+			case 0x2563: return modernLook ? Draw_2563_new : Draw_2563; /* ╣ */ // + thickness
+			case 0x2564: return modernLook ? Draw_2564_new : Draw_2564; /* ╤ */
+			case 0x2565: return modernLook ? Draw_2565_new : Draw_2565; /* ╥ */
+			case 0x2566: return modernLook ? Draw_2566_new : Draw_2566; /* ╦ */
+			case 0x2567: return modernLook ? Draw_2567_new : Draw_2567; /* ╧ */
+			case 0x2568: return modernLook ? Draw_2568_new : Draw_2568; /* ╨ */
+			case 0x2569: return modernLook ? Draw_2569_new : Draw_2569; /* ╩ */ // + thickness
+			case 0x256A: return modernLook ? Draw_256A_new : Draw_256A; /* ╪ */
+			case 0x256B: return modernLook ? Draw_256B_new : Draw_256B; /* ╫ */
+			case 0x256C: return modernLook ? Draw_256C_new : Draw_256C; /* ╬ */ // + thickness
 
+			// controls
+			case L'☐':   return Draw_unchecked_box;
+			case L'⦿':   return Draw_checked_radio;
+			case L'◯':   return Draw_unchecked_radio;
 //not fadable
 			case 0x2580: return Draw_2580; /* ▀ */
 

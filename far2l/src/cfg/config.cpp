@@ -488,7 +488,7 @@ void DirectoryNameSettings()
 		{DI_RADIOBUTTON, 5, 13,  50,  13, {}, 0, Msg::DirSettingsSymlinkRadio2},
 		{DI_TEXT,      5, 14,  50,  14, {}, DIF_DISABLE, Msg::DirSettingsSymlinkSizeHint},
 
-		{DI_TEXT,      0, 15,   0,  15, {}, DIF_SEPARATOR, L""},
+		{DI_TEXT,      0, 15,   0,  15, {}, (Opt.Dialogs.UseModernLook ? 0 : DIF_SEPARATOR), L""},
 		{DI_BUTTON,    0, 16,   0,  16, {}, DIF_DEFAULT | DIF_CENTERGROUP, Msg::Ok},
 		{DI_BUTTON,    0, 16,   0,  16, {}, DIF_CENTERGROUP, Msg::Cancel},
 		{DI_BUTTON,    0, 16,   0,  16, {}, DIF_CENTERGROUP | DIF_BTNNOCLOSE, Msg::DirSettingsApply},

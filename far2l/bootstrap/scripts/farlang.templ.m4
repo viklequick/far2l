@@ -29180,6 +29180,28 @@ upd:"Use Modern Look"
 upd:"Use Modern Look"
 upd:"Use Modern Look"
 
+UseModernLookRoundedBorders
+"Скруглять уголки рамок"
+"Round border edges"
+upd:"Round border edges"
+upd:"Round border edges"
+upd:"Round border edges"
+upd:"Round border edges"
+upd:"Round border edges"
+upd:"Round border edges"
+upd:"Round border edges"
+
+UseModernLookSingleBorders
+"Только одинарные рамки"
+"Single borders only"
+upd:"Single borders only"
+upd:"Single borders only"
+upd:"Single borders only"
+upd:"Single borders only"
+upd:"Single borders only"
+upd:"Single borders only"
+upd:"Single borders only"
+
 #Must be the last
 NewFileName
 l:

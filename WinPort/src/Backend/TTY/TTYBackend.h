@@ -123,6 +123,7 @@ class TTYBackend : IConsoleOutputBackend, ITTYInputSpecialSequenceHandler, IFar2
 
 	ClipboardBackendSetter _clipboard_backend_setter;
 	PrinterSupportBackendSetter _printer_backend_setter;
+	ShareBackendOptionsBackendSetter _share_backend_setter;
 
 	void GetWinSize(struct winsize &w);
 	void ChooseSimpleClipboardBackend();

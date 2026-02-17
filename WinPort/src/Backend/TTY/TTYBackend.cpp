@@ -30,7 +30,7 @@
 #include "../NotifySh.h"
 #include "base64.h"
 #include "TTYPrinterSupport.h"
-
+#include "TTYShareBackendOptions.h"
 
 #define PROBE_IMAGE_ID "tty-backend-image-probe"
 
@@ -193,6 +193,7 @@ bool TTYBackend::Startup()
 	}
 
 	_printer_backend_setter.Set<ttyPrinterSupportBackend>();
+	_share_backend_setter.Set<ttyShareBackendOptionsBackend>();
 
 	return true;
 }

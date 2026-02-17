@@ -34,6 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "FARString.hpp"
+#include<BackendOptions.h>
 
 enum
 {
@@ -279,7 +280,6 @@ struct DialogsOptions
 	int DelRemovesBlocks;
 	int CBoxMaxHeight;		// максимальный размер открываемого списка (по умолчанию=8)
 	bool ShowArrowsInEdit;	// show arrows on text overflow in edit controls
-	BOOL UseModernLook;     // unicode glyphs for check boxes / radio buttons
 };
 
 struct VMenuOptions
@@ -630,6 +630,7 @@ struct Options
 	LoadPluginsOptions LoadPlug;
 
 	DialogsOptions Dialogs;
+	BackendOptions Backend;
 	VMenuOptions VMenu;
 	CommandLineOptions CmdLine;
 	PoliciesOptions Policies;

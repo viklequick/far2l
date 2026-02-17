@@ -361,3 +361,46 @@ public:
 		}
 	}
 };
+
+//////////////////////////////////////////////////////////////////////////////////
+
+class IShareBackendOptions {
+public:
+	virtual void ShareBackendOptions(PVOID options) = 0;
+	virtual ~IShareBackendOptions() {};
+};
+
+IShareBackendOptions *WinPortShareBackendOptions_SetBackend(IShareBackendOptions *share_backend);
+
+class ShareBackendOptionsBackendSetter
+{
+	IShareBackendOptions *_prev_cb = nullptr;
+	bool _is_set = false;
+
+public:
+	inline bool IsSet() const { return _is_set; }
+
+	template <class BACKEND_T, typename... ArgsT>
+		inline void Set(ArgsT... args)
+	{
+		IShareBackendOptions *cb = new BACKEND_T(args...);
+		IShareBackendOptions *prev_cb = WinPortShareBackendOptions_SetBackend(cb);
+		if (!_is_set) {
+			_prev_cb = prev_cb;
+			_is_set = true;
+
+		} else {
+			delete prev_cb;
+		}
+	}
+
+	inline ~ShareBackendOptionsBackendSetter()
+	{
+		if (_is_set) {
+			IShareBackendOptions *cb = WinPortShareBackendOptions_SetBackend(_prev_cb);
+			if (cb != _prev_cb) {
+				delete cb;
+			}
+		}
+	}
+};

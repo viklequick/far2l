@@ -7,6 +7,7 @@
 #include <vector>
 #include <memory>
 #include "wxPrinterSupport.h"
+#include "wxShareBackendOptions.h"
 
 #define AREAS_REDUCTION
 
@@ -185,6 +186,9 @@ extern "C" __attribute__ ((visibility("default"))) bool WinPortMainBackend(WinPo
 
 	PrinterSupportBackendSetter printer_backend_setter;
 	printer_backend_setter.Set<wxPrinterSupportBackend>();
+	
+	ShareBackendOptionsBackendSetter share_backend_setter;
+	share_backend_setter.Set<wxShareBackendOptionsBackend>();
 
 	if (a->app_main && !g_winport_app_thread) {
 		g_winport_app_thread = new(std::nothrow) WinPortAppThread(a->argc, a->argv, a->app_main);

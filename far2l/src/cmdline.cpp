@@ -143,7 +143,7 @@ static void BuildMultilineDialogData(DialogDataEx *data, FarLangMsg title, FarLa
 {
 	data[MD_BOX] = {DI_DOUBLEBOX, 3, 1, (short)(dlg_w - 4), (short)(dlg_h - 2), {}, 0, title};
 	data[MD_MEMO] = {DI_MEMOEDIT, 5, 2, (short)(dlg_w - 6), (short)(dlg_h - 5), {}, DIF_FOCUS, L""};
-	if(!Opt.Dialogs.UseModernLook) data[MD_SEPARATOR] = {DI_TEXT, 0, (short)sep_y, 0, (short)sep_y, {}, DIF_SEPARATOR, L""};
+	if(!Opt.Backend.UseModernLook) data[MD_SEPARATOR] = {DI_TEXT, 0, (short)sep_y, 0, (short)sep_y, {}, DIF_SEPARATOR, L""};
 	data[MD_BTN1] = {DI_BUTTON, 0, (short)btn_y, 0, (short)btn_y, {}, btn1_flags | DIF_CENTERGROUP, btn1};
 	data[MD_BTN2] = {DI_BUTTON, 0, (short)btn_y, 0, (short)btn_y, {}, btn2_flags | DIF_CENTERGROUP, btn2};
 	if (has_btn3)

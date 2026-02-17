@@ -710,7 +710,10 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 	inline void SetColorEmbossImpl()
 	{
 		WinPortRGB clr_fade;
-		if (_clr_back.r + _clr_back.g + _clr_back.b < 0x5f) /* near to black background */
+		/* near to black / near to white means LAB */
+		int blackb = _clr_back.r + _clr_back.g + _clr_back.b;
+		int blackf = _clr_text.r + _clr_text.g + _clr_text.b;
+		if (blackb < 0x5f || blackf < 0x5f || blackb > 700 || blackf > 700) 
 			clr_fade = ComputeEmbossColor_LAB(_clr_back, _clr_text);
 		else
 			clr_fade = ComputeEmbossColor_HSL(_clr_back, _clr_text);
@@ -735,14 +738,30 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter._dc.DrawRectangle(left, top, right + 1 - left , bottom + 1 - top);
 	}
 
-	inline void DrawEllipticArcImpl(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end) {
+	inline void DrawEllipticArcImpl(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end, wxCoord thickness) {
 		wxBrush oldBrush = _painter._dc.GetBrush(); 
 		wxColour brushColor = oldBrush.GetColour();
 		wxPen oldPen = _painter._dc.GetPen(); 
-		_painter._dc.SetPen(wxPen(brushColor, 1));
+		_painter._dc.SetPen(wxPen(brushColor, thickness < 1 ? 1 : thickness));
 
 		_painter._dc.SetBrush(*wxTRANSPARENT_BRUSH);
 		_painter._dc.DrawEllipticArc(left, top, width, height, start, end);
+		_painter._dc.SetBrush(oldBrush);
+		_painter._dc.SetPen(oldPen);
+	}
+
+	inline void FillEllipticPieImpl(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end) {
+		_painter._dc.DrawEllipticArc(left, top, width, height, start, end);
+	}
+
+	inline void DrawLineImpl(wxCoord X1, wxCoord Y1, wxCoord X2, wxCoord Y2, wxCoord thickness) {
+		wxBrush oldBrush = _painter._dc.GetBrush(); 
+		wxColour brushColor = oldBrush.GetColour();
+		wxPen oldPen = _painter._dc.GetPen(); 
+		_painter._dc.SetPen(wxPen(brushColor, thickness < 1 ? 1 : thickness));
+
+		_painter._dc.SetBrush(*wxTRANSPARENT_BRUSH);
+		_painter._dc.DrawLine(X1, Y1, X2, Y2);
 		_painter._dc.SetBrush(oldBrush);
 		_painter._dc.SetPen(oldPen);
 	}
@@ -784,14 +803,24 @@ void WXCustomDrawChar::Painter::FillRectangle(wxCoord left, wxCoord top, wxCoord
 	((WXCustomDrawCharPainter *)this)->FillRectangleImpl(left, top, right, bottom);
 }
 
-void WXCustomDrawChar::Painter::DrawEllipticArc(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end)
+void WXCustomDrawChar::Painter::DrawEllipticArc(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end, wxCoord thickness)
 {
-	((WXCustomDrawCharPainter *)this)->DrawEllipticArcImpl(left, top, width, height, start, end);
+	((WXCustomDrawCharPainter *)this)->DrawEllipticArcImpl(left, top, width, height, start, end, thickness);
 }
 
 void WXCustomDrawChar::Painter::FillPixel(wxCoord left, wxCoord top)
 {
 	((WXCustomDrawCharPainter *)this)->FillRectangleImpl(left, top, left, top);
+}
+
+void WXCustomDrawChar::Painter::FillEllipticPie(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end)
+{
+	((WXCustomDrawCharPainter *)this)->FillEllipticPieImpl(left, top, width, height, start, end);
+}
+
+void WXCustomDrawChar::Painter::DrawLine(wxCoord X1, wxCoord Y1, wxCoord X2, wxCoord Y2, wxCoord thickness) 
+{
+	((WXCustomDrawCharPainter *)this)->DrawLineImpl(X1, Y1, X2, Y2, thickness);
 }
 
 void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t *wcz, unsigned int nx)
@@ -947,7 +976,7 @@ static RGB ComputeRaiseColor_HSL(const RGB& bg, const RGB& line)
     RGBtoHSL(line, hl, sl, ll);
 
     // Opposite lightness shift
-    double shift = 0.20; // 20% is a good UI default
+    double shift = 0.25; // 20% is a good UI default
 
     double newL = (ll < lb) ? ll + shift : ll - shift;
     newL = std::clamp(newL, 0.0, 1.0);
@@ -1032,7 +1061,7 @@ static RGB ComputeRaiseColor_LAB(const RGB& bg, const RGB& line)
     LAB out = Lln;
 
     // Opposite lightness shift
-    double shift = 12.0; // LAB L is 0..100, so 12 is ~12%
+    double shift = 25.0; // LAB L is 0..100, so 12 is ~12%
     out.L = (Lln.L < Lbg.L) ? (Lln.L + shift) : (Lln.L - shift);
     out.L = std::clamp(out.L, 0.0, 100.0);
 

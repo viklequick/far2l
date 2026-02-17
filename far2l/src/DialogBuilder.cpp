@@ -86,7 +86,7 @@ DialogBuilder::DialogBuilder(FarLangMsg TitleMessageId, const wchar_t *HelpTopic
 	HelpTopic(HelpTopic)
 {
 	UserDlgProc = nullptr;
-	UseModernLook = Opt.Dialogs.UseModernLook;
+	UseModernLook = Opt.Backend.UseModernLook;
 	AddBorder(GetLangString(TitleMessageId));
 }
 

@@ -758,7 +758,7 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 		if (Type == DI_BUTTON && !(ItemFlags & DIF_NOBRACKETS)) {
 			LPCWSTR BracketsNew[] = {L"⟦ ", L" ⟧", L"⟪ ", L" ⟫"};
 			LPCWSTR BracketsOld[] = {L"[ ", L" ]", L"{ ", L" }"};
-			LPCWSTR *Brackets = Opt.Dialogs.UseModernLook ? BracketsNew : BracketsOld;
+			LPCWSTR *Brackets = Opt.Backend.UseModernLook ? BracketsNew : BracketsOld;
 			int Start = (CurItem->DefaultButton ? 2 : 0);
 			if (CurItem->strData.At(0) != *Brackets[Start]) {
 				CurItem->strData = Brackets[Start] + CurItem->strData + Brackets[Start + 1];
@@ -1486,7 +1486,7 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 			if (Flags & (DIF_SEPARATORUSER|DIF_SEPARATOR|DIF_SEPARATOR2))
 			{
 				// Box
-				if (Opt.Dialogs.UseModernLook) 
+				if (Opt.Backend.UseModernLook) 
 					Color[0] = FarColorToReal(IsWarning? (DisabledItem?COL_WARNDIALOGDISABLED:COL_WARNDIALOGBOXTITLE) : (DisabledItem?COL_DIALOGDISABLED:COL_DIALOGBOXTITLE));
 				Color[2] = FarColorToReal(IsWarning? (DisabledItem?COL_WARNDIALOGDISABLED:COL_WARNDIALOGBOX) : (DisabledItem?COL_DIALOGDISABLED:COL_DIALOGBOX));
 			}
@@ -1952,7 +1952,7 @@ void Dialog::ShowDialog(unsigned ID)
 
 					X = X1 + CX1 + (CW - LenText) / 2;
 
-					if (Opt.Dialogs.UseModernLook || ((CurItem->Flags & DIF_LEFTTEXT) && X1 + CX1 + 1 < X))
+					if (Opt.Backend.UseModernLook || ((CurItem->Flags & DIF_LEFTTEXT) && X1 + CX1 + 1 < X))
 						X = X1 + CX1 + 1;
 
 //					SetColorNormal(Attr, CurItem->TrueColors);
@@ -1991,7 +1991,7 @@ void Dialog::ShowDialog(unsigned ID)
 				if (CurItem->Flags & (DIF_SEPARATOR | DIF_SEPARATOR2)) {
 					X = (X2 - X1 + 1 - LenText) / 2;
 
-					if (Opt.Dialogs.UseModernLook && CX1 >= 0)
+					if (Opt.Backend.UseModernLook && CX1 >= 0)
 						X = CX1 + 1;
 
 				}
@@ -2189,27 +2189,27 @@ void Dialog::ShowDialog(unsigned ID)
 
 				if (CurItem->Type == DI_CHECKBOX) {
 					const wchar_t Check[] = {
-						(Opt.Dialogs.UseModernLook ? L' ' : L'['),
+						(Opt.Backend.UseModernLook ? L' ' : L'['),
 							(CurItem->Selected ? (((CurItem->Flags & DIF_3STATE) && CurItem->Selected == 2)
 												? *Msg::CheckBox2State
-												: ( Opt.Dialogs.UseModernLook ? L'✔' /* ☑️ ☒ ✔️✓ ✅ */ : L'x'))
-												: ( Opt.Dialogs.UseModernLook ? L'☐' /* L'✘' 🔲 🔳 ▢ ☐ ⧠ ✖️ X ✘ X ❌ ❎ */ : L' ')),
-						(Opt.Dialogs.UseModernLook ? L' ' : L']'), L'\0'};
+												: ( Opt.Backend.UseModernLook ? L'✔' /* ☑️ ☒ ✔️✓ ✅ */ : L'x'))
+												: ( Opt.Backend.UseModernLook ? L'☐' /* L'✘' 🔲 🔳 ▢ ☐ ⧠ ✖️ X ✘ X ❌ ❎ */ : L' ')),
+						(Opt.Backend.UseModernLook ? L' ' : L']'), L'\0'};
 					strStr = Check;
 
 					if (CurItem->strData.GetLength())
 						strStr+= L" ";
 				} else {
 					wchar_t Dot[] = {L' ', CurItem->Selected ? 
-						( Opt.Dialogs.UseModernLook ? L'⦿' : L'\x2022') : 
-						( Opt.Dialogs.UseModernLook ? L'◯' : L' '), 
+						( Opt.Backend.UseModernLook ? L'⦿' : L'\x2022') : 
+						( Opt.Backend.UseModernLook ? L'◯' : L' '), 
 						L' ', L'\0'};
 
 					if (CurItem->Flags & DIF_MOVESELECT) {
 						strStr = Dot;
 					} else {
-						Dot[0] = Opt.Dialogs.UseModernLook ? L' ' : L'(';
-						Dot[2] = Opt.Dialogs.UseModernLook ? L' ' : L')';
+						Dot[0] = Opt.Backend.UseModernLook ? L' ' : L'(';
+						Dot[2] = Opt.Backend.UseModernLook ? L' ' : L')';
 						strStr = Dot;
 
 						if (CurItem->strData.GetLength())

@@ -488,7 +488,7 @@ void DirectoryNameSettings()
 		{DI_RADIOBUTTON, 5, 13,  50,  13, {}, 0, Msg::DirSettingsSymlinkRadio2},
 		{DI_TEXT,      5, 14,  50,  14, {}, DIF_DISABLE, Msg::DirSettingsSymlinkSizeHint},
 
-		{DI_TEXT,      0, 15,   0,  15, {}, (Opt.Dialogs.UseModernLook ? 0 : DIF_SEPARATOR), L""},
+		{DI_TEXT,      0, 15,   0,  15, {}, (Opt.Backend.UseModernLook ? 0 : DIF_SEPARATOR), L""},
 		{DI_BUTTON,    0, 16,   0,  16, {}, DIF_DEFAULT | DIF_CENTERGROUP, Msg::Ok},
 		{DI_BUTTON,    0, 16,   0,  16, {}, DIF_CENTERGROUP, Msg::Cancel},
 		{DI_BUTTON,    0, 16,   0,  16, {}, DIF_CENTERGROUP | DIF_BTNNOCLOSE, Msg::DirSettingsApply},
@@ -918,7 +918,12 @@ void DialogSettings()
 	AddHistorySettings(Builder, Msg::ConfigDialogsEditHistory, &Opt.Dialogs.EditHistory,
 			&Opt.DialogsHistoryCount);
 	
-	Builder.AddCheckbox(Msg::UseModernLook, &Opt.Dialogs.UseModernLook);
+	if (Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+	Builder.AddCheckbox(Msg::UseModernLook, &Opt.Backend.UseModernLook);
+	Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, &Opt.Backend.UseRoundedBorders);
+	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, &Opt.Backend.UseSingleBordersOnly);
+	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+
 	Builder.AddCheckbox(Msg::ConfigDialogsEditBlock, &Opt.Dialogs.EditBlock);
 	Builder.AddCheckbox(Msg::ConfigDialogsDelRemovesBlocks, &Opt.Dialogs.DelRemovesBlocks);
 	Builder.AddCheckbox(Msg::ConfigDialogsAutoComplete, &Opt.Dialogs.AutoComplete);

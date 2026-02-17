@@ -254,6 +254,9 @@
 	WINPORT_DECL_DEF(PrintIsHTMLSupported, BOOL, ())
 	WINPORT_DECL_DEF(PrintIsSettingsDialogSupported, BOOL, ())
 
+	//backend config sharing
+	WINPORT_DECL_DEF(ShareBackendOptions, VOID, (PVOID options))
+
 	//keyboard
 	WINPORT_DECL_DEF(GetKeyboardLayoutList, int, (int nBuff, HKL *lpList))
 	WINPORT_DECL_DEF(MapVirtualKey, UINT, (UINT uCode, UINT uMapType))

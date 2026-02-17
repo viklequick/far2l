@@ -168,6 +168,9 @@
 #define    PrintIsPreviewSupported          WINPORT(PrintIsPreviewSupported)
 #define    PrintIsSettingsDialogSupported   WINPORT(PrintIsSettingsDialogSupported)
 
+//backend options
+#define    ShareBackendOptions               WINPORT(ShareBackendOptions);
+
 //keyboard
 #define    GetKeyboardLayoutList  WINPORT(GetKeyboardLayoutList)
 #define    MapVirtualKey          WINPORT(MapVirtualKey)

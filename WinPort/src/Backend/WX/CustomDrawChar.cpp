@@ -1068,15 +1068,18 @@ namespace WXCustomDrawChar
 		SingleLineBoxMetrics m(p, start_y, cx);
 		wxCoord wx = m.right - m.left;
 		wxCoord wy = m.bottom - m.top;
-		wxCoord r = (wx > wy ? wy : wx) / 2;
-		wxCoord r2 = r / 2;
+
+		wxCoord _2r = (wx > wy ? wy : wx);
+		wxCoord r = _2r / 2;
+		wxCoord _2r2 = _2r / 2;
+		wxCoord r2 = _2r2 / 2;
 		int ascent = p.GetFontAscent();
 
-		wxCoord X1 = m.middle_x - r,  Y1 = m.top + ascent - 2*r - 1;
-		wxCoord X2 = m.middle_x - r2, Y2 = m.top + ascent - 2*r + r2 - 1;
+		wxCoord X1 = m.middle_x - r,  Y1 = m.top + ascent - _2r;
+		wxCoord X2 = m.middle_x - r2, Y2 = m.top + ascent - _2r + r2;
 
-		p.DrawEllipticArc(X1, Y1, 2*r, 2*r, 0, 0);
-		p.DrawEllipticArc(X2, Y2, 2*r2, 2*r2, 0, 0);
+		p.DrawEllipticArc(X1, Y1, _2r, _2r, 0, 0, 1);
+		p.FillEllipticPie(X2, Y2, _2r2, _2r2, 0, 0);
 	}
 
 	static void Draw_unchecked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ◯ */
@@ -1084,11 +1087,27 @@ namespace WXCustomDrawChar
 		SingleLineBoxMetrics m(p, start_y, cx);
 		wxCoord wx = m.right - m.left;
 		wxCoord wy = m.bottom - m.top;
+		wxCoord _2r = (wx > wy ? wy : wx);
+		wxCoord r = _2r / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X = m.middle_x - r, Y = m.top + ascent - _2r;
+		p.DrawEllipticArc(X, Y, _2r, _2r, 0, 0, 1);
+	}
+
+	static void Draw_checked_sign(Painter &p, unsigned int start_y, unsigned int cx) /* ✔ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+
+		wxCoord wx = m.right - m.left;
+		wxCoord wy = m.bottom - m.top;
 		wxCoord r = (wx > wy ? wy : wx) / 2;
 		int ascent = p.GetFontAscent();
 
-		wxCoord X = m.middle_x - r, Y = m.top + ascent - 2*r - 1;
-		p.DrawEllipticArc(X, Y, 2*r, 2*r, 0, 0);
+		wxCoord X1 = m.middle_x - r, X2 = m.middle_x + r, Y1 = m.top + ascent - 2 * r - 1, Y2 = m.top + ascent - 1;
+
+		p.DrawLine(X2, Y1, X1 + r, Y2, 1);
+		p.DrawLine(X1, Y1 + r, X1 + r, Y2, 1);
 	}
 
 	////////////////////////////////////////////////////////////////
@@ -1192,6 +1211,7 @@ namespace WXCustomDrawChar
 			case L'☐':   return Draw_unchecked_box;
 			case L'⦿':   return Draw_checked_radio;
 			case L'◯':   return Draw_unchecked_radio;
+			case L'✔':	 return Draw_checked_sign;
 
 			case 0x1FB00 ... 0x1FB3b: return Draw_1fb00_1fb3b;
 

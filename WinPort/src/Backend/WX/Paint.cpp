@@ -715,6 +715,18 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 	{
 		_painter._dc.DrawRectangle(left, top, right + 1 - left , bottom + 1 - top);
 	}
+
+	inline void DrawEllipticArcImpl(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end) {
+		wxBrush oldBrush = _painter._dc.GetBrush(); 
+		wxColour brushColor = oldBrush.GetColour();
+		wxPen oldPen = _painter._dc.GetPen(); 
+		_painter._dc.SetPen(wxPen(brushColor, 1));
+
+		_painter._dc.SetBrush(*wxTRANSPARENT_BRUSH);
+		_painter._dc.DrawEllipticArc(left, top, width, height, start, end);
+		_painter._dc.SetBrush(oldBrush);
+		_painter._dc.SetPen(oldPen);
+	}
 };
 
 // this code little bit wacky just to avoid virtual methods overhead
@@ -741,6 +753,11 @@ int WXCustomDrawChar::Painter::GetFontAscent()
 void WXCustomDrawChar::Painter::FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 {
 	((WXCustomDrawCharPainter *)this)->FillRectangleImpl(left, top, right, bottom);
+}
+
+void WXCustomDrawChar::Painter::DrawEllipticArc(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end)
+{
+	((WXCustomDrawCharPainter *)this)->DrawEllipticArcImpl(left, top, width, height, start, end);
 }
 
 void WXCustomDrawChar::Painter::FillPixel(wxCoord left, wxCoord top)

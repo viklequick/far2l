@@ -18,6 +18,7 @@ namespace WXCustomDrawChar
 
 		void FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom);
 		void FillPixel(wxCoord left, wxCoord top);
+		void DrawEllipticArc(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end);
 	};
 
 	typedef void (*DrawT)(Painter &p, unsigned int start_y, unsigned int cx);

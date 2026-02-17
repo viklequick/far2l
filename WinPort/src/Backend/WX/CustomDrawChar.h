@@ -14,6 +14,7 @@ namespace WXCustomDrawChar
 
 		void SetColorFaded();
 		void SetColorExtraFaded();
+		int GetFontAscent();
 
 		void FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom);
 		void FillPixel(wxCoord left, wxCoord top);

@@ -1046,6 +1046,51 @@ namespace WXCustomDrawChar
 		}
 	}
 
+	static void Draw_unchecked_box(Painter &p, unsigned int start_y, unsigned int cx) /* ☐ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+
+		wxCoord wx = m.right - m.left;
+		wxCoord wy = m.bottom - m.top;
+		wxCoord r = (wx > wy ? wy : wx) / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X1 = m.middle_x - r, X2 = m.middle_x + r, Y1 = m.top + ascent - 2 * r - 1, Y2 = m.top + ascent - 1;
+
+		p.FillRectangle(X1, Y1, X1, Y2);
+		p.FillRectangle(X1, Y1, X2, Y1);
+		p.FillRectangle(X2, Y1, X2, Y2);
+		p.FillRectangle(X1, Y2, X2, Y2);
+	}
+	
+	static void Draw_checked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ⦿ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		wxCoord wx = m.right - m.left;
+		wxCoord wy = m.bottom - m.top;
+		wxCoord r = (wx > wy ? wy : wx) / 2;
+		wxCoord r2 = r / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X1 = m.middle_x - r,  Y1 = m.top + ascent - 2*r - 1;
+		wxCoord X2 = m.middle_x - r2, Y2 = m.top + ascent - 2*r + r2 - 1;
+
+		p.DrawEllipticArc(X1, Y1, 2*r, 2*r, 0, 0);
+		p.DrawEllipticArc(X2, Y2, 2*r2, 2*r2, 0, 0);
+	}
+
+	static void Draw_unchecked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ◯ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		wxCoord wx = m.right - m.left;
+		wxCoord wy = m.bottom - m.top;
+		wxCoord r = (wx > wy ? wy : wx) / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X = m.middle_x - r, Y = m.top + ascent - 2*r - 1;
+		p.DrawEllipticArc(X, Y, 2*r, 2*r, 0, 0);
+	}
+
 	////////////////////////////////////////////////////////////////
 
 	DrawT Get(const wchar_t c)
@@ -1142,6 +1187,11 @@ namespace WXCustomDrawChar
 			case 0x259d: return Draw_259d; /* ▝ */
 			case 0x259e: return Draw_259e; /* ▞ */
 			case 0x259f: return Draw_259f; /* ▟ */
+
+			// controls
+			case L'☐':   return Draw_unchecked_box;
+			case L'⦿':   return Draw_checked_radio;
+			case L'◯':   return Draw_unchecked_radio;
 
 			case 0x1FB00 ... 0x1FB3b: return Draw_1fb00_1fb3b;
 

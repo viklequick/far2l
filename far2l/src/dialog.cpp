@@ -2180,7 +2180,7 @@ void Dialog::ShowDialog(unsigned ID)
 							(CurItem->Selected ? (((CurItem->Flags & DIF_3STATE) && CurItem->Selected == 2)
 												? *Msg::CheckBox2State
 												: ( Opt.Dialogs.UseModernLook ? L'✔' : L'x'))
-												: ( Opt.Dialogs.UseModernLook ? L'⧠' : L' ')),
+												: ( Opt.Dialogs.UseModernLook ? L'☐' : L' ')),
 						(Opt.Dialogs.UseModernLook ? L' ' : L']'), L'\0'};
 					strStr = Check;
 

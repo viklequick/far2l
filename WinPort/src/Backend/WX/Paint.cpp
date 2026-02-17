@@ -704,6 +704,12 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter.SetFillColor(clr_fade);
 	}
 
+	inline int GetFontAscentImpl()
+	{
+		int w, h, descent, externalLeading; 
+		_painter._dc.GetTextExtent("Ag", &w, &h, &descent, &externalLeading);
+		return _painter._dc.GetCharHeight() - descent;
+	}
 
 	inline void FillRectangleImpl(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 	{
@@ -725,6 +731,11 @@ void WXCustomDrawChar::Painter::SetColorFaded()
 void WXCustomDrawChar::Painter::SetColorExtraFaded()
 {
 	((WXCustomDrawCharPainter *)this)->SetColorExtraFadedImpl();
+}
+
+int WXCustomDrawChar::Painter::GetFontAscent()
+{
+	return ((WXCustomDrawCharPainter *)this)->GetFontAscentImpl();
 }
 
 void WXCustomDrawChar::Painter::FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)

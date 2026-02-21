@@ -52,13 +52,11 @@ void MenuBar::DisplayObject()
 	Text(strFullMsg);
 }
 
-
-void EditorMenuBar::DisplayObject()
+void ViewerMenuBar::DisplayObject()
 {
 	FARString strSpace = L"    ";
-	FARString strMsg = strSpace + Msg::EditorMenuFileTitle + strSpace + Msg::EditorMenuEditTitle + strSpace
-			+ Msg::EditorMenuNavigateTitle + strSpace + Msg::EditorMenuViewTitle
-			+ strSpace + Msg::EditorMenuMacroTitle;
+	FARString strMsg = strSpace + Msg::ViewerMenuFileTitle + strSpace + Msg::ViewerMenuToolsTitle + strSpace
+			+ Msg::ViewerMenuNavigateTitle + strSpace + Msg::ViewerMenuViewTitle;
 	RemoveHighlights(strMsg);
 	int Length = X2 - X1 + 1;
 	FARString strFullMsg;
@@ -68,11 +66,11 @@ void EditorMenuBar::DisplayObject()
 	Text(strFullMsg);
 }
 
-void ViewerMenuBar::DisplayObject()
+void EditorMenuBar::DisplayObject()
 {
 	FARString strSpace = L"    ";
-	FARString strMsg = strSpace + Msg::ViewerMenuFileTitle + strSpace + Msg::ViewerMenuToolsTitle + strSpace
-			+ Msg::ViewerMenuNavigateTitle + strSpace + Msg::ViewerMenuViewTitle;
+	FARString strMsg = strSpace + Msg::EditorMenuFileTitle + strSpace + Msg::EditorMenuEditTitle + strSpace
+			+ Msg::EditorMenuNavigateTitle + strSpace + Msg::EditorMenuViewTitle;
 	RemoveHighlights(strMsg);
 	int Length = X2 - X1 + 1;
 	FARString strFullMsg;

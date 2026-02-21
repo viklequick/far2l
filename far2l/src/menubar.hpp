@@ -45,15 +45,6 @@ public:
 	virtual ~MenuBar() {}
 };
 
-class EditorMenuBar : public MenuBar
-{
-public:
-	virtual void DisplayObject();
-
-	EditorMenuBar() {}
-	virtual ~EditorMenuBar() {}
-};
-
 class ViewerMenuBar : public MenuBar
 {
 public:
@@ -63,3 +54,11 @@ public:
 	virtual ~ViewerMenuBar() {}
 };
 
+class EditorMenuBar : public MenuBar
+{
+public:
+	virtual void DisplayObject();
+
+	EditorMenuBar() {}
+	virtual ~EditorMenuBar() {}
+};

@@ -75,6 +75,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "printersupport.hpp"
 #include "fileedit2options.hpp"
 
+#include "fileedit2options.hpp"
+
 enum enumOpenEditor
 {
 	ID_OE_TITLE,

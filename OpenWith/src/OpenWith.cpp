@@ -48,7 +48,7 @@ void OpenWithPlugin::ProcessFiles(const std::vector<std::wstring>& filepaths)
 			menu_items.clear();
 			menu_items.reserve((*app_candidates).size());
 			for (const auto& app_candidate : *app_candidates) {
-				menu_items.push_back({app_candidate.name.c_str(), 0, 0, 0});
+				menu_items.push_back(FarMenuItem{app_candidate.name.c_str(), 0, 0, 0});
 			}
 			active_menu_idx = 0;
 		}

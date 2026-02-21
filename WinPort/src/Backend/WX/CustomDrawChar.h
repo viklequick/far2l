@@ -23,6 +23,9 @@ namespace WXCustomDrawChar
 		void DrawEllipticArc(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end, wxCoord thickness);
 		void FillEllipticPie(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end);
 		void DrawLine(wxCoord X1, wxCoord Y1, wxCoord X2, wxCoord Y2, wxCoord thickness);
+
+		void SaveBrush();
+		void RestoreBrush();
 	};
 
 	typedef void (*DrawT)(Painter &p, unsigned int start_y, unsigned int cx);

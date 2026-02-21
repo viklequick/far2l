@@ -565,6 +565,8 @@ class DialogBuilderBase
 			Separator->Flags = DIF_SEPARATOR;
 			Separator->X1 = 3;
 			Separator->Y1 = Separator->Y2 = NextY++;
+
+			if (UseModernLook) AddEmptyLine();
 		}
 
 		// Добавляет сепаратор, кнопки OK и Cancel.

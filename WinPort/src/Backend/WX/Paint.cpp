@@ -765,6 +765,16 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter._dc.SetBrush(oldBrush);
 		_painter._dc.SetPen(oldPen);
 	}
+
+	wxBrush savedBrush;
+
+	inline void SaveBrushImpl() {
+		savedBrush = _painter._dc.GetBrush();
+	}
+
+	inline void RestoreBrushImpl() {
+		_painter._dc.SetBrush(savedBrush);
+	}
 };
 
 // this code little bit wacky just to avoid virtual methods overhead
@@ -821,6 +831,14 @@ void WXCustomDrawChar::Painter::FillEllipticPie(wxCoord left, wxCoord top, wxCoo
 void WXCustomDrawChar::Painter::DrawLine(wxCoord X1, wxCoord Y1, wxCoord X2, wxCoord Y2, wxCoord thickness) 
 {
 	((WXCustomDrawCharPainter *)this)->DrawLineImpl(X1, Y1, X2, Y2, thickness);
+}
+
+void WXCustomDrawChar::Painter::SaveBrush() {
+	((WXCustomDrawCharPainter *)this)->SaveBrushImpl();
+}
+
+void WXCustomDrawChar::Painter::RestoreBrush() {
+	((WXCustomDrawCharPainter *)this)->RestoreBrushImpl();
 }
 
 void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t *wcz, unsigned int nx)

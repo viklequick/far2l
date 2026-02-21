@@ -922,6 +922,7 @@ void DialogSettings()
 	Builder.AddCheckbox(Msg::UseModernLook, &Opt.Backend.UseModernLook);
 	Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, &Opt.Backend.UseRoundedBorders);
 	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, &Opt.Backend.UseSingleBordersOnly);
+	Builder.AddCheckbox(Msg::UseModernLookNoBorders, &Opt.Backend.UseNoBorders);
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 
 	Builder.AddCheckbox(Msg::ConfigDialogsEditBlock, &Opt.Dialogs.EditBlock);

@@ -374,16 +374,18 @@ namespace WXCustomDrawChar
 
 	static inline void DrawSingleEllipseEmboss(Painter &p, SingleLineBoxMetrics &m, double start, double end, bool left, bool top)
 	{
-		DrawSingleEllipse(p, m, start, end, left, top, p.thickness);
+		p.SaveBrush();
+		p.SetColorEmboss();
+		DrawSingleEllipse(p, m, start, end, left, top, 2);
+		p.RestoreBrush();
 	}
 
 	static void Draw_250C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┌ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawSingleEllipse(p, m, 90, 180, false, false);
-			p.SetColorEmboss();
 			DrawSingleEllipseEmboss(p, m, 90, 180, false, false);
+			DrawSingleEllipse(p, m, 90, 180, false, false);
 		}
 		else {
 			p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
@@ -398,9 +400,8 @@ namespace WXCustomDrawChar
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawSingleEllipse(p, m, 0, 90, true, false);
-			p.SetColorEmboss();
 			DrawSingleEllipseEmboss(p, m, 0, 90, true, false);
+			DrawSingleEllipse(p, m, 0, 90, true, false);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle_y, m.middle_x, m.middle_y + p.thickness - 1);
@@ -415,9 +416,8 @@ namespace WXCustomDrawChar
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawSingleEllipse(p, m, 180, 270, false, true);
-			p.SetColorEmboss();
 			DrawSingleEllipseEmboss(p, m, 180, 270, false, true);
+			DrawSingleEllipse(p, m, 180, 270, false, true);
 		}
 		else {
 			p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
@@ -432,9 +432,8 @@ namespace WXCustomDrawChar
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawSingleEllipse(p, m, 270, 360, true, true);
-			p.SetColorEmboss();
 			DrawSingleEllipseEmboss(p, m, 270, 360, true, true);
+			DrawSingleEllipse(p, m, 270, 360, true, true);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle_y, m.middle_x + p.thickness - 1, m.middle_y + p.thickness - 1);
@@ -1111,12 +1110,15 @@ namespace WXCustomDrawChar
 
 	static inline void DrawDoubleEllipseHiPartEmboss(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top)
 	{
-		DrawDoubleEllipseHiPart(p, m, start, end, left, top, p.thickness);
+		p.SaveBrush();
+		p.SetColorEmboss();
+		DrawDoubleEllipseHiPart(p, m, start, end, left, top, 2);
+		p.RestoreBrush();
 	}
 
 	static inline void DrawDoubleEllipseLoPartEmboss(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top)
 	{
-		DrawDoubleEllipseLoPart(p, m, start, end, left, top, p.thickness);
+		DrawDoubleEllipseLoPart(p, m, start, end, left, top, 2);
 	}
 
 	static inline void DrawDoubleEllipseEmboss(Painter &p, DoubleLineBoxMetrics &m, double start, double end, bool left, bool top)
@@ -1129,11 +1131,14 @@ namespace WXCustomDrawChar
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawDoubleEllipse(p, m, 90, 180, false, false);
-			p.SetColorEmboss();
 			DrawDoubleEllipseEmboss(p, m, 90, 180, false, false);
+			DrawDoubleEllipse(p, m, 90, 180, false, false);
 		}
 		else {
+			p.FillRectangle(m.middle1_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+			p.FillRectangle(m.middle2_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+			p.FillRectangle(m.middle1_x, m.middle1_y, m.middle1_x + p.thickness - 1, m.bottom);
+			p.FillRectangle(m.middle2_x, m.middle2_y, m.middle2_x + p.thickness - 1, m.bottom);
 			p.SetColorEmboss();
 			p.FillRectangle(m.middle1_x + p.thickness, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
 			p.FillRectangle(m.middle2_x + p.thickness, m.middle2_y + p.thickness, m.right, m.middle2_y + p.thickness);
@@ -1146,9 +1151,8 @@ namespace WXCustomDrawChar
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawDoubleEllipse(p, m, 0, 90, true, false);
-			p.SetColorEmboss();
 			DrawDoubleEllipseEmboss(p, m, 0, 90, true, false);
+			DrawDoubleEllipse(p, m, 0, 90, true, false);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle1_y, m.middle2_x, m.middle1_y + p.thickness - 1);
@@ -1167,9 +1171,8 @@ namespace WXCustomDrawChar
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawDoubleEllipse(p, m, 180, 270, false, true);
-			p.SetColorEmboss();
 			DrawDoubleEllipseEmboss(p, m, 180, 270, false, true);
+			DrawDoubleEllipse(p, m, 180, 270, false, true);
 		}
 		else {
 			p.FillRectangle(m.middle2_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
@@ -1188,9 +1191,8 @@ namespace WXCustomDrawChar
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawDoubleEllipse(p, m, 270, 360, true, true);
-			p.SetColorEmboss();
 			DrawDoubleEllipseEmboss(p, m, 270, 360, true, true);
+			DrawDoubleEllipse(p, m, 270, 360, true, true);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
@@ -1235,12 +1237,12 @@ namespace WXCustomDrawChar
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
+			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
+			DrawDoubleEllipseLoPartEmboss(p, m, 90, 180, false, false);
 			DrawDoubleEllipseLoPart(p, m, 180, 270, false, true);
 			DrawDoubleEllipseLoPart(p, m, 90, 180, false, false);
 			p.SetColorEmboss();
 			p.FillRectangle(m.middle1_x + p.thickness, m.top, m.middle1_x + p.thickness, m.bottom);
-			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
-			DrawDoubleEllipseLoPartEmboss(p, m, 90, 180, false, false);
 		}
 		else {
 			p.FillRectangle(m.middle2_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
@@ -1262,12 +1264,12 @@ namespace WXCustomDrawChar
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
+			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);
+			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
 			DrawDoubleEllipseLoPart(p, m, 270, 360, true, true);
 			DrawDoubleEllipseLoPart(p, m, 0, 90, true, false);
 			p.SetColorEmboss();
 			p.FillRectangle(m.middle2_x + p.thickness, m.top, m.middle2_x + p.thickness, m.bottom);
-			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);
-			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
@@ -1302,12 +1304,12 @@ namespace WXCustomDrawChar
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
+			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
+			DrawDoubleEllipseLoPartEmboss(p, m, 90, 180, false, false);
 			DrawDoubleEllipseLoPart(p, m, 0, 90, true, false);
 			DrawDoubleEllipseLoPart(p, m, 90, 180, false, false);
 			p.SetColorEmboss();
 			p.FillRectangle(m.left, m.middle1_y + p.thickness, m.right, m.middle1_y + p.thickness);
-			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
-			DrawDoubleEllipseLoPartEmboss(p, m, 90, 180, false, false);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
@@ -1341,12 +1343,12 @@ namespace WXCustomDrawChar
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
+			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
+			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);
 			DrawDoubleEllipseLoPart(p, m, 180, 270, false, true);
 			DrawDoubleEllipseLoPart(p, m, 270, 360, true, true);
 			p.SetColorEmboss();
 			p.FillRectangle(m.left, m.middle2_y + p.thickness, m.right, m.middle2_y + p.thickness);
-			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
-			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
@@ -1367,15 +1369,14 @@ namespace WXCustomDrawChar
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
-			DrawDoubleEllipseLoPart(p, m, 180, 270, false, true);
-			DrawDoubleEllipseLoPart(p, m, 270, 360, true, true);
-			DrawDoubleEllipseLoPart(p, m, 0, 90, true, false);
-			DrawDoubleEllipseLoPart(p, m, 90, 180, false, false);
-			p.SetColorEmboss();
 			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
 			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);
 			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
 			DrawDoubleEllipseLoPartEmboss(p, m, 90, 180, false, false);
+			DrawDoubleEllipseLoPart(p, m, 180, 270, false, true);
+			DrawDoubleEllipseLoPart(p, m, 270, 360, true, true);
+			DrawDoubleEllipseLoPart(p, m, 0, 90, true, false);
+			DrawDoubleEllipseLoPart(p, m, 90, 180, false, false);
 		}
 		else {
 			p.FillRectangle(m.left, m.middle1_y, m.middle1_x + p.thickness - 1, m.middle1_y + p.thickness - 1);
@@ -1883,11 +1884,36 @@ namespace WXCustomDrawChar
 		p.DrawLine(X1, Y1 + r, X1 + r, Y2, 1);
 	}
 
+	static void Draw_Space(Painter &p, unsigned int start_y, unsigned int cx) /* empty */
+	{
+	}
+
 	////////////////////////////////////////////////////////////////
 
-#define BordersL(a)	options && options->UseModernLook ? a ## _new : a
-#define BordersT(a)	options && options->UseModernLook ? Draw_Thicker<a ## _new> : Draw_Thicker<a>
-#define Borders2(b, a)		options && options->UseModernLook ? ( options->UseSingleBordersOnly ? Draw_Thicker<b ## _new> : a ## _new ) : a
+	/* single */
+#define BordersL(a)		( options && options->UseModernLook ? a ## _new : a )
+#define BordersT(a)		( options && options->UseModernLook ? Draw_Thicker<a ## _new> : Draw_Thicker<a> )
+#define BordersСL(a)	( /*options && options->UseNoBorders ? Draw_Space :*/ BordersL(a) )
+#define BordersСT(a)	( /*options && options->UseNoBorders ? Draw_Space :*/ BordersT(a) )
+#define BordersEL(b, a)	( options && options->UseNoBorders ? BordersL(b) : BordersL(a) )
+#define BordersET(b, a)	( options && options->UseNoBorders ? BordersT(b) : BordersT(a) )
+
+	/* double */
+#define BordersD(b, a)	( options && options->UseSingleBordersOnly ? BordersL(b) : BordersL(a) )
+#define BordersCD(b, a)	( /* options && options->UseNoBorders ? Draw_Space :*/ BordersD(b, a) )
+
+#define BordersED(b, be, ae, a)	( options && options->UseNoBorders ? BordersD(be, ae) : BordersD(b, a) )
+
+    /* 
+    	Mnemonics:
+        	Borders - mean border characters
+              C - corner | E - line + corner join
+              L - light  | T - thick | D - double
+              ( 
+              	[Thin replacemenmt Draw_f, 
+              	[No edges thin replacement Draw_f, No edges replacement Draw_f,]] 
+              	Original Draw_f )
+    */
 
 	DrawT Get(const wchar_t c)
 	{
@@ -1912,53 +1938,53 @@ namespace WXCustomDrawChar
 			case 0x254d: return Draw_Thicker<Draw_DashesH<2>>;		/* ╍ */
 			case 0x254e: return Draw_DashesV<2>;					/* ╎ */
 			case 0x254f: return Draw_Thicker<Draw_DashesV<2>>;		/* ╏ */
-			case 0x250c: return BordersL(Draw_250C);		/* ┌ */
-			case 0x250f: return BordersT(Draw_250C);		/* ┏ */
-			case 0x2510: return BordersL(Draw_2510);		/* ┐ */
-			case 0x2513: return BordersT(Draw_2510);		/* ┓ */
-			case 0x2514: return BordersL(Draw_2514);		/* └ */
-			case 0x2517: return BordersT(Draw_2514);		/* ┗ */
-			case 0x2518: return BordersL(Draw_2518);		/* ┘ */
-			case 0x251b: return BordersT(Draw_2518);		/* ┛ */
-			case 0x251c: return BordersL(Draw_251C);		/* ├ */
-			case 0x2523: return BordersT(Draw_251C);		/* ┣ */
-			case 0x2524: return BordersL(Draw_2524);		/* ┤ */
-			case 0x252b: return BordersT(Draw_2524);		/* ┫ */
-			case 0x252c: return BordersL(Draw_252C);		/* ┬ */
-			case 0x2533: return BordersT(Draw_252C);		/* ┳ */
-			case 0x2534: return BordersL(Draw_2534);		/* ┴ */
-			case 0x253b: return BordersT(Draw_2534);		/* ┻ */
-			case 0x253c: return BordersL(Draw_253C);		/* ┼ */
-			case 0x254b: return BordersT(Draw_253C);		/* ╋ */
-			case 0x2550: return Borders2(Draw_2500, Draw_2550);		/* ═ */
-			case 0x2551: return Borders2(Draw_2502, Draw_2551);		/* ║ */
-			case 0x2552: return Borders2(Draw_250C, Draw_2552);		/* ╒ */
-			case 0x2553: return Borders2(Draw_250C, Draw_2553);		/* ╓ */
-			case 0x2554: return Borders2(Draw_250C, Draw_2554);  	/* ╔ */
-			case 0x2555: return Borders2(Draw_2510, Draw_2555); 	/* ╕ */
-			case 0x2556: return Borders2(Draw_2510, Draw_2556);		/* ╖ */
-			case 0x2557: return Borders2(Draw_2510, Draw_2557); 	/* ╗ */
-			case 0x2558: return Borders2(Draw_2514, Draw_2558);		/* ╘ */
-			case 0x2559: return Borders2(Draw_2514, Draw_2559);		/* ╙ */
-			case 0x255a: return Borders2(Draw_2514, Draw_255A);		/* ╚ */
-			case 0x255B: return Borders2(Draw_2518, Draw_255B); 	/* ╛*/ // + thickness
-			case 0x255C: return Borders2(Draw_2518, Draw_255C); 	/* ╜ */ // + thickness
-			case 0x255d: return Borders2(Draw_2518, Draw_255D); 	/* ╝ */
+			case 0x250c: return BordersСL(Draw_250C);		/* ┌ */
+			case 0x250f: return BordersСT(Draw_250C);		/* ┏ */
+			case 0x2510: return BordersСL(Draw_2510);		/* ┐ */
+			case 0x2513: return BordersСT(Draw_2510);		/* ┓ */
+			case 0x2514: return BordersСL(Draw_2514);		/* └ */
+			case 0x2517: return BordersСT(Draw_2514);		/* ┗ */
+			case 0x2518: return BordersСL(Draw_2518);		/* ┘ */
+			case 0x251b: return BordersСT(Draw_2518);		/* ┛ */
+			case 0x251c: return BordersEL(Draw_2502, Draw_251C);		/* ├ */
+			case 0x2523: return BordersET(Draw_2502, Draw_251C);		/* ┣ */
+			case 0x2524: return BordersEL(Draw_2502, Draw_2524);		/* ┤ */
+			case 0x252b: return BordersET(Draw_2502, Draw_2524);		/* ┫ */
+			case 0x252c: return BordersEL(Draw_2500, Draw_252C);		/* ┬ */
+			case 0x2533: return BordersET(Draw_2500, Draw_252C);		/* ┳ */
+			case 0x2534: return BordersEL(Draw_2500, Draw_2534);		/* ┴ */
+			case 0x253b: return BordersET(Draw_2500, Draw_2534);		/* ┻ */
+			case 0x253c: return BordersСL(Draw_253C);		/* ┼ */
+			case 0x254b: return BordersСT(Draw_253C);		/* ╋ */
+			case 0x2550: return BordersD(Draw_2500, Draw_2550);		/* ═ */
+			case 0x2551: return BordersD(Draw_2502, Draw_2551);		/* ║ */
+			case 0x2552: return BordersCD(Draw_250C, Draw_2552);		/* ╒ */
+			case 0x2553: return BordersCD(Draw_250C, Draw_2553);		/* ╓ */
+			case 0x2554: return BordersCD(Draw_250C, Draw_2554);  	/* ╔ */
+			case 0x2555: return BordersCD(Draw_2510, Draw_2555); 	/* ╕ */
+			case 0x2556: return BordersCD(Draw_2510, Draw_2556);		/* ╖ */
+			case 0x2557: return BordersCD(Draw_2510, Draw_2557); 	/* ╗ */
+			case 0x2558: return BordersCD(Draw_2514, Draw_2558);		/* ╘ */
+			case 0x2559: return BordersCD(Draw_2514, Draw_2559);		/* ╙ */
+			case 0x255a: return BordersCD(Draw_2514, Draw_255A);		/* ╚ */
+			case 0x255B: return BordersCD(Draw_2518, Draw_255B); 	/* ╛*/ // + thickness
+			case 0x255C: return BordersCD(Draw_2518, Draw_255C); 	/* ╜ */ // + thickness
+			case 0x255d: return BordersCD(Draw_2518, Draw_255D); 	/* ╝ */
 			case 0x255E: return BordersL(Draw_255E);	 			/* ╞ */
-			case 0x255f: return Borders2(Draw_251C, Draw_255F);		/* ╟ */
-			case 0x2560: return Borders2(Draw_251C, Draw_2560);		/* ╠ */
+			case 0x255f: return BordersED(Draw_251C, Draw_2502, Draw_2551, Draw_255F);		/* ╟ */
+			case 0x2560: return BordersED(Draw_251C, Draw_2502, Draw_2551, Draw_2560);		/* ╠ */
 			case 0x2561: return BordersL(Draw_2561); 				/* ╡ */ // + p.thickness - 1
-			case 0x2562: return Borders2(Draw_2524, Draw_2562);		/* ╢ */
-			case 0x2563: return Borders2(Draw_2524, Draw_2563);		/* ╣ */ // + thickness
-			case 0x2564: return Borders2(Draw_252C, Draw_2564);		/* ╤ */
-			case 0x2565: return Borders2(Draw_252C, Draw_2565);		/* ╥ */
-			case 0x2566: return Borders2(Draw_252C, Draw_2566);		/* ╦ */
-			case 0x2567: return Borders2(Draw_2534, Draw_2567);		/* ╧ */
-			case 0x2568: return Borders2(Draw_2534, Draw_2568); 	/* ╨ */
-			case 0x2569: return Borders2(Draw_2534, Draw_2569); 	/* ╩ */ // + thickness
-			case 0x256A: return Borders2(Draw_253C, Draw_256A);		/* ╪ */
-			case 0x256B: return Borders2(Draw_253C, Draw_256B); 	/* ╫ */
-			case 0x256C: return Borders2(Draw_253C, Draw_256C); 	/* ╬ */ // + thickness
+			case 0x2562: return BordersED(Draw_2524, Draw_2502, Draw_2551, Draw_2562);		/* ╢ */
+			case 0x2563: return BordersED(Draw_2524, Draw_2502, Draw_2551, Draw_2563);		/* ╣ */ // + thickness
+			case 0x2564: return BordersED(Draw_252C, Draw_2500, Draw_2550, Draw_2564);		/* ╤ */
+			case 0x2565: return BordersCD(Draw_252C, Draw_2565);		/* ╥ */
+			case 0x2566: return BordersED(Draw_252C, Draw_2500, Draw_2550, Draw_2566);		/* ╦ */
+			case 0x2567: return BordersED(Draw_2534, Draw_2500, Draw_2550, Draw_2567);		/* ╧ */
+			case 0x2568: return BordersCD(Draw_2534, Draw_2568); 	/* ╨ */
+			case 0x2569: return BordersED(Draw_2534, Draw_2500, Draw_2550, Draw_2569); 	/* ╩ */ // + thickness
+			case 0x256A: return BordersD(Draw_253C, Draw_256A);		/* ╪ */
+			case 0x256B: return BordersD(Draw_253C, Draw_256B); 	/* ╫ */
+			case 0x256C: return BordersD(Draw_253C, Draw_256C); 	/* ╬ */ // + thickness
 
 			// controls
 			case L'☐':   return Draw_unchecked_box;

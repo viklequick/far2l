@@ -1060,10 +1060,64 @@ void DrawLine(int Length, int Type, const wchar_t *UserSep)
 	}
 }
 
+/*
+	9 - flupdate.cpp
+	0, 1, 2 - vmenu.cpp
+
+#define ShowSeparator(Length, Type)              DrawLine(Length, Type)
+#define ShowUserSeparator(Length, Type, UserSep) DrawLine(Length, Type, UserSep)
+
+	DrawLine:
+		MakeSeparator(Length, BufPtr, Type, UserSep);
+
+	 dialog.cpp
+			case DI_SINGLEBOX:
+			case DI_DOUBLEBOX:
+
+				if (CY1 == CY2) {
+					DrawLine(CX2 - CX1 + 1, CurItem->Type == DI_SINGLEBOX ? 8 : 9);		//???
+				} else if (CX1 == CX2) {
+					DrawLine(CY2 - CY1 + 1, CurItem->Type == DI_SINGLEBOX ? 10 : 11);
+					IsDrawTitle = FALSE;
+				} else {
+					Box(X1 + CX1, Y1 + CY1, X1 + CX2, Y1 + CY2, ItemColor[2],
+							(CurItem->Type == DI_SINGLEBOX) ? SINGLE_BOX : DOUBLE_BOX);
+				}
+
+	  message.cpp:
+
+		if (Chr == 1 || Chr == 2) {
+			int Length = X2 - X1 - 5;
+
+			if (Length > 1) {
+				SetFarColor((Flags & MSG_WARNING) ? COL_WARNDIALOGBOX : COL_DIALOGBOX);
+				GotoXY(X1 + 3, Y1 + I + 2);
+				DrawLine(Length, (Chr == 2 ? 3 : 1));
+				CPtrStr++;
+
+	Box:
+		Type = (Type == DOUBLE_BOX || Type == SHORT_DOUBLE_BOX);
+	vertical:
+		wmemset(BufPtr, BoxSymbols[Type ? BS_V2 : BS_V1], height - 1);
+	horizontal:
+	  1:
+		BufPtr[0] = BoxSymbols[Type ? BS_LT_H2V2 : BS_LT_H1V1];
+		wmemset(BufPtr + 1, BoxSymbols[Type ? BS_H2 : BS_H1], width - 3);
+		BufPtr[width - 2] = BoxSymbols[Type ? BS_RT_H2V2 : BS_RT_H1V1];
+		BufPtr[width - 1] = 0;
+	  2:
+		BufPtr[0] = BoxSymbols[Type ? BS_LB_H2V2 : BS_LB_H1V1];
+		BufPtr[width - 2] = BoxSymbols[Type ? BS_RB_H2V2 : BS_RB_H1V1];
+
+	all other code:
+		Box(... DOUBLE_BOX);
+
+	custom borders: pick_color.cpp
+*/
 // "Нарисовать" сепаратор в памяти.
 WCHAR *MakeSeparator(int Length, WCHAR *DestStr, int Type, const wchar_t *UserSep)
 {
-	wchar_t BoxType[12][3] = {
+	wchar_t BoxType[14][3] = {
 			// h-horiz, s-space, v-vert, b-border, 1-one line, 2-two line
 			/* 00 */ {L' ', L' ', BoxSymbols[BS_H1]},										//  -     h1s
 			/* 01 */ {BoxSymbols[BS_L_H1V2], BoxSymbols[BS_R_H1V2], BoxSymbols[BS_H1]},		// ||-||  h1b2
@@ -1079,7 +1133,16 @@ WCHAR *MakeSeparator(int Length, WCHAR *DestStr, int Type, const wchar_t *UserSe
 			/* 09 */ {BoxSymbols[BS_H2], BoxSymbols[BS_H2], BoxSymbols[BS_H2]},				// =      h2
 			/* 10 */ {BoxSymbols[BS_V1], BoxSymbols[BS_V1], BoxSymbols[BS_V1]},				// |      v1
 			/* 11 */ {BoxSymbols[BS_V2], BoxSymbols[BS_V2], BoxSymbols[BS_V2]},				// ||     v2
+
+            /* copy for case we need to keep separators e g menus */
+			/* 12 */ {BoxSymbols[BS_L_H1V2], BoxSymbols[BS_R_H1V2], BoxSymbols[BS_H1]},		// ||-||  h1b2
+			/* 13 */ {BoxSymbols[BS_L_H1V1], BoxSymbols[BS_R_H1V1], BoxSymbols[BS_H1]},		// |-|    h1b1
 	};
+
+	if (Opt.Backend.UseModernLook || Opt.Backend.UseNoBorders) {
+		// we do not need edge strokes either globally (NoBorders) or in separators (ModernLook)
+		if (Type == 1 || Type == 2) Type = 0; // usual lines no edges
+	}
 
 	if (Length > 1 && DestStr) {
 		Type%= ARRAYSIZE(BoxType);

@@ -221,6 +221,7 @@ const ConfigOpt g_cfg_opts[] {
 	{true,  NSecDialog, "UseModernLook", &Opt.Backend.UseModernLook, 1},
 	{true,  NSecDialog, "UseModernLookRoundBorders", &Opt.Backend.UseRoundedBorders, 0},
 	{true,  NSecDialog, "UseModernLookSingleBordersOnly", &Opt.Backend.UseSingleBordersOnly, 0},
+	{true,  NSecDialog, "UseModernLookNoBorders", &Opt.Backend.UseNoBorders, 0},
 
 	{true,  NSecEditor, "ExternalEditorName", &Opt.strExternalEditor, L""},
 	{true,  NSecEditor, "UseExternalEditor", &Opt.EdOpt.UseExternalEditor, 0},

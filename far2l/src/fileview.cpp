@@ -393,10 +393,11 @@ int FileViewer::ProcessKey(FarKey Key)
 			View.SetClickableURLs(ViOpt.ClickableURLs);
 			View.SetPersistentBlocks(ViOpt.PersistentBlocks);
 
-			ViewKeyBar.Refresh(Opt.ViOpt.ShowKeyBar);
-			MenuBarVisible = Opt.ViOpt.ShowMenuBar;
+			ViewKeyBar.Refresh(ViOpt.ShowKeyBar);
+			MenuBarVisible = ViOpt.ShowMenuBar;
 
-			View.Show();
+			Show();
+
 			return TRUE;
 		case KEY_ALTF10:
 			FrameManager->ExitMainLoop(TRUE);

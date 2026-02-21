@@ -249,6 +249,8 @@ size_t ItemStringAndSize(DialogItemEx *Data, FARString &ItemString)
 	if (sz > Data->nMaxLength && Data->nMaxLength > 0)
 		sz = Data->nMaxLength;
 
+	if (sz < 40) sz = 40;
+
 	return sz;
 }
 
@@ -769,7 +771,7 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 			FocusPos = I;		// запомним первый фокусный элемент
 
 		CurItem->Focus = 0;		// сбросим для всех, чтобы не оказалось,
-		// что фокусов - как у дурочка фантиков
+		// что фокусов - как у дурака фантиков
 
 		// сбросим флаг DIF_CENTERGROUP для редакторов
 		switch (Type) {
@@ -1905,6 +1907,14 @@ void Dialog::ShowDialog(unsigned ID)
 		for (size_t g = 0; g < DLG_ITEM_MAX_CUST_COLORS; g++)
 			if (CurItem->customItemColor[g])
 				ItemColor[g] = CurItem->customItemColor[g];
+
+		// drawing hacks here
+		if (Opt.Backend.UseModernLook) {
+			// main border: rearrange to real corners
+			if (CurItem->Type == DI_DOUBLEBOX /* && CX1 == 2 /*&& CX2 == X2 - -X1 - 2 && CY1 == 1 && CY2 == Y2 - Y1 - 1*/) {
+				CX1 = 0; CX2 = X2 - X1; CY1 = 0; CY2 = Y2 - Y1;
+			}
+		}
 
 #if 0
 

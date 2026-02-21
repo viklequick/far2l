@@ -84,8 +84,7 @@ public:
 	~DialogBuilder();
 
 	// Добавляет поле типа DI_EDIT для редактирования указанного строкового значения.
-	DialogItemEx *
-	AddEditField(FARString *Value, int Width, const wchar_t *HistoryID = nullptr, int Flags = 0);
+	DialogItemEx* AddEditField(FARString *Value, int Width, const wchar_t *HistoryID = nullptr, int Flags = 0);
 
 	LONG_PTR UserData;
 	bool SetUserDlgProc(FARWINDOWPROC UserProc, LONG_PTR UserParam2);
@@ -105,8 +104,7 @@ public:
 	// сбрасывает флаги.
 	// Если LinkLabels установлено в true, то текстовые элементы, добавленные к элементу Target
 	// методами AddTextBefore и AddTextAfter, также связываются с элементом Parent.
-	void
-	LinkFlags(DialogItemEx *Parent, DialogItemEx *Target, FarDialogItemFlags Flags, bool LinkLabels = true);
+	void LinkFlags(DialogItemEx *Parent, DialogItemEx *Target, FarDialogItemFlags Flags, bool LinkLabels = true);
 
 	void AddOKCancel() { DialogBuilderBase<DialogItemEx>::AddOKCancel(Msg::Ok, Msg::Cancel); }
 };

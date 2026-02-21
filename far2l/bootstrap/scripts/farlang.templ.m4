@@ -11968,15 +11968,15 @@ ViewF8
 "->ANSI"
 
 ViewF9
-"Конфиг"
-"Config"
-"Nastav"
-"Konfig"
-"Beáll."
-"Konfig"
-"Config"
-"Конфіг"
-"Налады"
+"Меню"
+"Menu"
+"Menu"
+"Menu"
+"Menu"
+"Menu"
+"Menu"
+"Menu"
+"Menu"
 
 ViewF10
 "Выход"
@@ -29201,6 +29201,17 @@ upd:"Single borders only"
 upd:"Single borders only"
 upd:"Single borders only"
 upd:"Single borders only"
+
+UseModernLookNoBorders
+"Без псевдографики в уголках"
+"Hide edge borders"
+upd:"Hide edge borders"
+upd:"Hide edge borders"
+upd:"Hide edge borders"
+upd:"Hide edge borders"
+upd:"Hide edge borders"
+upd:"Hide edge borders"
+upd:"Hide edge borders"
 
 #Must be the last
 NewFileName

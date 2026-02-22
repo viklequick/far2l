@@ -587,6 +587,8 @@ typedef struct _INPUT_RECORD {
 #define COMMON_LVB_REVERSE_VIDEO   0x4000 // Reverse fore/back ground attribute.
 #define COMMON_LVB_UNDERSCORE      0x8000 // Underscore.
 #define COMMON_LVB_STRIKEOUT       0x2000 // Striekout.
+#define COMMON_LVB_BOLD            0x1000 // Bold.
+// #define COMMON_LVB_ITALIC         0x?000 // Italic. No space in mask
 
 #define FOREGROUND_RGB (FOREGROUND_RED|FOREGROUND_GREEN|FOREGROUND_BLUE)
 #define BACKGROUND_RGB (BACKGROUND_RED|BACKGROUND_GREEN|BACKGROUND_BLUE)

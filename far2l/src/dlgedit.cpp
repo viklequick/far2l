@@ -175,7 +175,7 @@ int DlgEdit::ProcessKey(FarKey Key)
 
 int DlgEdit::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
-
+	fprintf(stderr, "dlgedit::mouse %x\n", MouseEvent->dwButtonState);
 	if (Type == DLGEDIT_MULTILINE) {
 		DialogEditorPluginScope scope(multiEdit);
 		return multiEdit->ProcessMouse(MouseEvent);

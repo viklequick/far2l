@@ -637,6 +637,9 @@ void InterfaceSettings()
 		Builder.AddCheckbox(Msg::ConfigDeleteTotal, &Opt.DelOpt.DelShowTotal);
 		Builder.AddCheckbox(Msg::ConfigPgUpChangeDisk, &Opt.PgUpChangeDisk);
 
+		Builder.AddCheckbox(Msg::CopyToPrimarySelection, &Opt.CopyToPrimarySelection);
+		Builder.AddCheckbox(Msg::PasteFromPrimarySelection, &Opt.PasteFromPrimarySelection);
+
 		Builder.AddSeparator(Msg::ConfigDateFormat);
 
 		/*DialogBuilderListItem CAListItems[] = {
@@ -923,6 +926,7 @@ void DialogSettings()
 	Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, &Opt.Backend.UseRoundedBorders);
 	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, &Opt.Backend.UseSingleBordersOnly);
 	Builder.AddCheckbox(Msg::UseModernLookNoBorders, &Opt.Backend.UseNoBorders);
+	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, &Opt.Backend.UseEmbossAsBold);
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 
 	Builder.AddCheckbox(Msg::ConfigDialogsEditBlock, &Opt.Dialogs.EditBlock);
@@ -1155,7 +1159,6 @@ void EditorConfig(EditorOptions &EdOpt, bool Local, int EdCfg_ExpandTabs, int Ed
 	Builder.AddCheckbox(Msg::EditShowWhiteSpace, &EdOpt.ShowWhiteSpace);
 	Builder.AddCheckbox(Msg::EditShowKeyBar, &EdOpt.ShowKeyBar);
 	Builder.AddCheckbox(Msg::EditShowLineNumbers, &EdOpt.ShowLineNumbers);
-	Builder.AddCheckbox(Msg::EditCopyToPrimarySelection, &EdOpt.EditCopyToPrimarySelection);
 
 	Builder.ColumnBreak();
 	Builder.AddCheckbox(Msg::EditConfigDelRemovesBlocks, &EdOpt.DelRemovesBlocks);
@@ -1167,7 +1170,6 @@ void EditorConfig(EditorOptions &EdOpt, bool Local, int EdCfg_ExpandTabs, int Ed
 	Builder.AddCheckbox(Msg::EditShowTitleBar, &EdOpt.ShowTitleBar);
 	Builder.AddCheckbox(Msg::EditShowMenuBar, &EdOpt.ShowMenuBar);
 	Builder.AddCheckbox(Msg::EditWordWrap, &EdOpt.WordWrap);
-	Builder.AddCheckbox(Msg::EditPasteFromPrimarySelection, &EdOpt.EditPasteFromPrimarySelection);
 	Builder.EndColumns();
 
 	if (!Local) {

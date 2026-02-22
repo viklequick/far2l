@@ -131,6 +131,7 @@ static st_font_style_bind_t sup_styles[] = {
 	{ID_ST_CHECKBOX_STYLE_STRIKEOUT, COMMON_LVB_STRIKEOUT},
 	{ID_ST_CHECKBOX_STYLE_UNDERLINE, COMMON_LVB_UNDERSCORE},
 	{ID_ST_CHECKBOX_STYLE_INVERSE,   COMMON_LVB_REVERSE_VIDEO},
+	{ID_ST_CHECKBOX_STYLE_BOLD,      COMMON_LVB_BOLD},
 };
 
 static uint32_t basepalette[32];
@@ -139,6 +140,7 @@ static uint32_t basepalette[32];
 							  COMMON_LVB_STRIKEOUT\
 							| COMMON_LVB_UNDERSCORE\
 							| COMMON_LVB_REVERSE_VIDEO\
+							| COMMON_LVB_BOLD\
 )
 
 struct color_panel_s
@@ -216,6 +218,8 @@ struct set_color_s
 		cPanel[IDC_FOREGROUND_PANEL].offset = ID_CP_FIRST;
 		cPanel[IDC_BACKGROUND_PANEL].id = IDC_BACKGROUND_PANEL;
 		cPanel[IDC_BACKGROUND_PANEL].offset = ID_CP_FIRST + ID_CP_TOTAL;
+
+		bStyleEnabled = true;
 	}
 
 	inline void enable_RGB(const bool bEnable) {

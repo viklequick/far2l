@@ -8,6 +8,7 @@
 #include "PathHelpers.h"
 #include "WinPort.h"
 #include <utils.h>
+#include <BackendOptions.h>
 
 #define COLOR_ATTRIBUTES ( FOREGROUND_INTENSITY | BACKGROUND_INTENSITY | \
 					FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | \
@@ -20,6 +21,14 @@
 #else
 # define DEFAULT_FONT_SIZE	16
 #endif
+
+WinPortRGB ComputeEmbossColor_HSL(const WinPortRGB& xbg, const WinPortRGB& xline);
+WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline);
+
+namespace WXCustomDrawChar
+{
+	extern BackendOptions* options;
+};
 
 /////////////////////////////////////////////////////////////////////////////////
 static const char *g_known_good_fonts[] = { "Ubuntu", "Terminus", "DejaVu",
@@ -547,7 +556,7 @@ void CursorProps::Update()
 ConsolePainter::ConsolePainter(ConsolePaintContext *context, wxPaintDC &dc, wxString &buffer, CursorProps &cursor_props) :
 	_context(context), _dc(dc), _buffer(buffer), _cursor_props(cursor_props),
 	_start_cx((unsigned int)-1), _start_back_cx((unsigned int)-1), _prev_fit_font_index(0),
-	_prev_underlined(false), _prev_strikeout(false)
+	_prev_underlined(false), _prev_strikeout(false), _prev_bold(false)
 {
 	_dc.SetPen(context->GetTransparentPen());
 	_dc.SetBackgroundMode(wxPENSTYLE_TRANSPARENT);
@@ -609,11 +618,45 @@ void ConsolePainter::FlushBackground(unsigned int cx_end)
 	}
 }
 
+WinPortRGB ConsolePainter::GetEmbossColor() {
+	WinPortRGB clr_fade;
+	/* near to black / near to white means LAB */
+	int blackb = _clr_back.r + _clr_back.g + _clr_back.b;
+	int blackf = _clr_text.r + _clr_text.g + _clr_text.b;
+	if (blackb < 0x5f || blackf < 0x5f || blackb > 700 || blackf > 700) 
+		clr_fade = ComputeEmbossColor_LAB(_clr_back, _clr_text);
+	else
+		clr_fade = ComputeEmbossColor_HSL(_clr_back, _clr_text);
+	return clr_fade;
+}
+
 void ConsolePainter::FlushText(unsigned int cx_end)
 {
 	if (!_buffer.empty()) {
-		_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
-		_dc.DrawText(_buffer, _start_cx * _context->FontWidth(), _start_y);
+		if (_prev_bold) {
+			if (WXCustomDrawChar::options->UseEmbossAsBold) {
+				WinPortRGB emboss = GetEmbossColor();
+				_dc.SetTextForeground(wxColour(emboss.r, emboss.g, emboss.b));
+				_dc.DrawText(_buffer, _start_cx * _context->FontWidth() + 1, _start_y + 1);
+				_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
+				_dc.DrawText(_buffer, _start_cx * _context->FontWidth(), _start_y);
+			}
+			else {
+				wxFont normal = _dc.GetFont();
+				wxFont bold = normal;
+				bold.MakeBold(); 
+				//bold.SetWeight(wxFONTWEIGHT_SEMIBOLD);
+				bold.SetPixelSize(normal.GetPixelSize());
+				_dc.SetFont(bold);
+				_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
+				_dc.DrawText(_buffer, _start_cx * _context->FontWidth(), _start_y);
+				_dc.SetFont(normal);
+			}
+		}
+		else {
+			_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
+			_dc.DrawText(_buffer, _start_cx * _context->FontWidth(), _start_y);
+		}
 		_buffer.Empty();
 	}
 	FlushDecorations(cx_end);
@@ -661,9 +704,6 @@ static inline unsigned char CalcExtraFadeColor(unsigned char bg, unsigned char f
 }
 
 // #define DEBUG_FADED_EDGES
-
-WinPortRGB ComputeEmbossColor_HSL(const WinPortRGB& xbg, const WinPortRGB& xline);
-WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline);
 
 struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 {
@@ -767,13 +807,16 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 	}
 
 	wxBrush savedBrush;
+	wxPen savedPen;
 
 	inline void SaveBrushImpl() {
 		savedBrush = _painter._dc.GetBrush();
+		savedPen = _painter._dc.GetPen();
 	}
 
 	inline void RestoreBrushImpl() {
 		_painter._dc.SetBrush(savedBrush);
+		_painter._dc.SetPen(savedPen);
 	}
 };
 
@@ -861,8 +904,9 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 
 	const bool underlined = (attributes & COMMON_LVB_UNDERSCORE) != 0;
 	const bool strikeout = (attributes & COMMON_LVB_STRIKEOUT) != 0;
+	const bool bold = (attributes & COMMON_LVB_BOLD) != 0;
 
-	if (!strikeout && !underlined && wcz[0] == L' ' && !wcz[1]) {
+	if (!strikeout && !underlined && wcz[0] == L' ' && !wcz[1]) { /* bold does not impact on space */
 		return;
 	}
 
@@ -880,6 +924,7 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 			_clr_text = clr_text;
 			FlushDecorations(cx + nx);
 		}
+        /* bold doers not affect to custom draws as it are unicode glyphs, borders etc */
 		_start_cx = (unsigned int)-1;
 		_prev_fit_font_index = 0;
 		return;
@@ -888,6 +933,7 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 	uint8_t fit_font_index = _context->CharFitTest(_dc, *wcz, nx);
 
 	if (fit_font_index == _prev_fit_font_index && _prev_underlined == underlined && _prev_strikeout == strikeout
+		&& _prev_bold == bold
 		&& _start_cx != (unsigned int)-1 && _clr_text == clr_text && _context->IsPaintBuffered())
 	{
 		_buffer+= wcz;
@@ -900,6 +946,7 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 	_prev_fit_font_index = fit_font_index;
 	_prev_underlined = underlined;
 	_prev_strikeout = strikeout;
+	_prev_bold = bold;
 
 	_start_cx = cx;
 	_buffer = wcz;

@@ -2762,9 +2762,12 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 	}
 
-	// VK: TODO: with option, place to command line from primary instead (if available)
-
 	if (MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED && MouseEvent->dwEventFlags != MOUSE_MOVED) {
+		if (Opt.PasteFromPrimarySelection && !MouseEvent->dwControlKeyState) {
+			// CopyToPrimarySelection -- let EditorControl to do the rest
+			return FALSE;
+		}
+
 		FarKey Key = KEY_ENTER;
 		if (MouseEvent->dwControlKeyState & SHIFT_PRESSED) {
 			Key|= KEY_SHIFT;

@@ -3948,26 +3948,15 @@ upd:"Exit far2l                          Alt+F10"
 upd:"Exit far2l                          Alt+F10"
 
 ViewerMenuUndo
-upd:"Undo                                Ctrl+Z"
-"Undo                                Ctrl+Z"
-upd:"Undo                                Ctrl+Z"
-upd:"Undo                                Ctrl+Z"
-upd:"Undo                                Ctrl+Z"
-upd:"Undo                                Ctrl+Z"
-upd:"Undo                                Ctrl+Z"
-upd:"Undo                                Ctrl+Z"
-upd:"Undo                                Ctrl+Z"
-
-ViewerMenuRedo
-upd:"Redo                                Ctrl+Shift+Z"
-"Redo                                Ctrl+Shift+Z"
-upd:"Redo                                Ctrl+Shift+Z"
-upd:"Redo                                Ctrl+Shift+Z"
-upd:"Redo                                Ctrl+Shift+Z"
-upd:"Redo                                Ctrl+Shift+Z"
-upd:"Redo                                Ctrl+Shift+Z"
-upd:"Redo                                Ctrl+Shift+Z"
-upd:"Redo                                Ctrl+Shift+Z"
+upd:"To last position                    Ctrl+Z"
+"To last position                    Ctrl+Z"
+upd:"To last position                    Ctrl+Z"
+upd:"To last position                    Ctrl+Z"
+upd:"To last position                    Ctrl+Z"
+upd:"To last position                    Ctrl+Z"
+upd:"To last position                    Ctrl+Z"
+upd:"To last position                    Ctrl+Z"
+upd:"To last position                    Ctrl+Z"
 
 ViewerMenuSelect
 upd:"Select block                        Shift+Right"
@@ -4918,7 +4907,7 @@ upd:"Show line &numbers"
 "Номери рядкі&в"
 upd:"Show line &numbers"
 
-EditCopyToPrimarySelection
+CopyToPrimarySelection
 "Выделенный мышью текст помещать в PRIMARY"
 "Auto-copy mouse selection to PRIMARY"
 upd:"Auto-copy mouse selection to PRIMARY"
@@ -4929,7 +4918,7 @@ upd:"Auto-copy mouse selection to PRIMARY"
 upd:"Auto-copy mouse selection to PRIMARY"
 upd:"Auto-copy mouse selection to PRIMARY"
 
-EditPasteFromPrimarySelection
+PasteFromPrimarySelection
 "Вставлять по средней кнопке мыши из PRIMARY"
 "Paste from PRIMARY by 2nd mouse button"
 upd:"Paste from PRIMARY by 2nd mouse button"
@@ -29212,6 +29201,17 @@ upd:"Hide edge borders"
 upd:"Hide edge borders"
 upd:"Hide edge borders"
 upd:"Hide edge borders"
+
+UseModernLookEmbossAsBold
+"Тень к тексту вместо полужирного шрифта"
+"Text shadows instead of bold fonts"
+upd:"Text shadows instead of bold fonts"
+upd:"Text shadows instead of bold fonts"
+upd:"Text shadows instead of bold fonts"
+upd:"Text shadows instead of bold fonts"
+upd:"Text shadows instead of bold fonts"
+upd:"Text shadows instead of bold fonts"
+upd:"Text shadows instead of bold fonts"
 
 #Must be the last
 NewFileName

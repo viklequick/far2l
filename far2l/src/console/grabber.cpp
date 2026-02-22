@@ -201,6 +201,7 @@ void Grabber::DisplayObject()
 				}
 
 			// VK: TODO: copy fragment to primary
+			// CopyToPrimarySelection
 
 			PutText(area.left, area.top, area.right, area.bottom, char_info.data());
 		}

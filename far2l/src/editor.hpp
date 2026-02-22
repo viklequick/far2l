@@ -423,12 +423,6 @@ public:
 	int GetShowGutterMarks() const { return EdOpt.ShowGutterMarks; }
 	void SetShowGutterMarks(int NewMode);
 
-	int GetEditCopyToPrimarySelection() const { return EdOpt.EditCopyToPrimarySelection; }
-	void SetEditCopyToPrimarySelection(int NewMode);
-
-	int GetEditPasteFromPrimarySelection() const { return EdOpt.EditPasteFromPrimarySelection; }
-	void SetEditPasteFromPrimarySelection(int NewMode);
-
 	void GetSavePosMode(int &SavePos, int &SaveShortPos);
 
 	// передавайте в качестве значения параметра "-1" для параметра,

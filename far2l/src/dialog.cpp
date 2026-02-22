@@ -1911,7 +1911,7 @@ void Dialog::ShowDialog(unsigned ID)
 		// drawing hacks here
 		if (Opt.Backend.UseModernLook) {
 			// main border: rearrange to real corners
-			if (CurItem->Type == DI_DOUBLEBOX /* && CX1 == 2 /*&& CX2 == X2 - -X1 - 2 && CY1 == 1 && CY2 == Y2 - Y1 - 1*/) {
+			if (CurItem->Type == DI_DOUBLEBOX /* && CX1 == 2 && CX2 == X2 - -X1 - 2 && CY1 == 1 && CY2 == Y2 - Y1 - 1*/) {
 				CX1 = 0; CX2 = X2 - X1; CY1 = 0; CY2 = Y2 - Y1;
 			}
 		}
@@ -3380,6 +3380,34 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 		Type = Item[I]->Type;
 
+        /* middle mouse click */ 
+		if ( MouseEvent->dwButtonState & (FROM_LEFT_2ND_BUTTON_PRESSED) ) {
+			if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN))
+				continue;
+
+			GetItemRect(I, Rect);
+			Rect.Left+= X1;
+			Rect.Top+= Y1;
+			Rect.Right+= X1;
+			Rect.Bottom+= Y1;
+
+			if (MsX >= Rect.Left && MsY >= Rect.Top && MsX <= Rect.Right && MsY <= Rect.Bottom) {
+
+				if (FarIsEdit(Type)) {
+					DlgEdit *EditLine = (DlgEdit *)(Item[I]->ObjPtr);
+					ChangeFocus2(I);
+
+					if (EditLine->ProcessMouse(MouseEvent)) {
+						EditLine->SetClearFlag(0);	// а может это делать в самом edit?
+						ShowDialog();	// нужен ли только один контрол или весь диалог?
+						return TRUE;
+					} 
+				}
+
+				break;
+			}
+		}
+
 		if (Type == DI_LISTBOX && MsY >= Y1 + Item[I]->Y1 && MsY <= Y1 + Item[I]->Y2
 				&& MsX >= X1 + Item[I]->X1 && MsX <= X1 + Item[I]->X2) {
 			VMenu *List = Item[I]->ListPtr;
@@ -3571,7 +3599,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			}
 		}
 
-		if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+		// dialog hides other clicks except left mouse?
+		if ( MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED) ) {
 			// for (I=0;I<ItemCount;I++)
 
 			for (I = ItemCount - 1; I != (unsigned)-1; I--) {

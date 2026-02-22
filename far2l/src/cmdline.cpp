@@ -1128,8 +1128,19 @@ int CommandLine::ProcessKeyIfVisible(FarKey Key)
 			if (Key == KEY_CTRLD)
 				Key = KEY_RIGHT;
 
-			if (Key == KEY_CTRLV || Key == KEY_SHIFTINS || Key == KEY_SHIFTNUMPAD0) {
-				wchar_t *ClipText = PasteFromClipboard();
+			if (Key == KEY_CTRLV || Key == KEY_SHIFTINS || Key == KEY_SHIFTNUMPAD0 || Key == KEY_OP_PLAINTEXT) {
+				FARString clip;
+				if (Key == KEY_OP_PLAINTEXT && !GPastedText.IsEmpty()) {
+					clip = GPastedText;
+				} else {
+					wchar_t *p = PasteFromClipboard();
+					if (p) {
+						clip = p;
+						free(p);
+					}
+				}
+
+				const wchar_t *ClipText = clip.CPtr();
 				if (ClipText && wcschr(ClipText, L'\n') && wcschr(ClipText, L'\n')[1] != L'\0') {
 					CmdStr.GetString(strStr);
 					FARString strToExec = strStr.SubStr(0, CmdStr.GetCurPos()) + ClipText + strStr.SubStr(CmdStr.GetCurPos());

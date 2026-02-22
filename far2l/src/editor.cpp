@@ -1344,7 +1344,7 @@ void Editor::ProcessPasteEvent()
 
 void Editor::ProcessPasteEventFromPrimary()
 {
-	if (!EdOpt.EditPasteFromPrimarySelection) {
+	if (!Opt.PasteFromPrimarySelection) {
 		return;
 	}
 
@@ -3695,7 +3695,7 @@ int Editor::AutoGrabToClipboard ()
 {
 	int status = 0;
 
-	if (!EdOpt.EditCopyToPrimarySelection) {
+	if (!Opt.CopyToPrimarySelection) {
 		return status;
 	}
 
@@ -3907,7 +3907,6 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				}
 				EditorPrevClickCount = 0; // Reset to avoid re-triggering
 
-				// VK: TODO: grab selection and copy to selection buffer
 				AutoGrabToClipboard();
 			}
 			Show();
@@ -3916,7 +3915,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 	if (MouseEvent->dwButtonState == FROM_LEFT_2ND_BUTTON_PRESSED
 			&& (MouseEvent->dwEventFlags & (DOUBLE_CLICK | MOUSE_MOVED | MOUSE_HWHEELED | MOUSE_WHEELED)) == 0) {
-		if (EdOpt.EditPasteFromPrimarySelection)
+		if (Opt.PasteFromPrimarySelection)
 			ProcessPasteEventFromPrimary();
 		else
 			ProcessPasteEvent();
@@ -7691,16 +7690,6 @@ void Editor::SetShowWhiteSpace(int NewMode)
 			CurPtr->SetShowWhiteSpace(NewMode);
 		}
 	}
-}
-
-void Editor::SetEditCopyToPrimarySelection(int newMode) {
-	if (EdOpt.EditCopyToPrimarySelection != newMode)
-		EdOpt.EditCopyToPrimarySelection = newMode;
-}
-
-void Editor::SetEditPasteFromPrimarySelection(int newMode) {
-	if (EdOpt.EditPasteFromPrimarySelection != newMode)
-		EdOpt.EditPasteFromPrimarySelection = newMode;
 }
 
 void Editor::SetShowLineNumbers(int NewMode)

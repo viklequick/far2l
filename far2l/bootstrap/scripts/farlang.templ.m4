@@ -4171,7 +4171,7 @@ upd:"Show line &numbers"
 "Номери рядкі&в"
 upd:"Show line &numbers"
 
-EditCopyToPrimarySelection
+CopyToPrimarySelection
 "Выделенный мышью текст помещать в PRIMARY"
 "Auto-copy mouse selection to PRIMARY"
 upd:"Auto-copy mouse selection to PRIMARY"
@@ -4182,7 +4182,7 @@ upd:"Auto-copy mouse selection to PRIMARY"
 upd:"Auto-copy mouse selection to PRIMARY"
 upd:"Auto-copy mouse selection to PRIMARY"
 
-EditPasteFromPrimarySelection
+PasteFromPrimarySelection
 "Вставлять по средней кнопке мыши из PRIMARY"
 "Paste from PRIMARY by 2nd mouse button"
 upd:"Paste from PRIMARY by 2nd mouse button"

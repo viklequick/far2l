@@ -167,6 +167,9 @@ const ConfigOpt g_cfg_opts[] {
 	{true,  NSecInterface, "ExclusiveWinLeft", &Opt.ExclusiveWinLeft, 0},
 	{true,  NSecInterface, "ExclusiveWinRight", &Opt.ExclusiveWinRight, 0},
 
+	{true,  NSecInterface, "CopyToPrimarySelection", &Opt.CopyToPrimarySelection, 0},
+	{true,  NSecInterface, "PasteFromPrimarySelection", &Opt.PasteFromPrimarySelection, 0},
+
 	{true,  NSecInterface, "DateFormat", &Opt.DateFormat, GetDateFormatDefault()},
 	{true,  NSecInterface, "DateSeparator", &Opt.strDateSeparator, GetDateSeparatorDefaultStr()},
 	{true,  NSecInterface, "TimeSeparator", &Opt.strTimeSeparator, GetTimeSeparatorDefaultStr()},
@@ -244,8 +247,6 @@ const ConfigOpt g_cfg_opts[] {
 	{true,  NSecEditor, "WordWrap", &Opt.EdOpt.WordWrap, 0},
 	{true,  NSecEditor, "ShowWhiteSpace", &Opt.EdOpt.ShowWhiteSpace, 0},
 	{true,  NSecEditor, "ShowLineNumbers", &Opt.EdOpt.ShowLineNumbers, 0},
-	{true,  NSecEditor, "EditCopyToPrimarySelection", &Opt.EdOpt.EditCopyToPrimarySelection, 0},
-	{true,  NSecEditor, "EditPasteFromPrimarySelection", &Opt.EdOpt.EditPasteFromPrimarySelection, 0},
 
 	{true,  NSecNotifications, "OnFileOperation", &Opt.NotifOpt.OnFileOperation, 1},
 	{true,  NSecNotifications, "OnConsole", &Opt.NotifOpt.OnConsole, 1},

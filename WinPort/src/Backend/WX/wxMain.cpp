@@ -185,7 +185,9 @@ extern "C" __attribute__ ((visibility("default"))) bool WinPortMainBackend(WinPo
 	}
 
 	PrinterSupportBackendSetter printer_backend_setter;
-	printer_backend_setter.Set<wxPrinterSupportBackend>();
+	printer_backend_setter.Set<wxPrinterSupportBackend>(); // nullptr /* g_winport_frame */);
+
+	fprintf(stderr, "printer backend set\n");
 	
 	ShareBackendOptionsBackendSetter share_backend_setter;
 	share_backend_setter.Set<wxShareBackendOptionsBackend>();

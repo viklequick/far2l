@@ -3373,6 +3373,11 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	MsX = MouseEvent->dwMousePosition.X;
 	MsY = MouseEvent->dwMousePosition.Y;
 
+	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
+		// todo: handle hover effect here by indiocating the control and then repaint it
+		// return TRUE;
+	}
+
 	// for (I=0;I<ItemCount;I++)
 	for (I = ItemCount - 1; I != (unsigned)-1; I--) {
 		if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN))

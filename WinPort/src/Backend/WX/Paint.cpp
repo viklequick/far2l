@@ -419,6 +419,21 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		DWORD64 attributes = line->Attributes;
 		const unsigned int cx_begin = (area.Left > 0 && !line[area.Left].Char.UnicodeChar) ? area.Left - 1 : area.Left;
 		const unsigned int cx_end = std::min(cw, (unsigned)area.Right + 1);
+		bool prev_space = cx_begin > 0 ? line[cx_begin - 1].Char.UnicodeChar == L' ' : false;
+		unsigned int in_button_cx = -1;
+		bool draw_button = false;
+
+		for(unsigned int cx = cx_begin; cx > 1; --cx) {
+			wchar_t c = line[cx].Char.UnicodeChar;
+			if (c == L'⟧' || c == L'⟫') break;
+			if (c == L'⟦' || c == L'⟪') {
+				if (line[cx - 1].Char.UnicodeChar == L' ') {
+					in_button_cx = cx;
+					break;
+				}
+			}
+		}
+
 		for (unsigned int cx = cx_begin; cx < cx_end; ++cx) {
 			if (!line[cx].Char.UnicodeChar) {
 				painter.LineFlush(cx + 1);
@@ -443,8 +458,34 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 					attributes^= 0xffffff0000000000;
 				}
 			}
+
+			if (pwcz[0] == L'⟦' || pwcz[0] == L'⟪') {
+				pwcz = L" ";
+				in_button_cx = cx;
+			}
+
+			// ⟦ ok ⟧
+
+			if (in_button_cx >= 0) {
+				if (pwcz[0] == L'⟧' || pwcz[0] == L'⟫') {
+					// we have a button so we can draw it well
+					pwcz = L" ";
+					draw_button = true;
+				}
+			}
+
 			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
-			painter.NextChar(cx, attributes, pwcz, nx);
+			painter.NextChar(cx, attributes, pwcz, nx, prev_space);
+
+			if (draw_button) {
+				fprintf(stderr, "button: line=%d..%d, button %lc%d..%d%lc\n", cx_begin, cx_end, 
+					wchar_t(line[in_button_cx].Char.UnicodeChar), in_button_cx, cx, wchar_t(line[cx].Char.UnicodeChar));
+				painter.DrawButtonDecorations(in_button_cx, cx, cy);
+				in_button_cx = -1;
+				draw_button = false;
+			}
+
+			prev_space = pwcz[0] == L' ';
 		}
 		painter.LineFlush(area.Right + 1);
 	}
@@ -597,7 +638,7 @@ void ConsolePainter::PrepareBackground(unsigned int cx, const WinPortRGB &clr, u
 	if (h==0) h = 1;
 	unsigned int fill_height = _context->FontHeight() - h;
 	if (fill_height > _context->FontHeight()) fill_height = _context->FontHeight();
-	WinPortRGB clr_xored(clr.r ^ 0xff, clr.g ^ 0xff, clr.b ^ 0xff);
+	WinPortRGB clr_xored = GetCursorColor(clr);
 	SetFillColor(clr_xored);
 	_dc.DrawRectangle(x, _start_y + fill_height, _context->FontWidth() * nx, h);
 
@@ -664,6 +705,35 @@ void ConsolePainter::FlushText(unsigned int cx_end)
 	_prev_fit_font_index = 0;
 }
 
+void ConsolePainter::DrawButtonDecorations(unsigned int cx_start, unsigned int cx_end, unsigned int cy) 
+{
+	FlushBackground(cx_end + 1);
+	FlushText(cx_end + 1);
+
+	wxCoord Y1 = cy * _context->FontHeight(), Y2 = cy * _context->FontHeight() + _context->FontHeight() - 1;
+	wxCoord X1 = cx_start * _context->FontWidth(), X2 = cx_end * _context->FontWidth() + _context->FontWidth() - 1;
+	wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
+
+	// WinPortRGB emboss = GetEmbossColor();
+	ComputeAccents();
+	WinPortRGB emboss = _clr_accent_back;
+
+	_dc.SetBrush(wxColour(emboss.r, emboss.g, emboss.b));
+	_dc.DrawRectangle(X1, Y1, W, 1);
+	_dc.DrawRectangle(X1, Y2, W, 1);
+	_dc.DrawRectangle(X1, Y1, 1, H);
+	_dc.DrawRectangle(X2, Y1, 1, H);
+
+	// _dc.SetBrush(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
+
+	emboss = _clr_accent_text;
+	_dc.SetBrush(wxColour(emboss.r, emboss.g, emboss.b));
+	_dc.DrawRectangle(X1 + 1, Y1 + 1, W - 2, 1);
+	_dc.DrawRectangle(X1 + 1, Y2 - 1, W - 2, 1);
+	_dc.DrawRectangle(X1 + 1, Y1 + 1, 1, H - 2);
+	_dc.DrawRectangle(X2 - 1, Y1 + 1, 1, H - 2);
+}
+
 void ConsolePainter::FlushDecorations(unsigned int cx_end)
 {
 	if (!_prev_underlined && !_prev_strikeout) {
@@ -711,12 +781,13 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 	const WinPortRGB &_clr_text;
 	const WinPortRGB &_clr_back;
 
-	inline WXCustomDrawCharPainter(ConsolePainter &painter, const WinPortRGB &clr_text, const WinPortRGB &clr_back)
+	inline WXCustomDrawCharPainter(ConsolePainter &painter, const WinPortRGB &clr_text, const WinPortRGB &clr_back, bool _prev_space)
 		: _painter(painter), _clr_text(clr_text), _clr_back(clr_back)
 	{
 		fw = (wxCoord)_painter._context->FontWidth();
 		fh = (wxCoord)_painter._context->FontHeight(),
 		thickness = (wxCoord)_painter._context->FontThickness();
+		prev_space = _prev_space;
 		_painter.SetFillColor(clr_text);
 	}
 
@@ -747,6 +818,16 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter.SetFillColor(clr_fade);
 	}
 
+	inline void SetAccentBackgroundImpl() {
+		_painter.ComputeAccents();
+		_painter.SetFillColor(_painter._clr_accent_back);
+	}
+	
+	inline void SetAccentForegroundImpl() {
+		_painter.ComputeAccents();
+		_painter.SetFillColor(_painter._clr_accent_text);
+	}
+
 	inline void SetColorEmbossImpl()
 	{
 		WinPortRGB clr_fade;
@@ -768,9 +849,10 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 
 	inline int GetFontAscentImpl()
 	{
-		int w, h, descent, externalLeading; 
-		_painter._dc.GetTextExtent("Ag", &w, &h, &descent, &externalLeading);
-		return _painter._dc.GetCharHeight() - descent;
+		//int w, h, descent, externalLeading; 
+		// _painter._dc.GetTextExtent("Ag", &w, &h, &descent, &externalLeading);
+		// return _painter._dc.GetCharHeight() - descent;
+		return _painter._context->FontHeight() - _painter._context->FontDescent();
 	}
 
 	inline void FillRectangleImpl(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
@@ -836,6 +918,16 @@ void WXCustomDrawChar::Painter::SetColorExtraFaded()
 	((WXCustomDrawCharPainter *)this)->SetColorExtraFadedImpl();
 }
 
+void WXCustomDrawChar::Painter::SetAccentBackground() 
+{
+	((WXCustomDrawCharPainter *)this)->SetAccentBackgroundImpl();
+}
+
+void WXCustomDrawChar::Painter::SetAccentForeground()
+{
+	((WXCustomDrawCharPainter *)this)->SetAccentForegroundImpl();
+}
+
 void WXCustomDrawChar::Painter::SetColorEmboss()
 {
 	((WXCustomDrawCharPainter *)this)->SetColorEmbossImpl();
@@ -884,7 +976,7 @@ void WXCustomDrawChar::Painter::RestoreBrush() {
 	((WXCustomDrawCharPainter *)this)->RestoreBrushImpl();
 }
 
-void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t *wcz, unsigned int nx)
+void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t *wcz, unsigned int nx, bool prev_space)
 {
 	if (!wcz[0] || !WCHAR_IS_VALID(wcz[0])) {
 		wcz = L" ";
@@ -911,10 +1003,11 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 	}
 
 	const WinPortRGB &clr_text = WxConsoleForeground2RGB(attributes);
+	_clr_accent_computed = false;
 
 	if (custom_draw) {
 		FlushBackground(cx + nx);
-		WXCustomDrawCharPainter cdp(*this, clr_text, clr_back);
+		WXCustomDrawCharPainter cdp(*this, clr_text, clr_back, prev_space);
 		cdp.wc = wcz[0];
 		custom_draw(cdp, _start_y, cx);
 		if (underlined || strikeout) {
@@ -1022,3 +1115,44 @@ WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline
 	return _last_colors.rg;
 }
 
+void ConsolePainter::ComputeAccents() {
+	if (_clr_accent_computed) return;
+
+	HoverResult r = ComputeControlAccent(FarToRGB(_clr_text), FarToRGB(_clr_back));
+	_clr_accent_computed = true;
+	_clr_accent_text = RGBtoFar(r.fg_hover);
+	_clr_accent_back = RGBtoFar(r.bg_hover);
+}
+
+WinPortRGB ConsolePainter::GetCursorColor(const WinPortRGB& clr) {
+	// was: WinPortRGB clr_xored(clr.r ^ 0xff, clr.g ^ 0xff, clr.b ^ 0xff);
+
+	if (_clr_for_caret == clr) return _caret_clr;
+	_clr_for_caret = clr;
+
+	// WinPortRGB clr_xored(255 - clr.r, 255 - clr.g, 255 - clr.b);
+	WinPortRGB clr_xored(clr.r ^ 0xff, clr.g ^ 0xff, clr.b ^ 0xff);
+
+	int lum1 = (clr_xored.r * 30 + clr_xored.g * 59 + clr_xored.b * 11) / 100;
+	int lum2 = (clr.r * 30 + clr.g * 59 + clr.b * 11) / 100;
+
+	bool is_bad_for_xor = abs(lum1 - lum2) < 40;
+    
+    if (is_bad_for_xor) {
+        HSL hsl;
+    	RGB rgb = toRGB(clr.r, clr.g, clr.b);
+
+        RGBtoHSL(rgb, hsl.h, hsl.s, hsl.l);
+        hsl.l = 1.0 - hsl.l;
+        if (hsl.l > 0.5)
+            hsl.l = std::min(1.0, hsl.l + 0.15);
+        else
+            hsl.l = std::max(0.0, hsl.l - 0.15);
+        rgb = HSLtoRGB(hsl.h, hsl.s, hsl.l);
+        iRGB r = toIRGB(rgb);
+
+        clr_xored = WinPortRGB(r.r, r.g, r.b);
+    }
+    _caret_clr = clr_xored;
+	return clr_xored;
+}

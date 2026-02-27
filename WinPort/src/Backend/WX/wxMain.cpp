@@ -353,6 +353,12 @@ wxBEGIN_EVENT_TABLE(WinPortFrame, wxFrame)
 	EVT_COMMAND(wxID_ANY, WX_CONSOLE_SAVE_WIN_STATE, WinPortFrame::OnConsoleSaveWindowStateSync)
 wxEND_EVENT_TABLE()
 
+void WinPortFrame::OnSetFocus( wxFocusEvent &event )
+{
+	fprintf(stderr, "frame::OnSetFocus\n");
+	_panel->SetFocus();
+}
+
 WinPortFrame::WinPortFrame(const wxString& title)
 	: _shown(false),  _menu_bar(nullptr)
 {
@@ -2226,7 +2232,7 @@ void WinPortPanel::CheckPutText2CLip()
 
 void WinPortPanel::OnSetFocus( wxFocusEvent &event )
 {
-	//fprintf(stderr, "OnSetFocus\n");
+	fprintf(stderr, "OnSetFocus\n");
 	g_wx_keyboard_leds_state.Current(true);
 	const bool was_focused = (_focused_ts != 0);
 	const DWORD ts = WINPORT(GetTickCount)();

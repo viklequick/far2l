@@ -9,6 +9,7 @@ namespace WXCustomDrawChar
 		wxCoord fh;
 		wxCoord thickness;
 		wchar_t wc;
+		bool prev_space;
 
 		bool MayDrawFadedEdges();
 
@@ -17,6 +18,9 @@ namespace WXCustomDrawChar
 		void SetColorEmboss();
 		void SetColorRed();
 		int GetFontAscent();
+
+		void SetAccentBackground();
+		void SetAccentForeground();
 
 		void FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom);
 		void FillPixel(wxCoord left, wxCoord top);

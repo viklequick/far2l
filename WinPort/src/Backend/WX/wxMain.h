@@ -233,6 +233,7 @@ class WinPortFrame: public wxFrame
 	void OnShow(wxShowEvent &show);
 	void OnClose(wxCloseEvent &show);
 	void OnConsoleSaveWindowStateSync(wxCommandEvent& event);
+	void OnSetFocus( wxFocusEvent &event );
 
 public:
 	WinPortFrame(const wxString& title);

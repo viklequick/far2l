@@ -20,7 +20,7 @@
 #include "Mac/printing.h"
 #endif
 
-static wxFrame *g_winport_frame = nullptr;
+#include "wxMain.h"
 
 class PreviewWatcher : public wxEvtHandler
 {
@@ -36,6 +36,29 @@ public:
     }
 
 private:
+
+	template<typename T> T* FindChildOfType(wxWindow* parent) {
+	    for (wxWindow* w : parent->GetChildren()) {
+	        if (auto p = wxDynamicCast(w, T))
+    	        return p;
+
+        	if (auto p = FindChildOfType<T>(w))
+            	return p;
+    	}
+    	return nullptr;
+	}
+
+	void OnClose(wxCloseEvent& evt) 
+	{ 
+		evt.Skip(); 
+		if (m_parent) {
+			WinPortPanel* panel = FindChildOfType<WinPortPanel>(m_parent);
+			if (panel) panel->SetFocus();
+		}
+        m_tracked -> Unbind(wxEVT_CLOSE_WINDOW, &PreviewWatcher::OnClose, this);
+        delete this;
+	}
+
     void OnWindowCreate(wxWindowCreateEvent& evt)
     {
         wxWindow* win = evt.GetWindow();
@@ -44,12 +67,16 @@ private:
         if (win->IsTopLevel() && ci && wxString(ci->GetClassName()).Contains("wxPreviewFrame"))
         {
             // Make it behave like a floating tool window
+            /*
             long style = win->GetWindowStyle();
             style |= wxSTAY_ON_TOP;
             style |= wxFRAME_TOOL_WINDOW;
             win->SetWindowStyle(style);
+            */
+            m_tracked = win;
 
             win->Bind(wxEVT_SHOW, &PreviewWatcher::OnPreviewShown, this);
+            win->Bind(wxEVT_CLOSE_WINDOW, &PreviewWatcher::OnClose, this);
         }
 
         evt.Skip();
@@ -66,24 +93,20 @@ private:
             win->CentreOnParent(); // Now safe
 
             // m_parent->Enable(true);
-            wxWindow* top = g_winport_frame ? g_winport_frame : wxTheApp->GetTopWindow();
-            top->Enable(true);
-
-            // We're done — remove the watcher
             win->Unbind(wxEVT_SHOW, &PreviewWatcher::OnPreviewShown, this);
-            delete this;
         }
 
         evt.Skip();
     }
 
     wxWindow* m_parent;
+    wxWindow* m_tracked;
 };
 
 void wxPrinterSupportBackend::ensurePrinterCreated () {
 #ifndef MAC_NATIVE_PRINTING
 	if (!html_printer) {
-		wxWindow* top = g_winport_frame ? g_winport_frame : wxTheApp->GetTopWindow();
+		wxWindow* top = wxTheApp->GetTopWindow();
 		html_printer = new wxHtmlEasyPrinting("Printing", top);
 		html_printer->SetStandardFonts(10 /*, "Arial", "Lucida Console" */);
 		// new PreviewWatcher(top);
@@ -92,7 +115,6 @@ void wxPrinterSupportBackend::ensurePrinterCreated () {
 }
 
 wxPrinterSupportBackend::wxPrinterSupportBackend() : html_printer(nullptr) {
-	g_winport_frame = nullptr; // (wxFrame*)frame;
 }
 
 wxPrinterSupportBackend::~wxPrinterSupportBackend() {

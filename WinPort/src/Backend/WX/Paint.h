@@ -67,6 +67,7 @@ public:
 	inline unsigned int FontWidth() const { return _font_width; }
 	inline unsigned int FontHeight() const { return _font_height; }
 	inline unsigned int FontThickness() const { return _font_thickness; }
+	inline unsigned int FontDescent() const { return _font_descent; }
 
 	inline bool CursorBlinkState() const { return _cursor_props.blink_state; }
 };
@@ -108,6 +109,10 @@ class ConsolePainter
 	bool    _prev_bold;
 	std::map<WinPortRGB, wxPen *> _custom_draw_pens;
 
+	WinPortRGB _clr_for_caret {255,255,255}, _caret_clr {0,0,0};
+	WinPortRGB _clr_accent_text {0,0,0}, _clr_accent_back {0,0,0};
+	bool _clr_accent_computed { false };
+
 	friend struct WXCustomDrawCharPainter;
 
 	void PrepareBackground(unsigned int cx, const WinPortRGB &clr, unsigned int nx);
@@ -115,14 +120,17 @@ class ConsolePainter
 	void FlushText(unsigned int cx_end);
 	void FlushDecorations(unsigned int cx_end);
 
+	void ComputeAccents();
+
 	WinPortRGB GetEmbossColor();
+	WinPortRGB GetCursorColor(const WinPortRGB& clr);
+
 
 public:
 	ConsolePainter(ConsolePaintContext *context, wxPaintDC &dc, wxString &_buffer, CursorProps &cursor_props);
 	void SetFillColor(const WinPortRGB &clr);
 
-
-	void NextChar(unsigned int cx, DWORD64 attributes, const wchar_t *wcz, unsigned int nx);
+	void NextChar(unsigned int cx, DWORD64 attributes, const wchar_t *wcz, unsigned int nx, bool prev_space);
 
 	inline void LineBegin(unsigned int cy)
 	{
@@ -135,5 +143,7 @@ public:
 		FlushBackground(cx_end);
 		FlushText(cx_end);
 	}
+
+	void DrawButtonDecorations(unsigned int cx_s, unsigned int cx_e, unsigned int cy);
 };
 

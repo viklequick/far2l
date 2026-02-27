@@ -1820,16 +1820,52 @@ namespace WXCustomDrawChar
 		}
 	}
 
+	static inline wxCoord get2R(const Painter &p, const SingleLineBoxMetrics& m) {
+		wxCoord wx = p.fw; // m.right - m.left;
+		wxCoord wy = p.fh; // m.bottom - m.top;
+		return p.prev_space
+			? (wx < wy - 4 ? wy - 4 : wx) 
+			: (wx > wy ? wx : wy) / 2;
+	}
+
+	static void Draw_checked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ⦿ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+
+		wxCoord _2r = get2R(p, m);
+		wxCoord r = _2r / 2;
+		wxCoord r2 = r / 2;
+		int ascent = p.GetFontAscent();
+
+		wxCoord X1 = m.right - _2r,          Y1 = m.top + ascent - _2r;
+		wxCoord X2 = m.right - _2r + r - r2, Y2 = m.top + ascent - _2r + r - r2;
+
+		p.DrawEllipticArc(X1, Y1, _2r, _2r, 0, 0, 2);
+		p.SetAccentBackground();
+		p.FillEllipticPie(X1 + 1, Y1 + 1, _2r - 2, _2r - 2, 0, 0);
+		p.SetAccentForeground();
+		p.FillEllipticPie(X2, Y2, r, r, 0, 0);
+	}
+
+	static void Draw_unchecked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ◯ */
+	{
+		SingleLineBoxMetrics m(p, start_y, cx);
+		wxCoord _2r = get2R(p, m);
+		int ascent = p.GetFontAscent();
+
+		wxCoord X = m.right - _2r, Y = m.top + ascent - _2r;
+		p.DrawEllipticArc(X, Y, _2r, _2r, 0, 0, 1);
+	}
+
 	static void Draw_unchecked_box(Painter &p, unsigned int start_y, unsigned int cx) /* ☐ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
 
-		wxCoord wx = m.right - m.left;
-		wxCoord wy = m.bottom - m.top;
-		wxCoord r = (wx > wy ? wy : wx) / 2;
+		wxCoord _2r =get2R(p, m);
+		wxCoord r = _2r / 2;
 		int ascent = p.GetFontAscent();
 
-		wxCoord X1 = m.middle_x - r, X2 = m.middle_x + r, Y1 = m.top + ascent - 2 * r - 1, Y2 = m.top + ascent - 1;
+		wxCoord X1 = m.right - _2r, X2 = m.right, Y1 = m.top + ascent - 2 * r - 1, Y2 = m.top + ascent - 1;
 
 		p.FillRectangle(X1, Y1, X1, Y2);
 		p.FillRectangle(X1, Y1, X2, Y1);
@@ -1837,51 +1873,25 @@ namespace WXCustomDrawChar
 		p.FillRectangle(X1, Y2, X2, Y2);
 	}
 	
-	static void Draw_checked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ⦿ */
-	{
-		SingleLineBoxMetrics m(p, start_y, cx);
-		wxCoord wx = m.right - m.left;
-		wxCoord wy = m.bottom - m.top;
-
-		wxCoord _2r = (wx > wy ? wy : wx);
-		wxCoord r = _2r / 2;
-		wxCoord _2r2 = _2r / 2;
-		wxCoord r2 = _2r2 / 2;
-		int ascent = p.GetFontAscent();
-
-		wxCoord X1 = m.middle_x - r,  Y1 = m.top + ascent - _2r;
-		wxCoord X2 = m.middle_x - r2, Y2 = m.top + ascent - _2r + r2;
-
-		p.DrawEllipticArc(X1, Y1, _2r, _2r, 0, 0, 1);
-		p.FillEllipticPie(X2, Y2, _2r2, _2r2, 0, 0);
-	}
-
-	static void Draw_unchecked_radio(Painter &p, unsigned int start_y, unsigned int cx) /* ◯ */
-	{
-		SingleLineBoxMetrics m(p, start_y, cx);
-		wxCoord wx = m.right - m.left;
-		wxCoord wy = m.bottom - m.top;
-		wxCoord _2r = (wx > wy ? wy : wx);
-		wxCoord r = _2r / 2;
-		int ascent = p.GetFontAscent();
-
-		wxCoord X = m.middle_x - r, Y = m.top + ascent - _2r;
-		p.DrawEllipticArc(X, Y, _2r, _2r, 0, 0, 1);
-	}
-
 	static void Draw_checked_sign(Painter &p, unsigned int start_y, unsigned int cx) /* ✔ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
 
-		wxCoord wx = m.right - m.left;
-		wxCoord wy = m.bottom - m.top;
-		wxCoord r = (wx > wy ? wy : wx) / 2;
+		wxCoord _2r = get2R(p, m);
+		wxCoord r = _2r / 2;
 		int ascent = p.GetFontAscent();
 
-		wxCoord X1 = m.middle_x - r, X2 = m.middle_x + r, Y1 = m.top + ascent - 2 * r - 1, Y2 = m.top + ascent - 1;
+		wxCoord X1 = m.right - _2r, X2 = m.right, Y1 = m.top + ascent - 2 * r - 1, Y2 = m.top + ascent - 1;
 
-		p.DrawLine(X2, Y1, X1 + r, Y2, 1);
-		p.DrawLine(X1, Y1 + r, X1 + r, Y2, 1);
+		p.FillRectangle(X1, Y1, X1, Y2);
+		p.FillRectangle(X1, Y1, X2, Y1);
+		p.FillRectangle(X2, Y1, X2, Y2);
+		p.FillRectangle(X1, Y2, X2, Y2);
+		p.SetAccentBackground();
+		p.FillRectangle(X1 + 1, Y1 + 1, X2 - 1, Y2 - 1);
+		p.SetAccentForeground();
+		p.DrawLine(X2 - 1, Y1 + 1, X1 + r, Y2 - 1, 1);
+		p.DrawLine(X1 + 1, Y1 + r, X1 + r, Y2 - 1, 1);
 	}
 
 	static void Draw_Space(Painter &p, unsigned int start_y, unsigned int cx) /* empty */
@@ -2015,6 +2025,49 @@ namespace WXCustomDrawChar
 			case 0x259d: return Draw_259d; /* ▝ */
 			case 0x259e: return Draw_259e; /* ▞ */
 			case 0x259f: return Draw_259f; /* ▟ */
+
+            /* symbols for further improvements: 
+            📁 File Folder			U+1F4C1A	standard closed yellow (usually) folder.
+            📂 Open File Folder		U+1F4C2A	folder shown partially open.
+            🗀  Folder				U+1F5C0A	more "classic" or wireframe-style folder icon.
+            🗁  Open Folder			U+1F5C1		The open version of the classic icon.
+            🗂  Card Index Dividers	U+1F5C2		Looks like a folder with multiple index tabs.
+
+            📄  Page Facing Up 		U+1F4C4  	.txt, .pages, .log
+			📑  Bookmark Tabs  		U+1F4D1  	Indexing, categorized files
+			🗎   Document  			U+1F5CE  	Generic document icon
+			📝  Memo / Note  		U+1F4DD  	.doc, .docx, drafts
+			🖼   Framed Picture  	U+1F5BC  	.jpg, .png, .svg
+			📊  Bar Chart  			U+1F4CA  	.xls, .csv, Sheets
+			📉  Chart Decreasing  	U+1F4C9  	Financial reports
+			🎞   Film Frames  		U+1F39E  	.mp4, .mov, .avi
+			🎵  Musical Note  		U+1F3B5  	.mp3, .wav, .aac
+
+			▯	Rectangle			U+25AF		Generic text document/plain file
+			▭	White Rectangle		U+25AD		Wide document or folder placeholder
+			▱	Parallelogram		U+25B1		Specialized/Legacy file format
+			◧	Square+Left Half	U+25E7		Editable/Work-in-progress
+			▨	Square+DiagonalFill	U+25A8		Compressed/Locked/Read-only
+			▣	Square+Small Center	U+25A9		Application/Executable
+			▤	Square+HorizFill	U+25A4		Data/Log/Database file
+			▥	Square+VerticalFill	U+25A5		Spreadsheet/Tabular data
+			▦	Square+Cross Fill	U+25A6		Archived/Master file
+			◈	Diamond+Center		U+25C8		Script/Configuration file
+
+			🗎	Document			U+1F5CE		Generic Text File
+			🖹	Document with Text	U+1F5B9		Standard .txt or .doc
+			🖺	Document+Picture	U+1F5BA		".jpg, .png, .pdf"
+			🖻	Graphic Document	U+1F5BB		Design or Vector file
+			🗀	Folder				U+1F5C0		Directory / Path
+			🗁	Open Folder			U+1F5C1		Active Directory
+			🗂	Card Index Dividers	U+1F5C2		Archive / Database
+			🗃	Card File Box		U+1F5C3		Data Storage / Backups
+			📋	Clipboard			U+1F4CB		Templates / Paste-ready
+			📎	Paperclip			U+1F4CE		Attachments
+			⚙	Gear				U+2699		".config, .ini, Settings"
+			🗜	Compression			U+1F5DC		".zip, .7z, .tar"
+			💾	Save/Disk			U+1F4BE		System / Executable
+            */
 
 			case 0x1FB00 ... 0x1FB3b: return Draw_1fb00_1fb3b;
 

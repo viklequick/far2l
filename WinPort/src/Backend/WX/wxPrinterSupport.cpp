@@ -114,7 +114,8 @@ void wxPrinterSupportBackend::ensurePrinterCreated () {
 #endif
 }
 
-wxPrinterSupportBackend::wxPrinterSupportBackend() : html_printer(nullptr) {
+wxPrinterSupportBackend::wxPrinterSupportBackend() : html_printer(nullptr) 
+{
 }
 
 wxPrinterSupportBackend::~wxPrinterSupportBackend() {

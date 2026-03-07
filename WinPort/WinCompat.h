@@ -449,6 +449,11 @@ typedef struct _CHAR_INFO {
     // low 16 bits - usual attributes, followed by two 24-bit RGB colors that used
     // if FOREGROUND_TRUECOLOR/BACKGROUND_TRUECOLOR defined and backend supports truecolor
     DWORD64 Attributes;
+
+    union {
+        DWORD64 ExtraFlags;
+        void* ArbitraryPointer;
+    } Extra;
 } CHAR_INFO, *PCHAR_INFO;
 
 #define COMPOSITE_CHAR_MARK (COMP_CHAR(1) << 63)

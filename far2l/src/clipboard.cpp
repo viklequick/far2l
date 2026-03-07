@@ -306,5 +306,6 @@ BOOL EmptyInternalClipboard()
 int Clipboard::SetUseSelectionWhenPossible(int option) 
 {
 	UseSelectionWhenPossible = option; 
+	fprintf(stderr, "SetUseSelectionWhenPossible=%c\n", option > 0 ? 'P' : 'C');
 	return (int)WINPORT(ChooseClipboard)((INT)option);
 }

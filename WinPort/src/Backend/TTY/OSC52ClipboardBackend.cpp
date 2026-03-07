@@ -34,7 +34,7 @@ void *OSC52ClipboardBackend::OnClipboardGetData(UINT format)
 
 	const char*	stx = _interactor->OSC52RequestClipboardData(_is_primary);
 	if (!stx)
-		return nullptr;
+		return FSClipboardBackend::OnClipboardGetData(format);
 
 	std::string _text(stx);
 	if (_text.empty())	

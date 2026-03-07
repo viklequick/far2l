@@ -1273,7 +1273,7 @@ void TTYBackend::OnGetCellSize(unsigned int w, unsigned int h)
 
 void TTYBackend::OnOSC52PasteReply(const std::string& s, bool is_primary_buffer) 
 {
-	// todo: call clipboard backend to fit the request with paste
+	// vk: todo: call clipboard backend to fit the request with paste
 	fprintf(stderr, "TTYBackend: OSC52 paste arrived: %c, %ld length\n", is_primary_buffer ? 'P' : 'C', s.size() );
 	std::unique_lock<std::mutex> lock(_async_mutex);
 	_osc52clip = s;
@@ -1283,6 +1283,7 @@ void TTYBackend::OnOSC52PasteReply(const std::string& s, bool is_primary_buffer)
 
 const char* TTYBackend::OSC52RequestClipboardData(bool is_primary_buffer) 
 {
+	// vk: todo: many terminals do not have / blocks osc52 read, so we need to handle this
 	fprintf(stderr, "TTY: OSC52RequestClipboardData request\n");
 	{
 		std::unique_lock<std::mutex> lock(_async_mutex);
@@ -1293,7 +1294,7 @@ const char* TTYBackend::OSC52RequestClipboardData(bool is_primary_buffer)
 	fprintf(stderr, "TTY: OSC52RequestClipboardData wait for response\n");
 	for(;;) {
 		std::unique_lock<std::mutex> lock(_async_mutex);
-		if(_async_cond.wait_for(lock, std::chrono::milliseconds(500))) {
+		if(_async_cond.wait_for(lock, std::chrono::milliseconds(100))) {
 			if (_ae.osc52clip_get) break;
 		}
 		else {

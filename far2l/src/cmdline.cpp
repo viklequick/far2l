@@ -75,6 +75,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "dialog.hpp"
 #include <limits>
 
+#include "powerline.hpp"
+
 namespace
 {
 void NormalizeMultilineForExec(FARString &text)
@@ -358,11 +360,13 @@ void CommandLine::DisplayObject()
 		strTruncDir = L"> ";
 	} else {
 		GetPrompt(strTruncDir);
-		TruncPathStr(strTruncDir, (X2 - X1) / 2);
+		if(!strTruncDir.Contains(L'\x1b')) {
+			TruncPathStr(strTruncDir, (X2 - X1) / 2);
+		}
 	}
 	const int input_y = Y2;
 	const int width = X2 - X1 + 2;
-	const int prompt_len = (int)strTruncDir.CellsCount();
+	int prompt_len = (int)strTruncDir.CellsCount();
 	if (has_multiline) {
 		const int total_lines = (int)m_multilineLines.size();
 		const int view_lines = std::min(total_lines, kCmdlineMultilineMaxLines);
@@ -391,8 +395,33 @@ void CommandLine::DisplayObject()
 		CmdStr.SetPosition(X1 + prompt_len, active_y, X2, active_y);
 	} else {
 		GotoXY(X1, input_y);
-		SetFarColor(COL_COMMANDLINEPREFIX);
-		Text(strTruncDir);
+		if (strTruncDir.Contains(L'\x1b')) {
+			std::vector<TextSegment> v = ParseColorizedText(strTruncDir.GetWide());
+			prompt_len = v.size();
+			for(size_t i = 0; i < v.size(); ++i) {
+				wchar_t x[2];
+				x[0] = v[i].c;
+				x[1] = L'\0';
+				
+				FarTrueColorForeAndBack tfb;
+				tfb.Fore = v[i].colors.fg;
+				tfb.Back = v[i].colors.bg;
+				tfb.Fore.Flags = tfb.Back.Flags = 1;
+				DWORD64 Attrs;
+
+				FarTrueColorToAttributes(Attrs, tfb);
+				if (v[i].colors.bold) Attrs |= COMMON_LVB_BOLD;
+				Attrs &= ~(COMMON_LVB_UNDERSCORE|COMMON_LVB_STRIKEOUT);
+				SetColor(Attrs);
+				GotoXY(X1 + i, input_y);
+
+				Text(x);
+			}
+		}
+		else {
+			SetFarColor(COL_COMMANDLINEPREFIX);
+			Text(strTruncDir);
+		}
 		CmdStr.SetObjectColor(FarColorToReal(COL_COMMANDLINE), FarColorToReal(COL_COMMANDLINESELECTED));
 		CmdStr.SetPosition(X1 + prompt_len, input_y, X2, input_y);
 	}
@@ -1248,6 +1277,8 @@ int CommandLine::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	return r;
 }
 
+std::string GetPowerlinePrompt(const std::string& curDir);
+
 void CommandLine::GetPrompt(FARString &strDestStr)
 {
 	FARString strExpandedFormatStr;
@@ -1270,7 +1301,8 @@ void CommandLine::GetPrompt(FARString &strDestStr)
 			{L'Q', L'='},		// $Q - = (equal sign)
 			{L'S', L' '},		// $S - (space)
 			{L'$', L'$'},		// $$ - $ (dollar sign)
-	};
+	};  /* used: a b c d e f g h L m n p Q r S t u v z $ # _ + @ */
+        /* free: i j k o w x y -> p[O][W]erl[I]ne */
 
 	const wchar_t *Format = strExpandedFormatStr;
 	while (*Format) {
@@ -1362,6 +1394,13 @@ void CommandLine::GetPrompt(FARString &strDestStr)
 					case L'Z':		// Git Branch
 					{
 						strDestStr+= GetGitBranchName(strCurDir);
+						break;
+					}
+					case 'O': // connect to powerline, get the colored results
+					{
+						std::string lineA = GetPowerlinePrompt(Wide2MB(strCurDir));
+						std::wstring lineW = MB2Wide(lineA.c_str());
+						strDestStr += lineW;
 						break;
 					}
 				}

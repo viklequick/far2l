@@ -980,23 +980,28 @@ void CmdlineSettings()
 
 	DialogBuilder Builder(Msg::ConfigCmdlineTitle, L"CmdlineSettings");
 	AddHistorySettings(Builder, Msg::ConfigSaveHistory, &Opt.SaveHistory, &Opt.HistoryCount);
+	if (Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	Builder.AddCheckbox(Msg::ConfigCmdlineEditBlock, &Opt.CmdLine.EditBlock);
 	Builder.AddCheckbox(Msg::ConfigCmdlineDelRemovesBlocks, &Opt.CmdLine.DelRemovesBlocks);
 	Builder.AddCheckbox(Msg::ConfigCmdlineAutoComplete, &Opt.CmdLine.AutoComplete);
 	Builder.AddCheckbox(Msg::ConfigCmdlineSplitter, &Opt.CmdLine.Splitter);
 
+	if (Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	auto LimitEdit = Builder.AddIntEditField(&Opt.CmdLine.VTLogLimit, 8);
 	Builder.AddTextBefore(LimitEdit, Msg::ConfigCmdlineVTLogLimit);
 
+	if (Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	Builder.AddText(Msg::ConfigCmdlineWaitKeypress);
 	Builder.AddComboBox((int *)&Opt.CmdLine.WaitKeypress, 40, CMWListItems, ARRAYSIZE(CMWListItems),
 			DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE);
 
+	if (Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	auto UsePromptFormat =
 			Builder.AddCheckbox(Msg::ConfigCmdlineUsePromptFormat, &Opt.CmdLine.UsePromptFormat);
 	auto PromptFormat = Builder.AddEditField(&Opt.CmdLine.strPromptFormat, 19);
 	PromptFormat->Indent(4);
 	Builder.LinkFlags(UsePromptFormat, PromptFormat, DIF_DISABLE);
+	if (Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	auto UseShell = Builder.AddCheckbox(Msg::ConfigCmdlineUseShell, &Opt.CmdLine.UseShell);
 	auto Shell = Builder.AddEditField(&Opt.CmdLine.strShell, 19);
 	Shell->Indent(4);

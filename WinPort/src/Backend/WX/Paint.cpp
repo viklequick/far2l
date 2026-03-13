@@ -420,7 +420,7 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		const unsigned int cx_begin = (area.Left > 0 && !line[area.Left].Char.UnicodeChar) ? area.Left - 1 : area.Left;
 		const unsigned int cx_end = std::min(cw, (unsigned)area.Right + 1);
 		bool prev_space = cx_begin > 0 ? line[cx_begin - 1].Char.UnicodeChar == L' ' : false;
-		unsigned int in_button_cx = -1;
+		signed int in_button_cx = -1;
 		bool draw_button = false;
 
 //#define LBTN	L'⟦'
@@ -449,6 +449,8 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		for (unsigned int cx = cx_begin; cx < cx_end; ++cx) {
 			if (!line[cx].Char.UnicodeChar) {
 				painter.LineFlush(cx + 1);
+				draw_button = false;
+				in_button_cx = -1;
 				continue;
 			}
 			const wchar_t *pwcz;
@@ -482,12 +484,14 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 				if (cx < cx_end && line[cx + 1].Char.UnicodeChar == L' ' && (pwcz[0] == LBTN || pwcz[0] == LDEFBTN)) {
 					// pwcz = L" ";
 					in_button_cx = cx;
+					draw_button = false;
 				}
 				// and the end is space + RBTN
-				else if (in_button_cx > 0 && cx > 0 && line[cx - 1].Char.UnicodeChar == L' ' && (pwcz[0] == RBTN || pwcz[0] == RDEFBTN)) {
+				else if (in_button_cx > (int)cx_begin && cx > 0 && line[cx - 1].Char.UnicodeChar == L' ' && (pwcz[0] == RBTN || pwcz[0] == RDEFBTN)) {
 					// we have a button so we can draw it well
 					// pwcz = L" ";
 					draw_button = true;
+                    /* in_button_cx .. cx is a button */
 				}
 			}
 
@@ -495,9 +499,7 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 			painter.NextChar(cx, attributes, pwcz, nx, prev_space);
 
 			if (WXCustomDrawChar::options && WXCustomDrawChar::options->UseModernLook) {
-				if (draw_button) {
-					fprintf(stderr, "button: line=%d..%d, button %lc%d..%d%lc\n", cx_begin, cx_end,
-						wchar_t(line[in_button_cx].Char.UnicodeChar), in_button_cx, cx, wchar_t(line[cx].Char.UnicodeChar));
+				if (draw_button && in_button_cx > 0) {
 					painter.DrawButtonDecorations(in_button_cx, cx, cy);
 					in_button_cx = -1;
 					draw_button = false;
@@ -724,8 +726,10 @@ void ConsolePainter::FlushText(unsigned int cx_end)
 	_prev_fit_font_index = 0;
 }
 
-void ConsolePainter::DrawButtonDecorations(unsigned int cx_start, unsigned int cx_end, unsigned int cy) 
+void ConsolePainter::DrawButtonDecorations(int cx_start, unsigned int cx_end, unsigned int cy) 
 {
+	if(cx_start < 0) return;
+
 	FlushBackground(cx_end + 1);
 	FlushText(cx_end + 1);
 

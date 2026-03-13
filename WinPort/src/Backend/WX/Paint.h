@@ -144,6 +144,6 @@ public:
 		FlushText(cx_end);
 	}
 
-	void DrawButtonDecorations(unsigned int cx_s, unsigned int cx_e, unsigned int cy);
+	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy);
 };
 

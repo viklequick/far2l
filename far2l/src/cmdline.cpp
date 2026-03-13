@@ -1400,6 +1400,16 @@ void CommandLine::GetPrompt(FARString &strDestStr)
 					{
 						std::string lineA = GetPowerlinePrompt(Wide2MB(strCurDir));
 						std::wstring lineW = MB2Wide(lineA.c_str());
+						if (lineW.size() == 0) {
+							const auto &strHome = CachedHomeDir();
+							if (strCurDir.Begins(strHome)) {
+								strDestStr+= L'~';
+								strDestStr+= strCurDir.CPtr() + strHome.GetLength();
+							} else {
+								strDestStr+= strCurDir;
+							}
+							break;
+						}
 						strDestStr += lineW;
 						break;
 					}

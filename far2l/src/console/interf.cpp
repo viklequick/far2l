@@ -1134,7 +1134,7 @@ WCHAR *MakeSeparator(int Length, WCHAR *DestStr, int Type, const wchar_t *UserSe
 			/* 10 */ {BoxSymbols[BS_V1], BoxSymbols[BS_V1], BoxSymbols[BS_V1]},				// |      v1
 			/* 11 */ {BoxSymbols[BS_V2], BoxSymbols[BS_V2], BoxSymbols[BS_V2]},				// ||     v2
 
-            /* copy for case we need to keep separators e g menus */
+            /* copy for case we need to keep separators e g menus / panels */
 			/* 12 */ {BoxSymbols[BS_L_H1V2], BoxSymbols[BS_R_H1V2], BoxSymbols[BS_H1]},		// ||-||  h1b2
 			/* 13 */ {BoxSymbols[BS_L_H1V1], BoxSymbols[BS_R_H1V1], BoxSymbols[BS_H1]},		// |-|    h1b1
 	};

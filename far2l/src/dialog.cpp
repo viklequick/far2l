@@ -758,7 +758,7 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 			добавим энти самые скобки
 		*/
 		if (Type == DI_BUTTON && !(ItemFlags & DIF_NOBRACKETS)) {
-			LPCWSTR BracketsNew[] = {L"⟦ ", L" ⟧", L"⟪ ", L" ⟫"};
+			LPCWSTR BracketsNew[] = {L"► ", L" ◄", L"« ", L" »"};
 			LPCWSTR BracketsOld[] = {L"[ ", L" ]", L"{ ", L" }"};
 			LPCWSTR *Brackets = Opt.Backend.UseModernLook ? BracketsNew : BracketsOld;
 			int Start = (CurItem->DefaultButton ? 2 : 0);

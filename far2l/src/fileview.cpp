@@ -65,11 +65,6 @@ FileViewer::FileViewer(FileHolderPtr NewFileHolder, int EnableSwitch, int Disabl
 	_OT(SysLog(L"[%p] FileViewer::FileViewer(I variant...)", this));
 	SetPosition(0, 0, ScrX, ScrY);
 	Init(NewFileHolder, EnableSwitch, DisableHistory, ViewStartPos, PluginData, ViewNamesList, ToSaveAs);
-
-	MenuBar = new ViewerMenuBar();
-	MenuBar->SetPosition(0, (TitleBarVisible ? 1 : 0), ScrX, (TitleBarVisible ? 1 : 0));
-	// if (!MenuBarVisible) EditMenuBar->Hide0();
-	MenuBar->Show();
 }
 
 FileViewer::FileViewer(FileHolderPtr NewFileHolder, int EnableSwitch, int DisableHistory, const wchar_t *Title,
@@ -106,11 +101,6 @@ FileViewer::FileViewer(FileHolderPtr NewFileHolder, int EnableSwitch, int Disabl
 	FullScreen = (!X1 && !Y1 && X2 == ScrX && Y2 == ScrY);
 	View.SetTitle(Title);
 	Init(NewFileHolder, EnableSwitch, DisableHistory, -1, L"", nullptr, FALSE);
-
-	MenuBar = new ViewerMenuBar();
-	MenuBar->SetPosition(X1, Y1 + (TitleBarVisible ? 1 : 0), X2, Y1 + (TitleBarVisible ? 1 : 0));
-	// if (!MenuBarVisible) EditMenuBar->Hide0();
-	MenuBar->Show();
 }
 
 void FileViewer::Init(FileHolderPtr NewFileHolder, int EnableSwitch, int disableHistory,	///
@@ -153,6 +143,13 @@ void FileViewer::Init(FileHolderPtr NewFileHolder, int EnableSwitch, int disable
 
 	if (!Opt.ViOpt.ShowKeyBar)
 		ViewKeyBar.Hide0();
+
+	MenuBar = new ViewerMenuBar();
+	MenuBar->SetPosition(0, (TitleBarVisible ? 1 : 0), ScrX, (TitleBarVisible ? 1 : 0));
+	if (!MenuBarVisible) 
+		MenuBar->Hide0();
+	else
+		MenuBar->Show();
 
 	ShowConsoleTitle();
 	AutoClose = false;

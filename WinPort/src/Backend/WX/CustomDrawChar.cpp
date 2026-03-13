@@ -1824,7 +1824,7 @@ namespace WXCustomDrawChar
 		wxCoord wx = p.fw; // m.right - m.left;
 		wxCoord wy = p.fh; // m.bottom - m.top;
 		return p.prev_space
-			? (wx < wy - 4 ? wy - 4 : wx) 
+			? wy - 4 /* (wx < wy - 4 ? wy - 4 : wx) */
 			: (wx > wy ? wx : wy) / 2;
 	}
 

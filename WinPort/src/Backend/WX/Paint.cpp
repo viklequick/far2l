@@ -423,13 +423,25 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		unsigned int in_button_cx = -1;
 		bool draw_button = false;
 
-		for(unsigned int cx = cx_begin; cx > 1; --cx) {
-			wchar_t c = line[cx].Char.UnicodeChar;
-			if (c == L'⟧' || c == L'⟫') break;
-			if (c == L'⟦' || c == L'⟪') {
-				if (line[cx - 1].Char.UnicodeChar == L' ') {
-					in_button_cx = cx;
-					break;
+//#define LBTN	L'⟦'
+//#define RBTN	L'⟧'
+//#define LDEFBTN	L'⟪'
+//#define RDEFBTN	L'⟫'
+
+#define LBTN	L'►'
+#define RBTN	L'◄'
+#define LDEFBTN	L'«'
+#define RDEFBTN	L'»'
+
+		if (WXCustomDrawChar::options && WXCustomDrawChar::options->UseModernLook) {
+			for(unsigned int cx = cx_begin; cx > 1; --cx) {
+				wchar_t c = line[cx].Char.UnicodeChar;
+				if (c == RBTN || c == RDEFBTN ) break;
+				if (c == LBTN || c == LDEFBTN ) {
+					if (line[cx + 1].Char.UnicodeChar == L' ') {
+						in_button_cx = cx_begin /* cx is stricter but it is out of renderinfg window so we need to clip it */;
+						break;
+					}
 				}
 			}
 		}
@@ -459,17 +471,22 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 				}
 			}
 
-			if (pwcz[0] == L'⟦' || pwcz[0] == L'⟪') {
-				pwcz = L" ";
-				in_button_cx = cx;
-			}
+			// It are buttons:
+			// 
+			// [ Ok ]
+			// ⟦ Camcel ⟧
+			// ⟪ Cool ⟫
 
-			// ⟦ ok ⟧
-
-			if (in_button_cx >= 0) {
-				if (pwcz[0] == L'⟧' || pwcz[0] == L'⟫') {
+			if (WXCustomDrawChar::options && WXCustomDrawChar::options->UseModernLook) {
+				// begin of button is LBTN + space
+				if (cx < cx_end && line[cx + 1].Char.UnicodeChar == L' ' && (pwcz[0] == LBTN || pwcz[0] == LDEFBTN)) {
+					// pwcz = L" ";
+					in_button_cx = cx;
+				}
+				// and the end is space + RBTN
+				else if (in_button_cx > 0 && cx > 0 && line[cx - 1].Char.UnicodeChar == L' ' && (pwcz[0] == RBTN || pwcz[0] == RDEFBTN)) {
 					// we have a button so we can draw it well
-					pwcz = L" ";
+					// pwcz = L" ";
 					draw_button = true;
 				}
 			}
@@ -477,12 +494,14 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
 			painter.NextChar(cx, attributes, pwcz, nx, prev_space);
 
-			if (draw_button) {
-				fprintf(stderr, "button: line=%d..%d, button %lc%d..%d%lc\n", cx_begin, cx_end, 
-					wchar_t(line[in_button_cx].Char.UnicodeChar), in_button_cx, cx, wchar_t(line[cx].Char.UnicodeChar));
-				painter.DrawButtonDecorations(in_button_cx, cx, cy);
-				in_button_cx = -1;
-				draw_button = false;
+			if (WXCustomDrawChar::options && WXCustomDrawChar::options->UseModernLook) {
+				if (draw_button) {
+					fprintf(stderr, "button: line=%d..%d, button %lc%d..%d%lc\n", cx_begin, cx_end,
+						wchar_t(line[in_button_cx].Char.UnicodeChar), in_button_cx, cx, wchar_t(line[cx].Char.UnicodeChar));
+					painter.DrawButtonDecorations(in_button_cx, cx, cy);
+					in_button_cx = -1;
+					draw_button = false;
+				}
 			}
 
 			prev_space = pwcz[0] == L' ';
@@ -732,6 +751,9 @@ void ConsolePainter::DrawButtonDecorations(unsigned int cx_start, unsigned int c
 	_dc.DrawRectangle(X1 + 1, Y2 - 1, W - 2, 1);
 	_dc.DrawRectangle(X1 + 1, Y1 + 1, 1, H - 2);
 	_dc.DrawRectangle(X2 - 1, Y1 + 1, 1, H - 2);
+
+	_dc.SetBrush(wxColour(_clr_back.r, _clr_back.g, _clr_back.b));
+	_dc.SetPen(_context->GetTransparentPen());
 }
 
 void ConsolePainter::FlushDecorations(unsigned int cx_end)

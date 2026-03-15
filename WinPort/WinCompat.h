@@ -436,6 +436,38 @@ typedef struct _CONSOLE_CURSOR_INFO {
 
 typedef DWORD64 COMP_CHAR;
 
+typedef enum {
+    HintNone = 0,
+    HintConsoleBuffer = 1,
+    HintDialog,
+    HintMenu,
+    JintEditor,
+    HintViewer,
+    HintPanel,
+    HintCommandLine,
+    HintPanic
+} HintContainerType;
+
+typedef enum {
+    HintObjectNone = 0,
+    HintEdit = 1,
+    HintFixEdit,
+    HintPswEdit,
+    HintComboBox,
+    HintMemoEdit,
+    HintButton,
+    HintCheckbox,
+    HintRadioButton,
+    HintListBox,
+    HintUserControl,
+    HintText,
+    HintVerticalText,
+    HintLine,
+    HintBox,
+    HintTitle,
+    HintImage
+} HintObjectType;
+
 typedef struct _CHAR_INFO {
     union {
         // WCHAR or result of CompositeCharRegister() can be differentiated
@@ -453,6 +485,18 @@ typedef struct _CHAR_INFO {
     union {
         DWORD64 ExtraFlags;
         void* ArbitraryPointer;
+        struct {
+            HintContainerType Container; /* e.g menu, dialog, console, editor, viewer, panels, ... */
+            HintObjectType Object; /* e.g push button, text, box, separator, combo box, ...  */
+            
+            int Icon: 8; /* e.g. search, settings, ... */
+            
+            int Focus: 1;
+            int Hover: 1;
+            int Enabled: 1;
+            int Default: 1; 
+            int Beveled: 1;
+        } Hint;
     } Extra;
 } CHAR_INFO, *PCHAR_INFO;
 

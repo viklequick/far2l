@@ -1973,6 +1973,11 @@ void Dialog::ShowDialog(unsigned ID)
 						Text(strStr);
 					else
 						HiText(strStr, ItemColor[1]);
+					
+					Hint(X1 + CX1, Y1 + CY1, X1 + CX2, Y1 + CY1, HintDialog, HintBox);
+					Hint(X1 + CX1, Y1 + CY1, X1 + CX1, Y1 + CY2, HintDialog, HintBox);
+					Hint(X1 + CX2, Y1 + CY1, X1 + CX2, Y1 + CY2, HintDialog, HintBox);
+					Hint(X1 + CX2, Y1 + CY1, X1 + CX2, Y1 + CY2, HintDialog, HintBox);
 
 /**
 					if (CurItem->Flags & DIF_SHOWAMPERSAND)
@@ -2064,10 +2069,10 @@ void Dialog::ShowDialog(unsigned ID)
 				if (CurItem->Flags & (DIF_SEPARATORUSER | DIF_SEPARATOR | DIF_SEPARATOR2)) {
 //					SetColorFrame(Attr, CurItem->TrueColors);
 					SetColor(ItemColor[2]);
-					GotoXY(X1
-									+ ((CurItem->Flags & DIF_SEPARATORUSER)
-													? X
-													: (!DialogMode.Check(DMODE_SMALLDIALOG) ? 3 : 0)),
+					GotoXY(X1 + 
+								((CurItem->Flags & DIF_SEPARATORUSER)
+								? X
+								: (!DialogMode.Check(DMODE_SMALLDIALOG) ? 3 : 0));,
 							Y1 + Y);	//????
 					ShowUserSeparator((CurItem->Flags & DIF_SEPARATORUSER)
 									? X2 - X1 + 1
@@ -2076,6 +2081,7 @@ void Dialog::ShowDialog(unsigned ID)
 									? 12
 									: (CurItem->Flags & DIF_SEPARATOR2 ? 3 : 1),
 							CurItem->strMask);
+					 Hint(X1 + CX1, Y1 + CY1, X1 + CX2, Y1 + CY1, HintDialog, HintLine);
 				}
 
 //				SetColorNormal(Attr, CurItem->TrueColors);
@@ -2184,9 +2190,9 @@ void Dialog::ShowDialog(unsigned ID)
 				GotoXY(X1 + X, Y1 + Y);
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
-					VText(strStr);
+					VText(strStr, HintDialog, HintText);
 				else
-					HiText(strStr, ItemColor[1], TRUE);
+					HiText(strStr, ItemColor[1], HintDialog, HintText, TRUE);
 
 				break;
 			}
@@ -2234,11 +2240,12 @@ void Dialog::ShowDialog(unsigned ID)
 					strStr.TruncateByCells(ObjWidth - 1);
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
-					Text(strStr);
+					Text(strStr, HintDialog, HintCheckbox);
 				else
-					HiText(strStr, ItemColor[1]);
+					HiText(strStr, ItemColor[1], HintDialog, HintCheckbox);
 
 				if (CurItem->Focus) {
+					// todo: focus highlighting
 					// Отключение мигающего курсора при перемещении диалога
 					if (!DialogMode.Check(DMODE_DRAGGED))
 						SetCursorType(1, -1);
@@ -2256,9 +2263,9 @@ void Dialog::ShowDialog(unsigned ID)
 				GotoXY(X1 + CX1, Y1 + CY1);
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
-					Text(strStr);
+					Text(strStr, HintDialog, HintButton);
 				else
-					HiText(strStr,ItemColor[1]);
+					HiText(strStr,ItemColor[1], HintDialog, HintButton);
 //					HiText(strStr, HIBYTE(LOWORD(Attr)));
 
 				if (CurItem->Flags & DIF_SETSHIELD) {
@@ -2301,11 +2308,12 @@ void Dialog::ShowDialog(unsigned ID)
 				if (DialogMode.Check(DMODE_DRAGGED))
 					SetCursorType(0, 0);
 
+				// todo: set hints for edit fields
 				if (ItemHasDropDownArrow(CurItem)) {
 					int EditX1, EditY1, EditX2, EditY2;
 					EditPtr->GetPosition(EditX1, EditY1, EditX2, EditY2);
 					// Text((CurItem->Type == DI_COMBOBOX?"\x1F":"\x19"));
-					Text(EditX2 + 1, EditY1, ItemColor[3], L"\x2193");
+					Text(EditX2 + 1, EditY1, ItemColor[3], L"\x2193", HintDialog, HintEditor);
 				}
 
 				if (CurItem->Type == DI_COMBOBOX && GetDropDownOpened() && CurItem->ListPtr->IsVisible())		// need redraw VMenu?

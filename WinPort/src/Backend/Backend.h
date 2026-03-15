@@ -199,9 +199,9 @@ public:
 	virtual bool Read(CHAR_INFO &data, COORD screen_pos) = 0;
 	virtual bool Write(const CHAR_INFO &data, COORD screen_pos) = 0;
 
-	virtual size_t WriteString(const WCHAR *data, size_t count) = 0;
-	virtual size_t WriteStringAt(const WCHAR *data, size_t count, COORD &pos) = 0;
-	virtual size_t FillCharacterAt(WCHAR cCharacter, size_t count, COORD &pos) = 0;
+	virtual size_t WriteString(const WCHAR *data, size_t count, HintContainerType, HintObjectType) = 0;
+	virtual size_t WriteStringAt(const WCHAR *data, size_t count, COORD &pos, HintContainerType, HintObjectType) = 0;
+	virtual size_t FillCharacterAt(WCHAR cCharacter, size_t count, COORD &pos, HintContainerType, HintObjectType) = 0;
 	virtual size_t FillAttributeAt(DWORD64 qAttribute, size_t count, COORD &pos) = 0;
 
 	virtual bool Scroll(const SMALL_RECT *lpScrollRectangle, const SMALL_RECT *lpClipRectangle,

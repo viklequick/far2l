@@ -155,6 +155,13 @@ void FileViewer::Init(FileHolderPtr NewFileHolder, int EnableSwitch, int disable
 	AutoClose = false;
 	F3KeyOnly = true;
 
+	MenuBar = new ViewerMenuBar();
+	MenuBar->SetPosition(0, (TitleBarVisible ? 1 : 0), ScrX, (TitleBarVisible ? 1 : 0));
+	if (!MenuBarVisible) 
+		MenuBar->Hide0();
+	else
+		MenuBar->Show();
+
 	if (EnableSwitch) {
 		FrameManager->InsertFrame(this);
 	} else {
@@ -210,7 +217,7 @@ void FileViewer::Show()
 		int gap = (Opt.ViOpt.ShowTitleBar ? 1 : 0) + (Opt.ViOpt.ShowMenuBar ? 1 : 0);
 		View.SetPosition(0, gap, ScrX, ScrY - (Opt.ViOpt.ShowKeyBar ? 1 : 0));
 
-		if (MenuBarVisible) {
+		if (MenuBar && MenuBarVisible) {
 			MenuBar->SetPosition(0, TitleBarVisible ? 1 : 0, ScrX, TitleBarVisible ? 1 : 0);
 			MenuBar->Show();
 		}
@@ -223,7 +230,7 @@ void FileViewer::Show()
 void FileViewer::DisplayObject()
 {
 	View.Show();
-	if (MenuBarVisible) MenuBar->DisplayObject();
+	if (MenuBar && MenuBarVisible) MenuBar->DisplayObject();
 }
 
 int64_t FileViewer::VMProcess(MacroOpcode OpCode, void *vParam, int64_t iParam)

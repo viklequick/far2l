@@ -2072,7 +2072,7 @@ void Dialog::ShowDialog(unsigned ID)
 					GotoXY(X1 + 
 								((CurItem->Flags & DIF_SEPARATORUSER)
 								? X
-								: (!DialogMode.Check(DMODE_SMALLDIALOG) ? 3 : 0));,
+								: (!DialogMode.Check(DMODE_SMALLDIALOG) ? 3 : 0)),
 							Y1 + Y);	//????
 					ShowUserSeparator((CurItem->Flags & DIF_SEPARATORUSER)
 									? X2 - X1 + 1
@@ -2081,7 +2081,7 @@ void Dialog::ShowDialog(unsigned ID)
 									? 12
 									: (CurItem->Flags & DIF_SEPARATOR2 ? 3 : 1),
 							CurItem->strMask);
-					 Hint(X1 + CX1, Y1 + CY1, X1 + CX2, Y1 + CY1, HintDialog, HintLine);
+					 HintAt(HintDialog, HintLine, false, false, (CurItem->Flags & DIF_DISABLE) != 0);
 				}
 
 //				SetColorNormal(Attr, CurItem->TrueColors);
@@ -2095,6 +2095,7 @@ void Dialog::ShowDialog(unsigned ID)
 					// MessageBox(0, strStr, strStr, MB_OK);
 					HiText(strStr, ItemColor[1]);
 				}
+				HintAt(HintDialog, HintText, false, false, (CurItem->Flags & DIF_DISABLE) != 0);
 
 				break;
 			}
@@ -2182,6 +2183,7 @@ void Dialog::ShowDialog(unsigned ID)
 									? 13
 									: (CurItem->Flags & DIF_SEPARATOR2 ? 7 : 5),
 							CurItem->strMask);
+					HintAt(HintDialog, HintLine, false, false, (CurItem->Flags & DIF_DISABLE) != 0);
 				}
 
 #endif
@@ -2190,10 +2192,10 @@ void Dialog::ShowDialog(unsigned ID)
 				GotoXY(X1 + X, Y1 + Y);
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
-					VText(strStr, HintDialog, HintText);
+					VText(strStr);
 				else
-					HiText(strStr, ItemColor[1], HintDialog, HintText, TRUE);
-
+					HiText(strStr, ItemColor[1], TRUE);
+				HintAt(HintDialog, HintText, false, false, (CurItem->Flags & DIF_DISABLE) != 0);
 				break;
 			}
 			/* ***************************************************************** */
@@ -2240,12 +2242,12 @@ void Dialog::ShowDialog(unsigned ID)
 					strStr.TruncateByCells(ObjWidth - 1);
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
-					Text(strStr, HintDialog, HintCheckbox);
+					Text(strStr);
 				else
-					HiText(strStr, ItemColor[1], HintDialog, HintCheckbox);
+					HiText(strStr, ItemColor[1]);
+				HintAt(HintDialog, HintCheckbox, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0);
 
-				if (CurItem->Focus) {
-					// todo: focus highlighting
+				if (CurItem->Focus && !Opt.Backend.UseModernLook) {
 					// Отключение мигающего курсора при перемещении диалога
 					if (!DialogMode.Check(DMODE_DRAGGED))
 						SetCursorType(1, -1);
@@ -2263,10 +2265,11 @@ void Dialog::ShowDialog(unsigned ID)
 				GotoXY(X1 + CX1, Y1 + CY1);
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
-					Text(strStr, HintDialog, HintButton);
+					Text(strStr);
 				else
-					HiText(strStr,ItemColor[1], HintDialog, HintButton);
+					HiText(strStr,ItemColor[1]);
 //					HiText(strStr, HIBYTE(LOWORD(Attr)));
+				HintAt(HintDialog, HintButton, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0);
 
 				if (CurItem->Flags & DIF_SETSHIELD) {
 					int startx = X1 + CX1 + (CurItem->Flags & DIF_NOBRACKETS ? 0 : 2);
@@ -2313,7 +2316,8 @@ void Dialog::ShowDialog(unsigned ID)
 					int EditX1, EditY1, EditX2, EditY2;
 					EditPtr->GetPosition(EditX1, EditY1, EditX2, EditY2);
 					// Text((CurItem->Type == DI_COMBOBOX?"\x1F":"\x19"));
-					Text(EditX2 + 1, EditY1, ItemColor[3], L"\x2193", HintDialog, HintEditor);
+					Text(EditX2 + 1, EditY1, ItemColor[3], L"\x2193");
+					HintAt(HintDialog, HintMemoEdit, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0);
 				}
 
 				if (CurItem->Type == DI_COMBOBOX && GetDropDownOpened() && CurItem->ListPtr->IsVisible())		// need redraw VMenu?
@@ -2343,6 +2347,8 @@ void Dialog::ShowDialog(unsigned ID)
 					GetCursorType(CursorVisible, CursorSize);
 					CurItem->ListPtr->Show();
 
+					// todo: hint 
+
 					// .. а теперь восстановим!
 					if (FocusPos != I)
 						SetCursorType(CursorVisible, CursorSize);
@@ -2365,6 +2371,9 @@ void Dialog::ShowDialog(unsigned ID)
 						}
 					}
 				}
+
+				// todo: hint 
+
 				// не забудем переместить курсор, если он позиционирован.
 				if (FocusPos == I) {
 					if (CurItem->UCData->CursorPos.X != -1 && CurItem->UCData->CursorPos.Y != -1) {

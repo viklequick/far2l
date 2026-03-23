@@ -534,6 +534,24 @@ void Text(const WCHAR Ch, size_t Length)
 	Text(Ch, CurColor, Length);
 }
 
+void Hint(
+		int X1, int Y1, int X2, int Y2, 
+		HintContainerType hcc, 
+		HintObjectType hco, 
+		bool focused, bool hovered, bool disabled) 
+{
+	// todo: set char infom nextra data with specific region
+}
+
+void HintAt(
+		HintContainerType hcc, 
+		HintObjectType hco, 
+		bool focused, bool hovered, bool disabled) 
+{
+	// todo: set char infom nextra data with specific region
+	// todo: grabs last region to be updated and then Hint()
+}
+
 void Text(const WCHAR *Str, size_t Length)
 {
 	if (Length == (size_t)-1)

@@ -621,8 +621,8 @@ HoverResult ComputeControlAccent(const RGB& fg, const RGB& bg)
     bool dark_theme = (lum_bg < 0.5);
 
     RGB accent = dark_theme
-        ? toRGB(80, 140, 255)   // bright blue for dark theme
-        : toRGB( 0, 120, 215);  // Windows-like blue for light theme
+        ? toRGB( 215, 140, 0 )    // toRGB(80, 140, 255)   // bright blue for dark theme / toRGB( 215, 140, 0 ) orange toRGB(0x7F, 0x4F, 0x8C) violet
+        : toRGB( 0, 120, 255);    // Windows-like blue for light theme
 
     HSL h;
     RGBtoHSL(accent, h.h, h.s, h.l);

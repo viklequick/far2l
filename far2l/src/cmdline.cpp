@@ -634,7 +634,7 @@ std::string CommandLine::GetConsoleLog(HANDLE con_hnd, bool colored)
 void CommandLine::ChangeDirFromHistory(bool PluginPath, int SelectType, FARString strDir, FARString strFile)
 {
 	if (SelectType == 2)
-		CtrlObject->FolderHistory->SetAddMode(false, 2, true);
+		CtrlObject->FolderHistory->SetAddMode(false, HISTORY_REMOVE_DUPS_CASE_INSENSITIVE, true);
 
 	// пусть плагин сам прыгает... ;-)
 	Panel *Panel = CtrlObject->Cp()->ActivePanel;
@@ -653,7 +653,7 @@ void CommandLine::ChangeDirFromHistory(bool PluginPath, int SelectType, FARStrin
 				CtrlObject->Cp()->ActivePanel->SetCurPath();
 			}
 			Panel->Redraw();
-			CtrlObject->FolderHistory->SetAddMode(true, 2, true);
+			CtrlObject->FolderHistory->SetAddMode(true, HISTORY_REMOVE_DUPS_CASE_INSENSITIVE, true);
 		}
 	}
 }
@@ -1441,7 +1441,7 @@ void CommandLine::ShowViewEditHistory()
 		if (SelectType != 2)
 			CtrlObject->ViewHistory->AddToHistory(strStr, Type);
 
-		CtrlObject->ViewHistory->SetAddMode(false, 1, true);
+		CtrlObject->ViewHistory->SetAddMode(false, HISTORY_REMOVE_DUPS_CASE_SENSITIVE, true);
 
 		switch (Type) {
 			case 0:		// вьювер
@@ -1483,7 +1483,7 @@ void CommandLine::ShowViewEditHistory()
 			}
 		}
 
-		CtrlObject->ViewHistory->SetAddMode(true, 1, true);
+		CtrlObject->ViewHistory->SetAddMode(true, HISTORY_REMOVE_DUPS_CASE_SENSITIVE, true);
 	}
 	else if (SelectType == 3)		// скинуть из истории в ком.строку?
 		SetString(strStr);

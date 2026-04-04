@@ -514,13 +514,14 @@ ContrastLevel ComputeContrast(const RGB& fg, const RGB& bg, RGB& newFg) {
     if (goodLab && goodWcag)
         return ContrastLevel::Good;
 
-    if (warnLab || warnWcag)
-        return ContrastLevel::Warning;
+    //if (warnLab || warnWcag)
+    //    return ContrastLevel::Warning;
 
     double targetDeltaE = 30;
     for (int i = 0; i < 50; ++i) {
         double dE = deltaE2000(labFg, labBg);
         if (dE >= targetDeltaE) {
+            newFg = LABtoRGB(labFg);
             return ContrastLevel::Good;
         }
 
@@ -535,6 +536,29 @@ ContrastLevel ComputeContrast(const RGB& fg, const RGB& bg, RGB& newFg) {
         labFg.L = std::clamp(labFg.L, 0.0, 100.0);
     }
 
+    // no way to lighten -> try to make darken
+
+    labFg = RGBtoLAB(fg);
+    for (int i = 0; i < 50; ++i) {
+        double dE = deltaE2000(labFg, labBg);
+        if (dE >= targetDeltaE) {
+            newFg = LABtoRGB(labFg);
+            return ContrastLevel::Good;
+        }
+
+        double diff = targetDeltaE - dE;
+        double step = std::clamp(diff * 0.25, 0.5, 3.0);
+
+        if (labBg.L > 0.5)
+            labFg.L -= step;   // darken foreground
+        else
+            labFg.L += step;   // lighten foreground
+
+        labFg.L = std::clamp(labFg.L, 0.0, 100.0);
+    }
+
+    // keep unchanged
+    // newFg = LABtoRGB(labFg);
     return ContrastLevel::Bad;
 }
 

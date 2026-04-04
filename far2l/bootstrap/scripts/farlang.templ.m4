@@ -29202,6 +29202,17 @@ upd:"Text shadows instead of bold fonts"
 upd:"Text shadows instead of bold fonts"
 upd:"Text shadows instead of bold fonts"
 
+EnforceColorCorrection
+"Выравнивать контрастность цветов автоматически"
+"Auto-adjust colors contrast"
+upd:"Auto-adjust colors contrast"
+upd:"Auto-adjust colors contrast"
+upd:"Auto-adjust colors contrast"
+upd:"Auto-adjust colors contrast"
+upd:"Auto-adjust colors contrast"
+upd:"Auto-adjust colors contrast"
+upd:"Auto-adjust colors contrast"
+
 #Must be the last
 NewFileName
 l:

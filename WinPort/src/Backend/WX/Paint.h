@@ -125,6 +125,25 @@ class ConsolePainter
 	WinPortRGB GetEmbossColor();
 	WinPortRGB GetCursorColor(const WinPortRGB& clr);
 
+    struct CustomCharPos {
+    	wchar_t cc;
+    	WXCustomDrawChar::DrawT custom_draw;
+    	DWORD64 attributes;
+    	unsigned cx;
+    	unsigned nx;
+    	bool prev_space;
+
+    	CustomCharPos(wchar_t _cc, WXCustomDrawChar::DrawT _custom_draw, DWORD64 _attributes, unsigned _cx, unsigned _nx, bool _prev_space) {
+        	cc = _cc;
+            custom_draw = _custom_draw;
+            attributes = _attributes;
+            cx = _cx;
+            nx = _nx;
+            prev_space = _prev_space;
+    	}
+    };
+
+    std::vector<CustomCharPos> line_custom_chars;
 
 public:
 	ConsolePainter(ConsolePaintContext *context, wxPaintDC &dc, wxString &_buffer, CursorProps &cursor_props);
@@ -136,14 +155,22 @@ public:
 	{
 		_start_cy = cy;
 		_start_y = cy * _context->FontHeight();
+		line_custom_chars.clear();
 	}
 
 	inline void LineFlush(unsigned int cx_end)
 	{
 		FlushBackground(cx_end);
 		FlushText(cx_end);
+
+		for(size_t x = 0; x < line_custom_chars.size(); ++x) {
+			CustomCharPos c = line_custom_chars[x];
+			DrawCustomCharImpl(c.cc, c.custom_draw, c.attributes, c.cx, c.nx, c.prev_space);
+		}
+		line_custom_chars.clear();
 	}
 
 	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy);
+	bool DrawCustomChar(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;
+	bool DrawCustomCharImpl(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;
 };
-

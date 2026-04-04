@@ -890,10 +890,12 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		wxBrush oldBrush = _painter._dc.GetBrush(); 
 		wxColour brushColor = oldBrush.GetColour();
 		wxPen oldPen = _painter._dc.GetPen(); 
-		_painter._dc.SetPen(wxPen(brushColor, thickness < 1 ? 1 : thickness));
 
+		_painter._dc.SetPen(wxPen(brushColor, thickness < 1 ? 1 : thickness));
 		_painter._dc.SetBrush(*wxTRANSPARENT_BRUSH);
+
 		_painter._dc.DrawEllipticArc(left, top, width, height, start, end);
+		
 		_painter._dc.SetBrush(oldBrush);
 		_painter._dc.SetPen(oldPen);
 	}
@@ -914,17 +916,18 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter._dc.SetPen(oldPen);
 	}
 
-	wxBrush savedBrush;
-	wxPen savedPen;
+	// wxBrush savedBrush;
+	// wxPen savedPen;
 
 	inline void SaveBrushImpl() {
-		savedBrush = _painter._dc.GetBrush();
-		savedPen = _painter._dc.GetPen();
+		// savedBrush = _painter._dc.GetBrush();
+		// savedPen = _painter._dc.GetPen();
 	}
 
 	inline void RestoreBrushImpl() {
-		_painter._dc.SetBrush(savedBrush);
-		_painter._dc.SetPen(savedPen);
+		//_painter._dc.SetBrush(savedBrush);
+		//_painter._dc.SetPen(savedPen);
+		_painter.SetFillColor(_clr_text);
 	}
 };
 
@@ -1002,6 +1005,39 @@ void WXCustomDrawChar::Painter::RestoreBrush() {
 	((WXCustomDrawCharPainter *)this)->RestoreBrushImpl();
 }
 
+bool ConsolePainter::DrawCustomCharImpl(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) 
+{
+	WinPortRGB clr_back = WxConsoleBackground2RGB(attributes);
+	PrepareBackground(cx, clr_back, nx);
+	const bool underlined = (attributes & COMMON_LVB_UNDERSCORE) != 0;
+	const bool strikeout = (attributes & COMMON_LVB_STRIKEOUT) != 0;
+	WinPortRGB clr_text = WxConsoleForeground2RGB(attributes);
+
+    if (custom_draw) {
+		FlushBackground(cx + nx);
+		WXCustomDrawCharPainter cdp(*this, clr_text, clr_back, prev_space);
+		cdp.wc = cc;
+		custom_draw(cdp, _start_y, cx);
+		/* bold does not affect to custom draws as it are unicode glyphs, borders etc */
+		if (underlined || strikeout) {
+			_start_cx = cx;
+			_prev_underlined = underlined;
+			_prev_strikeout = strikeout;
+			_clr_text = clr_text;
+			FlushDecorations(cx + nx);
+		}
+		_start_cx = (unsigned int)-1;
+		_prev_fit_font_index = 0;
+	}
+	return custom_draw != nullptr;
+}
+
+bool ConsolePainter::DrawCustomChar(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) {
+	if (custom_draw) 
+		line_custom_chars.push_back(CustomCharPos(cc, custom_draw, attributes, cx, nx, prev_space));
+	return custom_draw != nullptr;
+}
+
 void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t *wcz, unsigned int nx, bool prev_space)
 {
 	if (!wcz[0] || !WCHAR_IS_VALID(wcz[0])) {
@@ -1031,21 +1067,7 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 	const WinPortRGB &clr_text = WxConsoleForeground2RGB(attributes);
 	_clr_accent_computed = false;
 
-	if (custom_draw) {
-		FlushBackground(cx + nx);
-		WXCustomDrawCharPainter cdp(*this, clr_text, clr_back, prev_space);
-		cdp.wc = wcz[0];
-		custom_draw(cdp, _start_y, cx);
-		if (underlined || strikeout) {
-			_start_cx = cx;
-			_prev_underlined = underlined;
-			_prev_strikeout = strikeout;
-			_clr_text = clr_text;
-			FlushDecorations(cx + nx);
-		}
-        /* bold doers not affect to custom draws as it are unicode glyphs, borders etc */
-		_start_cx = (unsigned int)-1;
-		_prev_fit_font_index = 0;
+	if (custom_draw && DrawCustomChar(wcz[0], custom_draw, attributes, cx, nx, prev_space)) {
 		return;
 	}
 

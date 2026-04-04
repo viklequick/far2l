@@ -111,10 +111,18 @@ void wxPrinterSupportBackend::ensurePrinterCreated () {
 		html_printer->SetStandardFonts(10 /*, "Arial", "Lucida Console" */);
 		// new PreviewWatcher(top);
 	}
+
+    /*
+	if (!text_printer) {
+		wxWindow* top = wxTheApp->GetTopWindow();
+		text_printer = new wxRichTextPrinting("Printing", top);
+		// text_printer->SetStandardFonts(10);
+		// new PreviewWatcher(top);
+	}*/
 #endif
 }
 
-wxPrinterSupportBackend::wxPrinterSupportBackend() : html_printer(nullptr) 
+wxPrinterSupportBackend::wxPrinterSupportBackend() : html_printer(nullptr), text_printer(nullptr) 
 {
 }
 
@@ -122,6 +130,8 @@ wxPrinterSupportBackend::~wxPrinterSupportBackend() {
 #ifndef MAC_NATIVE_PRINTING
 	if (html_printer) delete html_printer;
 	html_printer = nullptr;
+	// if (text_printer) delete text_printer;
+	// text_printer = nullptr;
 #endif
 }
 
@@ -133,18 +143,20 @@ void wxPrinterSupportBackend::PrintText(const wchar_t* jobName, const wchar_t* t
 		return;
 	}
 
-	ensurePrinterCreated ();
+	ensurePrinterCreated();
 
 	wxString wxText(text); 
 
 #ifndef MAC_NATIVE_PRINTING
+	/*
 	wxRichTextBuffer buffer; 
 	wxArrayString lines = wxSplit(wxText, '\n'); 
 	
 	for (auto& line : lines) buffer.AddParagraph(line);
 
-	wxRichTextPrinting rtf_printer(jobName, wxTheApp->GetTopWindow());
-	rtf_printer.PrintBuffer(buffer);
+	text_printer->PrintBuffer(buffer);
+    */
+    PrintReducedHTML(jobName, text);
 #else
 	MacNativePrintText(wxText);
 #endif
@@ -176,11 +188,11 @@ void wxPrinterSupportBackend::PrintTextFile(const wchar_t* fileName)
 		return;
 	}
 
-	ensurePrinterCreated ();
+	ensurePrinterCreated();
 
 #ifndef MAC_NATIVE_PRINTING
-	wxRichTextPrinting rtf_printer(fileName, wxTheApp->GetTopWindow());
-	rtf_printer.PrintFile(fileName);
+	// text_printer->PrintFile(fileName);
+	PrintHtmlFile(fileName);
 #else
 	wxString wxText(fileName); 
 	MacNativePrintTextFile(wxText);
@@ -215,16 +227,18 @@ void wxPrinterSupportBackend::ShowPreviewForText(const wchar_t* jobName, const w
 		return;
 	}
 
-	ensurePrinterCreated ();
+	ensurePrinterCreated();
 
 #ifndef MAC_NATIVE_PRINTING
+	/*
 	wxRichTextBuffer buffer; 
 	wxString wxText(text); 
 	wxArrayString lines = wxSplit(wxText, '\n'); 
 	for (auto& line : lines) buffer.AddParagraph(line);
 
-	wxRichTextPrinting rtf_printer(jobName, wxTheApp->GetTopWindow());
-	rtf_printer.PreviewBuffer(buffer);
+	text_printer->PreviewBuffer(buffer);
+    */
+    ShowPreviewForReducedHTML(jobName, text);
 #else
 	wxString wxText(text); 
 	MacNativePrintPreviewText(wxText);
@@ -259,11 +273,14 @@ void wxPrinterSupportBackend::ShowPreviewForTextFile(const wchar_t* fileName)
 		return;
 	}
 
-	ensurePrinterCreated ();
+	ensurePrinterCreated();
+
+	fprintf(stderr, "wxPrinterSupportBackend::ShowPreviewForTextFile(`%ls`)\n", fileName);
 
 #ifndef MAC_NATIVE_PRINTING
-	wxRichTextPrinting rtf_printer(fileName, wxTheApp->GetTopWindow());
-	rtf_printer.PreviewFile(fileName);
+	//text_printer->PreviewFile(fileName);
+	// text_printer->PrintFile(fileName, true);
+	ShowPreviewForHtmlFile(fileName);
 #else
 	wxString wxText(fileName); 
 	MacNativePrintPreviewTextFile(wxText);

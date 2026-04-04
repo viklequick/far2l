@@ -716,6 +716,20 @@ void InterfaceSettings()
 			Builder.AddCheckbox(Msg::ConfigTTYPaletteOverride, &Opt.TTYPaletteOverride);
 		}
 
+    	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+    	Builder.AddCheckbox(Msg::EnforceColorCorrection, (BOOL *)&Opt.Dialogs.EnforceColorCorrection);
+
+    	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+    	Builder.AddCheckbox(Msg::UseModernLook, (BOOL *)&Opt.Backend.UseModernLook);
+
+        if (supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) {
+        	Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, (BOOL *)&Opt.Backend.UseRoundedBorders);
+        	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, (BOOL *)&Opt.Backend.UseSingleBordersOnly);
+        	Builder.AddCheckbox(Msg::UseModernLookNoBorders, (BOOL *)&Opt.Backend.UseNoBorders);
+        	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, (BOOL *)&Opt.Backend.UseEmbossAsBold);
+        }
+    	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+
 		Builder.AddText(Msg::ConfigWindowTitle);
 		Builder.AddEditField(&Opt.strWindowTitle, 47);
 
@@ -727,6 +741,7 @@ void InterfaceSettings()
 		Builder.AddOKCancel();
 
 		int clicked_id = -1;
+       	bool oldColorCC = Opt.Dialogs.EnforceColorCorrection;
 		if (Builder.ShowDialog(&clicked_id)) {
 			if (Opt.CMOpt.CopyTimeRule)
 				Opt.CMOpt.CopyTimeRule = 3;
@@ -743,6 +758,15 @@ void InterfaceSettings()
 			CtrlObject->Cp()->SetScreenPosition();
 			// $ 10.07.2001 SKV ! надо это делать, иначе если кейбар спрятали, будет полный рамс.
 			CtrlObject->Cp()->Redraw();
+
+       		if (Opt.Dialogs.EnforceColorCorrection != oldColorCC) {
+       			// FarColors::FARColors.AdjustContrastLevels();
+       			FarColors::FARColors.Set();
+       		}
+
+       		if (Opt.Backend.UseModernLook) {
+       			fprintf(stderr, "Modern Look = ON\n");
+       		}
 
 			ApplyConsoleTweaks();
 			WINPORT(SetConsoleCursorBlinkTime)(NULL, Opt.CursorBlinkTime);
@@ -922,19 +946,13 @@ void DialogSettings()
 			&Opt.DialogsHistoryCount);
 	
 	if (Opt.Backend.UseModernLook) Builder.AddEmptyLine();
-	Builder.AddCheckbox(Msg::UseModernLook, &Opt.Backend.UseModernLook);
-	Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, &Opt.Backend.UseRoundedBorders);
-	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, &Opt.Backend.UseSingleBordersOnly);
-	Builder.AddCheckbox(Msg::UseModernLookNoBorders, &Opt.Backend.UseNoBorders);
-	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, &Opt.Backend.UseEmbossAsBold);
-	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
-
 	Builder.AddCheckbox(Msg::ConfigDialogsEditBlock, &Opt.Dialogs.EditBlock);
 	Builder.AddCheckbox(Msg::ConfigDialogsDelRemovesBlocks, &Opt.Dialogs.DelRemovesBlocks);
 	Builder.AddCheckbox(Msg::ConfigDialogsAutoComplete, &Opt.Dialogs.AutoComplete);
 	Builder.AddCheckbox(Msg::ConfigDialogsEULBsClear, &Opt.Dialogs.EULBsClear);
 	Builder.AddCheckbox(Msg::ConfigDialogsMouseButton, &Opt.Dialogs.MouseButton);
 	Builder.AddCheckbox(Msg::ConfigDialogsShowArrowsInEdit, (BOOL *)&Opt.Dialogs.ShowArrowsInEdit);
+
 	Builder.AddOKCancel();
 
 	if (Builder.ShowDialog()) {

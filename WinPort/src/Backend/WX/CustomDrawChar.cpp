@@ -1865,7 +1865,8 @@ namespace WXCustomDrawChar
 		wxCoord r = _2r / 2;
 		int ascent = p.GetFontAscent();
 
-		wxCoord X1 = m.right - _2r, X2 = m.right, Y1 = m.top + ascent - 2 * r + 1, Y2 = m.top + ascent + 1;
+		// wxCoord X1 = m.right - _2r, X2 = m.right, Y1 = m.top + ascent - 2 * r + 1, Y2 = m.top + ascent + 1;
+		wxCoord X1 = m.left, X2 = m.left + _2r, Y1 = m.top + ascent - 2 * r + 1, Y2 = m.top + ascent + 1;
 
 		p.FillRectangle(X1, Y1, X1, Y2);
 		p.FillRectangle(X1, Y1, X2, Y1);
@@ -1881,7 +1882,8 @@ namespace WXCustomDrawChar
 		wxCoord r = _2r / 2;
 		int ascent = p.GetFontAscent();
 
-		wxCoord X1 = m.right - _2r, X2 = m.right, Y1 = m.top + ascent - 2 * r + 1, Y2 = m.top + ascent + 1;
+		// wxCoord X1 = m.right - _2r, X2 = m.right, Y1 = m.top + ascent - 2 * r + 1, Y2 = m.top + ascent + 1;
+		wxCoord X1 = m.left, X2 = m.left + _2r, Y1 = m.top + ascent - 2 * r + 1, Y2 = m.top + ascent + 1;
 
 		p.FillRectangle(X1, Y1, X1, Y2);
 		p.FillRectangle(X1, Y1, X2, Y1);

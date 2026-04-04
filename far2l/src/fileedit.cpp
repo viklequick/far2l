@@ -2177,6 +2177,7 @@ void FileEditor::ResizeConsole()
 	m_editor->PrepareResizedConsole();
 }
 
+
 int FileEditor::ProcessEditorInput(INPUT_RECORD *Rec)
 {
 	int RetCode;
@@ -2184,6 +2185,7 @@ int FileEditor::ProcessEditorInput(INPUT_RECORD *Rec)
 	RetCode = CtrlObject->Plugins.ProcessEditorInput(Rec);
 	return RetCode;
 }
+
 
 void FileEditor::SetPluginTitle(const wchar_t *PluginTitle)
 {

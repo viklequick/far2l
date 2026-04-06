@@ -29213,6 +29213,17 @@ upd:"Soften boxes and bevels"
 upd:"Soften boxes and bevels"
 upd:"Soften boxes and bevels"
 
+UseModernLookUse3D
+"Использовать 3D эффект"
+"Use 3D effect"
+upd:"Use 3D effect"
+upd:"Use 3D effect"
+upd:"Use 3D effect"
+upd:"Use 3D effect"
+upd:"Use 3D effect"
+upd:"Use 3D effect"
+upd:"Use 3D effect"
+
 EnforceColorCorrection
 "Выравнивать контрастность цветов автоматически"
 "Auto-adjust colors contrast"

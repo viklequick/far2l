@@ -164,6 +164,7 @@ class ConsolePainter
     	unsigned nx;
         unsigned cy;
     	DWORD64 attributes;
+        std::wstring text;
     };
 
     std::vector<CustomCharPos> line_custom_chars;
@@ -207,15 +208,17 @@ public:
 
 	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
 	void DrawCheckboxDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
+	void DrawButtonDecorationsAsNew(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
 
 	bool DrawCustomChar(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;
 	bool DrawCustomCharImpl(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;
 
-	void DrawGradientLine(wxCoord X1, wxCoord Y1, wxCoord X2, wxCoord Y2, WinPortRGB color1, WinPortRGB color2, wxCoord thickness = 1);
-	void DrawHorizontalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, wxCoord thickness = 1);
-	void DrawVerticalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, wxCoord thickness = 1);
-	void DrawVerticalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, WinPortRGB color3, wxCoord thickness = 1);
-	void DrawHorizontalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, WinPortRGB color3, wxCoord thickness = 1);
+	void DrawGradientLine(wxCoord X1, wxCoord Y1, wxCoord X2, wxCoord Y2, const WinPortRGB& color1, const WinPortRGB& color2, wxCoord thickness = 1);
+	void DrawHorizontalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, wxCoord thickness = 1);
+	void DrawVerticalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, wxCoord thickness = 1);
+	void DrawVerticalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, const WinPortRGB& color3, wxCoord thickness = 1);
+	void DrawHorizontalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, const WinPortRGB& color3, wxCoord thickness = 1);
 
-	void DrawHorizontalDashedGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, int dashLength = 6, int gapLength  = 4, wxCoord thickness = 1);
+	void DrawHorizontalDashedGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, int dashLength = 6, int gapLength  = 4, wxCoord thickness = 1);
+	void DrawLiquidButtonBackground(wxCoord X1, wxCoord Y1, wxCoord w, wxCoord h, const WinPortRGB& colTop);
 };

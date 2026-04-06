@@ -70,19 +70,19 @@ RGB SoftenToDisabledState_LAB(const RGB& cc,
 	double L_strength = 0.5,  // how strongly to pull L toward center
 	double C_strength = 0.7);  // how strongly to desaturate
 RGB SoftenToHoverState_LAB(const RGB& cc,
-	const LAB& tint = { 75.0, -5.0, -25.0 }, // default light blue
+	const RGB& tint = { 0.0, 0.5, 1.0 }, // default light blue
 	double L_boost = 0.10,   // +10% brightness
 	double C_boost = 0.20,   // +20% chroma
 	double tint_max = 0.40,  // max tint for pure black/white
 	double tint_min = 0.10,  // min tint for slightly neutral colors
 	double C_neutral = 20.0); // chroma threshold for "neutral"
 RGB SoftenToFocusedState_LAB(const RGB& cc,
-	const RGB& focusTint = { 0.0, 0.4, 1.0 }, // subtle blue-violet
-	double L_boost = 0.25,   // +5% brightness
+	const RGB& focusTint = { 0.4, 0.1, 1.0 }, // subtle blue-violet
+	double L_boost = 0.05,   // +5% brightness
 	double C_boost = 0.30,   // +30% chroma
 	double tint_max = 0.25,  // max tint for pure neutrals
-	double tint_min = 0.15,  // min tint for slightly neutral colors
-	double C_neutral = 55.0); // chroma threshold for "neutral"
+	double tint_min = 0.05,  // min tint for slightly neutral colors
+	double C_neutral = 45.0); // chroma threshold for "neutral"
 RGB SoftenToPressedState_LAB(const RGB& fg,
 	const RGB& bgC,          // background LAB
 	double L_push = 0.25,   // how strongly to push toward background L*

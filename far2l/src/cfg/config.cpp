@@ -728,6 +728,7 @@ void InterfaceSettings()
         	Builder.AddCheckbox(Msg::UseModernLookNoBorders, (BOOL *)&Opt.Backend.UseNoBorders);
         	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, (BOOL *)&Opt.Backend.UseEmbossAsBold);
         	Builder.AddCheckbox(Msg::UseModernLookUseSoftenBevels, (BOOL *)&Opt.Backend.UseSoftenBevels);
+        	Builder.AddCheckbox(Msg::UseModernLookUse3D, (BOOL *)&Opt.Backend.Use3D);
         }
     	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 

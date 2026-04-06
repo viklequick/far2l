@@ -775,7 +775,7 @@ RGB SoftenToDisabledState_LAB(const RGB& cc,
 }
 
 RGB SoftenToHoverState_LAB(const RGB& cc,
-	const LAB& tint, // default light blue
+	const RGB& tintR, // default light blue
 	double L_boost,   // +10% brightness
 	double C_boost,   // +20% chroma
 	double tint_max,  // max tint for pure black/white
@@ -783,6 +783,7 @@ RGB SoftenToHoverState_LAB(const RGB& cc,
 	double C_neutral) // chroma threshold for "neutral"
 {
     LAB lab = RGBtoLAB(cc);
+    LAB tint = RGBtoLAB(tintR);
 
     // 1. Brightness boost
     lab.L = lab.L + (100.0 - lab.L) * L_boost;

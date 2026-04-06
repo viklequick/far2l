@@ -560,6 +560,9 @@ void HintAt(
 	Hint(HintX, HintY, CurX, CurY, hcc, hco, focused, hovered, disabled, defaultCtrl);
 }
 
+void HintBeginContainer() { TagRef = 1; }
+void HintEndContainer() {}
+
 void Text(const WCHAR *Str, size_t Length)
 {
 	if (Length == (size_t)-1)

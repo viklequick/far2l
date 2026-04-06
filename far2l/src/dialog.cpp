@@ -1472,6 +1472,22 @@ static uint64_t assembleColor(RGB& fg, RGB& bg) {
 	return color | FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR;
 }
 
+uint64_t SoftenItemColor(uint64_t attributes, int Focus, int Hover, int Pressed) 
+{
+	if (!Opt.Backend.UseModernLook) return attributes;
+
+   	RGB bg, fg;
+   	extractColor(attributes, fg, bg);
+   	HoverResult r = ComputeControlAccent(fg, bg);
+   	if (Pressed)
+   		fg = SoftenToPressedState_LAB(fg, r.fg_hover);
+   	else if (Focus)
+   		fg = SoftenToFocusedState_LAB(fg, r.fg_hover);
+   	else if (Hover) 
+   		fg = SoftenToHoverState_LAB(fg, r.fg_hover);
+   	return assembleColor(fg, bg) | (attributes & 0x0000FFFF);
+}
+
 // Функция формирования и запроса цветов.
 DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t *Color)
 {
@@ -1480,6 +1496,8 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 	const int Focus = CurItem->Focus;
 	const int Default = CurItem->DefaultButton;
 	const DWORD Flags = CurItem->Flags;
+	const int Hover = CurItem->Hover;
+	const int Pressed = CurItem->Pressed;
 
 	const bool IsWarning = DialogMode.Check(DMODE_WARNINGSTYLE);
 	const bool DisabledItem = (Flags & DIF_DISABLE) != 0;
@@ -1601,17 +1619,9 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 			Color[0] = FarColorToReal( COLOR_IF(IsWarning, COL_WARNDIALOGTEXT, COL_DIALOGTEXT, DisabledItem, COL_WARNDIALOGDISABLED, COL_DIALOGDISABLED) );
 			Color[1] = FarColorToReal( COLOR_IF(IsWarning, COL_WARNDIALOGHIGHLIGHTTEXT, COL_DIALOGHIGHLIGHTTEXT, DisabledItem, COL_WARNDIALOGDISABLED, COL_DIALOGDISABLED) );
 
-			if (!DisabledItem && Focus) {
-				RGB bg, fg;
-				extractColor(Color[0], fg, bg);
-				HoverResult r = ComputeControlAccent(fg, bg);
-				fg = SoftenToFocusedState_LAB(fg, r.fg_hover);
-				Color[0] = assembleColor(fg, bg);
-
-				extractColor(Color[1], fg, bg);
-				r = ComputeControlAccent(fg, bg);
-				fg = SoftenToFocusedState_LAB(fg, r.fg_hover);
-				Color[1] = assembleColor(fg, bg);
+			if (!DisabledItem && (Focus || Hover || Pressed)) {
+				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed);
+				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed);
 			}
 
 			break;
@@ -1659,6 +1669,12 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 					Default, COL_WARNDIALOGHIGHLIGHTDEFAULTBUTTON, COL_DIALOGHIGHLIGHTDEFAULTBUTTON,
 					DisabledItem, COL_WARNDIALOGDISABLED, COL_DIALOGDISABLED ));
 			}
+
+			if (!DisabledItem && (Focus || Hover || Pressed)) {
+				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed);
+				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed);
+			}
+
 			break;
 
 /**
@@ -1754,6 +1770,13 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 					Color[4] = FarColorToReal( COLOR_D_IF (DisabledItem, COL_DIALOGOVERFLOWARROW, COL_DIALOGDISABLED) );
 				}
 			}
+
+			if (!DisabledItem && (Focus || Hover || Pressed)) {
+				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed);
+				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed);
+				Color[2] = SoftenItemColor(Color[2], Focus, Hover, Pressed);
+			}
+
 			break;
 /**
 			if (Type == DI_COMBOBOX && (Flags & DIF_DROPDOWNLIST)) {
@@ -1939,6 +1962,7 @@ void Dialog::ShowDialog(unsigned ID)
 		SetCursorType(CursorVisible, CursorSize);
 	}
 
+	HintBeginContainer();
 	for (I = ID; I < DrawItemCount; I++) {
 		CurItem = Item[I];
 
@@ -2330,17 +2354,20 @@ void Dialog::ShowDialog(unsigned ID)
 //				SetColorNormal(Attr, CurItem->TrueColors);
 				GotoXY(X1 + CX1, Y1 + CY1);
 
-                /*
-				if(IsWxBackend() && Opt.Backend.UseModernLook) {
-					if (CurItem->Focus) { 
-						strStr.ReplaceChar(0, L'►');
-						strStr.ReplaceChar(strStr.GetLength() - 1, L'◄'); 
-					}
-					else {
+				if (CurItem->Focus) { 
+					strStr.ReplaceChar(0, L'►');
+					strStr.ReplaceChar(strStr.GetLength() - 1, L'◄'); 
+				}
+				else {
+					if(Opt.Backend.UseModernLook) {
 						strStr.ReplaceChar(0, L' ');
 						strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
 					}
-				}*/
+					else {
+						strStr.ReplaceChar(0, CurItem->DefaultButton ? L'{' : L'[');
+						strStr.ReplaceChar(strStr.GetLength() - 1, CurItem->DefaultButton ? L'}' : L']'); 
+					}
+				}
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
 					Text(strStr);
@@ -2471,6 +2498,7 @@ void Dialog::ShowDialog(unsigned ID)
 				//.........
 		}	// end switch(...
 	}		// end for (I=...
+	HintEndContainer();
 
 	// КОСТЫЛЬ!
 	// но работает ;-)
@@ -3472,8 +3500,32 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	MsY = MouseEvent->dwMousePosition.Y;
 
 	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
-		// todo: handle hover effect here by indiocating the control and then repaint it
+		// todo: handle hover effect here by indicating the control and then repaint it
+		int oldHover = -1, newHover = -1;;
+		for (I = ItemCount - 1; I != (unsigned)-1; I--) {
+			if (Item[I]->Hover) oldHover = I;
+			Item[I]->Hover = 0;
+			if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN)) continue;
+
+			GetItemRect(I, Rect);
+			Rect.Left+= X1;
+			Rect.Top+= Y1;
+			Rect.Right+= X1;
+			Rect.Bottom+= Y1;
+
+			if (MsX >= Rect.Left && MsY >= Rect.Top && MsX <= Rect.Right && MsY <= Rect.Bottom) {
+				if(IsItemFocusable(Item[I])) {
+					newHover = I;
+					Item[I]->Hover = 1;
+				}
+			}
+		}
 		// return TRUE;
+
+		if (oldHover != newHover) {
+			ShowDialog();
+			return TRUE;
+		}
 	}
 
 	// for (I=0;I<ItemCount;I++)
@@ -3485,9 +3537,6 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
         /* middle mouse click */ 
 		if ( MouseEvent->dwButtonState & (FROM_LEFT_2ND_BUTTON_PRESSED) ) {
-			if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN))
-				continue;
-
 			GetItemRect(I, Rect);
 			Rect.Left+= X1;
 			Rect.Top+= Y1;

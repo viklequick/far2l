@@ -16,6 +16,7 @@ namespace WXCustomDrawChar
 		void SetColorFaded();
 		void SetColorExtraFaded();
 		void SetColorEmboss();
+		void SetColorSoften();
 		void SetColorRed();
 		int GetFontAscent();
 

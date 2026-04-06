@@ -23,6 +23,7 @@ public:
 	virtual COORD OnConsoleGetLargestWindowSize() = 0;
 	virtual void OnConsoleAdhocQuickEdit() = 0;
 	virtual DWORD64 OnConsoleSetTweaks(DWORD64 tweaks) = 0;
+	virtual DWORD64 OnConsoleGetTweaks() = 0;
 	virtual void OnConsoleChangeFont() = 0;
 	virtual void OnConsoleSaveWindowState() = 0;
 	virtual void OnConsoleSetMaximized(bool maximized) = 0;
@@ -205,6 +206,7 @@ public:
 
 	virtual void AdhocQuickEdit() = 0;
 	virtual DWORD64 SetConsoleTweaks(DWORD64 tweaks) = 0;
+	virtual DWORD64 GetConsoleTweaks() = 0;
 	virtual void ConsoleChangeFont() = 0;
 	virtual void ConsoleSaveWindowState() = 0;
 	virtual bool IsActive() = 0;

@@ -465,7 +465,8 @@ typedef enum {
     HintLine,
     HintBox,
     HintTitle,
-    HintImage
+    HintImage,
+    HintScrollBar
 } HintObjectType;
 
 typedef struct _CHAR_INFO {
@@ -486,9 +487,10 @@ typedef struct _CHAR_INFO {
         DWORD64 ExtraFlags;
         void* ArbitraryPointer;
         struct {
-            HintContainerType Container; /* e.g menu, dialog, console, editor, viewer, panels, ... */
-            HintObjectType Object; /* e.g push button, text, box, separator, combo box, ...  */
+            HintContainerType Container: 8; /* e.g menu, dialog, console, editor, viewer, panels, ... */
+            HintObjectType Object: 8; /* e.g push button, text, box, separator, combo box, ...  */
             
+            int Tag: 8; /* ID if the element */
             int Icon: 8; /* e.g. search, settings, ... */
             
             int Focus: 1;
@@ -496,6 +498,7 @@ typedef struct _CHAR_INFO {
             int Enabled: 1;
             int Default: 1; 
             int Beveled: 1;
+            int Shadow: 1;
         } Hint;
     } Extra;
 } CHAR_INFO, *PCHAR_INFO;

@@ -74,6 +74,8 @@ FARString strInitTitle;
 SMALL_RECT InitWindowRect;
 COORD InitialSize;
 
+static SHORT HintX = -1, HintY = -1;
+
 // static HICON hOldLargeIcon=nullptr, hOldSmallIcon=nullptr;
 
 const size_t StackBufferSize = 0x2000;
@@ -321,8 +323,8 @@ void ShowTime(int ShowAlways)
 
 void GotoXY(int X, int Y)
 {
-	CurX = X;
-	CurY = Y;
+	HintX = CurX = X;
+	HintY = CurY = Y;
 }
 
 int WhereX()
@@ -492,16 +494,16 @@ void InitRecodeOutTable()
 void Text(int X, int Y, uint64_t Color, const WCHAR *Str, size_t Length)
 {
 	CurColor = Color;
-	CurX = X;
-	CurY = Y;
+	HintX = CurX = X;
+	HintY = CurY = Y;
 	Text(Str, Length);
 }
 
 void Text(int X, int Y, uint64_t Color, const WCHAR *Str)
 {
 	CurColor = Color;
-	CurX = X;
-	CurY = Y;
+	HintX = CurX = X;
+	HintY = CurY = Y;
 	Text(Str);
 }
 
@@ -534,22 +536,28 @@ void Text(const WCHAR Ch, size_t Length)
 	Text(Ch, CurColor, Length);
 }
 
+static long TagRef = 1;
+
 void Hint(
 		int X1, int Y1, int X2, int Y2, 
 		HintContainerType hcc, 
 		HintObjectType hco, 
-		bool focused, bool hovered, bool disabled) 
+		bool focused, bool hovered, bool disabled, bool defaultCtrl) 
 {
-	// todo: set char infom nextra data with specific region
+	int tag = (TagRef++) % 0x00FF;
+	/*if (hcc == HintDialog) {
+		fprintf(stderr, "type %d: tag=%d, pos=%d..%d, %d..%d, focus=%c hover=%c disabled=%c\n", hco, tag, X1, X2, Y1, Y2, 
+			focused ? 'Y': 'n', hovered ? 'Y': 'n', disabled ? 'Y': 'n');
+	}*/
+	ScrBuf.ApplyHint(X1, Y1, X2, Y2, tag, hcc, hco, focused, hovered, disabled, defaultCtrl, false);
 }
 
 void HintAt(
 		HintContainerType hcc, 
 		HintObjectType hco, 
-		bool focused, bool hovered, bool disabled) 
+		bool focused, bool hovered, bool disabled, bool defaultCtrl) 
 {
-	// todo: set char infom nextra data with specific region
-	// todo: grabs last region to be updated and then Hint()
+	Hint(HintX, HintY, CurX, CurY, hcc, hco, focused, hovered, disabled, defaultCtrl);
 }
 
 void Text(const WCHAR *Str, size_t Length)
@@ -899,6 +907,7 @@ void GetText(int X1, int Y1, int X2, int Y2, void *Dest, int DestSize)
 	ScrBuf.Read(X1, Y1, X2, Y2, (CHAR_INFO *)Dest, DestSize);
 }
 
+// todo: check if it is being used fromn dialogs
 void PutText(int X1, int Y1, int X2, int Y2, const void *Src)
 {
 	int Width = X2 - X1 + 1;
@@ -926,6 +935,7 @@ void BoxText(const wchar_t *Str, int IsVert)
 /*
 	Отрисовка прямоугольника.
 */
+// todo: check if it is being used from dialogs
 void Box(int x1, int y1, int x2, int y2, uint64_t Color, int Type)
 {
 	if (x1 >= x2 || y1 >= y2)
@@ -981,6 +991,7 @@ bool ScrollBarRequired(UINT Length, UINT64 ItemsCount)
 	return Length > 2 && ItemsCount && Length < ItemsCount;
 }
 
+// todo: check if it is being ued from dialogs
 bool ScrollBarEx(UINT X1, UINT Y1, UINT Length, UINT64 TopItem, UINT64 ItemsCount)
 {
 	if (ScrollBarRequired(Length, ItemsCount)) {
@@ -1014,6 +1025,9 @@ bool ScrollBarEx(UINT X1, UINT Y1, UINT Length, UINT64 TopItem, UINT64 ItemsCoun
 		BufPtr[Length + 2] = 0;
 		GotoXY(X1, Y1);
 		VText(BufPtr);
+
+		// todo: HintAt here
+
 		if (HeapBuffer) {
 			delete[] HeapBuffer;
 		}
@@ -1057,8 +1071,10 @@ void ScrollBar(int X1, int Y1, int Length, unsigned int Current, unsigned int To
 			delete[] HeapBuffer;
 		}
 	}
+	// todo: HintAt here
 }
 
+// todo check if it is being used from dialogs
 void DrawLine(int Length, int Type, const wchar_t *UserSep)
 {
 	if (Length > 1) {

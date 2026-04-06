@@ -345,6 +345,7 @@ namespace WXCustomDrawChar
 	static void Draw_2500_new(Painter &p, unsigned int start_y, unsigned int cx) /* ─ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.SetColorEmboss();
 		p.FillRectangle(m.left, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
@@ -353,6 +354,7 @@ namespace WXCustomDrawChar
 	static void Draw_2502_new(Painter &p, unsigned int start_y, unsigned int cx) /* │ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
 		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.bottom);
@@ -385,9 +387,11 @@ namespace WXCustomDrawChar
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			DrawSingleEllipseEmboss(p, m, 90, 180, false, false);
+			p.SetColorSoften();
 			DrawSingleEllipse(p, m, 90, 180, false, false);
 		}
 		else {
+			p.SetColorSoften();
 			p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 			p.FillRectangle(m.middle_x, m.middle_y, m.middle_x + p.thickness - 1, m.bottom);
 			p.SetColorEmboss();
@@ -401,9 +405,11 @@ namespace WXCustomDrawChar
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			DrawSingleEllipseEmboss(p, m, 0, 90, true, false);
+			p.SetColorSoften();
 			DrawSingleEllipse(p, m, 0, 90, true, false);
 		}
 		else {
+			p.SetColorSoften();
 			p.FillRectangle(m.left, m.middle_y, m.middle_x, m.middle_y + p.thickness - 1);
 			p.FillRectangle(m.middle_x, m.middle_y, m.middle_x + p.thickness - 1, m.bottom);
 			p.SetColorEmboss();
@@ -417,9 +423,11 @@ namespace WXCustomDrawChar
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			DrawSingleEllipseEmboss(p, m, 180, 270, false, true);
+			p.SetColorSoften();
 			DrawSingleEllipse(p, m, 180, 270, false, true);
 		}
 		else {
+			p.SetColorSoften();
 			p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 			p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle_y);
 			p.SetColorEmboss();
@@ -433,9 +441,11 @@ namespace WXCustomDrawChar
 		SingleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			DrawSingleEllipseEmboss(p, m, 270, 360, true, true);
+			p.SetColorSoften();
 			DrawSingleEllipse(p, m, 270, 360, true, true);
 		}
 		else {
+			p.SetColorSoften();
 			p.FillRectangle(m.left, m.middle_y, m.middle_x + p.thickness - 1, m.middle_y + p.thickness - 1);
 			p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle_y);
 			p.SetColorEmboss();
@@ -447,6 +457,7 @@ namespace WXCustomDrawChar
 	static void Draw_251C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ├ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
@@ -458,6 +469,7 @@ namespace WXCustomDrawChar
 	static void Draw_2524_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┤ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle_y, m.middle_x, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
@@ -468,6 +480,7 @@ namespace WXCustomDrawChar
 	static void Draw_252C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┬ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle_x, m.middle_y, m.middle_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
@@ -479,6 +492,7 @@ namespace WXCustomDrawChar
 	static void Draw_2534_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┴ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle_y);
 		p.SetColorEmboss();
@@ -489,6 +503,7 @@ namespace WXCustomDrawChar
 	static void Draw_253C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┼ */
 	{
 		SingleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
@@ -1057,6 +1072,7 @@ namespace WXCustomDrawChar
 	static void Draw_2550_new(Painter &p, unsigned int start_y, unsigned int cx) /* ═ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
 		p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
 		p.SetColorEmboss();
@@ -1067,6 +1083,7 @@ namespace WXCustomDrawChar
 	static void Draw_2551_new(Painter &p, unsigned int start_y, unsigned int cx) /* ║ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
 		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
@@ -1132,9 +1149,11 @@ namespace WXCustomDrawChar
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			DrawDoubleEllipseEmboss(p, m, 90, 180, false, false);
+			p.SetColorSoften();
 			DrawDoubleEllipse(p, m, 90, 180, false, false);
 		}
 		else {
+			p.SetColorSoften();
 			p.FillRectangle(m.middle1_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
 			p.FillRectangle(m.middle2_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
 			p.FillRectangle(m.middle1_x, m.middle1_y, m.middle1_x + p.thickness - 1, m.bottom);
@@ -1152,9 +1171,11 @@ namespace WXCustomDrawChar
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			DrawDoubleEllipseEmboss(p, m, 0, 90, true, false);
+			p.SetColorSoften();
 			DrawDoubleEllipse(p, m, 0, 90, true, false);
 		}
 		else {
+			p.SetColorSoften();
 			p.FillRectangle(m.left, m.middle1_y, m.middle2_x, m.middle1_y + p.thickness - 1);
 			p.FillRectangle(m.left, m.middle2_y, m.middle1_x, m.middle2_y + p.thickness - 1);
 			p.FillRectangle(m.middle2_x, m.middle1_y, m.middle2_x + p.thickness - 1, m.bottom);
@@ -1172,9 +1193,11 @@ namespace WXCustomDrawChar
 		DoubleLineBoxMetrics m(p, start_y, cx);
 		if (options && options->UseRoundedBorders) {
 			DrawDoubleEllipseEmboss(p, m, 180, 270, false, true);
+			p.SetColorSoften();
 			DrawDoubleEllipse(p, m, 180, 270, false, true);
 		}
 		else {
+			p.SetColorSoften();
 			p.FillRectangle(m.middle2_x, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
 			p.FillRectangle(m.middle1_x, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
 			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.middle2_y);
@@ -1190,6 +1213,7 @@ namespace WXCustomDrawChar
 	static void Draw_255D_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╝ */ // + thickness
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		if (options && options->UseRoundedBorders) {
 			DrawDoubleEllipseEmboss(p, m, 270, 360, true, true);
 			DrawDoubleEllipse(p, m, 270, 360, true, true);
@@ -1210,6 +1234,7 @@ namespace WXCustomDrawChar
 	static void Draw_255F_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╟ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.middle2_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
 		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
@@ -1223,6 +1248,7 @@ namespace WXCustomDrawChar
 	static void Draw_2562_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╢ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle_y, m.middle1_x, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
 		p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
@@ -1235,6 +1261,7 @@ namespace WXCustomDrawChar
 	static void Draw_2560_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╠ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.middle1_x, m.top, m.middle1_x + p.thickness - 1, m.bottom);
 			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
@@ -1262,6 +1289,7 @@ namespace WXCustomDrawChar
 	static void Draw_2563_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╣ */ // + thickness
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.middle2_x, m.top, m.middle2_x + p.thickness - 1, m.bottom);
 			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);
@@ -1289,6 +1317,7 @@ namespace WXCustomDrawChar
 	static void Draw_2565_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╥ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle1_x, m.middle_y, m.middle1_x + p.thickness - 1, m.bottom);
 		p.FillRectangle(m.middle2_x, m.middle_y, m.middle2_x + p.thickness - 1, m.bottom);
@@ -1302,6 +1331,7 @@ namespace WXCustomDrawChar
 	static void Draw_2566_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╦ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
 			DrawDoubleEllipseLoPartEmboss(p, m, 0, 90, true, false);
@@ -1329,6 +1359,7 @@ namespace WXCustomDrawChar
 	static void Draw_2567_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╧ */
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		p.FillRectangle(m.left, m.middle1_y, m.right, m.middle1_y + p.thickness - 1);
 		p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.middle1_y);
@@ -1341,6 +1372,7 @@ namespace WXCustomDrawChar
 	static void Draw_2569_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╩ */ // + thickness
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		if (options && options->UseRoundedBorders) {
 			p.FillRectangle(m.left, m.middle2_y, m.right, m.middle2_y + p.thickness - 1);
 			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
@@ -1368,6 +1400,7 @@ namespace WXCustomDrawChar
 	static void Draw_256C_new(Painter &p, unsigned int start_y, unsigned int cx) /* ╬ */ // + thickness
 	{
 		DoubleLineBoxMetrics m(p, start_y, cx);
+		p.SetColorSoften();
 		if (options && options->UseRoundedBorders) {
 			DrawDoubleEllipseLoPartEmboss(p, m, 180, 270, false, true);
 			DrawDoubleEllipseLoPartEmboss(p, m, 270, 360, true, true);

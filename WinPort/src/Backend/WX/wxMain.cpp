@@ -2107,6 +2107,18 @@ DWORD64 WinPortPanel::OnConsoleSetTweaks(DWORD64 tweaks)
 	return out;
 }
 
+DWORD64 WinPortPanel::OnConsoleGetTweaks()
+{
+	DWORD64 out = TWEAK_STATUS_SUPPORT_CHANGE_FONT | TWEAK_STATUS_SUPPORT_BLINK_RATE;
+
+	if (_paint_context.IsSharpSupported())
+		out|= TWEAK_STATUS_SUPPORT_PAINT_SHARP;
+
+	if (_exclusive_hotkeys.Available())
+		out|= TWEAK_STATUS_SUPPORT_EXCLUSIVE_KEYS;
+
+	return out;
+}
 
 bool WinPortPanel::OnConsoleIsActive()
 {

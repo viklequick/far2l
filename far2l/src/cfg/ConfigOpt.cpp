@@ -197,6 +197,7 @@ const ConfigOpt g_cfg_opts[] {
 	{true,  NSecInterface, "UseModernLookSingleBordersOnly", &Opt.Backend.UseSingleBordersOnly, 0},
 	{true,  NSecInterface, "UseModernLookNoBorders", &Opt.Backend.UseNoBorders, 0},
 	{true,  NSecInterface, "UseModernLookEmbossAsBold", &Opt.Backend.UseEmbossAsBold, 0},
+	{true,  NSecInterface, "UseSoftenBevels", &Opt.Backend.UseSoftenBevels, 1},
 
 	{true,  NSecViewer, "ExternalViewerName", &Opt.strExternalViewer, L""},
 	{true,  NSecViewer, "UseExternalViewer", &Opt.ViOpt.UseExternalViewer, 0},

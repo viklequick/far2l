@@ -120,10 +120,12 @@ class ConsolePainter
 	void FlushText(unsigned int cx_end);
 	void FlushDecorations(unsigned int cx_end);
 
-	void ComputeAccents();
+	void ComputeAccents(bool cache = true);
+	void ComputeAccents(const WinPortRGB& clr_text, const WinPortRGB& clr_back, WinPortRGB& clr_a_text, WinPortRGB& clr_a_back);
 
-	WinPortRGB GetEmbossColor();
+	WinPortRGB GetEmbossColor(const WinPortRGB& clr);
 	WinPortRGB GetCursorColor(const WinPortRGB& clr);
+	WinPortRGB GetSoftenColorIf(const WinPortRGB& clr);
 
     struct CustomCharPos {
     	wchar_t cc;
@@ -143,7 +145,29 @@ class ConsolePainter
     	}
     };
 
+    struct HintPos {
+        struct {
+            HintContainerType Container; /* e.g menu, dialog, console, editor, viewer, panels, ... */
+            HintObjectType Object; /* e.g push button, text, box, separator, combo box, ...  */
+            
+            int Focus: 1;
+            int Hover: 1;
+            int Enabled: 1;
+            int Default: 1; 
+            int Beveled: 1;
+            int Shadow: 1;
+        } Hint;
+
+        int tag;
+
+    	unsigned cx;
+    	unsigned nx;
+        unsigned cy;
+    	DWORD64 attributes;
+    };
+
     std::vector<CustomCharPos> line_custom_chars;
+    std::vector<HintPos> line_hints;
 
 public:
 	ConsolePainter(ConsolePaintContext *context, wxPaintDC &dc, wxString &_buffer, CursorProps &cursor_props);
@@ -170,7 +194,28 @@ public:
 		line_custom_chars.clear();
 	}
 
-	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy);
+	inline void HintFlush() {
+		for(size_t x = 0; x < line_hints.size(); ++x) {
+			HintPos c = line_hints[x];
+			DrawHint(c);
+		}
+		line_hints.clear();
+	}
+
+	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy);
+	void DrawHint(const HintPos& x);
+
+	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
+	void DrawCheckboxDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
+
 	bool DrawCustomChar(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;
 	bool DrawCustomCharImpl(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;
+
+	void DrawGradientLine(wxCoord X1, wxCoord Y1, wxCoord X2, wxCoord Y2, WinPortRGB color1, WinPortRGB color2, wxCoord thickness = 1);
+	void DrawHorizontalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, wxCoord thickness = 1);
+	void DrawVerticalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, wxCoord thickness = 1);
+	void DrawVerticalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, WinPortRGB color3, wxCoord thickness = 1);
+	void DrawHorizontalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, WinPortRGB color3, wxCoord thickness = 1);
+
+	void DrawHorizontalDashedGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, WinPortRGB color1, WinPortRGB color2, int dashLength = 6, int gapLength  = 4, wxCoord thickness = 1);
 };

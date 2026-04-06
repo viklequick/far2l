@@ -798,6 +798,14 @@ DWORD64 ConsoleOutput::SetConsoleTweaks(DWORD64 tweaks)
 	return _backend->OnConsoleSetTweaks(tweaks);
 }
 
+DWORD64 ConsoleOutput::GetConsoleTweaks()
+{
+	if (!_backend)
+		return 0;
+
+	return _backend->OnConsoleGetTweaks();
+}
+
 void ConsoleOutput::ConsoleChangeFont()
 {
 	if (_backend)

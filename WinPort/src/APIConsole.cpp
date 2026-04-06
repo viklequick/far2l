@@ -495,6 +495,11 @@ extern "C" {
 		return g_winport_con_out->SetConsoleTweaks(tweaks);
 	}
 
+	WINPORT_DECL(GetConsoleTweaks, DWORD64, ())
+	{
+		return g_winport_con_out->GetConsoleTweaks();
+	}
+
 	WINPORT_DECL(SaveConsoleWindowState,VOID,())
 	{
 		return g_winport_con_out->ConsoleSaveWindowState();

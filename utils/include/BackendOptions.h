@@ -4,4 +4,5 @@ struct BackendOptions {
 	BOOL UseSingleBordersOnly;	// wx only: replace double borders to single
 	BOOL UseNoBorders;			// wx only: replace double borders to single
 	BOOL UseEmbossAsBold;		// wx only: repplace bold glyphs to emboss effect
+	BOOL UseSoftenBevels;		// wx only: makes boxes less bright for black and white case
 };

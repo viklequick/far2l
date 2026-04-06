@@ -1006,6 +1006,15 @@ DWORD64 TTYBackend::OnConsoleSetTweaks(DWORD64 tweaks)
 	return out;
 }
 
+DWORD64 TTYBackend::OnConsoleGetTweaks()
+{
+	DWORD64 out = TWEAK_STATUS_SUPPORT_TTY_PALETTE;
+	if (_tty_caps.kind != TTYCaps::FAR2L && !_ttyx) {
+		out|= TWEAK_STATUS_SUPPORT_OSC52CLIP_SET;
+	}
+	return out;
+}
+
 void TTYBackend::OnConsoleOverrideColor(DWORD Index, DWORD *ColorFG, DWORD *ColorBK)
 {
 	if (Index == (DWORD)-1) {

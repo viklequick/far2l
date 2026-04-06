@@ -29202,6 +29202,17 @@ upd:"Text shadows instead of bold fonts"
 upd:"Text shadows instead of bold fonts"
 upd:"Text shadows instead of bold fonts"
 
+UseModernLookUseSoftenBevels
+"Уменьшать яркость рамок и линий"
+"Soften boxes and bevels"
+upd:"Soften boxes and bevels"
+upd:"Soften boxes and bevels"
+upd:"Soften boxes and bevels"
+upd:"Soften boxes and bevels"
+upd:"Soften boxes and bevels"
+upd:"Soften boxes and bevels"
+upd:"Soften boxes and bevels"
+
 EnforceColorCorrection
 "Выравнивать контрастность цветов автоматически"
 "Auto-adjust colors contrast"

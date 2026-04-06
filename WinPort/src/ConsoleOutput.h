@@ -110,6 +110,7 @@ public:
 
 	virtual void AdhocQuickEdit();
 	virtual DWORD64 SetConsoleTweaks(DWORD64 tweaks);
+	virtual DWORD64 GetConsoleTweaks();
 	virtual void ConsoleChangeFont();
 	virtual void ConsoleSaveWindowState();
 	virtual bool IsActive();

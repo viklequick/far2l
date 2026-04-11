@@ -94,9 +94,9 @@ enum DLGITEMINTERNALFLAGS
 
 const wchar_t *fmtSavedDialogHistory = L"SavedDialogHistory/";
 
-static DWORD supported_tweaks = 0;
+static uint64_t supported_tweaks = 0;
 static bool IsWxBackend() {
-	if (!supported_tweaks) supported_tweaks = WINPORT(GetConsoleTweaks)();
+	if(!supported_tweaks) supported_tweaks = WINPORT(GetConsoleTweaks)();
 	return (supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) != 0;
 }
 
@@ -768,10 +768,10 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 		*/
 		if (Type == DI_BUTTON && !(ItemFlags & DIF_NOBRACKETS)) {
 			LPCWSTR BracketsNew[] = {
-				IsWxBackend() ? L"  " : L"► ", 
-				IsWxBackend() ? L"  " : L" ◄", 
-				IsWxBackend() ? L"  " : L"« ", 
-				IsWxBackend() ? L"  " : L" »"};
+				(IsWxBackend() ? L"  " : L"► "), 
+				(IsWxBackend() ? L"  " : L" ◄"), 
+				(IsWxBackend() ? L"  " : L"« "), 
+				(IsWxBackend() ? L"  " : L" »") };
 			LPCWSTR BracketsOld[] = {L"[ ", L" ]", L"{ ", L" }"};
 			LPCWSTR *Brackets = Opt.Backend.UseModernLook ? BracketsNew : BracketsOld;
 			int Start = (CurItem->DefaultButton ? 2 : 0);
@@ -1474,18 +1474,35 @@ static uint64_t assembleColor(RGB& fg, RGB& bg) {
 
 uint64_t SoftenItemColor(uint64_t attributes, int Focus, int Hover, int Pressed) 
 {
-	if (!Opt.Backend.UseModernLook) return attributes;
+	// if (!Opt.Backend.UseModernLook) return attributes;
 
    	RGB bg, fg;
    	extractColor(attributes, fg, bg);
-   	HoverResult r = ComputeControlAccent(fg, bg);
+   	HoverResult r = ComputeControlAccent(bg, fg);
    	if (Pressed)
    		fg = SoftenToPressedState_LAB(fg, r.fg_hover);
-   	else if (Focus)
+   	else if (Focus) {
+    	if (!IsWxBackend()) {
+			LAB topLab = RGBtoLAB(bg);
+			if (IsNearBlack(bg))
+				topLab.L = std::min(topLab.L + 15.0, 100.0);
+			else
+				topLab.L = std::max(topLab.L - 10.0, 0.0);
+			bg = LABtoRGB(topLab);
+    	}
    		fg = SoftenToFocusedState_LAB(fg, r.fg_hover);
+    }
    	else if (Hover) 
    		fg = SoftenToHoverState_LAB(fg, r.fg_hover);
    	return assembleColor(fg, bg) | (attributes & 0x0000FFFF);
+}
+
+uint64_t GetAccentColors(uint64_t attributes) 
+{
+   	RGB bg, fg;
+   	extractColor(attributes, fg, bg);
+   	HoverResult r = ComputeControlAccent(bg, fg);
+   	return assembleColor(r.fg_hover, r.bg_hover) | (attributes & 0x0000FFFF);
 }
 
 // Функция формирования и запроса цветов.
@@ -1771,7 +1788,7 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 				}
 			}
 
-			if (!DisabledItem && (Focus || Hover || Pressed)) {
+			if (IsWxBackend() && Opt.Backend.UseModernLook && !DisabledItem && (Focus || Hover || Pressed)) {
 				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed);
 				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed);
 				Color[2] = SoftenItemColor(Color[2], Focus, Hover, Pressed);
@@ -2014,7 +2031,6 @@ void Dialog::ShowDialog(unsigned ID)
 			SetScreen(X1+CX1,Y1+CY1,X1+CX2,Y1+CY2,' ',Attr&0xFF);
 
 #endif
-
 		switch (CurItem->Type) {
 				/* ***************************************************************** */
 			case DI_SINGLEBOX:
@@ -2291,6 +2307,8 @@ void Dialog::ShowDialog(unsigned ID)
 			/* ***************************************************************** */
 			case DI_CHECKBOX:
 			case DI_RADIOBUTTON: {
+				FARString checkMark;
+
 //				SetColorNormal(Attr, CurItem->TrueColors);
 				SetColor(ItemColor[0]);
 				GotoXY(X1 + CX1, Y1 + CY1);
@@ -2304,6 +2322,8 @@ void Dialog::ShowDialog(unsigned ID)
 												: ( Opt.Backend.UseModernLook ? L'☐' /* L'✘' 🔲 🔳 ▢ ☐ ⧠ ✖️ X ✘ X ❌ ❎ */ : L' ')),
 						(Opt.Backend.UseModernLook ? L' ' : L']'), L'\0'};
 					strStr = Check;
+
+					checkMark = Check;
 
 					if (CurItem->strData.GetLength())
 						strStr+= L" ";
@@ -2323,6 +2343,8 @@ void Dialog::ShowDialog(unsigned ID)
 						if (CurItem->strData.GetLength())
 							strStr+= L" ";
 					}
+
+					checkMark = Dot; 
 				}
 
 				strStr+= CurItem->strData;
@@ -2336,6 +2358,12 @@ void Dialog::ShowDialog(unsigned ID)
 				else
 					HiText(strStr, ItemColor[1]);
 				HintAt(HintDialog, HintCheckbox, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0);
+
+				if (Opt.Backend.UseModernLook && !IsWxBackend()) {
+					SetColor(SoftenItemColor(GetAccentColors(ItemColor[0]), CurItem->Focus, CurItem->Hover, CurItem->Pressed));
+					GotoXY(X1 + CX1, Y1 + CY1);
+					Text(checkMark);
+				}
 
 				if (CurItem->Focus && !Opt.Backend.UseModernLook) {
 					// Отключение мигающего курсора при перемещении диалога
@@ -2357,15 +2385,24 @@ void Dialog::ShowDialog(unsigned ID)
 				if (CurItem->Focus) { 
 					strStr.ReplaceChar(0, L'►');
 					strStr.ReplaceChar(strStr.GetLength() - 1, L'◄'); 
+					strStr.ReplaceChar(1, L' ');
+					strStr.ReplaceChar(strStr.GetLength() - 2, L' '); 
 				}
 				else {
-					if(Opt.Backend.UseModernLook) {
-						strStr.ReplaceChar(0, L' ');
-						strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
-					}
-					else {
-						strStr.ReplaceChar(0, CurItem->DefaultButton ? L'{' : L'[');
-						strStr.ReplaceChar(strStr.GetLength() - 1, CurItem->DefaultButton ? L'}' : L']'); 
+					strStr.ReplaceChar(0, L' ');
+					strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
+
+					if(!IsWxBackend()) {
+						if(Opt.Backend.UseModernLook) {
+							strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' '); // •
+							strStr.ReplaceChar(strStr.GetLength() - 2, CurItem->DefaultButton ? L'★' : L' '); 
+							strStr.ReplaceChar(0, L'❲');
+							strStr.ReplaceChar(strStr.GetLength() - 1, L'❳'); 
+						}
+						else {
+							strStr.ReplaceChar(0, CurItem->DefaultButton ? L'{' : L'[');
+							strStr.ReplaceChar(strStr.GetLength() - 1, CurItem->DefaultButton ? L'}' : L']'); 
+						}
 					}
 				}
 

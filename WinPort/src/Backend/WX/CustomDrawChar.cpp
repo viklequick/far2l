@@ -1905,6 +1905,9 @@ namespace WXCustomDrawChar
 		p.FillRectangle(X1, Y1, X2, Y1);
 		p.FillRectangle(X2, Y1, X2, Y2);
 		p.FillRectangle(X1, Y2, X2, Y2);
+
+		//p.SetBackground();
+		//p.FillGradientRectangle(X1 + 1, Y1 + 1, X2 - 1, Y2 - 1);
 	}
 	
 	static void Draw_checked_sign(Painter &p, unsigned int start_y, unsigned int cx) /* ✔ */
@@ -1922,8 +1925,11 @@ namespace WXCustomDrawChar
 		p.FillRectangle(X1, Y1, X2, Y1);
 		p.FillRectangle(X2, Y1, X2, Y2);
 		p.FillRectangle(X1, Y2, X2, Y2);
+
 		p.SetAccentBackground();
+		//p.FillGradientRectangle(X1 + 1, Y1 + 1, X2 - 1, Y2 - 1);
 		p.FillRectangle(X1 + 1, Y1 + 1, X2 - 1, Y2 - 1);
+		
 		p.SetAccentForeground();
 		p.DrawLine(X2 - 1, Y1 + 1, X1 + r, Y2 - 1, 1);
 		p.DrawLine(X1 + 1, Y1 + r, X1 + r, Y2 - 1, 1);

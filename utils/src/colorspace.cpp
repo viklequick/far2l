@@ -638,7 +638,7 @@ double Luminance(const RGB& c)
 HoverResult ComputeControlAccent(const RGB& fg, const RGB& bg)
 {
     double lum_bg = Luminance(bg);
-    bool dark_theme = (lum_bg < 0.5);
+    bool dark_theme = (lum_bg < 0.3) || IsNearBlack(bg);
 
     RGB accent = dark_theme
         ? toRGB( 215, 140, 0 )    // toRGB(80, 140, 255)   // bright blue for dark theme / toRGB( 215, 140, 0 ) orange toRGB(0x7F, 0x4F, 0x8C) violet
@@ -716,6 +716,16 @@ bool IsNearWhite(int r, int g, int b, double threshold)
 {
     double L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     return L > (255.0 - threshold);
+}
+
+bool IsNearBlack(RGB c, double threshold) {
+	iRGB i = toIRGB(c);
+	return IsNearBlack(i.r, i.g, i.b, threshold);
+}
+
+bool IsNearWhite(RGB c, double threshold) {
+	iRGB i = toIRGB(c);
+	return IsNearWhite(i.r, i.g, i.b, threshold);
 }
 
 double Chroma(const LAB& lab)

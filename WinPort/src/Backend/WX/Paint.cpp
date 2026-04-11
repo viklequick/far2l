@@ -772,9 +772,17 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter.SetFillColor(_painter._clr_accent_back);
 	}
 	
+	inline void SetBackgroundImpl() {
+		_painter.SetFillColor(_painter._clr_back);
+	}
+	
 	inline void SetAccentForegroundImpl() {
 		_painter.ComputeAccents();
 		_painter.SetFillColor(_painter._clr_accent_text);
+	}
+
+	inline void SetForegroundImpl() {
+		_painter.SetFillColor(_painter._clr_text);
 	}
 
 	inline void SetColorEmbossImpl()
@@ -811,6 +819,14 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 	inline void FillRectangleImpl(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 	{
 		_painter._dc.DrawRectangle(left, top, right + 1 - left , bottom + 1 - top);
+	}
+
+	inline void FillGradientRectangleImpl(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
+	{
+		wxBrush oldBrush = _painter._dc.GetBrush(); 
+		wxColour brushColor = oldBrush.GetColour();
+		WinPortRGB x{ brushColor.GetRed(), brushColor.GetGreen(), brushColor.GetBlue() };
+		_painter.DrawLiquidButtonBackground(left, top, right + 1 - left , bottom + 1 - top, x);
 	}
 
 	inline void DrawEllipticArcImpl(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end, wxCoord thickness) {
@@ -879,9 +895,19 @@ void WXCustomDrawChar::Painter::SetAccentBackground()
 	((WXCustomDrawCharPainter *)this)->SetAccentBackgroundImpl();
 }
 
+void WXCustomDrawChar::Painter::SetBackground() 
+{
+	((WXCustomDrawCharPainter *)this)->SetBackgroundImpl();
+}
+
 void WXCustomDrawChar::Painter::SetAccentForeground()
 {
 	((WXCustomDrawCharPainter *)this)->SetAccentForegroundImpl();
+}
+
+void WXCustomDrawChar::Painter::SetForeground()
+{
+	((WXCustomDrawCharPainter *)this)->SetForegroundImpl();
 }
 
 void WXCustomDrawChar::Painter::SetColorEmboss()
@@ -907,6 +933,11 @@ int WXCustomDrawChar::Painter::GetFontAscent()
 void WXCustomDrawChar::Painter::FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 {
 	((WXCustomDrawCharPainter *)this)->FillRectangleImpl(left, top, right, bottom);
+}
+
+void WXCustomDrawChar::Painter::FillGradientRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
+{
+	((WXCustomDrawCharPainter *)this)->FillGradientRectangleImpl(left, top, right, bottom);
 }
 
 void WXCustomDrawChar::Painter::DrawEllipticArc(wxCoord left, wxCoord top, wxCoord width, wxCoord height, double start, double end, wxCoord thickness)
@@ -1571,3 +1602,106 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 	_dc.SetPen(_context->GetTransparentPen());
 }
 
+// Draws the scrollbar track (background)
+void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, const wxColour& colDark)
+{
+    // Subtle vertical gradient
+    dc.GradientFillLinear(rect, colLight, colDark, wxSOUTH);
+
+    // Optional: inner shadow at top
+    dc.SetPen(wxPen(wxColour(0,0,0,40), 1));
+    dc.DrawLine(rect.x, rect.y, rect.x + rect.width, rect.y);
+
+    // Optional: highlight at bottom
+    dc.SetPen(wxPen(wxColour(255,255,255,40), 1));
+    dc.DrawLine(rect.x, rect.y + rect.height - 1,
+                rect.x + rect.width, rect.y + rect.height - 1);
+}
+
+
+// Draws the scrollbar thumb (liquid-metal style)
+void DrawScrollThumb(wxDC& dc, const wxRect& rect, 
+	const wxColour& colTop, const wxColour& colBottom, bool pressed = false, bool hover = false)
+{
+    wxRect r = rect;
+
+    // Slight inset for nicer look
+    r.Deflate(1);
+
+    // --- State adjustments ---
+    wxColour top = colTop;
+    wxColour bottom = colBottom;
+
+    if (hover)
+    {
+        // Slight brightness boost
+        top = wxColour(
+            std::min(top.Red() + 20, 255),
+            std::min(top.Green() + 20, 255),
+            std::min(top.Blue() + 20, 255)
+        );
+    }
+
+    if (pressed)
+    {
+        // Darken both ends
+        top = wxColour(
+            std::max(top.Red() - 30, 0),
+            std::max(top.Green() - 30, 0),
+            std::max(top.Blue() - 30, 0)
+        );
+        bottom = wxColour(
+            std::max(bottom.Red() - 30, 0),
+            std::max(bottom.Green() - 30, 0),
+            std::max(bottom.Blue() - 30, 0)
+        );
+    }
+
+    // --- Draw 3-layer gradient for liquid-metal effect ---
+
+    int h = r.height;
+
+    // Top highlight band
+    wxRect rTop(r.x, r.y, r.width, h * 0.35);
+    wxColour top1 = wxColour(
+        std::min(top.Red() + 40, 255),
+        std::min(top.Green() + 40, 255),
+        std::min(top.Blue() + 40, 255)
+    );
+    dc.GradientFillLinear(rTop, top1, top, wxSOUTH);
+
+    // Middle body
+    wxRect rMid(r.x, r.y + h * 0.35, r.width, h * 0.45);
+    dc.GradientFillLinear(rMid, top, bottom, wxSOUTH);
+
+    // Bottom shadow
+    wxRect rBot(r.x, r.y + h * 0.80, r.width, h * 0.20);
+    wxColour bot2 = wxColour(
+        std::max(bottom.Red() - 30, 0),
+        std::max(bottom.Green() - 30, 0),
+        std::max(bottom.Blue() - 30, 0)
+    );
+    dc.GradientFillLinear(rBot, bottom, bot2, wxSOUTH);
+
+    // Border
+    dc.SetPen(wxPen(wxColour(0,0,0,80), 1));
+    dc.SetBrush(*wxTRANSPARENT_BRUSH);
+    dc.DrawRoundedRectangle(r, 3);
+}
+
+/*
+Lab base = RGBtoLAB(120, 120, 120);
+
+Lab topLab = base;    topLab.L += 12;
+Lab botLab = base;    botLab.L -= 10;
+
+wxColour colTop = LABtoRGB(topLab);
+wxColour colBottom = LABtoRGB(botLab);
+
+DrawScrollTrack(dc, trackRect,
+                wxColour(240,240,240),
+                wxColour(220,220,220));
+DrawScrollThumb(dc, thumbRect,
+                colTop, colBottom,
+                isPressed, isHovered);
+*/

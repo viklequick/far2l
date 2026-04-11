@@ -62,6 +62,8 @@ HoverResult ComputeControlAccent(const RGB& fg, const RGB& bg);
 
 bool IsNearBlack(int r, int g, int b, double threshold = 32.0);
 bool IsNearWhite(int r, int g, int b, double threshold = 32.0);
+bool IsNearBlack(RGB c, double threshold = 32.0);
+bool IsNearWhite(RGB c, double threshold = 32.0);
 
 iRGB SoftenBlackish_LAB(const RGB& c);
 

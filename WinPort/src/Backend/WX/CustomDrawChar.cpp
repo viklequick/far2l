@@ -1944,8 +1944,8 @@ namespace WXCustomDrawChar
 	/* single */
 #define BordersL(a)		( options && options->UseModernLook ? a ## _new : a )
 #define BordersT(a)		( options && options->UseModernLook ? Draw_Thicker<a ## _new> : Draw_Thicker<a> )
-#define BordersСL(a)	( /*options && options->UseNoBorders ? Draw_Space :*/ BordersL(a) )
-#define BordersСT(a)	( /*options && options->UseNoBorders ? Draw_Space :*/ BordersT(a) )
+#define BordersCL(a)	( /*options && options->UseNoBorders ? Draw_Space :*/ BordersL(a) )
+#define BordersCT(a)	( /*options && options->UseNoBorders ? Draw_Space :*/ BordersT(a) )
 #define BordersEL(b, a)	( options && options->UseNoBorders ? BordersL(b) : BordersL(a) )
 #define BordersET(b, a)	( options && options->UseNoBorders ? BordersT(b) : BordersT(a) )
 
@@ -1989,14 +1989,14 @@ namespace WXCustomDrawChar
 			case 0x254d: return Draw_Thicker<Draw_DashesH<2>>;		/* ╍ */
 			case 0x254e: return Draw_DashesV<2>;					/* ╎ */
 			case 0x254f: return Draw_Thicker<Draw_DashesV<2>>;		/* ╏ */
-			case 0x250c: return BordersСL(Draw_250C);		/* ┌ */
-			case 0x250f: return BordersСT(Draw_250C);		/* ┏ */
-			case 0x2510: return BordersСL(Draw_2510);		/* ┐ */
-			case 0x2513: return BordersСT(Draw_2510);		/* ┓ */
-			case 0x2514: return BordersСL(Draw_2514);		/* └ */
-			case 0x2517: return BordersСT(Draw_2514);		/* ┗ */
-			case 0x2518: return BordersСL(Draw_2518);		/* ┘ */
-			case 0x251b: return BordersСT(Draw_2518);		/* ┛ */
+			case 0x250c: return BordersCL(Draw_250C);		/* ┌ */
+			case 0x250f: return BordersCT(Draw_250C);		/* ┏ */
+			case 0x2510: return BordersCL(Draw_2510);		/* ┐ */
+			case 0x2513: return BordersCT(Draw_2510);		/* ┓ */
+			case 0x2514: return BordersCL(Draw_2514);		/* └ */
+			case 0x2517: return BordersCT(Draw_2514);		/* ┗ */
+			case 0x2518: return BordersCL(Draw_2518);		/* ┘ */
+			case 0x251b: return BordersCT(Draw_2518);		/* ┛ */
 			case 0x251c: return BordersEL(Draw_2502, Draw_251C);		/* ├ */
 			case 0x2523: return BordersET(Draw_2502, Draw_251C);		/* ┣ */
 			case 0x2524: return BordersEL(Draw_2502, Draw_2524);		/* ┤ */
@@ -2005,8 +2005,8 @@ namespace WXCustomDrawChar
 			case 0x2533: return BordersET(Draw_2500, Draw_252C);		/* ┳ */
 			case 0x2534: return BordersEL(Draw_2500, Draw_2534);		/* ┴ */
 			case 0x253b: return BordersET(Draw_2500, Draw_2534);		/* ┻ */
-			case 0x253c: return BordersСL(Draw_253C);		/* ┼ */
-			case 0x254b: return BordersСT(Draw_253C);		/* ╋ */
+			case 0x253c: return BordersCL(Draw_253C);		/* ┼ */
+			case 0x254b: return BordersCT(Draw_253C);		/* ╋ */
 			case 0x2550: return BordersD(Draw_2500, Draw_2550);		/* ═ */
 			case 0x2551: return BordersD(Draw_2502, Draw_2551);		/* ║ */
 			case 0x2552: return BordersCD(Draw_250C, Draw_2552);		/* ╒ */

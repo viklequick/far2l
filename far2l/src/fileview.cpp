@@ -61,7 +61,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 FileViewer::FileViewer(FileHolderPtr NewFileHolder, int EnableSwitch, int DisableHistory, int DisableEdit,
 		long ViewStartPos, const wchar_t *PluginData, NamesList *ViewNamesList, int ToSaveAs, UINT aCodePage)
 	:
-	View(false, aCodePage), FullScreen(TRUE), DisableEdit(DisableEdit)
+	View(false, aCodePage), MenuBar(nullptr), FullScreen(TRUE), DisableEdit(DisableEdit)
 {
 	_OT(SysLog(L"[%p] FileViewer::FileViewer(I variant...)", this));
 	SetPosition(0, 0, ScrX, ScrY);
@@ -701,19 +701,21 @@ bool FileViewer::SendToPrinter()
 	}
 
 	FILE* fp = printer.BeginPrint();
-	FILE* in = fopen(strName.GetMB().c_str(), "r");
-
-	char c;
-	while((c = getc(in)) != EOF) {
-		if (c == '\n') fprintf(fp, "<br>");
-		else putc(c, fp);
+	if (fp) {
+		FILE* in = fopen(strName.GetMB().c_str(), "r");
+		if (in) {
+			int c;
+			while ((c = getc(in)) != EOF) {
+				if (c == '\n') fprintf(fp, "<br>");
+				else putc(c, fp);
+			}
+			fclose(in);
+		}
+		printer.EndPrint(fp);
 	}
-	fclose(in);
-
-	printer.EndPrint(fp);
 
 	// unlink(tmpl);
-	return TRUE;
+	return true;
 }
 
 //////////////////////////////////

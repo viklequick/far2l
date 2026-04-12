@@ -215,5 +215,7 @@ public:
 	void OnSigTstp();
 	void OnSigCont();
 	void OnSigHup();
+
+	DWORD QueryControlKeys();
 };
 

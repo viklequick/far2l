@@ -2392,6 +2392,9 @@ void Dialog::ShowDialog(unsigned ID)
 					strStr.ReplaceChar(0, L' ');
 					strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
 
+					if(Opt.Backend.UseModernLook) 
+						strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' ');
+
 					if(!IsWxBackend()) {
 						if(Opt.Backend.UseModernLook) {
 							strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' '); // •

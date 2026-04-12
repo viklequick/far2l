@@ -1338,13 +1338,19 @@ const char* TTYBackend::OSC52RequestClipboardData(bool is_primary_buffer)
 	return _osc52clip.c_str();
 }
 
+#ifdef __linux__
+#include <linux/keyboard.h>
+#include <linux/kd.h>
+#endif
+
 DWORD TTYBackend::QueryControlKeys()
 {
 	DWORD out = 0;
 
 #ifdef __linux__
 	unsigned char state = 6;
-/* #ifndef KG_SHIFT
+/*
+#ifndef KG_SHIFT
 # define KG_SHIFT        0
 # define KG_CTRL         2
 # define KG_ALT          3
@@ -1355,7 +1361,7 @@ DWORD TTYBackend::QueryControlKeys()
 # define KG_CTRLL        6
 # define KG_CTRLR        7
 # define KG_CAPSSHIFT    8
-#endif */
+#endif*/
 
 	if (ioctl(_stdin, TIOCLINUX, &state) == 0) {
 		if (state & ((1 << KG_SHIFT) | (1 << KG_SHIFTL) | (1 << KG_SHIFTR))) {

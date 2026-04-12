@@ -3821,6 +3821,11 @@ int Editor::AutoGrabToClipboard ()
 	return status;
 }
 
+static bool AltDown(const MOUSE_EVENT_RECORD *MouseEvent)
+{
+	return (MouseEvent->dwControlKeyState & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0;
+}
+
 int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	m_MouseButtonIsHeld = MouseEvent->dwButtonState & 3;
@@ -3883,12 +3888,15 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 	MouseTarget target;
 	const bool left_down = (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) != 0;
+	const bool right_down = (MouseEvent->dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0;
+	const bool any_button_down = left_down || right_down;
+
 	auto apply_cursor_target = [&](bool allow_selection) {
 		MouseTarget cur{};
 		cur.line = CurLine;
 		cur.pos = CurLine ? CurLine->GetCurPos() : 0;
 		cur.visual_line = m_CurVisualLineInLogicalLine;
-		ApplyMouseTarget(cur, false, MouseEvent->dwControlKeyState, allow_selection);
+		ApplyMouseTarget(cur, false, right_down || AltDown(MouseEvent), allow_selection);
 	};
 
 	if (!m_bWordWrap && (MouseEvent->dwButtonState & 3) && (MouseEvent->dwEventFlags & MOUSE_MOVED)) {
@@ -3906,7 +3914,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				Pasting--;
 
 				if (MouseSelStartingLine != -1) {
-					apply_cursor_target(left_down);
+					apply_cursor_target(any_button_down);
 				}
 				Show();
 			}
@@ -3917,14 +3925,14 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	if (MouseEvent->dwMousePosition.Y < Y1 && (MouseEvent->dwButtonState & 3)) {
 		while (IsMouseButtonPressed() && MouseY < Y1) {
 			ProcessKey(KEY_UP);
-			if (left_down) {
+			if (any_button_down) {
 				apply_cursor_target(true);
 				Show();
 			}
 		}
-		if (left_down) {
+		if (any_button_down) {
 			if (ComputeMouseTarget(MouseEvent->dwMousePosition.X, Y1, target)) {
-				ApplyMouseTarget(target, false, MouseEvent->dwControlKeyState, true);
+				ApplyMouseTarget(target, false, right_down || AltDown(MouseEvent), true);
 				Show();
 			}
 		}
@@ -3933,14 +3941,14 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	if (MouseEvent->dwMousePosition.Y > Y2 && (MouseEvent->dwButtonState & 3)) {
 		while (IsMouseButtonPressed() && MouseY > Y2) {
 			ProcessKey(KEY_DOWN);
-			if (left_down) {
+			if (any_button_down) {
 				apply_cursor_target(true);
 				Show();
 			}
 		}
-		if (left_down) {
+		if (any_button_down) {
 			if (ComputeMouseTarget(MouseEvent->dwMousePosition.X, Y2, target)) {
-				ApplyMouseTarget(target, false, MouseEvent->dwControlKeyState, true);
+				ApplyMouseTarget(target, false, right_down || AltDown(MouseEvent), true);
 				Show();
 			}
 		}
@@ -3955,7 +3963,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		{
 			if (ComputeMouseTarget(MouseEvent->dwMousePosition.X, MouseEvent->dwMousePosition.Y, target)) {
 				ApplyMouseTarget(target, (MouseEvent->dwEventFlags & MOUSE_MOVED) == 0,
-					MouseEvent->dwControlKeyState, left_down);
+					right_down || AltDown(MouseEvent), any_button_down);
 			}
 		}
 
@@ -4079,7 +4087,7 @@ bool Editor::ComputeMouseTarget(int mouse_x, int mouse_y, MouseTarget& target)
 	return true;
 }
 
-void Editor::ApplyMouseTarget(const MouseTarget& target, bool initial_click, DWORD control_state, bool allow_selection)
+void Editor::ApplyMouseTarget(const MouseTarget& target, bool initial_click, bool vblock, bool allow_selection)
 {
 	const int screenHeight = Y2 - Y1;
 
@@ -4143,22 +4151,18 @@ void Editor::ApplyMouseTarget(const MouseTarget& target, bool initial_click, DWO
 			MouseSelStartingLine = NumLine;
 			MouseSelStartingPos = target.pos;
 		}
+		else if (MouseSelStartingLine < NumLine ||
+			(MouseSelStartingLine == NumLine && target.pos >= MouseSelStartingPos))
+		{
+			MarkBlock(vblock, MouseSelStartingLine, MouseSelStartingPos,
+				target.pos - MouseSelStartingPos,
+				NumLine + 1 - MouseSelStartingLine);
+		}
 		else
 		{
-			const bool vblock = (control_state & (LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0;
-			if (MouseSelStartingLine < NumLine ||
-				(MouseSelStartingLine == NumLine && target.pos >= MouseSelStartingPos))
-			{
-				MarkBlock(vblock, MouseSelStartingLine, MouseSelStartingPos,
-					target.pos - MouseSelStartingPos,
-					NumLine + 1 - MouseSelStartingLine);
-			}
-			else
-			{
-				MarkBlock(vblock, NumLine, target.pos,
-					MouseSelStartingPos - target.pos,
-					MouseSelStartingLine + 1 - NumLine);
-			}
+			MarkBlock(vblock, NumLine, target.pos,
+				MouseSelStartingPos - target.pos,
+				MouseSelStartingLine + 1 - NumLine);
 		}
 	}
 

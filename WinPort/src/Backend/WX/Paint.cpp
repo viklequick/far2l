@@ -825,7 +825,7 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 	{
 		wxBrush oldBrush = _painter._dc.GetBrush(); 
 		wxColour brushColor = oldBrush.GetColour();
-		WinPortRGB x{ brushColor.GetRed(), brushColor.GetGreen(), brushColor.GetBlue() };
+		WinPortRGB x{ (unsigned char)brushColor.Red(), (unsigned char)brushColor.Green(), (unsigned char)brushColor.Blue() };
 		_painter.DrawLiquidButtonBackground(left, top, right + 1 - left , bottom + 1 - top, x);
 	}
 
@@ -1518,7 +1518,14 @@ void ConsolePainter::DrawButtonDecorations(
 	else
 		DrawHorizontalGradientLine(X1 + 1, Y2 - 1, W - 2, c_a_text, emboss, 1);
 
+}
 
+void DrawTextBaseline(wxDC& dc, const wchar_t* text, int x, int baselineY)
+{
+    int w, h, descent;
+    dc.GetTextExtent(text, &w, &h, &descent);
+    int y = baselineY - (h - descent);
+    dc.DrawText(text, x, y);
 }
 
 void ConsolePainter::DrawButtonDecorationsAsNew(
@@ -1589,8 +1596,9 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 			_dc.SetFont(normal);
 		}
 		else {
+			int ascent = _context->FontHeight() - _context->FontDescent();
 			_dc.SetTextForeground(wxColour(c_text.r, c_text.g, c_text.b));
-			_dc.DrawText(pos.text, X1, Y1);
+			DrawTextBaseline(_dc, pos.text.c_str(), X1, Y1 + ascent);
 		}
 	}
 

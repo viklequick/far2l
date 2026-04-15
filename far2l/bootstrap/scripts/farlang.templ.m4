@@ -29059,6 +29059,17 @@ upd:"In this case user can't change codepage by F8 or Shift+F8"
 "У цьому випадку користувач не може змінити кодування F8 або Shift+F8"
 "У гэтым выпадку карыстач не можа змяніць кадоўку па F8 or Shift+F8"
 
+EnableAccidentalConfirmation
+"Применять изменения в диалоке по клику ПКМ мимо диалога"
+"Apply changes when clicked outside by right mouse click"
+upd:"Apply changes when clicked outside by right mouse click"
+upd:"Apply changes when clicked outside by right mouse click"
+upd:"Apply changes when clicked outside by right mouse click"
+upd:"Apply changes when clicked outside by right mouse click"
+upd:"Apply changes when clicked outside by right mouse click"
+upd:"Apply changes when clicked outside by right mouse click"
+upd:"Apply changes when clicked outside by right mouse click"
+
 ConfigGrepFilterTitle
 "Grep-фильтр"
 "Filter with grep"

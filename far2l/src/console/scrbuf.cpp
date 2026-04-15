@@ -357,15 +357,14 @@ void ScreenBuf::ApplyHint(int X1, int Y1, int X2, int Y2,
 			PtrBuf->Extra.Hint.Tag = tag;
 		}
 	}
-
+/*
 #ifdef DIRECT_SCREEN_OUT
 	Flush();
 #elif defined(DIRECT_RT)
-
 	if (DirectRT)
 		Flush();
-
 #endif
+*/
 }
 
 /*
@@ -480,14 +479,15 @@ void ScreenBuf::FillRect(int X1, int Y1, int X2, int Y2, WCHAR Ch, DWORD64 Color
 */
 void ScreenBuf::Flush()
 {
-	ConsoleRepaintsDeferScope crds(NULL);
-
 	CriticalSectionLock Lock(CS);
 
 	if (!Buf || !Shadow)
 		return;
 
 	if (!LockCount) {
+
+		ConsoleRepaintsDeferScope crds(NULL);
+
 		if (CtrlObject && (CtrlObject->Macro.IsRecording() || CtrlObject->Macro.IsExecuting())) {
 			MacroChar = Buf[0];
 			MacroCharUsed = true;
@@ -611,7 +611,8 @@ void ScreenBuf::Flush()
 
 void ScreenBuf::Lock()
 {
-	LockCount++;
+	// VK: todo: lock should operate with region but not the full screen!
+	// LockCount++;
 }
 
 void ScreenBuf::Unlock()

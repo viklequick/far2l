@@ -2303,9 +2303,9 @@ void Dialog::ShowDialog(unsigned ID)
 					}
 				}
 
-				if (CurItem->Focus && !Opt.Backend.UseModernLook) {
+				if (CurItem->Focus) {
 					// Отключение мигающего курсора при перемещении диалога
-					if (!DialogMode.Check(DMODE_DRAGGED))
+					if (!Opt.Backend.UseModernLook && !DialogMode.Check(DMODE_DRAGGED))
 						SetCursorType(1, -1);
 
 					MoveCursor(X1 + CX1 + 1, Y1 + CY1);
@@ -3648,7 +3648,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			else if (!(MouseEvent->dwButtonState & RIGHTMOST_BUTTON_PRESSED)
 					&& (PrevMouseButtonState & RIGHTMOST_BUTTON_PRESSED)
 					&& (Opt.Dialogs.MouseButton & DMOUSEBUTTON_RIGHT))
-				ProcessKey(KEY_ENTER);
+				ProcessKey(Opt.Dialogs.EnableAccidentalConfirmation ? KEY_ENTER : KEY_ESC);
 		}
 
 		if (MouseEvent->dwButtonState)

@@ -376,7 +376,7 @@ int FileViewer::ProcessKey(FarKey Key)
 			if (Opt.UsePrintManager && CtrlObject->Plugins.FindPlugin(SYSID_PRINTMANAGER))
 				CtrlObject->Plugins.CallPlugin(SYSID_PRINTMANAGER, OPEN_VIEWER, 0);		// printman
             */
-            SendToPrinter();
+           	SendToPrinter();
 			return TRUE;
 		}
 		case KEY_F9:

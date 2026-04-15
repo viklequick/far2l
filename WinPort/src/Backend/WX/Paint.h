@@ -160,11 +160,15 @@ class ConsolePainter
 
         int tag;
 
-    	unsigned cx;
-    	unsigned nx;
-        unsigned cy;
+    	int cx;
+    	int nx;
+        int cy;
+
+        unsigned int cw, ch;
+
     	DWORD64 attributes;
         std::wstring text;
+        SMALL_RECT area;
     };
 
     std::vector<CustomCharPos> line_custom_chars;
@@ -203,7 +207,7 @@ public:
 		line_hints.clear();
 	}
 
-	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy);
+	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned int cw, unsigned int ch, const SMALL_RECT& area);
 	void DrawHint(const HintPos& x);
 
 	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);

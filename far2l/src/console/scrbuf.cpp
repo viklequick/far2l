@@ -71,6 +71,9 @@ static bool AreSameCharInfoBuffers(const CHAR_INFO *left, const CHAR_INFO *right
 			return false;
 		if (left->Attributes != right->Attributes)
 			return false;
+		// vk: todo: check if hints are different
+		if (left->Extra.ExtraFlags != right->Extra.ExtraFlags)
+		    return false;
 	}
 	return true;
 }
@@ -274,7 +277,8 @@ void ScreenBuf::ApplyShadow(int X1, int Y1, int X2, int Y2, SaveScreen *ss)
 			uint8_t cc = attr & 0x07;
 			DstBuf->Attributes = ((attr & 0xFEFEFEFEFEFE0000ULL) >> 1) |
 									(attr & 0x000000000000FF00ULL) | (cc ? cc : 8);
-			DstBuf->Extra.Hint.Shadow = 1;
+			// VK: todo: apply shadow: do we need to track it and how to turn it off?
+			// DstBuf->Extra.Hint.Shadow = 1;
 		}
 	}
 
@@ -319,6 +323,11 @@ void ScreenBuf::ApplyColorMask(int X1, int Y1, int X2, int Y2, DWORD64 ColorMask
 		Flush();
 
 #endif
+}
+
+void ScreenBuf::Unhint() 
+{
+	ApplyHint(0, 0, BufX - 1, BufY - 1, 0, HintNone, HintObjectNone, false, false, false, false, false);
 }
 
 void ScreenBuf::ApplyHint(int X1, int Y1, int X2, int Y2, 
@@ -442,6 +451,11 @@ void ScreenBuf::FillRect(int X1, int Y1, int X2, int Y2, WCHAR Ch, DWORD64 Color
 	int Height = Y2 - Y1 + 1;
 	CHAR_INFO CI;
 	CI.Attributes = Color;
+	
+	CI.Extra.Hint.Container = HintNone;
+	CI.Extra.Hint.Object = HintObjectNone;
+	CI.Extra.Hint.Tag = 0;
+
 	SetVidChar(CI, Ch);
 
 	for (int I = 0; I < Height; I++) {

@@ -60,8 +60,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <cwctype>
 #include <atomic>
 
-#include "Colorspace.h"
-
 #define VTEXT_ADN_SEPARATORS 1
 
 // Флаги для функции ConvertItem
@@ -93,13 +91,6 @@ enum DLGITEMINTERNALFLAGS
 };
 
 const wchar_t *fmtSavedDialogHistory = L"SavedDialogHistory/";
-
-static uint64_t supported_tweaks = 0;
-static bool IsWxBackend() {
-	if(!supported_tweaks) supported_tweaks = WINPORT(GetConsoleTweaks)();
-	return (supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) != 0;
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 /**
@@ -1442,69 +1433,6 @@ void Dialog::GetDialogObjectsData()
 	}
 }
 
-static void extractColorComponents(int color, int& r, int& g, int& b) {
-	r = (color >> 16) & 0xFF;
-	g = (color >> 8)  & 0xFF;
-	b =  color        & 0xFF;
-}
-
-static void extractColor(uint64_t color, RGB& fg, RGB& bg) {
-	int fgC = (color >> 16) & 0xFFFFFF;
-	int bgC = (color >> 40) & 0xFFFFFF;;
-
-	int r, g, b;
-	extractColorComponents(fgC, r, g, b);
-	fg = toRGB(r, g, b);
-	extractColorComponents(bgC, r, g, b);
-	bg = toRGB(r, g, b);
-}
-
-static int assembleColorComponents(int r, int g, int b) {
-	return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
-}
-
-static uint64_t assembleColor(RGB& fg, RGB& bg) {
-	iRGB ifg = toIRGB(fg);
-	iRGB ibg = toIRGB(bg);
-	uint64_t color = 0;
-	color |= (uint64_t)assembleColorComponents(ifg.r, ifg.g, ifg.b) << 16;
-	color |= (uint64_t)assembleColorComponents(ibg.r, ibg.g, ibg.b) << 40;
-	return color | FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR;
-}
-
-uint64_t SoftenItemColor(uint64_t attributes, int Focus, int Hover, int Pressed) 
-{
-	// if (!Opt.Backend.UseModernLook) return attributes;
-
-   	RGB bg, fg;
-   	extractColor(attributes, fg, bg);
-   	HoverResult r = ComputeControlAccent(bg, fg);
-   	if (Pressed)
-   		fg = SoftenToPressedState_LAB(fg, r.fg_hover);
-   	else if (Focus) {
-    	if (!IsWxBackend()) {
-			LAB topLab = RGBtoLAB(bg);
-			if (IsNearBlack(bg))
-				topLab.L = std::min(topLab.L + 15.0, 100.0);
-			else
-				topLab.L = std::max(topLab.L - 10.0, 0.0);
-			bg = LABtoRGB(topLab);
-    	}
-   		fg = SoftenToFocusedState_LAB(fg, r.fg_hover);
-    }
-   	else if (Hover) 
-   		fg = SoftenToHoverState_LAB(fg, r.fg_hover);
-   	return assembleColor(fg, bg) | (attributes & 0x0000FFFF);
-}
-
-uint64_t GetAccentColors(uint64_t attributes) 
-{
-   	RGB bg, fg;
-   	extractColor(attributes, fg, bg);
-   	HoverResult r = ComputeControlAccent(bg, fg);
-   	return assembleColor(r.fg_hover, r.bg_hover) | (attributes & 0x0000FFFF);
-}
-
 // Функция формирования и запроса цветов.
 DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t *Color)
 {
@@ -1637,8 +1565,8 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 			Color[1] = FarColorToReal( COLOR_IF(IsWarning, COL_WARNDIALOGHIGHLIGHTTEXT, COL_DIALOGHIGHLIGHTTEXT, DisabledItem, COL_WARNDIALOGDISABLED, COL_DIALOGDISABLED) );
 
 			if (!DisabledItem && (Focus || Hover || Pressed)) {
-				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed);
-				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed);
+				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed, 0);
+				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed, 0);
 			}
 
 			break;
@@ -1688,8 +1616,8 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 			}
 
 			if (!DisabledItem && (Focus || Hover || Pressed)) {
-				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed);
-				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed);
+				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed, 0);
+				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed, 0);
 			}
 
 			break;
@@ -1789,9 +1717,9 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 			}
 
 			if (IsWxBackend() && Opt.Backend.UseModernLook && !DisabledItem && (Focus || Hover || Pressed)) {
-				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed);
-				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed);
-				Color[2] = SoftenItemColor(Color[2], Focus, Hover, Pressed);
+				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed, 0);
+				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed, 0);
+				Color[2] = SoftenItemColor(Color[2], Focus, Hover, Pressed, 0);
 			}
 
 			break;
@@ -1979,7 +1907,10 @@ void Dialog::ShowDialog(unsigned ID)
 		SetCursorType(CursorVisible, CursorSize);
 	}
 
+	if (Opt.Backend.UseModernLook && IsWxBackend()) ID = 0; // draw everything always: backend will filter the rendering area
+
 	HintBeginContainer();
+	Hint(X1, Y1, X2, Y2, HintDialog, HintObjectNone);
 	for (I = ID; I < DrawItemCount; I++) {
 		CurItem = Item[I];
 
@@ -2093,7 +2024,6 @@ void Dialog::ShowDialog(unsigned ID)
 					else
 						HiText(strStr, ItemColor[1]);
 **/
-
 				}
 
 				break;
@@ -2359,10 +2289,18 @@ void Dialog::ShowDialog(unsigned ID)
 					HiText(strStr, ItemColor[1]);
 				HintAt(HintDialog, HintCheckbox, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0);
 
-				if (Opt.Backend.UseModernLook && !IsWxBackend()) {
-					SetColor(SoftenItemColor(GetAccentColors(ItemColor[0]), CurItem->Focus, CurItem->Hover, CurItem->Pressed));
-					GotoXY(X1 + CX1, Y1 + CY1);
-					Text(checkMark);
+				if (Opt.Backend.UseModernLook) {
+					if(!IsWxBackend()) {
+						SetColor(SoftenItemColor(GetAccentColors(ItemColor[0]), CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0));
+						GotoXY(X1 + CX1, Y1 + CY1);
+						Text(checkMark);
+					}
+					else {
+						// check status needs to be changed on both places
+						SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, CurItem->Selected));
+						GotoXY(X1 + CX1 + 1, Y1 + CY1);
+						Text(checkMark.LShift(1));
+					}
 				}
 
 				if (CurItem->Focus && !Opt.Backend.UseModernLook) {
@@ -2389,23 +2327,26 @@ void Dialog::ShowDialog(unsigned ID)
 					strStr.ReplaceChar(strStr.GetLength() - 2, L' '); 
 				}
 				else {
-					strStr.ReplaceChar(0, L' ');
-					strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
+					// modern + wx: no brackets
+					// modern + !wx: unicode glyphs
+					// !modern: old crazy brackets
 
-					if(Opt.Backend.UseModernLook) 
+					if(Opt.Backend.UseModernLook) {
 						strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' ');
-
-					if(!IsWxBackend()) {
-						if(Opt.Backend.UseModernLook) {
+						if (IsWxBackend()) {
+							strStr.ReplaceChar(0, L' ');
+							strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
+						}
+						else {
 							strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' '); // •
 							strStr.ReplaceChar(strStr.GetLength() - 2, CurItem->DefaultButton ? L'★' : L' '); 
 							strStr.ReplaceChar(0, L'❲');
 							strStr.ReplaceChar(strStr.GetLength() - 1, L'❳'); 
 						}
-						else {
-							strStr.ReplaceChar(0, CurItem->DefaultButton ? L'{' : L'[');
-							strStr.ReplaceChar(strStr.GetLength() - 1, CurItem->DefaultButton ? L'}' : L']'); 
-						}
+					}
+					else {
+						strStr.ReplaceChar(0, CurItem->DefaultButton ? L'{' : L'[');
+						strStr.ReplaceChar(strStr.GetLength() - 1, CurItem->DefaultButton ? L'}' : L']'); 
 					}
 				}
 
@@ -3539,8 +3480,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	MsX = MouseEvent->dwMousePosition.X;
 	MsY = MouseEvent->dwMousePosition.Y;
 
+	// Hover effect processing
 	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
-		// todo: handle hover effect here by indicating the control and then repaint it
 		int oldHover = -1, newHover = -1;;
 		for (I = ItemCount - 1; I != (unsigned)-1; I--) {
 			if (Item[I]->Hover) oldHover = I;
@@ -3939,6 +3880,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 							}
 
 							// Да, мальчик был. Зачнем...
+							// Dragged here: Hide / Show with locked window?
 							{
 								LockScreen LckScr;
 								Hide();
@@ -3952,7 +3894,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 								Show();
 							}
 						}
-					} else if (Mb == RIGHTMOST_BUTTON_PRESSED)		// abort
+					} 
+					else if (Mb == RIGHTMOST_BUTTON_PRESSED)		// abort
 					{
 						LockScreen LckScr;
 						Hide();
@@ -3968,7 +3911,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 							Show();
 
 						break;
-					} else		// release key, drop dialog
+					} 
+					else		// release key, drop dialog
 					{
 						if (OldX1 != X1 || OldX2 != X2 || OldY1 != Y1 || OldY2 != Y2) {
 							LockScreen LckScr;
@@ -4861,6 +4805,9 @@ void Dialog::Process()
 				WaitUserTime = save;
 		}
 	}
+
+	// VK: todo: update hints as dioalog is completed
+	// HintBeginContainer();
 
 	if (pSaveItemEx)
 		for (unsigned i = 0; i < ItemCount; i++)

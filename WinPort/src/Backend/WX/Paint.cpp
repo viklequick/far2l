@@ -393,7 +393,6 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 
 	ConsolePainter painter(this, dc, _buffer, _cursor_props);
 
-	// out-of clipping: collect tags
 	for (unsigned int cy = (unsigned)area.Top; cy <= (unsigned)area.Bottom; ++cy) {
 		const CHAR_INFO *line;
 		{
@@ -410,32 +409,9 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 			line = &_line[0];
 		}
 
-		for (unsigned int cx = 0; cx < cw; ++cx) {
-			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
-			painter.ConsumeHintAt(line[cx], cx, nx, cy);
-		}
-	}
-
-	for (unsigned int cy = 0; cy <= (unsigned)area.Bottom; ++cy) {
 		wxRegionContain lc = rgn.Contains(0, cy * _font_height, cw * _font_width, _font_height);
-
 		if (lc == wxOutRegion) {
 			continue;
-		}
-
-		const CHAR_INFO *line;
-		{
-			// dont keep console output locked for a long time to avoid output slowdown
-			IConsoleOutput::DirectLineAccess dla(g_winport_con_out, cy);
-			line = dla.Line();
-			unsigned int cur_cw = line ? dla.Width() : 0;
-			if (cur_cw < cw) {
-				memcpy(&_line[0], line, cur_cw * sizeof(*line));
-				memset(&_line[cur_cw], 0, (cw - cur_cw) * sizeof(*line));
-			} else {
-				memcpy(&_line[0], line, cw * sizeof(*line));
-			}
-			line = &_line[0];
 		}
 
 		painter.LineBegin(cy);
@@ -444,12 +420,16 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		const unsigned int cx_begin = (area.Left > 0 && !line[area.Left].Char.UnicodeChar) ? area.Left - 1 : area.Left;
 		const unsigned int cx_end = std::min(cw, (unsigned)area.Right + 1);
 		bool prev_space = cx_begin > 0 ? line[cx_begin - 1].Char.UnicodeChar == L' ' : false;
+
+		// out-of clipping: collect tags
+		for (unsigned int cx = cx_begin; cx < cw && cx < cx_end; ++cx) {
+			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
+			painter.ConsumeHintAt(line[cx], (int)cx, nx, (int)cy, cw, ch, area);
+		}
 		
 		for (unsigned int cx = cx_begin; cx < cx_end; ++cx) {
 			if (!line[cx].Char.UnicodeChar) {
 				painter.LineFlush(cx + 1);
-				//draw_button = false;
-				//in_button_cx = -1;
 				continue;
 			}
 			const wchar_t *pwcz;
@@ -1389,8 +1369,7 @@ void ConsolePainter::DrawLiquidButtonBackground(
     _dc.GradientFillLinear(rBot, bot1, bot2, wxSOUTH);
 }
 
-
-void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy) {
+void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned cw, unsigned ch, const SMALL_RECT& area) {
 	if (WXCustomDrawChar::options && !WXCustomDrawChar::options->UseModernLook) return;
 	if (ci.Extra.Hint.Container != HintDialog) return;
 	if (ci.Extra.Hint.Object == HintObjectNone) return;
@@ -1410,7 +1389,7 @@ void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy) 
 	if (line_hints.size() > 0) {
 		for(int i = line_hints.size() - 1; i >= 0; --i) {
 			if (line_hints[i].Hint.Object == ci.Extra.Hint.Object && line_hints[i].tag == ci.Extra.Hint.Tag) {
-				line_hints[i].nx = cx + nx - 1 - line_hints[i].cx;
+				line_hints[i].nx = cx + nx - 1; // - line_hints[i].cx;
 				line_hints[i].text += text;
 				return;
 			}
@@ -1422,9 +1401,11 @@ void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy) 
 		ci.Extra.Hint.Focus, ci.Extra.Hint.Hover, ci.Extra.Hint.Enabled, 
 		ci.Extra.Hint.Default, ci.Extra.Hint.Beveled, ci.Extra.Hint.Shadow },
 		ci.Extra.Hint.Tag,
-		(unsigned)cx, (unsigned)nx, 
-		(unsigned)cy, 
-		ci.Attributes, text };
+		cx, cx + nx - 1, // nx 
+		cy, 
+		cw, ch,
+		ci.Attributes, text,
+		area };
 
 	line_hints.push_back(pos);
 }
@@ -1432,6 +1413,21 @@ void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy) 
 void ConsolePainter::DrawHint(const HintPos& x) {
 	WinPortRGB clr_back = WxConsoleBackground2RGB(x.attributes);
 	WinPortRGB clr_text = WxConsoleForeground2RGB(x.attributes);
+
+	int cx_start = x.cx;
+	int cx_end = x.nx - 1; // x.cx + x.nx - 1;
+	int cy = x.cy;
+
+	if (cy < 0 || cy < x.area.Top || cy > x.area.Bottom) return;
+	if (cx_end < 0 || cx_end < x.area.Left) return;
+	if (cx_start > x.area.Right || (unsigned)cx_start > x.cw) return;
+
+	if (cx_start < x.area.Left) cx_start = x.area.Left;
+	if (cx_start > x.area.Right) cx_start = x.area.Right;
+	if (cx_end < x.area.Left) cx_end = x.area.Left;
+	if (cx_end > x.area.Right) cx_end = x.area.Right;
+
+	if (cx_end <= cx_start) return;
 
 	switch(x.Hint.Object){
     case HintEdit:
@@ -1442,15 +1438,20 @@ void ConsolePainter::DrawHint(const HintPos& x) {
     case HintComboBox:
     	break;
     case HintButton:
-    	// fprintf(stderr, "button: %d..%d, %d: tag=%d focus=%c type=%d\n", x.cx, x.cx + x.nx - 1, _start_cy, ((int)x.tag) & 0x00FF, x.Hint.Focus ? 'Y': 'n', x.Hint.Object);
+    	fprintf(stderr, "...paint: button: %d..%d, %d -> %d..%d, %d `%ls` in %d..%d, %d..%d, tag=%d focus=%c type=%d\n", 
+        	x.cx, x.nx, x.cy,
+    		cx_start, cx_end, cy, 
+            x.text.c_str(),
+            (int)x.area.Left, (int)x.area.Right, (int)x.area.Top, (int)x.area.Bottom,
+    		((int)x.tag) & 0x00FF, x.Hint.Focus ? 'Y': 'n', x.Hint.Object);
         if(WXCustomDrawChar::options->Use3D)
-	        DrawButtonDecorationsAsNew(x.cx, x.cx + x.nx - 1, x.cy, clr_text, clr_back, x);
+	        DrawButtonDecorationsAsNew(cx_start, cx_end, cy, clr_text, clr_back, x);
 		else
-			DrawButtonDecorations(x.cx, x.cx + x.nx - 1, x.cy, clr_text, clr_back, x);
+			DrawButtonDecorations(cx_start, cx_end, cy, clr_text, clr_back, x);
     	break;
     case HintCheckbox:
     case HintRadioButton:
-        DrawCheckboxDecorations(x.cx, x.cx + x.nx - 1, x.cy, clr_text, clr_back, x);
+        DrawCheckboxDecorations(cx_start, cx_end, cy, clr_text, clr_back, x);
     	break;
     case HintListBox:
     	break;
@@ -1533,7 +1534,7 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 	const WinPortRGB& c_text, const WinPortRGB& c_back,
 	const HintPos& pos) 
 {
-	wxCoord Y1 = cy * _context->FontHeight(), Y2 = cy * _context->FontHeight() + _context->FontHeight() - 1;
+	wxCoord Y1 = cy * _context->FontHeight(), Y2 = (cy + 1) * _context->FontHeight() - 1;
 	wxCoord X1 = cx_start * _context->FontWidth(), X2 = cx_end * _context->FontWidth() + _context->FontWidth() - 1;
 	wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
 

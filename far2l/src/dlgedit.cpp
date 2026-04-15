@@ -743,7 +743,7 @@ void DlgEdit::ShowConsoleTitle()
 
 void DlgEdit::SetScreenPosition()
 {
-
+	// VK: todo: place as dialog, editor hint here?
 	if (Type == DLGEDIT_MULTILINE)
 		multiEdit->SetScreenPosition();
 	else
@@ -752,7 +752,6 @@ void DlgEdit::SetScreenPosition()
 
 void DlgEdit::ResizeConsole()
 {
-
 	if (Type == DLGEDIT_MULTILINE)
 		multiEdit->ResizeConsole();
 	else

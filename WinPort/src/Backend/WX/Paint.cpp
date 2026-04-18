@@ -421,10 +421,15 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		const unsigned int cx_end = std::min(cw, (unsigned)area.Right + 1);
 		bool prev_space = cx_begin > 0 ? line[cx_begin - 1].Char.UnicodeChar == L' ' : false;
 
+		painter.HintLineBegin(cy, cw, ch);
+
 		// out-of clipping: collect tags
+		std::vector<ConsolePainter::HintHatch> hatched;
+
 		for (unsigned int cx = cx_begin; cx < cw && cx < cx_end; ++cx) {
 			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
 			painter.ConsumeHintAt(line[cx], (int)cx, nx, (int)cy, cw, ch, area);
+			hatched.push_back({ line[cx].Extra.Hint.Container, line[cx].Extra.Hint.Object, (int)cx, (int)cy });
 		}
 		
 		for (unsigned int cx = cx_begin; cx < cx_end; ++cx) {
@@ -457,6 +462,8 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 			prev_space = pwcz[0] == L' ';
 		}
 		painter.LineFlush(area.Right + 1);
+
+		painter.DrawHatch(hatched);
 	}
 
 	painter.HintFlush();
@@ -1371,6 +1378,19 @@ void ConsolePainter::DrawLiquidButtonBackground(
 
 void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned cw, unsigned ch, const SMALL_RECT& area) {
 	if (WXCustomDrawChar::options && !WXCustomDrawChar::options->UseModernLook) return;
+
+	if (ci.Extra.Hint.Container == HintDialog) {
+		if(line_dlg.cx < 0){ 
+			line_dlg.cx = cx;
+			line_dlg.nx = cx + nx - 1;
+		}
+		int next_nx = cx + nx - 1;
+
+		// guard for unfinished paints
+		if (next_nx == line_dlg.nx + 1) line_dlg.nx = next_nx;
+		else return;
+	}
+
 	if (ci.Extra.Hint.Container != HintDialog) return;
 	if (ci.Extra.Hint.Object == HintObjectNone) return;
 
@@ -1418,6 +1438,10 @@ void ConsolePainter::DrawHint(const HintPos& x) {
 	int cx_end = x.nx - 1; // x.cx + x.nx - 1;
 	int cy = x.cy;
 
+	if (cy != line_dlg.cy) return;
+	if (cx_start <= line_dlg.cx || cx_start >= line_dlg.nx - 1) return;
+	if (cx_end >= line_dlg.nx - 1 || cx_end < line_dlg.cx) return;
+
 	if (cy < 0 || cy < x.area.Top || cy > x.area.Bottom) return;
 	if (cx_end < 0 || cx_end < x.area.Left) return;
 	if (cx_start > x.area.Right || (unsigned)cx_start > x.cw) return;
@@ -1438,12 +1462,13 @@ void ConsolePainter::DrawHint(const HintPos& x) {
     case HintComboBox:
     	break;
     case HintButton:
-    	fprintf(stderr, "...paint: button: %d..%d, %d -> %d..%d, %d `%ls` in %d..%d, %d..%d, tag=%d focus=%c type=%d\n", 
+    	fprintf(stderr, "...paint: button: %d..%d, %d -> %d..%d, %d `%ls` in %d..%d, %d..%d, tag=%d focus=%c type=%d in %d..%d, %d\n", 
         	x.cx, x.nx, x.cy,
     		cx_start, cx_end, cy, 
             x.text.c_str(),
             (int)x.area.Left, (int)x.area.Right, (int)x.area.Top, (int)x.area.Bottom,
-    		((int)x.tag) & 0x00FF, x.Hint.Focus ? 'Y': 'n', x.Hint.Object);
+    		((int)x.tag) & 0x00FF, x.Hint.Focus ? 'Y': 'n', x.Hint.Object,
+    		line_dlg.cx, line_dlg.nx, line_dlg.cy);
         if(WXCustomDrawChar::options->Use3D)
 	        DrawButtonDecorationsAsNew(cx_start, cx_end, cy, clr_text, clr_back, x);
 		else
@@ -1467,6 +1492,61 @@ void ConsolePainter::DrawHint(const HintPos& x) {
     default:
     	break;
 	}
+}
+
+static wxColour colorTable[] = {
+	wxColour(0, 0, 0, 255), // HintNone = 0,
+	wxColour(0, 0, 0, 40), // HintConsoleBuffer = 1,
+	wxColour(0, 255, 80, 100), // HintDialog,
+	wxColour(0, 0, 0, 40), // HintMenu,
+	wxColour(0, 0, 0, 40), // HintHMenu,
+	wxColour(0, 0, 0, 40), // HintEditor,
+	wxColour(0, 0, 0, 40), // HintViewer,
+	wxColour(16, 80, 192, 80), // HintPanel,
+	wxColour(0, 0, 0, 40), // HintTree,
+	wxColour(0, 0, 0, 40), // HintQuickView,
+	wxColour(0, 0, 0, 40), // HintScreenSaver,
+	wxColour(0, 0, 0, 40), // HintInfoList,
+	wxColour(0, 0, 0, 40), // HintHelpViewer,
+	wxColour(0, 0, 0, 40), // HintCommandLine,
+	wxColour(255, 0, 0, 40), // HintPanic
+};
+
+void ConsolePainter::DrawHatch(const std::vector<HintHatch>& hatched) {
+    wxGraphicsContext* dc = wxGraphicsContext::Create(_dc);
+    if (!dc) return;
+
+    return;
+
+	auto oldPen   = _dc.GetPen();
+	auto oldBrush = _dc.GetBrush();
+	auto oldText  = _dc.GetTextForeground();
+
+	_dc.SetPen(*wxTRANSPARENT_PEN);
+
+	for(size_t i = 0; i < hatched.size(); ++i) {
+		const HintHatch& x = hatched[i];
+
+		wxCoord Y1 = x.cy * _context->FontHeight();
+		wxCoord Y2 = Y1 + _context->FontHeight() - 1;
+
+		wxCoord X1 = x.cx * _context->FontWidth();
+		wxCoord X2 = X1 + _context->FontWidth() - 1;
+
+		wxColour hatchColor = colorTable[x.Container];  // 80 = semi-transparent
+
+		wxBrush hatchBrush(hatchColor /*, wxBRUSHSTYLE_CROSS_HATCH*/);
+		dc->SetBrush(hatchBrush);
+
+		// wxColour hatchPen = wxColor(hatchColor.Red(), hatchColor.Green(), hatchColor.Blue(), 255);
+		// dc->SetPen(hatchPen);
+
+		dc->DrawRectangle(X1, Y1, X2, Y2);
+	}
+
+	_dc.SetPen(oldPen);
+	_dc.SetBrush(oldBrush);
+	_dc.SetTextForeground(oldText);
 }
 
 void ConsolePainter::DrawCheckboxDecorations(
@@ -1518,7 +1598,6 @@ void ConsolePainter::DrawButtonDecorations(
 		DrawHorizontalGradientLine(X1 + 1, Y2 - 1, W - 2, c_a_text, emboss, 2);
 	else
 		DrawHorizontalGradientLine(X1 + 1, Y2 - 1, W - 2, c_a_text, emboss, 1);
-
 }
 
 void DrawTextBaseline(wxDC& dc, const wchar_t* text, int x, int baselineY)

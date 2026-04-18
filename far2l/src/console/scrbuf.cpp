@@ -64,16 +64,18 @@ extern int DirectRT;
 
 ScreenBuf ScrBuf;
 
+// this is the shadow-specific only so we are not interested in extra data
+static bool Equal (const CHAR_INFO& left, const CHAR_INFO& right)
+{
+	return left.Char.UnicodeChar == right.Char.UnicodeChar &&
+			left.Attributes == right.Attributes;
+}
+
 static bool AreSameCharInfoBuffers(const CHAR_INFO *left, const CHAR_INFO *right, size_t count)
 {	// use this instead of memcmp cuz it can produce wrong results due to uninitialized alignment gaps
 	for (; count; --count, ++left, ++right) {
-		if (left->Char.UnicodeChar != right->Char.UnicodeChar)
+		if (!Equal(*left, *right))
 			return false;
-		if (left->Attributes != right->Attributes)
-			return false;
-		// vk: todo: check if hints are different
-		if (left->Extra.ExtraFlags != right->Extra.ExtraFlags)
-		    return false;
 	}
 	return true;
 }
@@ -131,6 +133,13 @@ void ScreenBuf::AllocBuf(int X, int Y)
 	Buf = new (std::nothrow) CHAR_INFO[Cnt]();
 	Shadow = new (std::nothrow) CHAR_INFO[Cnt]();
 
+	for (int i = 0; i < Cnt; ++i) {
+		Shadow[i].Extra.Hint.Container = HintNone;
+		Shadow[i].Extra.Hint.Object = HintObjectNone;
+		Shadow[i].Extra.Hint.Tag = 0;
+		Shadow[i].Extra.Hint.Shadow = 1;
+	}
+
 	if (!Buf || !Shadow) {
 		fprintf(stderr, "FATAL: Failed to allocate screen buffer (%d x %d)\n", X, Y);
 		delete[] Buf;
@@ -159,6 +168,14 @@ void ScreenBuf::FillBuf()
 	SMALL_RECT ReadRegion = {0, 0, (SHORT)(BufX - 1), (SHORT)(BufY - 1)};
 	Console.ReadOutput(*Buf, BufferSize, BufferCoord, ReadRegion);
 	memcpy(Shadow, Buf, BufX * BufY * sizeof(CHAR_INFO));
+
+	for (int i = 0; i < BufX * BufY; ++i) {
+		Shadow[i].Extra.Hint.Container = HintNone;
+		Shadow[i].Extra.Hint.Object = HintObjectNone;
+		Shadow[i].Extra.Hint.Tag = 0;
+		Shadow[i].Extra.Hint.Shadow = 1;
+	}
+
 	SBFlags.Set(SBFLAGS_USESHADOW);
 	COORD CursorPosition;
 	Console.GetCursorPosition(CursorPosition);
@@ -278,7 +295,10 @@ void ScreenBuf::ApplyShadow(int X1, int Y1, int X2, int Y2, SaveScreen *ss)
 			DstBuf->Attributes = ((attr & 0xFEFEFEFEFEFE0000ULL) >> 1) |
 									(attr & 0x000000000000FF00ULL) | (cc ? cc : 8);
 			// VK: todo: apply shadow: do we need to track it and how to turn it off?
-			// DstBuf->Extra.Hint.Shadow = 1;
+			DstBuf->Extra.Hint.Container = HintNone;
+			DstBuf->Extra.Hint.Object = HintObjectNone;
+			DstBuf->Extra.Hint.Tag = 0;
+			DstBuf->Extra.Hint.Shadow = 1;
 		}
 	}
 
@@ -582,6 +602,13 @@ void ScreenBuf::Flush()
 					Console.WriteOutput(*Buf, BufferSize, BufferCoord, WriteRegion);
 				}
 				memcpy(Shadow, Buf, BufX * BufY * sizeof(CHAR_INFO));
+
+				for(int i = 0; i < BufX * BufY; ++i) {
+					Shadow[i].Extra.Hint.Container = HintNone;
+					Shadow[i].Extra.Hint.Object = HintObjectNone;
+					Shadow[i].Extra.Hint.Tag = 0;
+					Shadow[i].Extra.Hint.Shadow = 1;
+				}
 			}
 		}
 
@@ -612,7 +639,7 @@ void ScreenBuf::Flush()
 void ScreenBuf::Lock()
 {
 	// VK: todo: lock should operate with region but not the full screen!
-	// LockCount++;
+	LockCount++;
 }
 
 void ScreenBuf::Unlock()

@@ -556,10 +556,13 @@ void Hint(
 	Y1 = clamp(Y1, 0, ScrY);
 	Y2 = clamp(Y2, 0, ScrY);
 
-	if (hcc == HintDialog) {
-		fprintf(stderr, "type %d: tag=%d, pos=%d..%d, %d..%d, focus=%c hover=%c disabled=%c\n", hco, tag, X1, X2, Y1, Y2, 
+	//if (hcc == HintDialog) {
+		fprintf(stderr, "surface %d: type %d: tag=%d, pos=%d..%d, %d..%d, focus=%c hover=%c disabled=%c\n", 
+			hcc, hco, 
+			tag, 
+			X1, X2, Y1, Y2, 
 			focused ? 'Y': 'n', hovered ? 'Y': 'n', disabled ? 'Y': 'n');
-	}
+	//}
 	ScrBuf.ApplyHint(X1, Y1, X2, Y2, tag, hcc, hco, focused, hovered, disabled, defaultCtrl, false);
 }
 

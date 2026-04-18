@@ -173,8 +173,17 @@ class ConsolePainter
 
     std::vector<CustomCharPos> line_custom_chars;
     std::vector<HintPos> line_hints;
+    HintPos line_dlg;
 
 public:
+
+    struct HintHatch {
+		HintContainerType Container;
+		HintObjectType Object;
+		int cx;
+		int cy;
+    };
+
 	ConsolePainter(ConsolePaintContext *context, wxPaintDC &dc, wxString &_buffer, CursorProps &cursor_props);
 	void SetFillColor(const WinPortRGB &clr);
 
@@ -197,6 +206,18 @@ public:
 			DrawCustomCharImpl(c.cc, c.custom_draw, c.attributes, c.cx, c.nx, c.prev_space);
 		}
 		line_custom_chars.clear();
+		HintFlush();
+	}
+
+	inline void HintLineBegin(int cy, int cw, int ch) 
+	{
+		line_dlg.cy = cy;
+		line_dlg.cw = cw;
+		line_dlg.ch = ch;
+		line_dlg.Hint.Container = HintDialog;
+		line_dlg.Hint.Object = HintObjectNone;
+		line_dlg.tag = 0;
+		line_dlg.cx = line_dlg.nx = -1;
 	}
 
 	inline void HintFlush() {
@@ -209,6 +230,7 @@ public:
 
 	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned int cw, unsigned int ch, const SMALL_RECT& area);
 	void DrawHint(const HintPos& x);
+	void DrawHatch(const std::vector<HintHatch>& hatched);
 
 	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
 	void DrawCheckboxDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);

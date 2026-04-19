@@ -556,13 +556,13 @@ void Hint(
 	Y1 = clamp(Y1, 0, ScrY);
 	Y2 = clamp(Y2, 0, ScrY);
 
-	//if (hcc == HintDialog) {
+	if (hcc == HintDialog && (hco == HintButton || hco == HintCheckbox) ) {
 		fprintf(stderr, "surface %d: type %d: tag=%d, pos=%d..%d, %d..%d, focus=%c hover=%c disabled=%c\n", 
 			hcc, hco, 
 			tag, 
 			X1, X2, Y1, Y2, 
 			focused ? 'Y': 'n', hovered ? 'Y': 'n', disabled ? 'Y': 'n');
-	//}
+	}
 	ScrBuf.ApplyHint(X1, Y1, X2, Y2, tag, hcc, hco, focused, hovered, disabled, defaultCtrl, false);
 }
 
@@ -571,7 +571,7 @@ void HintAt(
 		HintObjectType hco, 
 		bool focused, bool hovered, bool disabled, bool defaultCtrl) 
 {
-	Hint(HintX, HintY, CurX, CurY, hcc, hco, focused, hovered, disabled, defaultCtrl);
+	Hint(HintX, HintY, CurX - 1, CurY, hcc, hco, focused, hovered, disabled, defaultCtrl);
 }
 
 void HintBeginContainer() {
@@ -897,14 +897,14 @@ uint64_t SoftenItemColor(uint64_t attributes, int Focus, int Hover, int Pressed,
    		bg = SoftenToPressedState_LAB(bg, r.bg_hover);
    	
    	if (Focus) {
-    	if (!IsWxBackend()) {
+    	//if (!IsWxBackend()) {
 			LAB topLab = RGBtoLAB(bg);
 			if (IsNearBlack(bg))
 				topLab.L = std::min(topLab.L + 15.0, 100.0);
 			else
 				topLab.L = std::max(topLab.L - 10.0, 0.0);
 			bg = LABtoRGB(topLab);
-    	}
+    	//}
    		fg = SoftenToFocusedState_LAB(fg, r.fg_hover);
 
         if (Hover) {

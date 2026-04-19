@@ -133,7 +133,7 @@ void ScreenBuf::AllocBuf(int X, int Y)
 	Buf = new (std::nothrow) CHAR_INFO[Cnt]();
 	Shadow = new (std::nothrow) CHAR_INFO[Cnt]();
 
-	for (int i = 0; i < Cnt; ++i) {
+	for (unsigned int i = 0; i < Cnt; ++i) {
 		Shadow[i].Extra.Hint.Container = HintNone;
 		Shadow[i].Extra.Hint.Object = HintObjectNone;
 		Shadow[i].Extra.Hint.Tag = 0;

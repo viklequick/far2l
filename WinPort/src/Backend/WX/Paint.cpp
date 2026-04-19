@@ -428,14 +428,6 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		std::vector<ConsolePainter::HintHatch> hatched;
 #endif
 
-		for (unsigned int cx = cx_begin; cx < cw && cx < cx_end; ++cx) {
-			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
-			painter.ConsumeHintAt(line[cx], (int)cx, nx, (int)cy, cw, ch, area);
-#ifdef TAG_DEBUG			
-			hatched.push_back({ line[cx].Extra.Hint.Container, line[cx].Extra.Hint.Object, (int)cx, (int)cy });
-#endif
-		}
-		
 		for (unsigned int cx = cx_begin; cx < cx_end; ++cx) {
 			if (!line[cx].Char.UnicodeChar) {
 				painter.LineFlush(cx + 1);
@@ -464,6 +456,11 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
 			painter.NextChar(cx, attributes, pwcz, nx, prev_space);
 			prev_space = pwcz[0] == L' ';
+
+			painter.ConsumeHintAt(line[cx], (int)cx, nx, (int)cy, cw, ch, area, pwcz);
+#ifdef TAG_DEBUG			
+			hatched.push_back({ line[cx].Extra.Hint.Container, line[cx].Extra.Hint.Object, (int)cx, (int)cy });
+#endif
 		}
 		painter.LineFlush(area.Right + 1);
 
@@ -1334,6 +1331,44 @@ void ConsolePainter::DrawHorizontalDashedGradientLine(
     delete gc;
 }
 
+void ConsolePainter::DrawVerticalDashedGradientLine(
+	wxCoord X1, wxCoord Y1, wxCoord length, 
+	const WinPortRGB& xc1, const WinPortRGB& xc2,
+	int dashLength, int gapLength, 
+	wxCoord thickness)
+{
+    wxGraphicsContext* gc = wxGraphicsContext::Create(_dc);
+    if (!gc) return;
+
+    wxColour c1(xc1.r, xc1.g, xc1.b);
+    wxColour c2(xc2.r, xc2.g, xc2.b);
+
+    int totalLength = length;
+    int patternLength = dashLength + gapLength;
+
+    for (int pos = 0; pos < totalLength; pos += patternLength) {
+        int dashStart = Y1 + pos;
+        int dashEnd   = std::min(dashStart + dashLength, Y1 + length);
+
+        // Compute gradient factor at the center of the dash
+        double t = double(dashStart + dashLength * 0.5 - Y1) / totalLength;
+        t = std::clamp(t, 0.0, 1.0);
+
+        wxColour c(
+            c1.Red()   + t * (c2.Red()   - c1.Red()),
+            c1.Green() + t * (c2.Green() - c1.Green()),
+            c1.Blue()  + t * (c2.Blue()  - c1.Blue())
+        );
+
+        gc->SetBrush(gc->CreateBrush(wxBrush(c)));
+        gc->SetPen(*wxTRANSPARENT_PEN);
+
+        gc->DrawRectangle(X1 - thickness / 2, dashStart, thickness, dashEnd - dashStart);
+    }
+
+    delete gc;
+}
+
 void ConsolePainter::DrawLiquidButtonBackground(
 	wxCoord X1, wxCoord Y1, wxCoord w, wxCoord h, 
     const WinPortRGB& r_col)
@@ -1382,40 +1417,24 @@ void ConsolePainter::DrawLiquidButtonBackground(
     _dc.GradientFillLinear(rBot, bot1, bot2, wxSOUTH);
 }
 
-void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned cw, unsigned ch, const SMALL_RECT& area) {
+void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned cw, unsigned ch, const SMALL_RECT& area, const wchar_t* pwcz) {
 	if (WXCustomDrawChar::options && !WXCustomDrawChar::options->UseModernLook) return;
-
-	if (ci.Extra.Hint.Container == HintDialog) {
-		if(line_dlg.cx < 0){ 
-			line_dlg.cx = cx;
-			line_dlg.nx = cx + nx - 1;
-		}
-		int next_nx = cx + nx - 1;
-
-		// guard for unfinished paints
-		if (next_nx == line_dlg.nx + 1) line_dlg.nx = next_nx;
-		else return;
-	}
 
 	if (ci.Extra.Hint.Container != HintDialog) return;
 	if (ci.Extra.Hint.Object == HintObjectNone) return;
 
-	std::wstring text;
-    if (ci.Char.UnicodeChar) {
-		if (UNLIKELY(CI_USING_COMPOSITE_CHAR(ci))) {
-			const wchar_t* pwcz = WINPORT(CompositeCharLookup)(ci.Char.UnicodeChar);
-			text += pwcz;
-		} else {
-			wchar_t tmp_wcz[2] = {0, 0};
-			tmp_wcz[0] = ci.Char.UnicodeChar ? wchar_t(ci.Char.UnicodeChar) : L' ';
-			text += tmp_wcz;
-		}
-	}
+	if (ci.Extra.Hint.Object == HintButton)
+		fprintf(stderr, "    ...(%d..%d, %d) = %d:%d +`%ls` tag=%d\n", 
+			cx, cx + nx - 1, cy, 
+			ci.Extra.Hint.Container, ci.Extra.Hint.Object, pwcz, 
+			ci.Extra.Hint.Tag);
+
+	std::wstring text(pwcz);
 
 	if (line_hints.size() > 0) {
 		for(int i = line_hints.size() - 1; i >= 0; --i) {
 			if (line_hints[i].Hint.Object == ci.Extra.Hint.Object && line_hints[i].tag == ci.Extra.Hint.Tag) {
-				line_hints[i].nx = cx + nx - 1; // - line_hints[i].cx;
+				line_hints[i].nx = cx /*+ nx - 1*/; // - line_hints[i].cx;
 				line_hints[i].text += text;
 				return;
 			}
@@ -1427,7 +1446,7 @@ void ConsolePainter::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, 
 		ci.Extra.Hint.Focus, ci.Extra.Hint.Hover, ci.Extra.Hint.Enabled, 
 		ci.Extra.Hint.Default, ci.Extra.Hint.Beveled, ci.Extra.Hint.Shadow },
 		ci.Extra.Hint.Tag,
-		cx, cx + nx - 1, // nx 
+		cx, cx /* + nx - 1*/, // nx 
 		cy, 
 		cw, ch,
 		ci.Attributes, text,
@@ -1441,12 +1460,8 @@ void ConsolePainter::DrawHint(const HintPos& x) {
 	WinPortRGB clr_text = WxConsoleForeground2RGB(x.attributes);
 
 	int cx_start = x.cx;
-	int cx_end = x.nx - 1; // x.cx + x.nx - 1;
+	int cx_end = x.nx;
 	int cy = x.cy;
-
-	if (cy != line_dlg.cy) return;
-	if (cx_start <= line_dlg.cx || cx_start >= line_dlg.nx - 1) return;
-	if (cx_end >= line_dlg.nx - 1 || cx_end < line_dlg.cx) return;
 
 	if (cy < 0 || cy < x.area.Top || cy > x.area.Bottom) return;
 	if (cx_end < 0 || cx_end < x.area.Left) return;
@@ -1468,13 +1483,12 @@ void ConsolePainter::DrawHint(const HintPos& x) {
     case HintComboBox:
     	break;
     case HintButton:
-    	fprintf(stderr, "...paint: button: %d..%d, %d -> %d..%d, %d `%ls` in %d..%d, %d..%d, tag=%d focus=%c type=%d in %d..%d, %d\n", 
+    	fprintf(stderr, "...paint: button: %d..%d, %d -> %d..%d, %d `%ls` /..%d/ in %d..%d, %d..%d, tag=%d focus=%c hover=%c type=%d\n", 
         	x.cx, x.nx, x.cy,
     		cx_start, cx_end, cy, 
-            x.text.c_str(),
+            x.text.c_str(), (int)(cx_start + x.text.size()),
             (int)x.area.Left, (int)x.area.Right, (int)x.area.Top, (int)x.area.Bottom,
-    		((int)x.tag) & 0x00FF, x.Hint.Focus ? 'Y': 'n', x.Hint.Object,
-    		line_dlg.cx, line_dlg.nx, line_dlg.cy);
+    		((int)x.tag) & 0x00FF, x.Hint.Focus ? 'Y': 'N', x.Hint.Hover ? 'Y': 'N', x.Hint.Object);
         if(WXCustomDrawChar::options->Use3D)
 	        DrawButtonDecorationsAsNew(cx_start, cx_end, cy, clr_text, clr_back, x);
 		else
@@ -1549,6 +1563,8 @@ void ConsolePainter::DrawHatch(const std::vector<HintHatch>& hatched) {
 		dc->DrawRectangle(X1, Y1, X2, Y2);
 	}
 
+	delete dc;
+
 	_dc.SetPen(oldPen);
 	_dc.SetBrush(oldBrush);
 	_dc.SetTextForeground(oldText);
@@ -1561,10 +1577,12 @@ void ConsolePainter::DrawCheckboxDecorations(
 	const HintPos& pos)
 {
 	if (pos.Hint.Focus) {
+		//wxCoord Y1 = cy * _context->FontHeight();
 		wxCoord Y2 = cy * _context->FontHeight() + _context->FontHeight() - 1;
-		wxCoord X1 = cx_start * _context->FontWidth() + 4 * _context->FontWidth();
-		wxCoord X2 = cx_end * _context->FontWidth() + _context->FontWidth() - 1;
+		wxCoord X1 = (cx_start + 3) * _context->FontWidth();
+		wxCoord X2 = (cx_end + 1) * _context->FontWidth()  - 1;
 		wxCoord W = X2 - X1 + 1;
+		//wxCoord H = Y2 - Y1 + 1;
 
 		WinPortRGB c_a_text, c_a_back;
 		ComputeAccents(c_text, c_back, c_a_text, c_a_back);
@@ -1572,7 +1590,10 @@ void ConsolePainter::DrawCheckboxDecorations(
 		WinPortRGB emboss = GetSoftenColorIf(c_text);
 
 		//DrawHorizontalGradientLine(X1, Y2, W, c_back, c_a_back, 1);
-		DrawHorizontalDashedGradientLine(X1 + 1, Y2 - 1, W, c_text, emboss, 6, 2, 2);
+		DrawHorizontalDashedGradientLine(X1 + 1, Y2, W, c_text, emboss, 6, 2, 2);
+		//DrawHorizontalDashedGradientLine(X1 + 1, Y1, W, c_text, emboss, 6, 2, 2);
+		//DrawVerticalDashedGradientLine(X1 + 1, Y1, H, c_text, emboss, 6, 2, 2);
+		//DrawVerticalDashedGradientLine(X2 - 2, Y2, H, c_text, emboss, 6, 2, 2);
 	}
 }
 

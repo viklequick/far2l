@@ -758,18 +758,13 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 			добавим энти самые скобки
 		*/
 		if (Type == DI_BUTTON && !(ItemFlags & DIF_NOBRACKETS)) {
-			LPCWSTR BracketsNew[] = {
-				(IsWxBackend() ? L"  " : L"► "), 
-				(IsWxBackend() ? L"  " : L" ◄"), 
-				(IsWxBackend() ? L"  " : L"« "), 
-				(IsWxBackend() ? L"  " : L" »") };
-			LPCWSTR BracketsOld[] = {L"[ ", L" ]", L"{ ", L" }"};
-			LPCWSTR *Brackets = Opt.Backend.UseModernLook ? BracketsNew : BracketsOld;
+			LPCWSTR Brackets[] = {L"[ ", L" ]", L"{ ", L" }"};
 			int Start = (CurItem->DefaultButton ? 2 : 0);
 			if (CurItem->strData.At(0) != *Brackets[Start]) {
 				CurItem->strData = Brackets[Start] + CurItem->strData + Brackets[Start + 1];
 			}
 		}
+
 		// предварительный поик фокуса
 		if (FocusPos == (unsigned)-1 && IsItemFocusable(CurItem) && CurItem->Focus)
 			FocusPos = I;		// запомним первый фокусный элемент
@@ -810,7 +805,7 @@ unsigned Dialog::InitDialogObjects(unsigned ID)
 
 	if (FocusPos == (unsigned)-1)		// ну ни хрена себе - нет ни одного
 	{									// элемента с возможностью фокуса
-		FocusPos = 0;					// убится, блин
+		FocusPos = 0;					// убиться, блин
 	}
 
 	// ну вот и добрались до!
@@ -1716,7 +1711,7 @@ DWORD Dialog::CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t
 				}
 			}
 
-			if (IsWxBackend() && Opt.Backend.UseModernLook && !DisabledItem && (Focus || Hover || Pressed)) {
+			if (IsWxBackend() && Opt.Backend.UseModernLook && !DisabledItem && !Focus && (Hover || Pressed)) {
 				Color[0] = SoftenItemColor(Color[0], Focus, Hover, Pressed, 0);
 				Color[1] = SoftenItemColor(Color[1], Focus, Hover, Pressed, 0);
 				Color[2] = SoftenItemColor(Color[2], Focus, Hover, Pressed, 0);
@@ -2297,7 +2292,8 @@ void Dialog::ShowDialog(unsigned ID)
 					}
 					else {
 						// check status needs to be changed on both places
-						SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, CurItem->Selected));
+						SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0/* CurItem->Selected */));
+						// SetColor(SoftenItemColor(GetAccentColors(ItemColor[0]), CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0));
 						GotoXY(X1 + CX1 + 1, Y1 + CY1);
 						Text(checkMark.LShift(1));
 					}
@@ -2305,10 +2301,10 @@ void Dialog::ShowDialog(unsigned ID)
 
 				if (CurItem->Focus) {
 					// Отключение мигающего курсора при перемещении диалога
-					if (!Opt.Backend.UseModernLook && !DialogMode.Check(DMODE_DRAGGED))
-						SetCursorType(1, -1);
-
-					MoveCursor(X1 + CX1 + 1, Y1 + CY1);
+					if (!Opt.Backend.UseModernLook) {
+						if (!DialogMode.Check(DMODE_DRAGGED)) SetCursorType(1, -1);
+						MoveCursor(X1 + CX1 + 1, Y1 + CY1);
+					}
 				}
 
 				break;
@@ -2320,34 +2316,36 @@ void Dialog::ShowDialog(unsigned ID)
 //				SetColorNormal(Attr, CurItem->TrueColors);
 				GotoXY(X1 + CX1, Y1 + CY1);
 
-				if (CurItem->Focus) { 
-					strStr.ReplaceChar(0, L'►');
-					strStr.ReplaceChar(strStr.GetLength() - 1, L'◄'); 
-					strStr.ReplaceChar(1, L' ');
-					strStr.ReplaceChar(strStr.GetLength() - 2, L' '); 
-				}
-				else {
-					// modern + wx: no brackets
-					// modern + !wx: unicode glyphs
-					// !modern: old crazy brackets
+				if (strStr.At(0) == L'{' || strStr.At(0) == L'[') {
+    				if (CurItem->Focus) { 
+    					strStr.ReplaceChar(0, L'►');
+    					strStr.ReplaceChar(strStr.GetLength() - 1, L'◄'); 
+    					strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' ');
+    					strStr.ReplaceChar(strStr.GetLength() - 2, L' '); 
+    				}
+    				else {
+    					// modern + wx: no brackets
+    					// modern + !wx: unicode glyphs
+    					// !modern: old crazy brackets
 
-					if(Opt.Backend.UseModernLook) {
-						strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' ');
-						if (IsWxBackend()) {
-							strStr.ReplaceChar(0, L' ');
-							strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
-						}
-						else {
-							strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' '); // •
-							strStr.ReplaceChar(strStr.GetLength() - 2, CurItem->DefaultButton ? L'★' : L' '); 
-							strStr.ReplaceChar(0, L'❲');
-							strStr.ReplaceChar(strStr.GetLength() - 1, L'❳'); 
-						}
-					}
-					else {
-						strStr.ReplaceChar(0, CurItem->DefaultButton ? L'{' : L'[');
-						strStr.ReplaceChar(strStr.GetLength() - 1, CurItem->DefaultButton ? L'}' : L']'); 
-					}
+    					if(Opt.Backend.UseModernLook) {
+    						strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' ');
+    						if (IsWxBackend()) {
+    							strStr.ReplaceChar(0, L' ');
+    							strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
+    						}
+    						else {
+    							strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' '); // •
+    							strStr.ReplaceChar(strStr.GetLength() - 2, CurItem->DefaultButton ? L'★' : L' '); 
+    							strStr.ReplaceChar(0, L'❲');
+    							strStr.ReplaceChar(strStr.GetLength() - 1, L'❳'); 
+    						}
+    					}
+    					else {
+    						strStr.ReplaceChar(0, CurItem->DefaultButton ? L'{' : L'[');
+    						strStr.ReplaceChar(strStr.GetLength() - 1, CurItem->DefaultButton ? L'}' : L']'); 
+    					}
+    				}
 				}
 
 				if (CurItem->Flags & DIF_SHOWAMPERSAND)
@@ -2361,6 +2359,15 @@ void Dialog::ShowDialog(unsigned ID)
 					ScrBuf.ApplyColor(startx, Y1 + CY1, startx + 1, Y1 + CY1, 0xE9);
 				}
 				HintAt(HintDialog, HintButton, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0, CurItem->DefaultButton);
+				/*
+				Hint(X1 + CX1, Y1 + CY1, X1 + CX1 + strStr.GetLength(), Y1 + CY1,
+					HintDialog, HintButton, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0, CurItem->DefaultButton);
+                */
+        		fprintf(stderr, "button `%ls`: pos=%d,%d..%d,%d, focus=%c hover=%c disabled=%c\n", 
+                	strStr.GetWide().c_str(),
+        			X1 + CX1, Y1 + CY1, (int)(X1 + CX1 + strStr.GetLength()), Y1 + CY1,
+        			CurItem->Focus ? 'Y': 'n', false ? 'Y': 'n', (CurItem->Flags & DIF_DISABLE) != 0 ? 'Y': 'n');
+
 
 				break;
 			}

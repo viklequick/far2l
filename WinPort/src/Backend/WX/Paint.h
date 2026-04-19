@@ -173,7 +173,6 @@ class ConsolePainter
 
     std::vector<CustomCharPos> line_custom_chars;
     std::vector<HintPos> line_hints;
-    HintPos line_dlg;
 
 public:
 
@@ -213,16 +212,7 @@ public:
 		HintFlush();
 	}
 
-	inline void HintLineBegin(int cy, int cw, int ch) 
-	{
-		line_dlg.cy = cy;
-		line_dlg.cw = cw;
-		line_dlg.ch = ch;
-		line_dlg.Hint.Container = HintDialog;
-		line_dlg.Hint.Object = HintObjectNone;
-		line_dlg.tag = 0;
-		line_dlg.cx = line_dlg.nx = -1;
-	}
+	inline void HintLineBegin(int cy, int cw, int ch) {}
 
 	inline void HintFlush() {
 		for(size_t x = 0; x < line_hints.size(); ++x) {
@@ -232,7 +222,7 @@ public:
 		line_hints.clear();
 	}
 
-	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned int cw, unsigned int ch, const SMALL_RECT& area);
+	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned int cw, unsigned int ch, const SMALL_RECT& area, const wchar_t* text);
 	void DrawHint(const HintPos& x);
 
 	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
@@ -249,5 +239,6 @@ public:
 	void DrawHorizontalGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, const WinPortRGB& color3, wxCoord thickness = 1);
 
 	void DrawHorizontalDashedGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, int dashLength = 6, int gapLength  = 4, wxCoord thickness = 1);
+	void DrawVerticalDashedGradientLine(wxCoord X1, wxCoord Y1, wxCoord length, const WinPortRGB& color1, const WinPortRGB& color2, int dashLength = 6, int gapLength  = 4, wxCoord thickness = 1);
 	void DrawLiquidButtonBackground(wxCoord X1, wxCoord Y1, wxCoord w, wxCoord h, const WinPortRGB& colTop);
 };

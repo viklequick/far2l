@@ -2282,7 +2282,7 @@ void Dialog::ShowDialog(unsigned ID)
 					Text(strStr);
 				else
 					HiText(strStr, ItemColor[1]);
-				HintAt(HintDialog, HintCheckbox, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0);
+				HintAt(HintDialog, HintCheckbox, CurItem->Focus, CurItem->Hover, (CurItem->Flags & DIF_DISABLE) != 0, CurItem->Selected);
 
 				if (Opt.Backend.UseModernLook) {
 					if(!IsWxBackend()) {
@@ -2292,7 +2292,7 @@ void Dialog::ShowDialog(unsigned ID)
 					}
 					else {
 						// check status needs to be changed on both places
-						SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0/* CurItem->Selected */));
+						SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, CurItem->Selected));
 						// SetColor(SoftenItemColor(GetAccentColors(ItemColor[0]), CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0));
 						GotoXY(X1 + CX1 + 1, Y1 + CY1);
 						Text(checkMark.LShift(1));
@@ -2330,7 +2330,7 @@ void Dialog::ShowDialog(unsigned ID)
 
     					if(Opt.Backend.UseModernLook) {
     						strStr.ReplaceChar(1, CurItem->DefaultButton ? L'★' : L' ');
-    						if (IsWxBackend()) {
+    						if (IsWxBackend() && Opt.Backend.Use3D) {
     							strStr.ReplaceChar(0, L' ');
     							strStr.ReplaceChar(strStr.GetLength() - 1, L' '); 
     						}
@@ -2358,11 +2358,12 @@ void Dialog::ShowDialog(unsigned ID)
 					int startx = X1 + CX1 + (CurItem->Flags & DIF_NOBRACKETS ? 0 : 2);
 					ScrBuf.ApplyColor(startx, Y1 + CY1, startx + 1, Y1 + CY1, 0xE9);
 				}
-				HintAt(HintDialog, HintButton, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0, CurItem->DefaultButton);
-				/*
-				Hint(X1 + CX1, Y1 + CY1, X1 + CX1 + strStr.GetLength(), Y1 + CY1,
-					HintDialog, HintButton, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0, CurItem->DefaultButton);
-                */
+				HintAt(HintDialog, HintButton, 
+					CurItem->Focus, false, 
+					(CurItem->Flags & DIF_DISABLE) != 0, 
+					CurItem->Selected, 
+					CurItem->DefaultButton,
+					(CurItem->Flags & DIF_NOBRACKETS) != 0);
         		fprintf(stderr, "button `%ls`: pos=%d,%d..%d,%d, focus=%c hover=%c disabled=%c\n", 
                 	strStr.GetWide().c_str(),
         			X1 + CX1, Y1 + CY1, (int)(X1 + CX1 + strStr.GetLength()), Y1 + CY1,

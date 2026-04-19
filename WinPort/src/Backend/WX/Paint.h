@@ -177,12 +177,16 @@ class ConsolePainter
 
 public:
 
+#ifdef TAG_DEBUG
     struct HintHatch {
 		HintContainerType Container;
 		HintObjectType Object;
 		int cx;
 		int cy;
     };
+
+	void DrawHatch(const std::vector<HintHatch>& hatched);
+#endif
 
 	ConsolePainter(ConsolePaintContext *context, wxPaintDC &dc, wxString &_buffer, CursorProps &cursor_props);
 	void SetFillColor(const WinPortRGB &clr);
@@ -230,7 +234,6 @@ public:
 
 	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned int cw, unsigned int ch, const SMALL_RECT& area);
 	void DrawHint(const HintPos& x);
-	void DrawHatch(const std::vector<HintHatch>& hatched);
 
 	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
 	void DrawCheckboxDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);

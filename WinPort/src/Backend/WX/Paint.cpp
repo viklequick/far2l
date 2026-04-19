@@ -423,13 +423,17 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 
 		painter.HintLineBegin(cy, cw, ch);
 
+#ifdef TAG_DEBUG
 		// out-of clipping: collect tags
 		std::vector<ConsolePainter::HintHatch> hatched;
+#endif
 
 		for (unsigned int cx = cx_begin; cx < cw && cx < cx_end; ++cx) {
 			const int nx = (cx + 1 < cw && !line[cx + 1].Char.UnicodeChar) ? 2 : 1;
 			painter.ConsumeHintAt(line[cx], (int)cx, nx, (int)cy, cw, ch, area);
+#ifdef TAG_DEBUG			
 			hatched.push_back({ line[cx].Extra.Hint.Container, line[cx].Extra.Hint.Object, (int)cx, (int)cy });
+#endif
 		}
 		
 		for (unsigned int cx = cx_begin; cx < cx_end; ++cx) {
@@ -463,7 +467,9 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		}
 		painter.LineFlush(area.Right + 1);
 
+#ifdef TAG_DEBUG
 		painter.DrawHatch(hatched);
+#endif
 	}
 
 	painter.HintFlush();
@@ -1512,11 +1518,10 @@ static wxColour colorTable[] = {
 	wxColour(255, 0, 0, 40), // HintPanic
 };
 
+#ifdef TAG_DEBUG
 void ConsolePainter::DrawHatch(const std::vector<HintHatch>& hatched) {
     wxGraphicsContext* dc = wxGraphicsContext::Create(_dc);
     if (!dc) return;
-
-    return;
 
 	auto oldPen   = _dc.GetPen();
 	auto oldBrush = _dc.GetBrush();
@@ -1548,6 +1553,7 @@ void ConsolePainter::DrawHatch(const std::vector<HintHatch>& hatched) {
 	_dc.SetBrush(oldBrush);
 	_dc.SetTextForeground(oldText);
 }
+#endif
 
 void ConsolePainter::DrawCheckboxDecorations(
 	int cx_start, unsigned int cx_end, unsigned int cy, 

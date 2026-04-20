@@ -1385,7 +1385,7 @@ void ConsolePainter::DrawLiquidButtonBackground(
 	wxColour colBottom(r_colBottom.r, r_colBottom.g, r_colBottom.b);
 
     // --- Top glossy highlight (about 35% of height) ---
-    wxRect rTop(X1, Y1, w, h * 0.35);
+    wxRect rTop(X1, Y1, w, h * 0.35 + 1);
     wxColour top1 = wxColour(
     	std::min(colTop.Red()   + 40, 255),
         std::min(colTop.Green() + 40, 255),
@@ -1397,7 +1397,7 @@ void ConsolePainter::DrawLiquidButtonBackground(
     drawVerticalGradientPiece (gc, rTop, top1, top2);
 
     // --- Middle body (about 45% of height) ---
-    wxRect rMid(X1, Y1 + h * 0.35, w, h * 0.45);
+    wxRect rMid(X1, Y1 + h * 0.35, w, h * 0.45 + 1);
     //gc->GradientFillLinear(rMid, colTop, colBottom, wxSOUTH);
     drawVerticalGradientPiece (gc, rMid, colTop, colBottom);
 

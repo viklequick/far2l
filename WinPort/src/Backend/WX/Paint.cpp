@@ -1653,7 +1653,7 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 
 	wxCoord W = _X2 - _X1 + 1, H = _Y2 - _Y1 + 1;
 
-#define OFFSCREEN_NITMAP	1
+// #define OFFSCREEN_NITMAP	1
 #ifdef OFFSCREEN_NITMAP
 	wxCoord X1 = 0, Y1 = 0;
 	wxCoord X2 = W, Y2 = H;
@@ -1694,18 +1694,22 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 
     	const bool underlined = (pos.attributes & COMMON_LVB_UNDERSCORE) != 0;
     	const bool strikeout = (pos.attributes & COMMON_LVB_STRIKEOUT) != 0;
+
+#ifdef COMMON_LVB_BOLD
     	const bool bold = (pos.attributes & COMMON_LVB_BOLD) != 0;
+#endif
 
         int ascent = _context->FontHeight() - _context->FontDescent();
 
     	// todo: highlight character to be displayed
+#ifdef COMMON_LVB_BOLD
     	if (bold) {
     		if (WXCustomDrawChar::options->UseEmbossAsBold) {
     			WinPortRGB emboss = GetEmbossColor(c_text);
     			wxFont normal = _dc.GetFont();
 
     			gc->SetFont(normal, wxColour(emboss.r, emboss.g, emboss.b));
-    			gc->DrawText(pos.text, X1 + 1, Y1 + 1);
+    			DrawTextBaseline(gc, pos.text.c_str(), X1 + 1, Y1 + 1 + ascent);
                 gc->SetFont(normal, wxColour(c_text.r, c_text.g, c_text.b));
     			DrawTextBaseline(gc, pos.text.c_str(), X1, Y1 + ascent);
     		}
@@ -1721,10 +1725,13 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
     		}
     	}
     	else {
+#endif
 			wxFont normal = _dc.GetFont();
 			gc->SetFont(normal, wxColour(c_text.r, c_text.g, c_text.b));
 			DrawTextBaseline(gc, pos.text.c_str(), X1, Y1 + ascent);
+#ifdef COMMON_LVB_BOLD
     	}
+#endif
 
     	if (underlined || strikeout) {
 	    	gc->SetPen(wxColour(c_text.r, c_text.g, c_text.b));

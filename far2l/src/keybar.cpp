@@ -122,9 +122,6 @@ std::wstring KeyBar::GetKeyName(int idx, int group)
 
 void KeyBar::RefreshObject(bool Render)
 {
-	if (Render)
-		GotoXY(X1, Y1);
-
 	AltState = AltPressed && (!CtrlPressed || !ShiftPressed); // C-A-S is a specific case
 	CtrlState = CtrlPressed;
 	ShiftState = ShiftPressed;
@@ -135,14 +132,17 @@ void KeyBar::RefreshObject(bool Render)
 	if (KeyWidth < 8) KeyWidth = 8;
 	int LabelWidth = KeyWidth - 2;
 
+	if (Render)
+		GotoXY(X1, Y1);
+
 	bool FKeyTitlesChanged = false;
 	for (int i = 0; i < KEY_COUNT; i++) {
 		const wchar_t *Label = KeyTitles[group][i];
 
-		xPos[i] = -1;
+		if (Render) xPos[i] = -1;
 		if (Opt.Backend.UseModernLook && (!Label || !*Label)) continue;
 
-		std::wstring keyLabel = Label && *Label && Opt.Backend.UseModernLook ? GetKeyName(i, group) : L"";
+		std::wstring keyLabel = Render && Label && *Label && Opt.Backend.UseModernLook ? GetKeyName(i, group) : L"";
 
 		if (i >= (int)PrevFKeyTitles.size() || PrevFKeyTitles[i] != Label) {
 			FKeyTitlesChanged = true;
@@ -152,7 +152,7 @@ void KeyBar::RefreshObject(bool Render)
 				PrevFKeyTitles[i] = Label;
 		}
 
-		if (Opt.Backend.UseModernLook) 
+		if (Opt.Backend.UseModernLook && Render) 
 			LabelWidth = wcslen(Label) + 3 + wcslen(keyLabel.c_str());
 
 		if (Render && WhereX() + LabelWidth < X2) {
@@ -200,9 +200,9 @@ void KeyBar::RefreshObject(bool Render)
     			FS << fmt::Cells() << fmt::LeftAlign() << fmt::Size(Width - 3) << strExtra << L"";
     		}
 		}
-	}
 
-	Hint(X1, Y1, X2, Y2, HintKeyBar, HintObjectNone);
+		Hint(X1, Y1, X2, Y2, HintKeyBar, HintObjectNone);
+	}
 
 	if (FKeyTitlesChanged) {
 		std::string str_titles[CONSOLE_FKEYS_COUNT];

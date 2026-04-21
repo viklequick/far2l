@@ -441,17 +441,17 @@ unsigned int WINAPI InputRecordToKey(const INPUT_RECORD *r)
 	return KEY_NONE;
 }
 
-
 DWORD IsMouseButtonPressed()
 {
 	INPUT_RECORD rec;
-	if (PeekInputRecord(&rec)) {
-		// If it's not a mouse event — don't read it!
-		if (rec.EventType != MOUSE_EVENT) {
+	if (Console.PeekInput(rec)) {
+		if (rec.EventType == MOUSE_EVENT) {
+			GetInputRecord(&rec);
+		} else {
 			return MouseButtonState;
-		}
-		GetInputRecord(&rec);
+		}	
 	}
+
 	// IsMouseButtonPressed used within loops, so lets sleep to avoid CPU hogging in that loops
 	// it would be nicer to sleep inside of that loops instead, but keep to original code for now
 	WINPORT(WaitConsoleInput)(NULL, 10);

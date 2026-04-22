@@ -136,7 +136,9 @@ void VT_ComposeCommandExec::Create(const IVTShellBackend &backend, const char *c
 	const std::string &start_marker, const std::string &exit_marker, const std::string &user_profile)
 {
 	std::string content = backend.MakeScript(cd, cmd, need_sudo, start_marker, _pwd_file, exit_marker, user_profile);
+	fprintf(stderr, "VT_ComposeCommandExec::Create(cmd=`%s`) => `%s` after backend.MakeScript\n", cmd, content.c_str());
 
+    /*
 	std::string pwd_suffix;
 	const char *last_ch = cmd + strlen(cmd);
 	while (last_ch != cmd && (*last_ch == ' ' || *last_ch == '\t' || *last_ch == 0)) {
@@ -182,6 +184,8 @@ void VT_ComposeCommandExec::Create(const IVTShellBackend &backend, const char *c
 		content+= "printf '\\033_push-attr\\007\\033_set-blank=~\\007\\033[33m\\033[K\\033_pop-attr\\007\\012'\n";
 		content+= "fi\n";
 	}
+    */
+
 	unlink(_pwd_file.c_str());
 	_fd = open(_cmd_script.c_str(), O_RDWR | O_CREAT | O_TRUNC, 0600);
 	if (_fd.Valid()) {
@@ -189,6 +193,7 @@ void VT_ComposeCommandExec::Create(const IVTShellBackend &backend, const char *c
 			_created = true;
 		}
 	}
+	fprintf(stderr, "VT_ComposeCommandExec::Create(cmd=`%s`) => `%s`\n", cmd, content.c_str());
 }
 
 void VT_ComposeCommandExec::Cleanup()

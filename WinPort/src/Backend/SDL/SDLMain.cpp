@@ -257,6 +257,7 @@ public:
 
 class SDLClipboardBackend : public IClipboardBackend
 {
+	int is_primary {0};
 public:
 	SDLClipboardBackend() = default;
 	~SDLClipboardBackend() override = default;
@@ -266,13 +267,13 @@ public:
 
 	void OnClipboardEmpty() override
 	{
-		SDL_SetClipboardText("");
+		is_primary ? SDL_SetPrimarySelectionText("") : SDL_SetClipboardText("");
 	}
 
 	bool OnClipboardIsFormatAvailable(UINT format) override
 	{
 		if (format == CF_UNICODETEXT || format == CF_TEXT) {
-			return SDL_HasClipboardText() ? true : false;
+			return (is_primary ? SDL_HasPrimarySelectionText() : SDL_HasClipboardText() ) ? true : false;
 		}
 		return false;
 	}
@@ -292,13 +293,16 @@ public:
 		} else {
 			return nullptr;
 		}
-		SDL_SetClipboardText(utf8.c_str());
+		if (is_primary)
+			SDL_SetPrimarySelectionText(utf8.c_str());
+		else
+			SDL_SetClipboardText(utf8.c_str());
 		return data;
 	}
 
 	void *OnClipboardGetData(UINT format) override
 	{
-		char *text = SDL_GetClipboardText();
+		char *text = is_primary ? SDL_GetPrimarySelectionText() : SDL_GetClipboardText();
 		if (!text) {
 			return nullptr;
 		}
@@ -317,6 +321,12 @@ public:
 	UINT OnClipboardRegisterFormat(const wchar_t *) override
 	{
 		return 0;
+	}
+
+	INT ChooseClipboard(INT format) { 
+		int old = is_primary;
+		is_primary = format > 0;
+		return old != is_primary;
 	}
 };
 
@@ -727,6 +737,11 @@ public:
 		}
 		return TWEAK_STATUS_SUPPORT_CHANGE_FONT | TWEAK_STATUS_SUPPORT_BLINK_RATE;
 	}
+
+	DWORD64 OnConsoleGetTweaks() override {
+		return TWEAK_STATUS_SUPPORT_CHANGE_FONT | TWEAK_STATUS_SUPPORT_BLINK_RATE;
+	}
+
 	void OnConsoleChangeFont() override { RequestFontDialog(); }
 	void OnConsoleSaveWindowState() override;
 	void OnConsoleExit() override;
@@ -2518,6 +2533,9 @@ bool SDLConsoleApp::Initialize()
 		}
 	}
 
+	SDL_SetHint(SDL_HINT_RENDER_SCALE_QUALITY, "0"); // keep glyphs pixel-crisp
+	SDL_SetHint(SDL_HINT_VIDEO_X11_NET_WM_BYPASS_COMPOSITOR, "0"); // do not touch KDE plasma
+
 	_window = SDL_CreateWindow(
 		"far2l (SDL backend)",
 		init_x,
@@ -2547,13 +2565,14 @@ bool SDLConsoleApp::Initialize()
 
 	_backend->Attach();
 
+    /*
 	if (win_state.valid) {
 		if (win_state.fullscreen) {
 			SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
 		} else if (win_state.maximized) {
 			SDL_MaximizeWindow(_window);
 		}
-	}
+	}*/
 
 	if (_arg.app_main) {
 		_worker = std::make_unique<SDLAppWorker>(_arg.argc, _arg.argv, _arg.app_main);

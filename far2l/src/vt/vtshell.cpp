@@ -974,6 +974,7 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 
 	bool ExecuteCommandBegin(const char *cd, const char *cmd, bool force_sudo) // return false on failure
 	{
+		fprintf(stderr, "vtshell::ExecuteCommandBegin: `%s`\n", cmd);
 		_cce.reset(new VT_ComposeCommandExec(*_backend, cd, cmd, force_sudo, _start_marker, _exit_marker, _init_user_profile));
 		if (!_cce->Created()) {
 			const std::string &error_str =

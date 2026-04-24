@@ -2570,7 +2570,9 @@ bool SDLConsoleApp::Initialize()
 	if (win_state.valid) {
 		if (win_state.fullscreen) {
 			SDL_SetWindowFullscreen(_window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-		} else if (win_state.maximized) {
+		} 
+		// VK: actually we do not need this as we already have created window with last reminded size and position.
+		else if (win_state.maximized) {
 			SDL_MaximizeWindow(_window);
 		}
 	}*/

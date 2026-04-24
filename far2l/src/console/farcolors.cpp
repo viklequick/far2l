@@ -290,6 +290,7 @@ void FarColors::AdjustContrastLevels() noexcept
 		if (nfg.r != ofg.r || nfg.g != ofg.g || nfg.b != ofg.b) {
 
 			uint64_t cc2 = assembleColor(newFg, bg);
+			cc2 |= (cc & 0xFF); // keep indexed markers for further usage
 
 			char tmp1[256], tmp2[256];
 			FarColorToExpr(cc, tmp1, 256);

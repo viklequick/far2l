@@ -100,3 +100,79 @@ size_t ImagePayloadSize(DWORD64 flags, DWORD width, DWORD height)
 		return 0;
 	}
 }
+
+#include <Colorspace.h>
+
+void ComputeAccents(
+		const WinPortRGB& c_text, const WinPortRGB& c_back,
+		WinPortRGB& c_a_text, WinPortRGB& c_a_back) 
+{
+	HoverResult r = ComputeControlAccent(FarToRGB(c_text), FarToRGB(c_back));
+	c_a_text = RGBtoFar(r.fg_hover);
+	c_a_back = RGBtoFar(r.bg_hover);
+}
+
+RGB FarToRGB(const WinPortRGB& c) 
+{
+	RGB rgb{c.r/255.0, c.g/255.0, c.b/255.0};
+	return rgb;
+}
+
+WinPortRGB RGBtoFar(const RGB& rgb) 
+{
+	return WinPortRGB((int)(rgb.r*255), (int)(rgb.g*255), (int)(rgb.b*255));
+}
+
+WinPortRGB RGBtoFar(const iRGB& rgb) 
+{
+	return WinPortRGB(rgb.r, rgb.g, rgb.b);
+}
+
+WinPortRGB GetSoftenColorIf(const WinPortRGB& _clr_text) 
+{
+	WinPortRGB clr{_clr_text.r, _clr_text.g, _clr_text.b};
+	if (SDLBackend::options && SDLBackend::options->UseSoftenBevels) {
+		if (IsNearBlack(_clr_text.r, _clr_text.g, _clr_text.b) || IsNearWhite(_clr_text.r, _clr_text.g, _clr_text.b)) {
+			RGB clrR = FarToRGB(clr);
+			iRGB clrT = SoftenBlackish_LAB(clrR);
+			clr = RGBtoFar(clrT);
+		}
+	}
+	return clr;
+}
+
+WinPortRGB GetEmbossColor(const WinPortRGB& _clr_text, const WinPortRGB& _clr_back) {
+	WinPortRGB clr_fade;
+	/* near to black / near to white means LAB */
+
+	int blackb = _clr_back.r + _clr_back.g + _clr_back.b;
+	int blackf = _clr_text.r + _clr_text.g + _clr_text.b;
+
+	if (blackb < 0x5f || blackf < 0x5f || blackb > 700 || blackf > 700) 
+		clr_fade = ComputeEmbossColor_LAB(_clr_back, GetSoftenColorIf(_clr_text));
+	else
+		clr_fade = ComputeEmbossColor_HSL(_clr_back, _clr_text);
+	return clr_fade;
+}
+
+WinPortRGB ComputeEmbossColor_HSL(const WinPortRGB& xbg, const WinPortRGB& xline) 
+{
+	RGB bg = FarToRGB(xbg);
+	RGB fg = FarToRGB(xline);
+	RGB r = ComputeRaiseColor_HSL(bg, fg);
+
+	return RGBtoFar(r);;
+}
+
+WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline) 
+{
+	RGB bg = FarToRGB(xbg);
+	RGB fg = FarToRGB(xline);
+	RGB r = ComputeRaiseColor_LAB(bg, fg);
+
+	return RGBtoFar(r);
+}
+
+namespace SDLBackend {
+	BackendOptions* options = 0;
+}

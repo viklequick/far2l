@@ -13,6 +13,7 @@
 #include "SDLBackendUtils.h"
 #include "SDLFontManager.h"
 #include "SDLPrinterSupport.h"
+#include "SDLShareBackendOptions.h"
 
 #include <SDL.h>
 #include <ft2build.h>
@@ -2657,6 +2658,9 @@ extern "C" __attribute__((visibility("default"))) bool WinPortMainBackend(WinPor
 	}
 	PrinterSupportBackendSetter printer_backend_setter;
 	printer_backend_setter.Set<SDLPrinterSupportBackend>();
+
+	ShareBackendOptionsBackendSetter share_backend_setter;
+	share_backend_setter.Set<SDLShareBackendOptionsBackend>();
 
 	bool ok = false;
 	SigIntGuard sig_guard;

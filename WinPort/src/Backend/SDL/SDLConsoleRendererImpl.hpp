@@ -418,6 +418,7 @@ public:
 		_present_full_copy = true;
 		_present_dirty_rects.clear();
 
+		// vk: main drawing cycle
 		for (unsigned int row = 0; row < _rows; ++row) {
 			IConsoleOutput::DirectLineAccess dla(g_winport_con_out, row);
 			const CHAR_INFO *line = dla.Line();
@@ -919,7 +920,7 @@ const RenderLayout &ResolveLayout() const
             return;
         }
 
-        if (cluster.size() == 1 && DrawBoxCharacter(cluster[0], fg_color, rect.x, rect.y)) {
+        if (cluster.size() == 1 && DrawBoxCharacter(cluster[0], fg_color, fg, bg, rect.x, rect.y, layout.ascent_px)) {
             return;
         }
 
@@ -1354,10 +1355,11 @@ const RenderLayout &ResolveLayout() const
 		}
 	}
 
-	bool DrawBoxCharacter(uint32_t codepoint, const SDL_Color &fg, int px, int py);
+	bool DrawBoxCharacter(uint32_t codepoint, const SDL_Color &fg, const WinPortRGB& _fg, const WinPortRGB& _bg, int px, int py, int accent);
 	bool EnsureBackingTexture(const RenderLayout &layout);
 	void DestroyBackingTexture();
 };
+
 bool SDLConsoleRendererImpl::CursorBlinkDue()
 {
 	if (!g_winport_con_out) {
@@ -1506,7 +1508,12 @@ bool SDLConsoleRendererImpl::DeleteImage(const std::string &id)
 	return ok;
 }
 
-bool SDLConsoleRendererImpl::DrawBoxCharacter(uint32_t codepoint, const SDL_Color &fg, int px, int py)
+bool SDLConsoleRendererImpl::DrawBoxCharacter(
+	uint32_t codepoint, 
+	const SDL_Color &fg, 
+	const WinPortRGB& clr_text, const WinPortRGB& clr_back, 
+	int px, int py,
+	int accent)
 {
 	const int cell_w = _font_manager.CellWidth();
 	const int cell_h = _font_manager.CellHeight();
@@ -1526,6 +1533,13 @@ bool SDLConsoleRendererImpl::DrawBoxCharacter(uint32_t codepoint, const SDL_Colo
 	painter.fh = cell_h;
 	painter.thickness = std::max(1, std::min(cell_w, cell_h) / 8);
 	painter.wc = codepoint;
+	painter.text_accent = accent;
+
+	painter._clr_text = clr_text;
+	painter._clr_back = clr_back;
+
+	SDL_RenderSetClipRect(_renderer, nullptr);
+
 	draw(painter, 0, 0);
 	return true;
 }

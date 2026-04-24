@@ -220,6 +220,11 @@ if (NOT ${USEWX})
     message(STATUS "Building without GUI backend due to USEWX=${USEWX}")
 #elseif (FAR2L_GUI_BACKEND STREQUAL "WX")
 endif()
+
+if (${USESDL})
+    message(STATUS "Building with GUI/SDL backend")
+    add_subdirectory(WinPort/src/Backend/SDL)
+endif()
 if (${USEWX})
     message(STATUS "Building with GUI/wxWidgets backend")
     if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
@@ -268,12 +273,6 @@ if (${USEWX})
 
     add_subdirectory(WinPort/src/Backend/WX)
 #elseif (FAR2L_GUI_BACKEND STREQUAL "SDL")
-endif()
-if (${USESDL})
-    message(STATUS "Building with GUI/SDL backend")
-    add_subdirectory(WinPort/src/Backend/SDL)
-#else()
-#    message(FATAL_ERROR "${ColorRed}Unknown FAR2L_GUI_BACKEND='${FAR2L_GUI_BACKEND}', expected WX or SDL${ColorNormal}")
 endif()
 
 if (NOT DEFINED TTYX)
@@ -590,11 +589,6 @@ else()
         " COMPONENT system)
 endif()
 
-if (DEFINED U_ADB AND U_ADB)
-    message(STATUS "ADB plugin enabled")
-    add_subdirectory(adb)
-endif()
-
 if (DEFINED U_MTP AND U_MTP)
     message(STATUS "MTP plugin enabled")
     add_subdirectory(mtp)
@@ -690,6 +684,7 @@ install(PROGRAMS "${INSTALL_DIR}/${EXECUTABLE_NAME}" DESTINATION "bin" RENAME fa
 install(DIRECTORY "${INSTALL_DIR}/" DESTINATION "lib/far2l" USE_SOURCE_PERMISSIONS COMPONENT base FILES_MATCHING
     PATTERN "colorer/base" EXCLUDE
     PATTERN "far2l_gui.so"
+    PATTERN "far2l_sdl.so"
     PATTERN "far2l_ttyx.broker"
     PATTERN "plug/*.far-plug-*"
     PATTERN "plug/*.broker"

@@ -27,7 +27,7 @@ static int sock = -1;
 static struct sockaddr_un addr;
 
 static PowerLineStatus connectToPowerLine() {
-	if (daemonResponsive == PowerLineStatus::NotAvailable) return daemonResponsive;
+	// if (daemonResponsive == PowerLineStatus::NotAvailable) return daemonResponsive;
 
     sock = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sock == -1) {

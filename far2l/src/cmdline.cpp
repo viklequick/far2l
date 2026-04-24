@@ -411,12 +411,14 @@ void CommandLine::DisplayObject()
 
 				FarTrueColorToAttributes(Attrs, tfb);
 				// if (v[i].colors.bold) Attrs |= COMMON_LVB_BOLD;
-				Attrs &= ~(COMMON_LVB_UNDERSCORE|COMMON_LVB_STRIKEOUT);
+				Attrs &= ~(COMMON_LVB_UNDERSCORE|COMMON_LVB_STRIKEOUT|COMMON_LVB_BOLD);
 				SetColor(Attrs);
 				GotoXY(X1 + i, input_y);
 
 				Text(x);
 			}
+			SetFarColor(COL_COMMANDLINEPREFIX);
+			Text(L" ");
 		}
 		else {
 			SetFarColor(COL_COMMANDLINEPREFIX);

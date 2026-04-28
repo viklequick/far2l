@@ -1540,7 +1540,8 @@ bool SDLConsoleRendererImpl::DrawBoxCharacter(
 	painter._clr_text = clr_text;
 	painter._clr_back = clr_back;
 
-	SDL_RenderSetClipRect(_renderer, nullptr);
+	// SDL_RenderSetClipRect(_renderer, nullptr);
+	painter.SetFillColor(clr_text);
 
 	draw(painter, 0, 0);
 	return true;

@@ -38,6 +38,22 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     )
 endif()
 
+set(NEW_MACOS TRUE)
+if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+     if (CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.7" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        set(NEW_MACOS FALSE)
+    endif()
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    if (${NEW_MACOS})
+        set(SOURCES
+            ${SOURCES}
+            Mac/printing.mm
+        )
+    endif()
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     find_package(wxWidgets REQUIRED core base adv html richtext)
 else()

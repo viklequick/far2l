@@ -908,7 +908,7 @@ ShellCopy::ShellCopy(Panel *SrcPanel,		// исходная панель (акт�
 	 */
 	if (Ask) {
 		FarList ComboList;
-		FarListItem LinkTypeItems[2] = {}, CopyModeItems[8] = {};
+		FarListItem LinkTypeItems[2] = {}, CopyModeItems[10] = {};
 
 		if (Link) {
 			ComboList.ItemsNumber = ARRAYSIZE(LinkTypeItems);

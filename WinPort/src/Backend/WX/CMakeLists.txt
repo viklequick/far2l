@@ -34,13 +34,17 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
         Mac/hide.mm
         Mac/init.mm
         Mac/displaynotify.mm
-        Mac/printing.mm
     )
 endif()
 
 set(NEW_MACOS TRUE)
 if (CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+<<<<<<< HEAD
      if (CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.7" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+=======
+#     if (CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.7" AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+>>>>>>> c1d01873c54b1777a32e6ec99d7902210ed66db7
         set(NEW_MACOS FALSE)
     endif()
 endif()

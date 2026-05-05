@@ -1515,6 +1515,9 @@ const RenderLayout &ResolveLayout() const
 
 	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned cw, unsigned ch, const SMALL_RECT& area, const wchar_t* pwcz);
 	void DrawHint(const HintPos& x);
+
+	void DrawCheckboxDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
+	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
 };
 
 bool SDLConsoleRendererImpl::CursorBlinkDue()
@@ -1722,6 +1725,14 @@ void SDLConsoleRendererImpl::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, 
 	if (ci.Extra.Hint.Container != HintDialog) return;
 	if (ci.Extra.Hint.Object == HintObjectNone) return;
 
+    /*
+	if (ci.Extra.Hint.Object == HintButton)
+		fprintf(stderr, "    ...(%d..%d, %d) = %d:%d +`%ls` tag=%d\n", 
+			cx, cx + nx - 1, cy, 
+			ci.Extra.Hint.Container, ci.Extra.Hint.Object, pwcz, 
+			ci.Extra.Hint.Tag);
+    */
+
 	std::wstring text(pwcz);
 
 	if (line_hints.size() > 0) {
@@ -1758,7 +1769,7 @@ void SDLConsoleRendererImpl::DrawHint(const HintPos& x) {
 
 	if (cy < 0 || cy < x.area.Top || cy > x.area.Bottom) return;
 	if (cx_end < 0 || cx_end < x.area.Left) return;
-	if (cx_start > x.area.Right || (unsigned)cx_start > x.cw) return;
+	if (cx_start > x.area.Right  /* || (unsigned)cx_start > x.cw*/) return;
 
 	if (cx_start < x.area.Left) cx_start = x.area.Left;
 	if (cx_start > x.area.Right) cx_start = x.area.Right;
@@ -1776,18 +1787,24 @@ void SDLConsoleRendererImpl::DrawHint(const HintPos& x) {
     case HintComboBox:
     	break;
     case HintButton:
+    	fprintf(stderr, "...paint: button: %d..%d, %d -> %d..%d, %d `%ls` /..%d/ in %d..%d, %d..%d, tag=%d focus=%c hover=%c type=%d\n", 
+        	x.cx, x.nx, x.cy,
+    		cx_start, cx_end, cy, 
+            x.text.c_str(), (int)(cx_start + x.text.size()),
+            (int)x.area.Left, (int)x.area.Right, (int)x.area.Top, (int)x.area.Bottom,
+    		((int)x.tag) & 0x00FF, x.Hint.Focus ? 'Y': 'N', x.Hint.Hover ? 'Y': 'N', x.Hint.Object);
+
         if (x.Hint.Enabled && !x.Hint.Beveled) {
         	/*
-	        if(WXCustomDrawChar::options->Use3D) 
+	        if(SDLBackend::options->Use3D) 
 		        DrawButtonDecorationsAsNew(cx_start, cx_end, cy, clr_text, clr_back, x);
-			else
+			else */
 				DrawButtonDecorations(cx_start, cx_end, cy, clr_text, clr_back, x);
-            */
 		}
     	break;
     case HintCheckbox:
     case HintRadioButton:
-        // DrawCheckboxDecorations(cx_start, cx_end, cy, clr_text, clr_back, x);
+        DrawCheckboxDecorations(cx_start, cx_end, cy, clr_text, clr_back, x);
     	break;
     case HintListBox:
     	break;
@@ -1803,6 +1820,55 @@ void SDLConsoleRendererImpl::DrawHint(const HintPos& x) {
     default:
     	break;
 	}
+}
+
+void SDLConsoleRendererImpl::DrawCheckboxDecorations(
+	int cx_start, unsigned int cx_end, unsigned int cy, 
+	const WinPortRGB& c_text, const WinPortRGB& c_back, 
+	const HintPos& pos)
+{
+	const int cell_w = _font_manager.CellWidth();
+	const int cell_h = _font_manager.CellHeight();
+
+	if (pos.Hint.Focus) {
+		int Y2 = cy * cell_h + cell_h - 1;
+		int X1 = (cx_start + 3) * cell_w;
+		int X2 = (cx_end + 1) * cell_w  - 1;
+
+		WinPortRGB c_a_text, c_a_back;
+		ComputeAccents(c_text, c_back, c_a_text, c_a_back);
+
+		WinPortRGB emboss = c_a_back; // GetSoftenColorIf(c_text);
+
+		SDL_SetRenderDrawColor(_renderer, emboss.r, emboss.g, emboss.b, 255);
+		DrawFilledTriangle(_renderer, X1, Y2, X2, Y2, X1, Y2 - 1);
+	}
+}
+
+void SDLConsoleRendererImpl::DrawButtonDecorations(
+	int cx_start, unsigned int cx_end, unsigned int cy, 
+	const WinPortRGB& c_text, const WinPortRGB& c_back,
+	const HintPos& pos) 
+{
+	const int cell_w = _font_manager.CellWidth();
+	const int cell_h = _font_manager.CellHeight();
+
+	int Y1 = cy * cell_h, Y2 = cy * cell_h + cell_h - 1;
+	int X1 = cx_start * cell_w, X2 = cx_end * cell_w + cell_w - 1;
+	int W = X2 - X1 + 1, H = Y2 - Y1 + 1;
+
+	WinPortRGB c_a_text, c_a_back;
+	ComputeAccents(c_text, c_back, c_a_text, c_a_back);
+
+	WinPortRGB emboss = c_a_back; // GetSoftenColorIf(c_text);
+	SDL_SetRenderDrawColor(_renderer, emboss.r, emboss.g, emboss.b, 255);
+	if (pos.Hint.Focus || pos.Hint.Hover) {
+		SDL_Rect rect{ X1, Y1, W, H};
+		SDL_RenderDrawRect(_renderer, &rect);
+		emboss = c_a_text; // GetSoftenColorIf(c_text);
+		SDL_SetRenderDrawColor(_renderer, emboss.r, emboss.g, emboss.b, 255);
+	}
+	SDL_RenderDrawLine(_renderer, X1, Y2, X2, Y2);
 }
 
 void SDLConsoleRendererImpl::DescribeImageCaps(WinportGraphicsInfo &wgi) const

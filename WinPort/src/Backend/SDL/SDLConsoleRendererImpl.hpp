@@ -950,11 +950,12 @@ const RenderLayout &ResolveLayout() const
 
             line_custom_chars.clear();
             line_hints.clear();
-            bool prev_space = false;
 
             const SHORT max_col = static_cast<SHORT>(width - 1);
             const SHORT col_end = std::min(right, max_col);
             SHORT col = left;
+            bool prev_space = col > 0 && line[col - 1].Char.UnicodeChar == L' ';
+
             while (col <= col_end) {
                 if (col > 0 && line[col].Char.UnicodeChar == 0 && CI_FULL_WIDTH_CHAR(line[col - 1])) {
                     ++col;
@@ -1460,7 +1461,7 @@ const RenderLayout &ResolveLayout() const
 
             line_custom_chars.clear();
             line_hints.clear();
-            bool prev_space = false;
+            bool prev_space = left > 0 && line[left - 1].Char.UnicodeChar == L' ';
 
 			const SHORT max_col = static_cast<SHORT>(width - 1);
 			const SHORT col_end = std::min(right, max_col);
@@ -1703,6 +1704,7 @@ bool SDLConsoleRendererImpl::DrawBoxCharacterImpl(const CustomCharPos& cc)
 	painter.thickness = std::max(1, std::min(cc.cw, cc.ch) / 8);
 	painter.wc = cc.codepoint;
 	painter.text_accent = cc.ascent;
+	painter.prev_space = cc.prev_space;
 
 	painter._clr_text = cc.clr_text;
 	painter._clr_back = cc.clr_back;

@@ -49,3 +49,7 @@ WinPortRGB RGBtoFar(const RGB& rgb) ;
 WinPortRGB RGBtoFar(const iRGB& rgb) ;
 
 void DrawFilledTriangle(SDL_Renderer* r, int x1, int y1, int x2, int y2, int x3, int y3);
+
+void drawHorizontalGradientBox(SDL_Renderer * renderer,
+    const int x, const int y, const int w, const int h, const float steps,
+    const SDL_Color c1, const SDL_Color c2, const int fill);

@@ -249,7 +249,7 @@ size_t ItemStringAndSize(DialogItemEx *Data, FARString &ItemString)
 	if (sz > Data->nMaxLength && Data->nMaxLength > 0)
 		sz = Data->nMaxLength;
 
-	if (sz < 40) sz = 40;
+	// if (sz < 40) sz = 40;
 
 	return sz;
 }
@@ -272,13 +272,13 @@ bool ConvertItemEx(CVTITEMFLAGS FromPlugin, FarDialogItem *Item, DialogItemEx *D
 					FARString str;
 					size_t sz = ItemStringAndSize(Data, str);
 					{
-						wchar_t *p = (wchar_t *)malloc((sz + 1) * sizeof(wchar_t));
+						wchar_t *p = (wchar_t *)malloc((sz + 5) * sizeof(wchar_t));
 						Item->PtrData = p;
 
 						if (!p)		// TODO: may be needed message?
 							return false;
 
-						wmemcpy(p, str.CPtr(), sz);
+						wcsncpy(p, str.CPtr(), sz);
 						p[sz] = L'\0';
 					}
 				}
@@ -1823,8 +1823,9 @@ static void SetColorFrame(DWORD Attr, const std::unique_ptr<DialogItemTrueColors
 }
 */
 
-int Dialog::IsLastBevelPriorToButtons(int I) {
-	return I < ItemCount && Item[I + 1]->Type == DI_BUTTON && (Item[I + 1]->Flags & DIF_CENTERGROUP);
+int Dialog::IsLastBevelPriorToButtons(int _I) {
+	unsigned I = _I < 0 ? 0 : (unsigned)_I;
+	return I < ItemCount - 1 && Item[I + 1]->Type == DI_BUTTON && (Item[I + 1]->Flags & DIF_CENTERGROUP);
 }
 
 //////////////////////////////////////////////////////////////////////////

@@ -176,3 +176,42 @@ WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline
 namespace SDLBackend {
 	BackendOptions* options = 0;
 }
+
+static inline void SDL_swap(int& a, int& b) {
+	int x = a;
+	a = b;
+	b = x;
+}
+
+void DrawFilledTriangle(SDL_Renderer* r,
+	int x1, int y1,
+	int x2, int y2,
+	int x3, int y3)
+{
+    // Sort vertices by Y (ascending)
+    if (y2 < y1) { SDL_swap(x1, x2); SDL_swap(y1, y2); }
+    if (y3 < y1) { SDL_swap(x1, x3); SDL_swap(y1, y3); }
+    if (y3 < y2) { SDL_swap(x2, x3); SDL_swap(y2, y3); }
+
+    // Helper lambda: interpolate X between two points
+    auto interp = [](int y, int x0, int y0, int x1, int y1) {
+        if (y1 == y0) return x0;
+        return (int)(x0 + (x1 - x0) * (float)(y - y0) / (float)(y1 - y0));
+    };
+
+    // Draw upper part (y1 → y2)
+    for (int y = y1; y <= y2; ++y) {
+        int xa = interp(y, x1, y1, x3, y3);
+        int xb = interp(y, x1, y1, x2, y2);
+        if (xa > xb) SDL_swap(xa, xb);
+        SDL_RenderDrawLine(r, xa, y, xb, y);
+    }
+
+    // Draw lower part (y2 → y3)
+    for (int y = y2; y <= y3; ++y) {
+        int xa = interp(y, x1, y1, x3, y3);
+        int xb = interp(y, x2, y2, x3, y3);
+        if (xa > xb) SDL_swap(xa, xb);
+        SDL_RenderDrawLine(r, xa, y, xb, y);
+    }
+}

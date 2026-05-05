@@ -93,7 +93,6 @@ void Painter::SetColorRed()
 
 int Painter::GetFontAscent()
 {
-	// todo: find it somewhere
 	return text_accent;
 }
 
@@ -102,9 +101,36 @@ void Painter::FillPixel(int left, int top)
 	FillRectangle(left, top, left, top);
 }
 
-
-void Painter::DrawEllipticArc(int left, int top, int width, int height, double startDeg, double endDeg, int thickness) 
+void Painter::DrawEllipticArcS(int left, int top, int width, int height, double startDeg, double endDeg, int thickness) 
 {
+	// use curved instead of rounded
+	//     \ < 90
+	//    / < 180
+	//    \ < 270
+	//    / < 360
+	if (endDeg == 0) endDeg = 360;
+	if (startDeg < 90 && endDeg >= 90) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		SDL_RenderDrawLine(renderer, origin_x + left + width / 2, origin_y + top, origin_x + left + width, origin_y + top + height / 2);
+	}
+	if (startDeg < 180 && endDeg >= 180) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		SDL_RenderDrawLine(renderer, origin_x + left + width / 2, origin_y + top, origin_x + left, origin_y + top + height / 2);
+	}
+	if (startDeg < 270 && endDeg >= 270) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		SDL_RenderDrawLine(renderer, origin_x + left + width / 2, origin_y + top + height, origin_x + left, origin_y + top + height / 2);
+	}
+	if (startDeg < 360 && endDeg == 360) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		SDL_RenderDrawLine(renderer, origin_x + left + width / 2, origin_y + top + height, origin_x + left + width, origin_y + top + height / 2);
+	}
+}
+
+void Painter::DrawEllipticArcE(int left, int top, int width, int height, double startDeg, double endDeg, int thickness) 
+{
+	if (endDeg == 0) endDeg = 360;
+
     double cx = left + width / 2.0;
     double cy = top + height / 2.0;
     double rx = width / 2.0;
@@ -129,7 +155,7 @@ void Painter::DrawEllipticArc(int left, int top, int width, int height, double s
             double x = cx + innerRx * cos(a);
             double y = cy + innerRy * sin(a);
 
-            SDL_RenderDrawLine(renderer, prevX, prevY, x, y);
+            SDL_RenderDrawLine(renderer, origin_x + prevX, origin_y + prevY, origin_x + x, origin_y + y);
 
             prevX = x;
             prevY = y;
@@ -137,8 +163,34 @@ void Painter::DrawEllipticArc(int left, int top, int width, int height, double s
     }
 }
 
-void Painter::FillEllipticPie(int left, int top, int width, int height, double startDeg, double endDeg)
+void Painter::FillEllipticPieS(int left, int top, int width, int height, double startDeg, double endDeg) 
 {
+	if (endDeg == 0) endDeg = 360;
+	int centerX = origin_x + left + width / 2;
+	int centerY = origin_y + top + height / 2;
+
+	if (startDeg < 90 && endDeg >= 90) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		DrawFilledTriangle(renderer, origin_x + left + width / 2, origin_y + top, origin_x + left + width, origin_y + top + height / 2, centerX, centerY);
+	}
+	if (startDeg < 180 && endDeg >= 180) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		DrawFilledTriangle(renderer, origin_x + left + width / 2, origin_y + top, origin_x + left, origin_y + top + height / 2, centerX, centerY);
+	}
+	if (startDeg < 270 && endDeg >= 270) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		DrawFilledTriangle(renderer, origin_x + left + width / 2, origin_y + top + height, origin_x + left, origin_y + top + height / 2, centerX, centerY);
+	}
+	if (startDeg < 360 && endDeg >= 360) {
+		SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
+		DrawFilledTriangle(renderer, origin_x + left + width / 2, origin_y + top + height, origin_x + left + width, origin_y + top + height / 2, centerX, centerY);
+	}
+}
+
+void Painter::FillEllipticPieE(int left, int top, int width, int height, double startDeg, double endDeg)
+{
+	if (endDeg == 0) endDeg = 360;
+
     double cx = left + width / 2.0;
     double cy = top + height / 2.0;
     double rx = width / 2.0;
@@ -160,9 +212,9 @@ void Painter::FillEllipticPie(int left, int top, int width, int height, double s
         double y = cy + ry * sin(a);
 
         // Draw triangle: center → prev → current
-        SDL_RenderDrawLine(renderer, cx, cy, prevX, prevY);
-        SDL_RenderDrawLine(renderer, prevX, prevY, x, y);
-        SDL_RenderDrawLine(renderer, x, y, cx, cy);
+        SDL_RenderDrawLine(renderer, origin_x + cx, origin_y + cy, origin_x + prevX, origin_y + prevY);
+        SDL_RenderDrawLine(renderer, origin_x + prevX,origin_y +  prevY, origin_x + x, origin_y + y);
+        SDL_RenderDrawLine(renderer, origin_x + x, origin_y + y, origin_x + cx, origin_y + cy);
 
         prevX = x;
         prevY = y;
@@ -171,7 +223,7 @@ void Painter::FillEllipticPie(int left, int top, int width, int height, double s
 
 void Painter::DrawLine(int X1, int Y1, int X2, int Y2, int thickness) {
 	SDL_SetRenderDrawColor(renderer, color.r, color.g, color.b, color.a);
-	SDL_RenderDrawLine(renderer, X1, Y1, X2, Y2);
+	SDL_RenderDrawLine(renderer, origin_x + X1, origin_y + Y1, origin_x + X2, origin_y + Y2);
 }
 
 void Painter::SaveBrush() {}

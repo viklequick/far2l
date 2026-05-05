@@ -43,9 +43,19 @@ namespace SDLBoxChar
 		void FillRectangle(int left, int top, int right, int bottom);
 		void FillPixel(int left, int top);
 
-		void DrawEllipticArc(int left, int top, int width, int height, double start, double end, int thickness);
-		void FillEllipticPie(int left, int top, int width, int height, double start, double end);
+		void DrawEllipticArcE(int left, int top, int width, int height, double start, double end, int thickness);
+		void DrawEllipticArcS(int left, int top, int width, int height, double start, double end, int thickness);
+		void FillEllipticPieE(int left, int top, int width, int height, double start, double end);
+		void FillEllipticPieS(int left, int top, int width, int height, double start, double end);
 		void DrawLine(int X1, int Y1, int X2, int Y2, int thickness);
+
+		inline void DrawEllipticArc(int left, int top, int width, int height, double start, double end, int thickness) {
+			DrawEllipticArcS(left, top, width, height, start, end, thickness);
+		}
+
+		inline void FillEllipticPie(int left, int top, int width, int height, double start, double end) {
+			FillEllipticPieS(left, top, width, height, start, end);
+		}
 
 		void SaveBrush();
 		void RestoreBrush();

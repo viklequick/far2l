@@ -428,15 +428,46 @@ public:
 			if (!line || !width) {
 				continue;
 			}
+
+            line_custom_chars.clear();
+            line_hints.clear();
+            bool prev_space = false;
+            SMALL_RECT area_in {0, 0, (SHORT)width, (SHORT)_rows};
+
 			unsigned int col = 0;
 			while (col < width) {
 				if (col > 0 && line[col].Char.UnicodeChar == 0 && CI_FULL_WIDTH_CHAR(line[col - 1])) {
 					++col;
 					continue;
 				}
-				DrawCell(col, row, line[col]);
-				col += CI_FULL_WIDTH_CHAR(line[col]) ? 2 : 1;
+
+    			const wchar_t *pwcz;
+                wchar_t tmp_wcz[2] = {0, 0};
+    			if (UNLIKELY(CI_USING_COMPOSITE_CHAR(line[col]))) {
+    				pwcz = WINPORT(CompositeCharLookup)(line[col].Char.UnicodeChar);
+    			} else {
+    				tmp_wcz[0] = line[col].Char.UnicodeChar ? wchar_t(line[col].Char.UnicodeChar) : L' ';
+    				pwcz = tmp_wcz;
+    			}
+
+				DrawCell(col, row, line[col], prev_space, pwcz);
+
+                prev_space = line[col].Char.UnicodeChar == L' ';
+                int nx = CI_FULL_WIDTH_CHAR(line[col]) ? 2 : 1;
+                ConsumeHintAt(line[col], col, nx, row, width, _rows, area_in, pwcz);
+                col += nx;
 			}
+
+       		for(size_t x = 0; x < line_custom_chars.size(); ++x) {
+       			CustomCharPos c = line_custom_chars[x];
+       			DrawBoxCharacterImpl(c);
+       		}
+       		line_custom_chars.clear();
+       		for(size_t x = 0; x < line_hints.size(); ++x) {
+       			HintPos c = line_hints[x];
+       			DrawHint(c);
+       		}
+       		line_hints.clear();
 		}
 	}
 
@@ -833,6 +864,67 @@ const RenderLayout &ResolveLayout() const
 		}
 	}
 
+    struct CustomCharPos {
+    	SDLBoxChar::DrawT custom_draw;
+    	bool prev_space;
+
+		uint32_t codepoint;
+		SDL_Color fg;
+		WinPortRGB clr_text; 
+		WinPortRGB clr_back;
+		int px;
+		int py;
+		int ascent;
+		int cw, ch;
+
+    	CustomCharPos(uint32_t _cc, SDLBoxChar::DrawT _custom_draw, 
+    			const SDL_Color &_fg, const WinPortRGB& _clr_text, const WinPortRGB& _clr_back,
+				int _px, int _py, int _ascent, bool _prev_space, int _cw, int _ch) 
+		{
+        	codepoint = _cc;
+            custom_draw = _custom_draw;
+            prev_space = _prev_space;
+            px = _px;
+            py = _py;
+            ascent = _ascent;
+            clr_text = _clr_text;
+            clr_back = _clr_back;
+            fg = _fg;
+            cw = _cw;
+            ch = _ch;
+    	}
+    };
+
+    struct HintPos {
+        struct {
+            HintContainerType Container; /* e.g menu, dialog, console, editor, viewer, panels, ... */
+            HintObjectType Object; /* e.g push button, text, box, separator, combo box, ...  */
+            
+            int Focus: 1;
+            int Hover: 1;
+            int Enabled: 1;
+            int Default: 1; 
+            int Beveled: 1;
+            int Shadow: 1;
+            int Checked: 1;
+        } Hint;
+
+        int tag;
+
+    	int cx;
+    	int nx;
+        int cy;
+
+        unsigned cw, ch;
+
+    	DWORD64 attributes;
+        std::wstring text;
+        SMALL_RECT area;
+    };
+
+    std::vector<CustomCharPos> line_custom_chars;
+    std::vector<HintPos> line_hints;
+
 	void DrawArea(const SMALL_RECT &area_in)
     {
         const SHORT top = std::max<SHORT>(0, area_in.Top);
@@ -856,6 +948,10 @@ const RenderLayout &ResolveLayout() const
                 continue;
             }
 
+            line_custom_chars.clear();
+            line_hints.clear();
+            bool prev_space = false;
+
             const SHORT max_col = static_cast<SHORT>(width - 1);
             const SHORT col_end = std::min(right, max_col);
             SHORT col = left;
@@ -864,13 +960,37 @@ const RenderLayout &ResolveLayout() const
                     ++col;
                     continue;
                 }
-                DrawCell(col, row, line[col]);
-                col += CI_FULL_WIDTH_CHAR(line[col]) ? 2 : 1;
+
+    			const wchar_t *pwcz;
+                wchar_t tmp_wcz[2] = {0, 0};
+    			if (UNLIKELY(CI_USING_COMPOSITE_CHAR(line[col]))) {
+    				pwcz = WINPORT(CompositeCharLookup)(line[col].Char.UnicodeChar);
+    			} else {
+    				tmp_wcz[0] = line[col].Char.UnicodeChar ? wchar_t(line[col].Char.UnicodeChar) : L' ';
+    				pwcz = tmp_wcz;
+    			}
+
+                DrawCell(col, row, line[col], prev_space, pwcz);
+                prev_space = line[col].Char.UnicodeChar == L' ';
+                int nx = CI_FULL_WIDTH_CHAR(line[col]) ? 2 : 1;
+                ConsumeHintAt(line[col], col, nx, row, col_end - left + 1, bottom - top + 1, area_in, pwcz);
+                col += nx;
             }
+
+       		for(size_t x = 0; x < line_custom_chars.size(); ++x) {
+       			CustomCharPos c = line_custom_chars[x];
+       			DrawBoxCharacterImpl(c);
+       		}
+       		line_custom_chars.clear();
+       		for(size_t x = 0; x < line_hints.size(); ++x) {
+       			HintPos c = line_hints[x];
+       			DrawHint(c);
+       		}
+       		line_hints.clear();
         }
     }
 
-	void DrawCell(int col, int row, const CHAR_INFO &ci)
+	void DrawCell(int col, int row, const CHAR_INFO &ci, bool prev_space, const wchar_t* text)
     {
         const RenderLayout &layout = CurrentLayout();
 		_last_draw_color_valid = false;
@@ -922,7 +1042,7 @@ const RenderLayout &ResolveLayout() const
             return;
         }
 
-        if (cluster.size() == 1 && DrawBoxCharacter(cluster[0], fg_color, fg, bg, rect.x, rect.y, layout.ascent_px)) {
+        if (cluster.size() == 1 && DrawBoxCharacter(cluster[0], fg_color, fg, bg, rect.x, rect.y, layout.ascent_px, prev_space)) {
             return;
         }
 
@@ -1337,6 +1457,11 @@ const RenderLayout &ResolveLayout() const
 			if (!width) {
 				continue;
 			}
+
+            line_custom_chars.clear();
+            line_hints.clear();
+            bool prev_space = false;
+
 			const SHORT max_col = static_cast<SHORT>(width - 1);
 			const SHORT col_end = std::min(right, max_col);
 			for (SHORT col = left; col <= col_end; ++col) {
@@ -1352,14 +1477,43 @@ const RenderLayout &ResolveLayout() const
 					attributes ^= 0xffffff0000000000;
 				}
 				tmp.Attributes = attributes;
-				DrawCell(col, row, tmp);
+
+    			const wchar_t *pwcz;
+                wchar_t tmp_wcz[2] = {0, 0};
+    			if (UNLIKELY(CI_USING_COMPOSITE_CHAR(line[col]))) {
+    				pwcz = WINPORT(CompositeCharLookup)(line[col].Char.UnicodeChar);
+    			} else {
+    				tmp_wcz[0] = line[col].Char.UnicodeChar ? wchar_t(line[col].Char.UnicodeChar) : L' ';
+    				pwcz = tmp_wcz;
+    			}
+
+				DrawCell(col, row, tmp, prev_space, pwcz);
+
+                prev_space = line[col].Char.UnicodeChar == L' ';
+                int nx = CI_FULL_WIDTH_CHAR(line[col]) ? 2 : 1;
+                ConsumeHintAt(line[col], col, nx, row, right - left + 1, bottom - top + 1, area, pwcz);
 			}
+
+       		for(size_t x = 0; x < line_custom_chars.size(); ++x) {
+       			CustomCharPos c = line_custom_chars[x];
+       			DrawBoxCharacterImpl(c);
+       		}
+       		line_custom_chars.clear();
+       		for(size_t x = 0; x < line_hints.size(); ++x) {
+       			HintPos c = line_hints[x];
+       			DrawHint(c);
+       		}
+       		line_hints.clear();
 		}
 	}
 
-	bool DrawBoxCharacter(uint32_t codepoint, const SDL_Color &fg, const WinPortRGB& _fg, const WinPortRGB& _bg, int px, int py, int accent);
+	bool DrawBoxCharacter(uint32_t codepoint, const SDL_Color &fg, const WinPortRGB& _fg, const WinPortRGB& _bg, int px, int py, int accent, bool prev_space);
+	bool DrawBoxCharacterImpl(const CustomCharPos& cc);
 	bool EnsureBackingTexture(const RenderLayout &layout);
 	void DestroyBackingTexture();
+
+	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned cw, unsigned ch, const SMALL_RECT& area, const wchar_t* pwcz);
+	void DrawHint(const HintPos& x);
 };
 
 bool SDLConsoleRendererImpl::CursorBlinkDue()
@@ -1510,12 +1664,13 @@ bool SDLConsoleRendererImpl::DeleteImage(const std::string &id)
 	return ok;
 }
 
+
 bool SDLConsoleRendererImpl::DrawBoxCharacter(
 	uint32_t codepoint, 
 	const SDL_Color &fg, 
 	const WinPortRGB& clr_text, const WinPortRGB& clr_back, 
 	int px, int py,
-	int accent)
+	int accent, bool prev_space)
 {
 	const int cell_w = _font_manager.CellWidth();
 	const int cell_h = _font_manager.CellHeight();
@@ -1526,25 +1681,126 @@ bool SDLConsoleRendererImpl::DrawBoxCharacter(
 	if (!draw) {
 		return false;
 	}
+
+   	CustomCharPos x(codepoint, draw, fg, clr_text, clr_back, px, py, accent, prev_space, cell_w, cell_h);
+    line_custom_chars.push_back(x);
+	return true;
+}
+
+bool SDLConsoleRendererImpl::DrawBoxCharacterImpl(const CustomCharPos& cc)
+{
+	if (!_renderer) {
+		return false;
+	}
+
 	SDLBoxChar::Painter painter;
 	painter.renderer = _renderer;
-	painter.color = fg;
-	painter.origin_x = px;
-	painter.origin_y = py;
-	painter.fw = cell_w;
-	painter.fh = cell_h;
-	painter.thickness = std::max(1, std::min(cell_w, cell_h) / 8);
-	painter.wc = codepoint;
-	painter.text_accent = accent;
+	painter.color = cc.fg;
+	painter.origin_x = cc.px;
+	painter.origin_y = cc.py;
+	painter.fw = cc.cw;
+	painter.fh = cc.ch;
+	painter.thickness = std::max(1, std::min(cc.cw, cc.ch) / 8);
+	painter.wc = cc.codepoint;
+	painter.text_accent = cc.ascent;
 
-	painter._clr_text = clr_text;
-	painter._clr_back = clr_back;
+	painter._clr_text = cc.clr_text;
+	painter._clr_back = cc.clr_back;
 
 	// SDL_RenderSetClipRect(_renderer, nullptr);
-	painter.SetFillColor(clr_text);
+	painter.SetFillColor(cc.clr_text);
 
-	draw(painter, 0, 0);
+	cc.custom_draw(painter, 0, 0);
 	return true;
+}
+
+void SDLConsoleRendererImpl::ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned cw, unsigned ch, const SMALL_RECT& area, const wchar_t* pwcz) {
+	if (SDLBackend::options && !SDLBackend::options->UseModernLook) return;
+
+	if (ci.Extra.Hint.Container != HintDialog) return;
+	if (ci.Extra.Hint.Object == HintObjectNone) return;
+
+	std::wstring text(pwcz);
+
+	if (line_hints.size() > 0) {
+		for(int i = line_hints.size() - 1; i >= 0; --i) {
+			if (line_hints[i].Hint.Object == ci.Extra.Hint.Object && line_hints[i].tag == ci.Extra.Hint.Tag) {
+				line_hints[i].nx = cx;
+				line_hints[i].text += text;
+				return;
+			}
+		}
+	}
+
+	HintPos pos { {
+			ci.Extra.Hint.Container, ci.Extra.Hint.Object, 
+			ci.Extra.Hint.Focus, ci.Extra.Hint.Hover, ci.Extra.Hint.Enabled, 
+			ci.Extra.Hint.Default, ci.Extra.Hint.Beveled, ci.Extra.Hint.Shadow, ci.Extra.Hint.Checked },
+		ci.Extra.Hint.Tag,
+		cx, cx,
+		cy, 
+		cw, ch,
+		ci.Attributes, text,
+		area };
+
+	line_hints.push_back(pos);
+}
+
+void SDLConsoleRendererImpl::DrawHint(const HintPos& x) {
+    WinPortRGB clr_text = SDLConsoleForeground2RGB(x.attributes);
+    WinPortRGB clr_back = SDLConsoleBackground2RGB(x.attributes);
+
+	int cx_start = x.cx;
+	int cx_end = x.nx;
+	int cy = x.cy;
+
+	if (cy < 0 || cy < x.area.Top || cy > x.area.Bottom) return;
+	if (cx_end < 0 || cx_end < x.area.Left) return;
+	if (cx_start > x.area.Right || (unsigned)cx_start > x.cw) return;
+
+	if (cx_start < x.area.Left) cx_start = x.area.Left;
+	if (cx_start > x.area.Right) cx_start = x.area.Right;
+	if (cx_end < x.area.Left) cx_end = x.area.Left;
+	if (cx_end > x.area.Right) cx_end = x.area.Right;
+
+	if (cx_end <= cx_start) return;
+
+	switch(x.Hint.Object){
+    case HintEdit:
+    case HintFixEdit:
+    case HintPswEdit:
+    case HintMemoEdit:
+    	break;
+    case HintComboBox:
+    	break;
+    case HintButton:
+        if (x.Hint.Enabled && !x.Hint.Beveled) {
+        	/*
+	        if(WXCustomDrawChar::options->Use3D) 
+		        DrawButtonDecorationsAsNew(cx_start, cx_end, cy, clr_text, clr_back, x);
+			else
+				DrawButtonDecorations(cx_start, cx_end, cy, clr_text, clr_back, x);
+            */
+		}
+    	break;
+    case HintCheckbox:
+    case HintRadioButton:
+        // DrawCheckboxDecorations(cx_start, cx_end, cy, clr_text, clr_back, x);
+    	break;
+    case HintListBox:
+    	break;
+    case HintLine:
+    case HintBox:
+    	break;
+    case HintTitle:
+    case HintImage:
+    case HintScrollBar:
+    case HintUserControl:
+    case HintText:
+    case HintVerticalText:
+    default:
+    	break;
+	}
 }
 
 void SDLConsoleRendererImpl::DescribeImageCaps(WinportGraphicsInfo &wgi) const

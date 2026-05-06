@@ -600,6 +600,12 @@ void FileViewer::ShowStatus()
 		}
 		ShowTime(FALSE);
 	}
+
+	if(Opt.Backend.UseModernLook && KeyBarVisible) {
+		FARString extra;
+		extra.Format(L"%d%% %lld %d ", percent, View.FileSize, View.LeftPos).Append(str_codepage);
+		ViewKeyBar.Extra(extra);
+	}
 }
 
 void FileViewer::OnChangeFocus(int focus)

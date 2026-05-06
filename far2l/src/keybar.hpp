@@ -119,6 +119,7 @@ public:
 	void Change(const wchar_t *NewStr, int Pos) { Change(KBL_MAIN, NewStr, Pos); }
 
 	void Extra(const wchar_t* text){ strExtra = text; Redraw(); }
+	void Extra(const FARString& text){ strExtra = text; Redraw(); }
 									 
 	// Изменение любого Label
 	void Change(int Group, const wchar_t *NewStr, int Pos);

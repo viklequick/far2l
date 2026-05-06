@@ -2366,7 +2366,7 @@ void FileEditor::ShowStatus()
 	ShortReadableCodepageName(m_codepage,str_codepage);
 	FormatString FString;
 	FString << fmt::Cells() << fmt::LeftAlign()
-			<< (m_editor->Flags.Check(FEDITOR_MODIFIED) ? L'*' : L' ')
+			<< (m_editor->Flags.Check(FEDITOR_MODIFIED) ? (Opt.Backend.UseModernLook ? L'★' : L'*') : L' ')
 			<< (m_editor->Flags.Check(FEDITOR_LOCKMODE) ? L'-' : L' ')
 			<< (m_editor->Flags.Check(FEDITOR_PROCESSCTRLQ) ? L'"' : L' ') << strWrapMode << strTabMode << L' '
 			<< fmt::Expand(5) << EOLName(m_editor->GlobalEOL) << L' ' << fmt::Expand(5) << str_codepage << L' '
@@ -2399,6 +2399,15 @@ void FileEditor::ShowStatus()
 			Text(X2 - 5, Y1, FarColorToReal(COL_EDITORTEXT), L" ");
 		}
 		ShowTime(FALSE);
+	}
+
+	if(Opt.Backend.UseModernLook && KeyBarVisible) {
+		FARString extra;
+		extra.Format(L"%c%d %d/%d ", 
+			(m_editor->Flags.Check(FEDITOR_MODIFIED) ? L'★' : L' '),
+			m_editor->CurLine->GetCellCurPos() + 1, 
+			m_editor->NumLine + 1, m_editor->NumLastLine).Append(str_codepage);
+		EditKeyBar.Extra(extra);
 	}
 }
 

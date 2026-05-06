@@ -173,10 +173,17 @@ void KeyBar::RefreshObject(bool Render)
 				uint64_t color1 = SoftenItemColor(FarColorToReal(COL_KEYBARNUM), 0, Hover[i], 0, 0);
 				uint64_t color2 = SoftenItemColor(FarColorToReal(COL_KEYBARTEXT), 0, Hover[i], 0, 0);
 
+				SetColor(color2);
+
+				if (i == 0) 
+					FS << L"🦊";
+				else 
+					FS << L"┋";
+
 				SetColor(color1);
 				FS << keyLabel.c_str();
 				SetColor(color2);
-				FS << L"┋ ";
+				FS << L" ";
 				FS << Label;
 				FS << L" ";
 			}
@@ -193,11 +200,13 @@ void KeyBar::RefreshObject(bool Render)
     		}
 		}
 		else {
-    		strExtra = L" Additional text here to see it if space available";
     		if (Width > 0) {
+            	int extraLen = strExtra.GetLength();
+                if (extraLen < Width - 2) extraLen = Width - 2;
     			SetFarColor(COL_KEYBARTEXT);
-    			FS << L"┋ ";
-    			FS << fmt::Cells() << fmt::LeftAlign() << fmt::Size(Width - 3) << strExtra << L"";
+    			// FS << L"┋ ";
+                SetFarColor(COL_KEYBARBACKGROUND);
+    			FS << fmt::Cells() << fmt::RightAlign() << fmt::Size(extraLen) << strExtra << L" ";
     		}
 		}
 

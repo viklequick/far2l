@@ -146,6 +146,7 @@ void KeyBar::RefreshObject(bool Render)
 
 	int KeyWidth = (X2 - X1 - 1) / 12;
 	if (KeyWidth < 8) KeyWidth = 8;
+	if (KeyWidth > 11) KeyWidth = 11;
 	int LabelWidth = KeyWidth - 2;
 
 	if (Render)
@@ -168,8 +169,13 @@ void KeyBar::RefreshObject(bool Render)
 				PrevFKeyTitles[i] = Label;
 		}
 
+		wchar_t labelHolder[128];
+		wcscpy(labelHolder, Label);
+		wchar_t* q = wcschr(labelHolder, L' ');
+		if(q) *q = 0;
+
 		if (Opt.Backend.UseModernLook && Render) 
-			LabelWidth = wcslen(Label) + 3 + wcslen(keyLabel.c_str());
+			LabelWidth = wcslen(/*Hover[i] ? Label :*/ labelHolder) + 3 + wcslen(keyLabel.c_str());
 
 		if (Render && WhereX() + LabelWidth < X2) {
 			xPos[i] = WhereX();
@@ -201,7 +207,7 @@ void KeyBar::RefreshObject(bool Render)
 				FS << keyLabel.c_str();
 				SetColor(color2);
 				FS << L" ";
-				FS << Label;
+				FS << (/*Hover[i] ? Label :*/ labelHolder);
 				FS << L" ";
 			}
 			xPos[i + 1] = WhereX();
@@ -358,50 +364,60 @@ int KeyBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	INPUT_RECORD rec;
 	FarKey Key;
 
-	for (int i = 0; i < KEY_COUNT; i++) Hover[i] = 0;
-
 	if (!IsVisible())
 		return FALSE;
 
-	int MsX = MouseEvent->dwMousePosition.X;
+   	int MsX = MouseEvent->dwMousePosition.X;
 
-	if (MsX < X1 || MsX > X2 || MouseEvent->dwMousePosition.Y != Y1)
-		return FALSE;
+	if (Opt.Backend.UseModernLook) {
+    	bool needsRedraw = SandwichHover != (MsX <= 2);
 
-	// Hover effect processing
-	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
-		int i, j;
+        // out oif key bar
+    	if (MsX < X1 || MsX > X2 || MouseEvent->dwMousePosition.Y != Y1) {
+    		for (int i = 0; i < KEY_COUNT; i++){ 
+    			if (Hover[i]) needsRedraw = true;
+    			Hover[i] = 0;
+    		}
+    		SandwichHover = 0;
+    		if (needsRedraw && Opt.Backend.UseModernLook) Redraw();
+    		return FALSE;
+    	}
 
-		bool needsRedraw = SandwichHover != (MsX <= 2);
-		SandwichHover = MsX <= 2;
-		for (i = 0; i < KEY_COUNT; i++) {
-			if (xPos[i] < 0) continue;
-			for(j = i + 1; j < KEY_COUNT && xPos[j] < 0; ++j);
+    	// Hover effect
+    	if (MouseEvent->dwEventFlags == MOUSE_MOVED) {
+    		int i, j;
 
-			if (xPos[i] <= MsX && xPos[j] >= MsX ) {
-				if (!Hover[i]) needsRedraw = true;
-				Hover[i] = 1;
-			}
-			else {
-				if (Hover[i]) needsRedraw = true;
-				Hover[i] = 0;
-			}
-		}
+    		SandwichHover = MsX <= 2;
+    		for (i = 0; i < KEY_COUNT; i++) {
+    			if (xPos[i] < 0) continue;
+    			for(j = i + 1; j < KEY_COUNT && xPos[j] < 0; ++j);
 
-		if (needsRedraw) {
-			Redraw();
-			return TRUE;
-		}
+    			if (xPos[i] <= MsX && xPos[j] >= MsX ) {
+    				if (!Hover[i]) needsRedraw = true;
+    				Hover[i] = 1;
+    			}
+    			else {
+    				Hover[i] = 0; // hiddeen means no repaints
+    			}
+    		}
+
+    		if (needsRedraw) {
+    			Redraw();
+    			return TRUE;
+    		}
+    	}
 	}
 
-	if (!(MouseEvent->dwButtonState & 3) || MouseEvent->dwEventFlags)
+	// out of region and no click
+	if (MsX < X1 || MsX > X2 || MouseEvent->dwMousePosition.Y != Y1)
+		return FALSE;
+	if (!(MouseEvent->dwButtonState & 3) || MouseEvent->dwEventFlags) 
 		return FALSE;
 
-	// Now click
+	// Now click: just fire events, no magic like below
 	if (Opt.Backend.UseModernLook) {
 		int i, j;
 		if (MsX <= 2) {
-			// vk: todo: menu button
 			ShowContextMenu();
 			Redraw();
 			return TRUE;
@@ -435,6 +451,7 @@ int KeyBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
                 	Key += KEY_F1;
 
                 FrameManager->ProcessKey(Key);
+                Redraw();
                 return TRUE;
 			}
 		}

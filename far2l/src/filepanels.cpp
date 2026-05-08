@@ -1110,11 +1110,13 @@ void FilePanels::DisplayObject()
 
 int FilePanels::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
+	if (MouseEvent->dwEventFlags == MOUSE_MOVED)
+		MainKeyBar.ProcessMouse(MouseEvent);
+
 	if (!ActivePanel->ProcessMouse(MouseEvent))
 		if (!GetAnotherPanel(ActivePanel)->ProcessMouse(MouseEvent))
 			if (!MainKeyBar.ProcessMouse(MouseEvent))
 				CtrlObject->CmdLine->ProcessMouse(MouseEvent);
-
 	return TRUE;
 }
 

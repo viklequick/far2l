@@ -111,12 +111,12 @@ std::wstring KeyBar::GetKeyName(int idx, int group)
 	static const wchar_t* prefixes[] = {
 		L"",
 		L"Shift+",
-		L"^",
+		L"Ctrl+",
 		L"Alt+",
-		L"^Shift+",
+		L"Ctrl+Shift+",
 		L"Alt+Shift+",
-		L"^Alt+",
-		L"^Alt+Shift+",
+		L"Ctrl+Alt+",
+		L"Ctrl+Alt+Shift+",
 	};
 
 	return std::wstring(prefixes[group]) + std::wstring(L"F") + std::to_wstring(idx + 1);
@@ -532,36 +532,73 @@ void KeyBar::SetDisableMask(int Mask)
 
 void KeyBar::ResizeConsole() {}
 
+static const wchar_t* GetDescriptionFromLabelIf(const wchar_t* label) {
+ 	const wchar_t* q = wcschr(label, L' ');
+ 	if (q) {
+ 		while(*q && *q == L' ') ++q;
+ 		if (!*q) q = 0;
+ 	}
+    return q ? q : label;
+}
+
 void KeyBar::ShowContextMenu() 
 {
 	int pos = 0;
 	int cnt = 0;
 	int width = 10;
+	int keywidth = 5;
 
+	// count list size and widths
 	for (int j = 0; j < KBL_GROUP_COUNT; ++j) {
 		for (int i = 0; i < KEY_COUNT; i++) {
 			const wchar_t *Label = KeyTitles[j][i];
 			if (!Label || !*Label) continue;
             ++cnt;
+
+            Label = GetDescriptionFromLabelIf(Label);
             width = std::max(width, (int)wcslen(Label) + 5);
+
+            std::wstring keyLabel = GetKeyName(i, j);
+            keywidth = std::max(keywidth, (int)keyLabel.size() + 5);
 		}
 	}
 
+	// prepare texts
 	std::vector<std::wstring> labels;
-	MenuDataEx Groups[cnt];
 	for (int j = 0; j < KBL_GROUP_COUNT; ++j) {
 		for (int i = 0; i < KEY_COUNT; i++) {
 			const wchar_t *Label = KeyTitles[j][i];
 			if (!Label || !*Label) continue;
+
+            Label = GetDescriptionFromLabelIf(Label);
+
 			std::wstring label = Label;
 			std::wstring keyLabel = GetKeyName(i, j);
 
 			std::wstring s = label;
     		if (s.size() < (size_t)width) s.resize(width, L' ');
     		s += keyLabel;
-			labels.push_back(s);
 
-			Groups[pos] = {	labels[labels.size() - 1].c_str(), 0, BuildShortcut(j, i) };
+            /*
+			std::wstring s = keyLabel;
+    		if (s.size() < (size_t)keywidth) s.resize(keywidth, L' ');
+    		s += label;
+            */
+
+			labels.push_back(s);
+		}
+	}
+
+	// std::sort(labels.begin(), labels.end());
+
+	// now we ready to fill menus
+	MenuDataEx Groups[cnt];
+	for (int j = 0; j < KBL_GROUP_COUNT; ++j) {
+		for (int i = 0; i < KEY_COUNT; i++) {
+			const wchar_t *Label = KeyTitles[j][i];
+			if (!Label || !*Label) continue;
+
+			Groups[pos] = {	labels[pos].c_str(), 0, BuildShortcut(j, i) };
             ++pos;
 		}
 	}

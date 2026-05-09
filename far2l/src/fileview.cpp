@@ -145,13 +145,6 @@ void FileViewer::Init(FileHolderPtr NewFileHolder, int EnableSwitch, int disable
 	if (!Opt.ViOpt.ShowKeyBar)
 		ViewKeyBar.Hide0();
 
-	MenuBar = new ViewerMenuBar();
-	MenuBar->SetPosition(0, (TitleBarVisible ? 1 : 0), ScrX, (TitleBarVisible ? 1 : 0));
-	if (!MenuBarVisible) 
-		MenuBar->Hide0();
-	else
-		MenuBar->Show();
-
 	ShowConsoleTitle();
 	AutoClose = false;
 	F3KeyOnly = true;

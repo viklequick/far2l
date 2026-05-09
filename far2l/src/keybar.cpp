@@ -47,6 +47,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vmenu.hpp"
 
+// 3 columns, 2 columns keys first, 2 columns keys last
+#define VIEW_MODE	0
+
 KeyBar::KeyBar()
 	:
 	Owner(nullptr), AltState(0), CtrlState(0), ShiftState(0), DisableMask(0), RegReaded(FALSE)
@@ -106,9 +109,25 @@ int KeyBar::GetGroup(int alt, int shift, int ctrl, int meta) {
 	return KBL_MAIN;
 }
 
+// у маков можно значки стащить ⌥ ⌘ ^ ⇧ но они караул мелкие
+#define MAC_CHARS	0
+#ifdef APPLE
+#define MAC_CHARS	1
+#endif
+
 std::wstring KeyBar::GetKeyName(int idx, int group) 
 {
 	static const wchar_t* prefixes[] = {
+#if MAC_CHARS
+		L"",
+		L"⇧",    // L"Shift+",
+		L"^",    // L"Ctrl+",
+		L"⌥",    // L"Alt+",
+		L"^⇧",   // L"Ctrl+Shift+",
+		L"⌥⇧",   // L"Alt+Shift+",
+		L"^⌥",   // L"Ctrl+Alt+",
+		L"^⌥⇧",  // L"Ctrl+Alt+Shift+",
+#else
 		L"",
 		L"Shift+",
 		L"Ctrl+",
@@ -117,8 +136,8 @@ std::wstring KeyBar::GetKeyName(int idx, int group)
 		L"Alt+Shift+",
 		L"Ctrl+Alt+",
 		L"Ctrl+Alt+Shift+",
+#endif
 	};
-
 	return std::wstring(prefixes[group]) + std::wstring(L"F") + std::to_wstring(idx + 1);
 }
 
@@ -533,12 +552,16 @@ void KeyBar::SetDisableMask(int Mask)
 void KeyBar::ResizeConsole() {}
 
 static const wchar_t* GetDescriptionFromLabelIf(const wchar_t* label) {
+#if VIEW_MODE > 0
  	const wchar_t* q = wcschr(label, L' ');
  	if (q) {
  		while(*q && *q == L' ') ++q;
  		if (!*q) q = 0;
  	}
     return q ? q : label;
+#else
+    return label;
+#endif
 }
 
 void KeyBar::ShowContextMenu() 
@@ -575,15 +598,15 @@ void KeyBar::ShowContextMenu()
 			std::wstring label = Label;
 			std::wstring keyLabel = GetKeyName(i, j);
 
+#if VIEW_MODE == 0 || VIEW_MODE == 2
 			std::wstring s = label;
     		if (s.size() < (size_t)width) s.resize(width, L' ');
     		s += keyLabel;
-
-            /*
+#else
 			std::wstring s = keyLabel;
     		if (s.size() < (size_t)keywidth) s.resize(keywidth, L' ');
     		s += label;
-            */
+#endif
 
 			labels.push_back(s);
 		}

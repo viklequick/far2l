@@ -2357,7 +2357,7 @@ void FileEditor::ShowStatus()
 	FARString strWrapMode;
 	if (m_editor->GetWordWrap())
 	{
-		strWrapMode = Opt.Backend.UseModernLook ? L"\x21AB\x2140" : L"WW ";
+		strWrapMode = /*Opt.Backend.UseModernLook ? L"\x21AB\x2140" :*/ L"WW ";
 	}                                                  
 
 	FARString strTabMode;

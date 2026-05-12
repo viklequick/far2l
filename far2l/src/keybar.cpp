@@ -627,6 +627,7 @@ void KeyBar::ShowContextMenu()
 	}
 	int GroupsLen = cnt;
 
+	FarKey key = 0;
 	{
 		int GroupsCode;
 		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
@@ -642,10 +643,15 @@ void KeyBar::ShowContextMenu()
 
 			if (GroupsCode < 0 || GroupsCode >= GroupsLen) break;
 
-			FarKey key = Groups[GroupsCode].AccelKey;
-			FrameManager->ProcessKey(key);
-
+			key = Groups[GroupsCode].AccelKey;
 			break;
+		}
+	}
+
+	if (key) {
+		FrameManager->ProcessKey(key);
+		if (key == KEY_F9){ 
+			FrameManager->ProcessKey(KEY_DOWN);
 		}
 	}
 }

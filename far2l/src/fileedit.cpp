@@ -2447,7 +2447,8 @@ void FileEditor::ShowStatus()
 				int len = v.size() > 1 ? std::min(15, (int)strTab.CellsCount()) : (int)strTab.CellsCount();
 				if (strTab.CellsCount() > (size_t)len) TruncStr(strTab, len);
 
-				tabPos.push_back({ strTab, WhereX(), (int)strTab.CellsCount() });
+				len = (int)strTab.CellsCount();
+				tabPos.push_back({ strTab, WhereX(), len });
 
 				// case with many tabs and status under clock
 				int left = TitleCells - (len + 1 + (i > 0 ? 1 : 0));

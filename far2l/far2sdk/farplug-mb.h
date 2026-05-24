@@ -1360,7 +1360,9 @@ namespace oldfar
 		int TabSize;
 		int BookMarkCount;
 		DWORD CurState;
-		DWORD Reserved[6];
+		int WindowX;
+		int WindowY;
+		DWORD Reserved[4];
 	};
 
 	struct EditorBookMarks

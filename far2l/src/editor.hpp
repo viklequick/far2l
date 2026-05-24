@@ -240,6 +240,11 @@ private:
 	Edit *EndList;
 	Edit *TopScreen;
 	int m_TopScreenVisualLine;
+	int m_CachedTotalVisualLines;
+	int m_CachedTopVisualLine;
+	Edit *m_CachedScrollbarTopScreen;
+	int m_CachedScrollbarTopScreenVisualLine;
+	bool m_VisualScrollbarDirty;
 	Edit *CurLine;
 	Edit *LastGetLine;
 	int MouseSelStartingLine{-1}, MouseSelStartingPos{-1};
@@ -323,6 +328,7 @@ void GoToVisualLine(int VisualLine);
 	int CalculateTextAreaWidth(int BaseWidth, bool ReserveScrollBar);  // Helper for text viewport width
 	void RecalculateAllWordWraps(bool SyncWordWrapState);
 	void RememberWordWrapPreferredCellPos();
+	void DrawGutterMark(int logical_line, int y, int line_num_x1);
 	// void SetStringsTable();
 	void BlockLeft();
 	void BlockRight();
@@ -450,7 +456,7 @@ public:
 
 	void GetRowCol(const wchar_t *argv, int *row, int *col);
 
-	void BeginVBlockMarking();
+	bool BeginVBlockMarking();
 	void AdjustVBlock(int PrevX);
 
 	void Xlat();

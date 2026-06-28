@@ -748,7 +748,7 @@ void InterfaceSettings()
 		Builder.AddOKCancel();
 
 		int clicked_id = -1;
-       	bool oldColorCC = Opt.Dialogs.EnforceColorCorrection;
+		bool oldColorCC = Opt.Dialogs.EnforceColorCorrection;
 		if (Builder.ShowDialog(&clicked_id)) {
 			if (Opt.CMOpt.CopyTimeRule)
 				Opt.CMOpt.CopyTimeRule = 3;

@@ -226,7 +226,6 @@ static void extractColorComponents(int color, int& r, int& g, int& b) {
 }
 
 static void extractColor(uint64_t color, RGB& fg, RGB& bg) {
-
 	// color is not truly RGB -- convert it first
 	if ((color & (FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR)) != (FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR) ) {
 		// if (color < SIZE_ARRAY_FARCOLORS) color = FarColors::setcolors[color];

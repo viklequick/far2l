@@ -1313,7 +1313,7 @@ void TTYBackend::OnOSC52PasteReply(const std::string& s, bool is_primary_buffer)
 	_async_cond.notify_all();
 }
 
-const char* TTYBackend::OSC52RequestClipboardData(bool is_primary_buffer) 
+std::string TTYBackend::OSC52RequestClipboardData(bool is_primary_buffer) 
 {
 	// vk: todo: many terminals do not have / blocks osc52 read, so we need to handle this
 	fprintf(stderr, "TTY: OSC52RequestClipboardData request\n");
@@ -1326,16 +1326,20 @@ const char* TTYBackend::OSC52RequestClipboardData(bool is_primary_buffer)
 	fprintf(stderr, "TTY: OSC52RequestClipboardData wait for response\n");
 	for(;;) {
 		std::unique_lock<std::mutex> lock(_async_mutex);
+		// we cannot wait longer due to security: many terminals simply ignores OSC52Read and no response given
 		if(_async_cond.wait_for(lock, std::chrono::milliseconds(100)) == std::cv_status::no_timeout) {
 			if (_ae.osc52clip_get) break;
 		}
 		else {
 			fprintf(stderr, "TTY: OSC52RequestClipboardData timeout\n");
-			return nullptr;
+			return "";
 		}
 	}
 	fprintf(stderr, "TTY: OSC52RequestClipboardData response arrived\n");
-	return _osc52clip.c_str();
+
+	std::unique_lock<std::mutex> lock(_async_mutex);
+	_ae.osc52clip_get = 0;
+	return _osc52clip;
 }
 
 #ifdef __linux__

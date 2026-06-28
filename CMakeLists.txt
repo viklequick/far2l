@@ -640,16 +640,6 @@ else()
         " COMPONENT system)
 endif()
 
-if (NOT DEFINED GITGUTTER OR GITGUTTER)
-    message(STATUS "GITGUTTER plugin enabled")
-    add_subdirectory (gitgutter)
-else()
-    message(STATUS "${ColorRed}GITGUTTER plugin disabled due to GITGUTTER=${GITGUTTER}${ColorNormal}")
-    install(CODE "
-        execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2l/Plugins/gitgutter/plug/gitgutter.far-plug-wide)
-        " COMPONENT system)
-endif()
-
 if (NOT DEFINED MEMO OR MEMO)
     message(STATUS "MEMO plugin enabled")
     add_subdirectory (memo)

@@ -258,7 +258,7 @@ public:
 
 class SDLClipboardBackend : public IClipboardBackend
 {
-	int is_primary {0};
+	bool is_primary {false};
 public:
 	SDLClipboardBackend() = default;
 	~SDLClipboardBackend() override = default;
@@ -325,9 +325,8 @@ public:
 	}
 
 	INT ChooseClipboard(INT format) { 
-		int old = is_primary;
 		is_primary = format > 0;
-		return old != is_primary;
+		return is_primary ? 1: 0;
 	}
 };
 

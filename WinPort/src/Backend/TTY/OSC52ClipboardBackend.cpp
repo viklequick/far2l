@@ -30,13 +30,12 @@ void *OSC52ClipboardBackend::OnClipboardGetData(UINT format)
 	// then we need to wait on guard until the data is arrived; and then 
 	// decode it from base64 and return the result
 
+	if (format != CF_UNICODETEXT && format != CF_TEXT)
+        return FSClipboardBackend::OnClipboardGetData(format);
+
 	fprintf(stderr, "OSC52ClipboardBackend: OnClipboardGetData\n");
 
-	const char*	stx = _interactor->OSC52RequestClipboardData(_is_primary);
-	if (!stx)
-		return FSClipboardBackend::OnClipboardGetData(format);
-
-	std::string _text(stx);
+	std::string	_text = _interactor->OSC52RequestClipboardData(_is_primary);
 	if (_text.empty())	
 		return nullptr;
 

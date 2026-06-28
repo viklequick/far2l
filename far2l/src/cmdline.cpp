@@ -382,9 +382,9 @@ void CommandLine::DisplayObject()
 			if (line_index != m_multilineActiveLine)
 				line = m_multilineLines[line_index];
 			const int content_width = std::max(0, width - prompt_len);
-			if (line.CellsCount() > content_width)
+			if (line.CellsCount() > (size_t)content_width)
 				line.TruncateByCells(content_width);
-			if (line.CellsCount() < content_width)
+			if (line.CellsCount() < (size_t)content_width)
 				line.Append(L' ', content_width - line.CellsCount());
 			GotoXY(X1 + prompt_len, y);
 			SetFarColor(COL_COMMANDLINE);

@@ -328,7 +328,6 @@ void GoToVisualLine(int VisualLine);
 	int CalculateTextAreaWidth(int BaseWidth, bool ReserveScrollBar);  // Helper for text viewport width
 	void RecalculateAllWordWraps(bool SyncWordWrapState);
 	void RememberWordWrapPreferredCellPos();
-	void DrawGutterMark(int logical_line, int y, int line_num_x1);
 	// void SetStringsTable();
 	void BlockLeft();
 	void BlockRight();

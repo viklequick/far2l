@@ -481,25 +481,6 @@ void Editor::RecalculateAllWordWraps(bool SyncWordWrapState)
 	m_VisualScrollbarDirty = true;
 }
 
-void Editor::DrawGutterMark(int logical_line, int y, int line_num_x1)
-{
-	if (line_num_x1 <= X1 || (!EdOpt.ShowLineNumbers && !EdOpt.ShowGutterMarks))
-		return;
-
-	const auto it = m_gutterMarks.find(logical_line);
-	if (it == m_gutterMarks.end())
-		return;
-
-	const int gx = line_num_x1 - 1;
-
-	const CHAR_INFO cell{
-		{ .UnicodeChar = L'\x258d' },
-		it->second
-	};
-
-	ScrBuf.Write(gx, y, &cell, 1);
-}
-
 void Editor::FreeAllocatedData(bool FreeUndo)
 {
 	while (EndList) {
@@ -3862,7 +3843,7 @@ int Editor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	}
 
 	if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0) {
-		if (MouseSelStartingLine!= -1) AutoGrabToClipboard();
+		if (MouseSelStartingLine!= -1 && (VBlockStart || BlockStart)) AutoGrabToClipboard();
 	}
 
 	if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) == 0 && !IsMouseButtonPressed()) {
@@ -8088,40 +8069,15 @@ void Editor::SetWordWrap(int NewMode)
 			int VisibleWidth = CalculateTextAreaWidth(ObjWidth,
 					NumLastLine > (Y2 - Y1) + 1 && EdOpt.ShowScrollBar);
 
-		// Clear vertical block selection when switching wrap modes
-		// Vertical blocks don't make sense in wrap mode and can cause issues
-		if (VBlockStart)
-		{
-			VBlockStart = nullptr;
-			Flags.Clear(FEDITOR_MARKINGVBLOCK);
-		}
-
-		if (m_bWordWrap) // Turning ON
-		{
-			m_TopScreenVisualLine = 0;
-		}
-		else // Turning OFF
-		{
-			m_WordWrapPreferredCellPos = 0;
-
-			if (CurLine && ObjWidth > 0)
-			{
-				int VisibleWidth = CalculateTextAreaWidth(ObjWidth,
-						NumLastLine > (Y2 - Y1) + 1 && EdOpt.ShowScrollBar);
-
-				// Account for line numbers/gutter if enabled
-				VisibleWidth -= CalculateLineNumberWidth();
-
-				int CurPos = CurLine->GetCellCurPos();
-				int NewLeftPos = CurLine->GetLeftPos();
-				if (CurPos - NewLeftPos > VisibleWidth - 1) {
-					for (int ShiftBy = 1; ShiftBy <= std::max(EdOpt.TabSize, 2); ++ShiftBy) {
-						int RealLeftPos = CurLine->CellPosToReal(CurPos - VisibleWidth + ShiftBy);
-						int CandidateLeftPos = CurLine->RealPosToCell(RealLeftPos);
-						if (CandidateLeftPos != NewLeftPos) {
-							NewLeftPos = CandidateLeftPos;
-							break;
-						}
+			int CurPos = CurLine->GetCellCurPos();
+			int NewLeftPos = CurLine->GetLeftPos();
+			if (CurPos - NewLeftPos > VisibleWidth - 1) {
+				for (int ShiftBy = 1; ShiftBy <= std::max(EdOpt.TabSize, 2); ++ShiftBy) {
+					int RealLeftPos = CurLine->CellPosToReal(CurPos - VisibleWidth + ShiftBy);
+					int CandidateLeftPos = CurLine->RealPosToCell(RealLeftPos);
+					if (CandidateLeftPos != NewLeftPos) {
+						NewLeftPos = CandidateLeftPos;
+						break;
 					}
 				}
 			}

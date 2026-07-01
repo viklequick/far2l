@@ -1955,10 +1955,22 @@ void Dialog::ShowDialog(unsigned ID)
 
 		// drawing hacks here
 		bool dialogBoxFound = false;
-		if (Opt.Backend.UseModernLook) {
+		if (Opt.Backend.UseModernLook || Opt.Dialogs.EliminateOuterBorders) {
 			// main border: rearrange to real corners
 			if (CurItem->Type == DI_DOUBLEBOX /* && CX1 == 2 && CX2 == X2 - -X1 - 2 && CY1 == 1 && CY2 == Y2 - Y1 - 1*/) {
-				CX1 = 0; CX2 = X2 - X1; CY1 = 0; CY2 = Y2 - Y1;
+				if (Opt.Backend.UseModernLook) {
+					CX1 = 0; 
+					CX2 = X2 - X1; 
+					CY1 = 0; 
+					CY2 = Y2 - Y1;
+				}
+
+				if (Opt.Dialogs.EliminateOuterBorders) {
+					CY2 = CY1;
+					CX1 = 1;
+					CX2 = X2 - X1 - 2;
+				}
+
 				dialogBoxFound = true;	
 			}
 		}
@@ -1985,18 +1997,20 @@ void Dialog::ShowDialog(unsigned ID)
 				} else if (CX1 == CX2) {
 					DrawLine(CY2 - CY1 + 1, CurItem->Type == DI_SINGLEBOX ? 10 : 11);
 					IsDrawTitle = FALSE;
+					dialogBoxFound = false;
 				} else {
 					Box(X1 + CX1, Y1 + CY1, X1 + CX2, Y1 + CY2, ItemColor[2],
 							(CurItem->Type == DI_SINGLEBOX) ? SINGLE_BOX : DOUBLE_BOX);
-    				if (dialogBoxFound) {
-                    	CloseX = X1 + CX2 - 1; // - (IsWxBackend() ? 0 : 1);
-                        CloseY = Y1 + CY1;
-                        dialogBox = true;
-    					GotoXY(CloseX, CloseY);
-                        strStr = L"✖"; // IsWxBackend() ? L"✖" : L"❌";
-                        SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0));
-    					Text(strStr);
-    				}
+				}
+
+				if (dialogBoxFound && Opt.Backend.UseModernLook) {
+                	CloseX = X1 + CX2 - 1; // - (IsWxBackend() ? 0 : 1);
+                    CloseY = Y1 + CY1;
+                    dialogBox = true;
+					GotoXY(CloseX, CloseY);
+                    strStr = L"✖"; // IsWxBackend() ? L"✖" : L"❌";
+                    SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0));
+					Text(strStr);
 				}
 
 				if (!CurItem->strData.IsEmpty() && IsDrawTitle) {
@@ -2062,7 +2076,9 @@ void Dialog::ShowDialog(unsigned ID)
 
 					if (Opt.Backend.UseModernLook && CX1 >= 0)
 						X = CX1 + 1;
-					if (Opt.Backend.UseModernLook && CurItem->strData.GetLength() == 0 && IsLastBevelPriorToButtons(I)) {
+					if ((Opt.Backend.UseModernLook || Opt.Dialogs.EliminateOuterBorders) && 
+							CurItem->strData.GetLength() == 0 && 
+							IsLastBevelPriorToButtons(I)) {
 						// crazy plug-in based bevel over the buttons line -> skip it!
 						CurItem->Flags &= ~(DIF_SEPARATOR | DIF_SEPARATOR2);
 					}

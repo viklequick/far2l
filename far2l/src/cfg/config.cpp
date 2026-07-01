@@ -728,10 +728,10 @@ void InterfaceSettings()
     	Builder.AddCheckbox(Msg::UseModernLook, (BOOL *)&Opt.Backend.UseModernLook);
 
         if ((supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) && Opt.Backend.UseModernLook) {
-        	Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, (BOOL *)&Opt.Backend.UseRoundedBorders);
+        	// Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, (BOOL *)&Opt.Backend.UseRoundedBorders);
         	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, (BOOL *)&Opt.Backend.UseSingleBordersOnly);
         	Builder.AddCheckbox(Msg::UseModernLookNoBorders, (BOOL *)&Opt.Backend.UseNoBorders);
-        	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, (BOOL *)&Opt.Backend.UseEmbossAsBold);
+        	// Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, (BOOL *)&Opt.Backend.UseEmbossAsBold);
         	Builder.AddCheckbox(Msg::UseModernLookUseSoftenBevels, (BOOL *)&Opt.Backend.UseSoftenBevels);
         	Builder.AddCheckbox(Msg::UseModernLookUse3D, (BOOL *)&Opt.Backend.Use3D);
         }
@@ -960,6 +960,7 @@ void DialogSettings()
 	Builder.AddCheckbox(Msg::ConfigDialogsMouseButton, &Opt.Dialogs.MouseButton);
 	Builder.AddCheckbox(Msg::ConfigDialogsShowArrowsInEdit, (BOOL *)&Opt.Dialogs.ShowArrowsInEdit);
 	Builder.AddCheckbox(Msg::EnableAccidentalConfirmation, (BOOL*)&Opt.Dialogs.EnableAccidentalConfirmation);
+	Builder.AddCheckbox(Msg::EliminateOuterBorders, (BOOL*)&Opt.Dialogs.EliminateOuterBorders);
 
 	Builder.AddOKCancel();
 

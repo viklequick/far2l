@@ -29103,6 +29103,17 @@ upd:"Apply changes when clicked outside by right mouse click"
 upd:"Apply changes when clicked outside by right mouse click"
 upd:"Apply changes when clicked outside by right mouse click"
 
+EliminateOuterBorders
+"Открытый заголовок у диалога"
+"Open dialog titles"
+upd:"Open dialog titles"
+upd:"Open dialog titles"
+upd:"Open dialog titles"
+upd:"Open dialog titles"
+upd:"Open dialog titles"
+upd:"Open dialog titles"
+upd:"Open dialog titles"
+
 ConfigGrepFilterTitle
 "Grep-фильтр"
 "Filter with grep"

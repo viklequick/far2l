@@ -2762,7 +2762,18 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 	}
 
-	if (MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED && MouseEvent->dwEventFlags != MOUSE_MOVED) {
+	if (Opt.Backend.UseModernLook && IsVisible() && (MouseEvent->dwEventFlags & MOUSE_MOVED) && !IsDragging() && 
+			!(MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) && !(MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+        /* vk: simple mouse move, highhlight the file */
+		int file = MouseToPosition(MouseEvent);
+		// ASSERT(file < ListData.Count());
+		// CurPtr = ListData[file];
+		LastHoveredIndex = file;
+		Redraw();
+        /* no return, continue processing */
+	}
+
+	if ((MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) && MouseEvent->dwEventFlags != MOUSE_MOVED) {
 		if (Opt.PasteFromPrimarySelection && !MouseEvent->dwControlKeyState) {
 			// CopyToPrimarySelection -- let EditorControl to do the rest
 			return FALSE;
@@ -2897,6 +2908,29 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 */
 void FileList::MoveToMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
+	int CurColumn = MouseToColumn(MouseEvent);
+
+	int OldCurFile = CurFile;
+	CurFile = MouseToPosition(MouseEvent);
+
+	CorrectPosition();
+
+	/*
+		$ 11.09.2000 SVS
+		Bug #17: Проверим на ПОЛНОСТЬЮ пустую колонку.
+	*/
+	if (Opt.PanelRightClickRule == 1)
+		IsEmpty = ((CurColumn - 1) * Height > ListData.Count());
+	else if (Opt.PanelRightClickRule == 2 && (MouseEvent->dwButtonState & RIGHTMOST_BUTTON_PRESSED)
+			&& ((CurColumn - 1) * Height > ListData.Count())) {
+		CurFile = OldCurFile;
+		IsEmpty = TRUE;
+	} else
+		IsEmpty = FALSE;
+}
+
+int FileList::MouseToColumn(MOUSE_EVENT_RECORD *MouseEvent)
+{
 	int CurColumn = 1, ColumnsWidth, I;
 	int PanelX = MouseEvent->dwMousePosition.X - X1 - 1;
 	int Level = 0;
@@ -2915,29 +2949,19 @@ void FileList::MoveToMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		ColumnsWidth++;
 		Level++;
 	}
+	return CurColumn;
+}
 
+int FileList::MouseToPosition(MOUSE_EVENT_RECORD *MouseEvent)
+{
+	int CurColumn = MouseToColumn(MouseEvent);
 	//	if (!CurColumn)
 	//		CurColumn=1;
-	int OldCurFile = CurFile;
-	CurFile = CurTopFile + MouseEvent->dwMousePosition.Y - Y1 - 1 - Opt.ShowColumnTitles;
+	int CurFile = CurTopFile + MouseEvent->dwMousePosition.Y - Y1 - 1 - Opt.ShowColumnTitles;
 
 	if (CurColumn > 1)
 		CurFile+= (CurColumn - 1) * Height;
-
-	CorrectPosition();
-
-	/*
-		$ 11.09.2000 SVS
-		Bug #17: Проверим на ПОЛНОСТЬЮ пустую колонку.
-	*/
-	if (Opt.PanelRightClickRule == 1)
-		IsEmpty = ((CurColumn - 1) * Height > ListData.Count());
-	else if (Opt.PanelRightClickRule == 2 && (MouseEvent->dwButtonState & RIGHTMOST_BUTTON_PRESSED)
-			&& ((CurColumn - 1) * Height > ListData.Count())) {
-		CurFile = OldCurFile;
-		IsEmpty = TRUE;
-	} else
-		IsEmpty = FALSE;
+	return CurFile;
 }
 
 void FileList::SetViewMode(int ViewMode)

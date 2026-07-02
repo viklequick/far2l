@@ -856,55 +856,6 @@ bool IsWxBackend() {
 	return (supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) != 0;
 }
 
-
-static void extractColorComponents(int color, int& r, int& g, int& b) {
-	r = (color >> 16) & 0xFF;
-	g = (color >> 8)  & 0xFF;
-	b =  color        & 0xFF;
-}
-
-static void extractColor(uint64_t color, RGB& fg, RGB& bg) {
-	// color is not truly RGB -- convert it first
-	if ((color & (FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR)) != (FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR) ) {
-		// if (color < SIZE_ARRAY_FARCOLORS) color = FarColors::setcolors[color];
-
-		uint64_t fix_c = 0;
-		if ((color & (FOREGROUND_TRUECOLOR)) != (FOREGROUND_TRUECOLOR) ) {
-			uint32_t c = Palette::FARPalette[16 + (color & 0x0F)];
-			fix_c |= ((uint64_t)(c & 0x00ffffff) << 16) | FOREGROUND_TRUECOLOR;
-		}
-
-		if ((color & (BACKGROUND_TRUECOLOR)) != (BACKGROUND_TRUECOLOR) ) {
-			uint32_t c2 = Palette::FARPalette[(color >> 4) & 0x0F];
-			fix_c |= ((uint64_t)(c2 & 0x00ffffff) << 40) | BACKGROUND_TRUECOLOR;
-		}
-		fix_c |= color;
-		color = fix_c;
-	}
-
-	int fgC = (color >> 16) & 0xFFFFFF;
-	int bgC = (color >> 40) & 0xFFFFFF;;
-
-	int r, g, b;
-	extractColorComponents(fgC, r, g, b);
-	fg = toRGB(r, g, b);
-	extractColorComponents(bgC, r, g, b);
-	bg = toRGB(r, g, b);
-}
-
-static int assembleColorComponents(int r, int g, int b) {
-	return ((r & 0xFF) << 16) | ((g & 0xFF) << 8) | (b & 0xFF);
-}
-
-static uint64_t assembleColor(RGB& fg, RGB& bg) {
-	iRGB ifg = toIRGB(fg);
-	iRGB ibg = toIRGB(bg);
-	uint64_t color = 0;
-	color |= (uint64_t)assembleColorComponents(ifg.r, ifg.g, ifg.b) << 16;
-	color |= (uint64_t)assembleColorComponents(ibg.r, ibg.g, ibg.b) << 40;
-	return color | FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR;
-}
-
 uint64_t GetLinkColor(uint64_t attributes) 
 {
    	RGB bg, fg;

@@ -359,9 +359,24 @@ struct set_color_s
 	void draw_panels_vbuff(void);
 };
 
+#include "farcolors.hpp"
+
+static const wchar_t* contrastToStringW(ContrastLevel lvl) 
+{
+    switch (lvl) {
+        case ContrastLevel::Good:    return L"Good";
+        case ContrastLevel::Warning: return L"Borderline";
+        case ContrastLevel::Bad:     return L"Poor";
+    }
+    return L"Unknown";
+}
+
 void set_color_s::draw_sample_vbuff(void)
 {
-	static const wchar_t *sample_text_str = L"Text Text Text Text Text Text Text Text Text Text";
+	static const wchar_t sample_text_str_tpl[] = L"Text Text Text Text Text Text Text Text Text Text";
+	static wchar_t sample_text_str[ARRAYSIZE(sample_text_str_tpl)];
+
+	wcscpy(sample_text_str, sample_text_str_tpl);
 
 	if (bTransparencyEnabled && !(color & 0xFF)) {
 
@@ -391,6 +406,12 @@ void set_color_s::draw_sample_vbuff(void)
 
 		return;
 	}
+
+	RGB fg, bg;
+	extractColor(smpcolor, fg, bg);
+	ContrastLevel level = ::AnazlyzeContrastLevel(fg, bg);
+	const wchar_t* resolution = contrastToStringW(level);
+	wcsncpy(sample_text_str, resolution, wcslen(resolution));
 
 	for (size_t i = 0; i < 4; i++) {
 		const uint64_t attr = (i > 0) ? smpcolor : smpcolor & 0xFF;

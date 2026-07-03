@@ -461,9 +461,9 @@ namespace WXCustomDrawChar
 		p.FillRectangle(m.middle_x, m.middle_y, m.right, m.middle_y + p.thickness - 1);
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
-		p.FillRectangle(m.middle_x + 1, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
-		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y + p.thickness);
-		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness - 1, m.middle_x + p.thickness, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y - p.thickness);
+		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.middle_x + p.thickness, m.middle_y + p.thickness);
 	}
 
 	static void Draw_2524_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┤ */
@@ -1885,7 +1885,7 @@ namespace WXCustomDrawChar
 		SingleLineBoxMetrics m(p, start_y, cx);
 
 		wxCoord _2r = get2R(p, m);
-		wxCoord r = _2r / 2;
+		// wxCoord r = _2r / 2;
 		// int ascent = p.GetFontAscent();
 
 		wxCoord X1 = m.left,            Y1 = m.top + 1; //  + ascent - _2r + 2;

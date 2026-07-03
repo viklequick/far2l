@@ -202,7 +202,7 @@ const ConfigOpt g_cfg_opts[] {
 	{OST_NONE,  NSecInterface, "UseModernLookRoundBorders", &Opt.Backend.UseRoundedBorders, 0},
 	{OST_COMMON,  NSecInterface, "UseModernLookSingleBordersOnly", &Opt.Backend.UseSingleBordersOnly, 0},
 	{OST_COMMON,  NSecInterface, "UseModernLookNoBorders", &Opt.Backend.UseNoBorders, 0},
-	{OST_NONE,  NSecInterface, "UseModernLookEmbossAsBold", &Opt.Backend.UseEmbossAsBold, 0},
+	{OST_COMMON,  NSecInterface, "UseModernLookEmbossAsBold", &Opt.Backend.UseEmbossAsBold, 0},
 	{OST_COMMON,  NSecInterface, "UseSoftenBevels", &Opt.Backend.UseSoftenBevels, 1},
 	{OST_COMMON,  NSecInterface, "Use3D", &Opt.Backend.Use3D, 1},
 

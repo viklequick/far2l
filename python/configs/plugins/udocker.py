@@ -3,8 +3,6 @@ import stat
 import time
 import logging
 
-from librosa import ex
-
 from far2l.plugin import PluginVFS
 from far2l.farprogress import ProgressMessage
 from far2l.fardialogbuilder import (

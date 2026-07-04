@@ -1874,7 +1874,6 @@ int Editor::ProcessKey(FarKey Key)
 						CurLine->Select(CurLength, -1);
 				}
 
-				CurLine->ObjWidth = XX2 - X1;
 				ProcessKey(KEY_END);
 				Pasting--;
 				Unlock();
@@ -3684,11 +3683,8 @@ case KEY_CTRLNUMPAD3: {
 				CurLine->GetSelection(PreSelStart, PreSelEnd);
 				// </comment>
 				// AY: Это что бы при FastShow LeftPos не становился в конец строки.
-				if (m_bWordWrap) {
-					CurLine->ObjWidth = ObjWidth > 0 ? CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar) : 0;
-				} else {
-					CurLine->ObjWidth = XX2 - X1 + 1;
-				}
+				int Width = ObjWidth > 0 ? CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar) : 0;
+				CurLine->ObjWidth = Width;
 
 				const int OldVisualLineCount = m_bWordWrap ? CurLine->GetVisualLineCount() : 0;
 				if (CurLine->ProcessKey(Key)) {
@@ -3703,7 +3699,6 @@ case KEY_CTRLNUMPAD3: {
 
 					if (m_bWordWrap)
 					{
-						int Width = ObjWidth > 0 ? CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar) : 0;
 						CurLine->RecalculateWordWrap(Width, EdOpt.TabSize);
 						if (CurLine->GetVisualLineCount() != OldVisualLineCount)
 							m_VisualScrollbarDirty = true;
@@ -8299,9 +8294,7 @@ Edit *Editor::CreateString(const wchar_t *lpwszStr, int nLength)
 	if (pEdit) {
 		pEdit->SetPosition(X1, Y1, X2, Y2);
 		pEdit->SetWordWrap(m_bWordWrap);
-		if (m_bWordWrap) {
-			pEdit->ObjWidth = ObjWidth > 0 ? CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar) : 0;
-		}
+		pEdit->ObjWidth = ObjWidth > 0 ? CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar) : 0;
 
 		pEdit->m_next = nullptr;
 		pEdit->m_prev = nullptr;

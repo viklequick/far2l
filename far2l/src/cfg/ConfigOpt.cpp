@@ -155,11 +155,11 @@ const ConfigOpt g_cfg_opts[] {
 	{OST_COMMON, NSecCmdline, "Splitter", &Opt.CmdLine.Splitter, 1},
 	{OST_COMMON, NSecCmdline, "WaitKeypress", &Opt.CmdLine.WaitKeypress, 1},
 	{OST_COMMON, NSecCmdline, "VTLogLimitKB", &Opt.CmdLine.VTLogLimit, 1024},
+	{OST_COMMON, NSecCmdline, "ShowStartupBanner",&Opt.ShowStartupBanner, 1},
 	{OST_NONE,   NSecCmdline, "AskOnMultilinePaste", &Opt.CmdLine.AskOnMultilinePaste, 1},
 
 	{OST_COMMON, NSecInterface, "Mouse", &Opt.Mouse, 1},
 	{OST_NONE,   NSecInterface, "UseVk_oem_x", &Opt.UseVk_oem_x, 1},
-	{OST_COMMON, NSecInterface, "ShowStartupBanner",&Opt.ShowStartupBanner, 1},
 	{OST_COMMON, NSecInterface, "ShowMenuBar", &Opt.ShowMenuBar, 0},
 	{OST_NONE,   NSecInterface, "CursorSize1", &Opt.CursorSize[0], 15},
 	{OST_NONE,   NSecInterface, "CursorSize2", &Opt.CursorSize[1], 10},

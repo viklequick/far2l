@@ -641,7 +641,6 @@ void InterfaceSettings()
 		Builder.AddCheckbox(Msg::ConfigCopyTimeRule, &Opt.CMOpt.CopyTimeRule);
 		Builder.AddCheckbox(Msg::ConfigDeleteTotal, &Opt.DelOpt.DelShowTotal);
 		Builder.AddCheckbox(Msg::ConfigPgUpChangeDisk, &Opt.PgUpChangeDisk);
-		Builder.AddCheckbox(Msg::ConfigShowStartupBanner, &Opt.ShowStartupBanner);
 
 		Builder.AddSeparator(Msg::ConfigDateFormat);
 
@@ -1002,6 +1001,7 @@ void CmdlineSettings()
 	auto Shell = Builder.AddEditField(&Opt.CmdLine.strShell, 19);
 	Shell->Indent(4);
 	Builder.LinkFlags(UseShell, Shell, DIF_DISABLE);
+	Builder.AddCheckbox(Msg::ConfigShowStartupBanner, &Opt.ShowStartupBanner);
 	Builder.AddOKCancel();
 
 	int oldUseShell = Opt.CmdLine.UseShell;

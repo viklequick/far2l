@@ -2750,17 +2750,6 @@ upd:"Use Ctrl-Alt-L to quick toggle from panel"
 upd:"Use Ctrl-Alt-L to quick toggle from panel"
 upd:"Use Ctrl-Alt-L to quick toggle from panel"
 
-ConfigShowStartupBanner
-"Показывать стартовый баннер во встроенном терминале"
-"Show startup banner in built-in terminal"
-upd:"Show startup banner in built-in terminal"
-upd:"Show startup banner in built-in terminal"
-upd:"Show startup banner in built-in terminal"
-upd:"Show startup banner in built-in terminal"
-upd:"Show startup banner in built-in terminal"
-upd:"Show startup banner in built-in terminal"
-upd:"Show startup banner in built-in terminal"
-
 ConfigClock
 "&Часы в панелях"
 "&Clock in panels"
@@ -3478,6 +3467,17 @@ upd:"Use shell"
 upd:"Use shell"
 "Використовувати &шелл"
 "Ужываць &shell"
+
+ConfigShowStartupBanner
+"Показывать стартовый баннер во встроенном терминале"
+"Show startup banner in built-in terminal"
+upd:"Show startup banner in built-in terminal"
+upd:"Show startup banner in built-in terminal"
+upd:"Show startup banner in built-in terminal"
+upd:"Show startup banner in built-in terminal"
+upd:"Show startup banner in built-in terminal"
+upd:"Show startup banner in built-in terminal"
+upd:"Show startup banner in built-in terminal"
 
 ConfigCmdlineUsePromptFormat
 "Установить &формат командной строки"

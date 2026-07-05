@@ -2567,9 +2567,6 @@ $ #Налаштування інтерфейсу#
  #Використовувати Ctrl-PgUp для вибору диска#
  Комбінація клавіш #Ctrl-PgUp# у кореневій папці викликає ~Меню переходу~@DriveDlg@.
 
- #Show startup banner in built-in terminal#
- Display a text block containing the far2l version, copyright notices, and keyboard tips under the panels at launch.
-
  #Datetime format#
  Тут ви можете вибрати порядок відображення дня, місяця та року, а також задати
 роздільники для дати та часу відповідно до ваших уподобань.
@@ -2712,6 +2709,8 @@ $ #Налаштування командного рядка#
  Зверніть увагу, що на даний момент повноцінна підтримка забезпечена тільки для #bash#,
 а робота з іншими командними оболонками може мати значні обмеження або помилки.
 
+ #Show startup banner in built-in terminal#
+ Display a text block containing the far2l version, copyright notices, and keyboard tips under the panels at launch.
 
 @AutoCompleteSettings
 $ #Налаштування автозавершення та історії#

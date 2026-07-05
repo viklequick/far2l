@@ -2077,6 +2077,14 @@ void Dialog::ShowDialog(unsigned ID)
 					Text(strStr);
 				}
 
+                /*
+				if (Opt.Backend.UseModernLook && Resizable) {
+					GotoXY(X1 + (X2 - X1) / 2, Y2);
+                    SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0));
+                    strStr = L"┉┉";
+					Text(strStr);
+				}*/
+
 				if (!CurItem->strData.IsEmpty() && IsDrawTitle) {
 					// ! Пусть диалог сам заботится о ширине собственного заголовка.
 					strStr = CurItem->strData;
@@ -2635,7 +2643,9 @@ void Dialog::ShowDialog(unsigned ID)
 		if (CurItem->ListPtr && GetDropDownOpened() && CurItem->ListPtr->IsVisible()) {
 			if ((CurItem->Type == DI_COMBOBOX)
 					|| ((CurItem->Type == DI_EDIT || CurItem->Type == DI_FIXEDIT)
-							&& !(CurItem->Flags & DIF_HIDDEN) && (CurItem->Flags & DIF_HISTORY))) {
+							&& !(CurItem->Flags & DIF_HIDDEN) 
+							&& IsItemVisible(I, BorderY1, BorderY2)
+							&& (CurItem->Flags & DIF_HISTORY))) {
 				CurItem->ListPtr->Show();
 			}
 		}
@@ -3627,6 +3637,26 @@ void Dialog::ProcessKey(FarKey Key, unsigned ItemPos)
 	$ 18.08.2000 SVS
 	+ DN_MOUSECLICK
 */
+
+bool Dialog::IsItemVisible(int I, int BorderY1, int BorderY2) 
+{
+	if (Item[I]->Flags & DIF_HIDDEN) return false;
+	if (IsOkCancelButtons(I)) return true;
+
+	SMALL_RECT Rect;
+	GetItemRect(I, Rect);
+
+	Rect.Left+= X1;
+	Rect.Top+= Y1 + ScrollY;
+	Rect.Right+= X1;
+	Rect.Bottom+= Y1 + ScrollY;
+
+	if (Rect.Bottom < BorderY1) return false;
+	if (Rect.Top > BorderY2) return false;
+
+	return true;
+}
+
 int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	CriticalSectionLock Lock(CS);
@@ -3652,6 +3682,16 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	int MsBY = MouseEvent->dwMousePosition.Y + (MaxY2 - Y2); /* last buttons that are pinned and not scrolled; no scroll  means MaxY2 == Y2 */
 	int MsOY = MouseEvent->dwMousePosition.Y;
 
+  	// first, we need actual borders
+	int BorderY1 = Y1, BorderY2 = Y2;
+	for (int Ij = 0; Ij < (int)ItemCount; Ij++) {
+		if (Item[Ij]->Flags & DIF_HIDDEN) continue;
+		if (IsOkCancelButtons(Ij))
+			BorderY2 = std::min(BorderY2, Y1 + Item[Ij]->Y2 - (MaxY2 - Y2) - 1);
+		if (Item[Ij]->Type == DI_DOUBLEBOX) 
+			BorderY1 = Y1 + Item[Ij]->Y1 + 1;
+	}
+
 	// vk: Hover effect processing
 	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
 		int oldHover = -1, newHover = -1;
@@ -3669,6 +3709,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			}
 
 			if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN)) continue;
+			if (!IsItemVisible(I, BorderY1, BorderY2)) continue;
 
 			GetItemRect(I, Rect);
 			Rect.Left+= X1;
@@ -3697,6 +3738,25 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 	}
 
+	// vk: scroll bar control
+    if (Y2 != MaxY2 && MsX == X2 - 1) {
+    	// ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
+		if (MsOY >= BorderY1 && MsOY <= BorderY2) {
+			// we are on the scroll bar
+			if (MsOY == BorderY1 || MsOY == BorderY2) { // arrows
+				if (ScrollDialogUpDown(MsOY == BorderY2 ? -1 : 1))
+					return TRUE;
+			}
+			else { /* band */
+				int page = (BorderY2 - BorderY1) / (MaxY2 - Y2);
+				int thumb = page * - ScrollY + BorderY1;
+				if (ScrollDialogUpDown(MsOY > thumb ? -1 : 1))
+					return TRUE;
+			}
+			return FALSE; // no further actions on top of scroll bar
+		}
+    }
+
 	// vk: middle click, pinned buttons, close dialog button, scroll bar events
 	for (I = ItemCount - 1; I != (unsigned)-1; I--) {
 
@@ -3707,19 +3767,32 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			}
 		}
 
-		if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN))
-			continue;
+		if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN)) continue;
+		if (!IsItemVisible(I, BorderY1, BorderY2)) continue;
 
 		Type = Item[I]->Type;
 
+		GetItemRect(I, Rect);
+		Rect.Left+= X1;
+		Rect.Top+= Y1;
+		Rect.Right+= X1;
+		Rect.Bottom+= Y1;
+
+ 		// pinned buttons for scroll
+ 		if (Y2 != MaxY2 && Type == DI_BUTTON && (MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) && IsOkCancelButtons(I)) {
+			if (MsX >= Rect.Left && MsBY >= Rect.Top && MsX <= Rect.Right && MsBY <= Rect.Bottom) {
+	 			ChangeFocus2(I);
+ 				ShowDialog();
+
+                fprintf(stderr, "Click on pinned button %d: %d,%d/%d/%d in %d,%d..%d,%d/%d\n", I, MsX, MsOY, MsY, MsBY, X1, Y1, X2, Y2, MaxY2);
+
+ 				ProcessKey(KEY_ENTER, I);
+ 				return TRUE;
+            }
+ 		}
+
         /* middle mouse click */ 
 		if ( MouseEvent->dwButtonState & (FROM_LEFT_2ND_BUTTON_PRESSED) ) {
-			GetItemRect(I, Rect);
-			Rect.Left+= X1;
-			Rect.Top+= Y1;
-			Rect.Right+= X1;
-			Rect.Bottom+= Y1;
-
 			if (MsX >= Rect.Left && MsY >= Rect.Top && MsX <= Rect.Right && MsY <= Rect.Bottom) {
 
 				if (FarIsEdit(Type)) {
@@ -3736,49 +3809,6 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				break;
 			}
 		}
-
- 		// pinned buttons for scroll
- 		if (Y2 != MaxY2 && Type == DI_BUTTON && (MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) && IsOkCancelButtons(I)) {
-			GetItemRect(I, Rect);
-			if (MsX >= X1 + Rect.Left && MsBY >= Y1 + Rect.Top && MsX <= X1 + Rect.Right && MsBY <= Y1 + Rect.Bottom) {
-	 			ChangeFocus2(I);
- 				ShowDialog();
-
-                fprintf(stderr, "Click on pinned button %d: %d,%d/%d/%d in %d,%d..%d,%d/%d\n", I, MsX, MsOY, MsY, MsBY, X1, Y1, X2, Y2, MaxY2);
-
- 				ProcessKey(KEY_ENTER, I);
- 				return TRUE;
-            }
- 		}
-
-        // scroll bar
-        if (Y2 != MaxY2 && (MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) && MsX == X2 - 1) {
-        	// ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
-           	int BorderY1 = Y1, BorderY2 = Y2;
-			for (int Ij = 0; Ij < (int)ItemCount; Ij++) {
-				if (Item[Ij]->Flags & DIF_HIDDEN) continue;
-
-				if (IsOkCancelButtons(Ij))
-					BorderY2 = std::min(BorderY2, Y1 + Item[Ij]->Y2 - (MaxY2 - Y2) - 1);
-				if (Item[Ij]->Type == DI_DOUBLEBOX) 
-					BorderY1 = Y1 + Item[Ij]->Y1 + 1;
-			}
-
-			if (MsOY >= BorderY1 && MsOY <= BorderY2) {
-				// we are on the scroll bar
-				if (MsOY == BorderY1 || MsOY == BorderY2) { // arrows
-					if (ScrollDialogUpDown(MsOY == BorderY2 ? -1 : 1))
-						return TRUE;
-				}
-				else { /* band */
-					int page = (BorderY2 - BorderY1) / (MaxY2 - Y2);
-					int thumb = page * - ScrollY + BorderY1;
-					if (ScrollDialogUpDown(MsOY > thumb ? -1 : 1))
-						return TRUE;
-				}
-				return FALSE; // no further actions on top of scroll bar
-			}
-        }
 
         // list box
 		if (Type == DI_LISTBOX && MsY >= Y1 + Item[I]->Y1 && MsY <= Y1 + Item[I]->Y2
@@ -3886,7 +3916,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			return TRUE;
 	}
 
-	if (MsX < X1 || MsY < Y1 || MsX > X2 || MsY > Y2) {
+	// click outside
+	if (MsX < X1 || MsOY < Y1 || MsX > X2 || MsOY > Y2) {
 		if (DialogMode.Check(DMODE_CLICKOUTSIDE)
 				&& !DlgProc((HANDLE)this, DN_MOUSECLICK, -1, (LONG_PTR)MouseEvent)) {
 			if (!DialogMode.Check(DMODE_SHOW))
@@ -3909,6 +3940,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 		if (!MouseEvent->dwButtonState && FocusPos < ItemCount
 				&& !(Item[FocusPos]->Flags & (DIF_DISABLE | DIF_HIDDEN))
+				&& IsItemVisible(FocusPos, BorderY1, BorderY2)
 				&& FarIsEdit(Item[FocusPos]->Type)) {
 			DlgEdit *EditLine = (DlgEdit *)(Item[FocusPos]->ObjPtr);
 			EditLine->ProcessMouse(MouseEvent);
@@ -3936,12 +3968,14 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		for (I = ItemCount - 1; I != (unsigned)-1; I--) {
 			if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN))
 				continue;
+			if (!IsItemVisible(I, BorderY1, BorderY2)) continue;
 
 			GetItemRect(I, Rect);
 			Rect.Left+= X1;
 			Rect.Top+= Y1;
 			Rect.Right+= X1;
 			Rect.Bottom+= Y1;
+
 			//_D(SysLog(L"? %2d) Rect (%2d,%2d) (%2d,%2d) '%ls'",I,Rect.left,Rect.top,Rect.right,Rect.bottom,Item[I].Data));
 
 			if (MsX >= Rect.Left && MsY >= Rect.Top && MsX <= Rect.Right && MsY <= Rect.Bottom) {
@@ -3993,6 +4027,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				// Исключаем из списка оповещаемых о мыши недоступные элементы
 				if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN))
 					continue;
+				if (!IsItemVisible(I, BorderY1, BorderY2)) 
+					continue;
 
 				Type = Item[I]->Type;
 
@@ -4001,6 +4037,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				Rect.Top+= Y1;
 				Rect.Right+= X1;
 				Rect.Bottom+= Y1;
+
 				if (ItemHasDropDownArrow(Item[I]))
 					Rect.Right++;
 

@@ -3757,6 +3757,7 @@ int WINAPI FarEditorControlA(int Command, void *Param)
 				oei->CurState = ei.CurState;
 				oei->WindowX = ei.WindowX;
 				oei->WindowY = ei.WindowY;
+				oei->IsMemoEdit = ei.IsMemoEdit;
 				return TRUE;
 			}
 

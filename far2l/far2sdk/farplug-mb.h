@@ -1359,6 +1359,7 @@ namespace oldfar
 		DWORD CurState;
 		int WindowX;
 		int WindowY;
+		int IsMemoEdit;
 		DWORD Reserved[4];
 	};
 

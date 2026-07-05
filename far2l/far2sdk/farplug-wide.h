@@ -1771,6 +1771,7 @@ struct EditorInfo
 	UINT CodePage;
 	int WindowX;
 	int WindowY;
+	int IsMemoEdit;
 	DWORD Reserved[3];
 };
 

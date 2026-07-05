@@ -82,6 +82,8 @@ Fills up to specified count handles, but returns background terminal session cou
 
 * added sort mode option "executables first", that works with the file panel by `FILE_ATTRIBUTE_EXECUTABLE` option. It is available for plug-ins in the same manner as "directories first" option so plug-ins are able to handle it as they need.
 
+* new "`IsMemoEdit`" member in `struct EditorInfo`.
+
 ### Added following commands into FILE_CONTROL_COMMANDS:
 * `FCTL_GETPANELPLUGINHANDLE`
 Can be used to interact with plugin that renders other panel.

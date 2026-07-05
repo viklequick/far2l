@@ -628,7 +628,7 @@ wx2INPUT_RECORD::wx2INPUT_RECORD(BOOL KeyDown, const wxKeyEvent& event, const Ke
 	if ((!event.GetKeyCode() || event.GetKeyCode() == WXK_ALT) &&
 		(event.GetRawKeyCode() == RAW_CONTEXT || event.GetRawKeyCode() == RAW_ALTGR)) {
 		if (KeyDown) {
-			Event.KeyEvent.dwControlKeyState|= RIGHT_ALT_PRESSED;
+			Event.KeyEvent.dwControlKeyState|= RIGHT_ALT_PRESSED | LEFT_CTRL_PRESSED;
 		}
 		Event.KeyEvent.dwControlKeyState|= ENHANCED_KEY;
 		Event.KeyEvent.wVirtualKeyCode = VK_MENU;
@@ -656,7 +656,7 @@ wx2INPUT_RECORD::wx2INPUT_RECORD(BOOL KeyDown, const wxKeyEvent& event, const Ke
 	}
 
 	if (key_tracker.RightAlt()) {
-		Event.KeyEvent.dwControlKeyState|= RIGHT_ALT_PRESSED;
+		Event.KeyEvent.dwControlKeyState|= RIGHT_ALT_PRESSED | LEFT_CTRL_PRESSED;
 	}
 
 	if (key_tracker.Shift() || event.ShiftDown()) {

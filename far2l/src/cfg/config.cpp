@@ -124,6 +124,8 @@ static void AddHistorySettings(DialogBuilder &Builder, FarLangMsg MTitle, int *O
 	CountText->Indent(4);
 	Builder.LinkFlags(EnabledCheckBox, CountEdit, DIF_DISABLE);
 	Builder.LinkFlags(EnabledCheckBox, CountText, DIF_DISABLE);
+
+	// Builder.AddCheckboxAndLabeledEdit(MTitle, OptEnabled, 0, Msg::ConfigMaxHistoryCount, OptCount, 6, 0);
 }
 
 void SanitizeHistoryCounts()
@@ -145,6 +147,8 @@ void SanitizeIndentationCounts()
 void SystemSettings()
 {
 	DialogBuilder Builder(Msg::ConfigSystemTitle, L"SystemSettings");
+
+	// Builder.StartColumns();
 
 	auto SudoEnabledItem = Builder.AddCheckbox(Msg::ConfigSudoEnabled, &Opt.SudoEnabled);
 	auto SudoPasswordExpirationEdit = Builder.AddIntEditField(&Opt.SudoPasswordExpiration, 4);
@@ -189,6 +193,9 @@ void SystemSettings()
 	MakeLinkSuggest->Indent(4);
 
 	Builder.AddSeparator();
+
+	// Builder.ColumnBreak();
+
 	AddHistorySettings(Builder, Msg::ConfigSaveHistory, &Opt.SaveHistory, &Opt.HistoryCount);
 	AddHistorySettings(Builder, Msg::ConfigSaveFoldersHistory, &Opt.SaveFoldersHistory,
 			&Opt.FoldersHistoryCount);
@@ -204,12 +211,16 @@ void SystemSettings()
 	Builder.AddTextBefore(HistRemove, Msg::ConfigHistoryRemoveDupsRule);
 
 	Builder.AddCheckbox(Msg::ConfigAutoHighlightHistory, &Opt.AutoHighlightHistory);
+
+	// Builder.EndColumns();
+
 	Builder.AddSeparator();
 
 	auto AutoSaveSetup = Builder.AddCheckbox(Msg::ConfigAutoSave, &Opt.AutoSaveSetup);
 	auto AutoSavePanels = Builder.AddCheckbox(Msg::ConfigAutoSavePanels, &Opt.AutoSavePanels);
 	AutoSavePanels->Indent(4);
 	Builder.LinkFlags(AutoSaveSetup, AutoSavePanels, DIF_DISABLE, false, false);
+
 	Builder.AddOKCancel();
 
 	if (Builder.ShowDialog()) {
@@ -263,7 +274,15 @@ void PanelSettings()
 		BOOL AutoUpdate = (Opt.AutoUpdateLimit);
 		BOOL TreeScanDepthEnabled = (Opt.Tree.ScanDepthEnabled);
 
+		Builder.StartColumns();
 		Builder.AddCheckbox(Msg::ConfigHidden, &Opt.ShowHidden);
+
+		Builder.AddCheckbox(Msg::ConfigSelectFolders, &Opt.SelectFolders);
+		Builder.AddCheckbox(Msg::ConfigCaseSensitiveCompareSelect, &Opt.PanelCaseSensitiveCompareSelect);
+		Builder.AddCheckbox(Msg::ConfigSortFolderExt, &Opt.SortFolderExt);
+		Builder.AddCheckbox(Msg::ConfigReverseSort, &Opt.ReverseSort);
+
+		Builder.ColumnBreak();
 
 		auto CbHighlight = Builder.AddCheckbox(Msg::ConfigHighlight, &Opt.Highlight);
 		int HighlightMarksID = -1;
@@ -276,10 +295,7 @@ void PanelSettings()
 		//ChangeSizeColumnStyleItem->Flags = DIF_CENTERGROUP;
 		ChangeSizeColumnStyleItem->Indent(1);
 
-		Builder.AddCheckbox(Msg::ConfigSelectFolders, &Opt.SelectFolders);
-		Builder.AddCheckbox(Msg::ConfigCaseSensitiveCompareSelect, &Opt.PanelCaseSensitiveCompareSelect);
-		Builder.AddCheckbox(Msg::ConfigSortFolderExt, &Opt.SortFolderExt);
-		Builder.AddCheckbox(Msg::ConfigReverseSort, &Opt.ReverseSort);
+		Builder.EndColumns();
 
 		auto AutoUpdateEnabled = Builder.AddCheckbox(Msg::ConfigAutoUpdateLimit, &AutoUpdate);
 		auto AutoUpdateLimit = Builder.AddIntEditField((int *)&Opt.AutoUpdateLimit, 6);
@@ -291,24 +307,32 @@ void PanelSettings()
 		Builder.AddCheckbox(Msg::ConfigClassicHotkeyLinkResolving, &Opt.ClassicHotkeyLinkResolving);
 
 		Builder.AddSeparator(Msg::ConfigTreeOptions);
-		Builder.StartColumns();
-		auto TreeScanDepthSwitch = Builder.AddCheckbox(Msg::ConfigDefaultTreeScanDepth, &TreeScanDepthEnabled);
-		Builder.ColumnBreak();
+
 		auto DefaultScanDepth = Builder.AddIntEditField((int *)&Opt.Tree.DefaultScanDepth, 12);
+		auto TreeScanDepthSwitch = Builder.AddCheckboxBefore(DefaultScanDepth, Msg::ConfigDefaultTreeScanDepth, &TreeScanDepthEnabled);
 		Builder.LinkFlags(TreeScanDepthSwitch, DefaultScanDepth, DIF_DISABLE, false);
-		Builder.EndColumns();
-		Builder.AddText(Msg::ConfigExclSubTreeMask);
-		Builder.AddEditField(&Opt.Tree.ExclSubTreeMask, 35);
+		
+		auto editF = Builder.AddEditField(&Opt.Tree.ExclSubTreeMask, 35);
+		Builder.AddTextBefore(editF, Msg::ConfigExclSubTreeMask);
 		Builder.AddCheckbox(Msg::ConfigAutoChange, &Opt.Tree.AutoChangeFolder);
 
 		Builder.AddSeparator();
+		
+		Builder.StartColumns();
+
 		Builder.AddCheckbox(Msg::ConfigShowColumns, &Opt.ShowColumnTitles);
 		Builder.AddCheckbox(Msg::ConfigShowStatus, &Opt.ShowPanelStatus);
 		Builder.AddCheckbox(Msg::ConfigShowTotal, &Opt.ShowPanelTotals);
 		Builder.AddCheckbox(Msg::ConfigShowFree, &Opt.ShowPanelFree);
+
+		Builder.ColumnBreak();
+
 		Builder.AddCheckbox(Msg::ConfigShowScrollbar, &Opt.ShowPanelScrollbar);
 		Builder.AddCheckbox(Msg::ConfigShowScreensNumber, &Opt.ShowScreensNumber);
 		Builder.AddCheckbox(Msg::ConfigShowSortMode, &Opt.ShowSortMode);
+
+		Builder.EndColumns();
+		
 		Builder.AddOKCancel();
 
 		int clicked_id = -1;
@@ -626,6 +650,8 @@ void InterfaceSettings()
 	for (;;) {
 		DialogBuilder Builder(Msg::ConfigInterfaceTitle, L"InterfSettings");
 
+		Builder.StartColumns();
+
 		Builder.AddCheckbox(Msg::ConfigClock, &Opt.Clock);
 		Builder.AddCheckbox(Msg::ConfigViewerEditorClock, &Opt.ViewerEditorClock);
 		Builder.AddCheckbox(Msg::ConfigKeyBar, &Opt.ShowKeyBar);
@@ -637,6 +663,8 @@ void InterfaceSettings()
 		Builder.AddTextAfter(SaverEdit, Msg::ConfigSaverMinutes);
 		Builder.LinkFlags(SaverCheckbox, SaverEdit, DIF_DISABLE);
 
+		Builder.ColumnBreak();
+
 		Builder.AddCheckbox(Msg::ConfigCopyTotal, &Opt.CMOpt.CopyShowTotal);
 		Builder.AddCheckbox(Msg::ConfigCopyTimeRule, &Opt.CMOpt.CopyTimeRule);
 		Builder.AddCheckbox(Msg::ConfigDeleteTotal, &Opt.DelOpt.DelShowTotal);
@@ -644,6 +672,7 @@ void InterfaceSettings()
 
 		Builder.AddCheckbox(Msg::CopyToPrimarySelection, &Opt.CopyToPrimarySelection);
 		Builder.AddCheckbox(Msg::PasteFromPrimarySelection, &Opt.PasteFromPrimarySelection);
+		Builder.EndColumns();
 
 		Builder.AddSeparator(Msg::ConfigDateFormat);
 
@@ -705,6 +734,8 @@ void InterfaceSettings()
 			ChangeFontItem = Builder.AddButton(Msg::ConfigConsoleChangeFont, ChangeFontID);
 		}
 
+		Builder.StartColumns();
+
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_PAINT_SHARP) {
 			if (ChangeFontItem)
 				Builder.AddCheckboxAfter(ChangeFontItem, Msg::ConfigConsolePaintSharp,
@@ -724,18 +755,22 @@ void InterfaceSettings()
     	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
     	Builder.AddCheckbox(Msg::EnforceColorCorrection, (BOOL *)&Opt.Dialogs.EnforceColorCorrection);
 
-    	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
-    	Builder.AddCheckbox(Msg::UseModernLook, (BOOL *)&Opt.Backend.UseModernLook);
+    	//if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 
+        Builder.ColumnBreak();
+
+    	Builder.AddCheckbox(Msg::UseModernLook, (BOOL *)&Opt.Backend.UseModernLook);
         if ((supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) && Opt.Backend.UseModernLook) {
         	// Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, (BOOL *)&Opt.Backend.UseRoundedBorders);
-        	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, (BOOL *)&Opt.Backend.UseSingleBordersOnly);
-        	Builder.AddCheckbox(Msg::UseModernLookNoBorders, (BOOL *)&Opt.Backend.UseNoBorders);
         	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, (BOOL *)&Opt.Backend.UseEmbossAsBold);
         	Builder.AddCheckbox(Msg::UseModernLookUseSoftenBevels, (BOOL *)&Opt.Backend.UseSoftenBevels);
         	Builder.AddCheckbox(Msg::UseModernLookUse3D, (BOOL *)&Opt.Backend.Use3D);
+	       	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, (BOOL *)&Opt.Backend.UseSingleBordersOnly);
+    	   	Builder.AddCheckbox(Msg::UseModernLookNoBorders, (BOOL *)&Opt.Backend.UseNoBorders);
         }
-    	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+        Builder.EndColumns();
+
+    	// if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 
 		Builder.AddText(Msg::ConfigWindowTitle);
 		Builder.AddEditField(&Opt.strWindowTitle, 47);

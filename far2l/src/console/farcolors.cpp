@@ -219,6 +219,12 @@ uint64_t FarColors::setcolors[SIZE_ARRAY_FARCOLORS];
 uint32_t FarColors::GammaCorrection = 0;
 bool FarColors::GammaChanged = false;
 
+static bool endsWith(const std::string& s, const std::string& suffix)
+{
+    return s.size() >= suffix.size() &&
+           s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
+}
+
 void extractColorComponents(int color, int& r, int& g, int& b) {
 	r = (color >> 16) & 0xFF;
 	g = (color >> 8)  & 0xFF;
@@ -275,7 +281,7 @@ void FarColors::AdjustContrastLevels() noexcept
 
 	fprintf(stderr, "FarColors::AdjustContrastLevels()\n");
 	for (size_t i = 0; i < SIZE_ARRAY_FARCOLORS; i++) {
-		if (ColorsInit[i].name == "Dialog.Box") continue;
+		if (endsWith(ColorsInit[i].name, ".Box")) continue;
 
 		uint64_t cc = FARColors.colors[i];
 

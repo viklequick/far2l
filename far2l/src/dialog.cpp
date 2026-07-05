@@ -562,7 +562,7 @@ void Dialog::CheckDialogCoord()
 
 	MaxY2 = Y2;
 
-	if (Y2 >= ScrY ) {
+	if (Y2 >= ScrY && Opt.Backend.UseModernLook) {
 		// scroll is here
 		// cut dialog
 		ScrollY = 0;
@@ -2760,6 +2760,7 @@ int Dialog::ProcessMoveDialog(DWORD Key)
 					if (Y2 > 0) {
 						Y1--;
 						Y2--;
+						MaxY2--;
 						AdjustEditPos(0, -1);
 					}
 
@@ -2782,6 +2783,7 @@ int Dialog::ProcessMoveDialog(DWORD Key)
 					if (Y1 < ScrY) {
 						Y1++;
 						Y2++;
+						MaxY2++;
 						AdjustEditPos(0, 1);
 					}
 
@@ -2807,6 +2809,7 @@ int Dialog::ProcessMoveDialog(DWORD Key)
 				X2 = OldX2;
 				Y1 = OldY1;
 				Y2 = OldY2;
+				MaxY2 = OldMaxY2;
 				DialogMode.Clear(DMODE_DRAGGED);
 
 				if (!DialogMode.Check(DMODE_ALTDRAGGED)) {
@@ -2835,6 +2838,7 @@ int Dialog::ProcessMoveDialog(DWORD Key)
 			OldX2 = X2;
 			OldY1 = Y1;
 			OldY2 = Y2;
+			OldMaxY2 = MaxY2;
 			// # GetText(0,0,3,0,LV);
 			Show();
 		}
@@ -4160,6 +4164,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				OldX2 = X2;
 				OldY1 = Y1;
 				OldY2 = Y2;
+				OldMaxY2 = MaxY2;
+
 				// запомним delta места хватания и Left-Top диалогового окна
 				MsX = abs(X1 - MouseX);
 				MsY = abs(Y1 - MouseY);
@@ -4199,6 +4205,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 								X2 = NX2;
 								Y1 = NY1;
 								Y2 = NY2;
+								MaxY2 += AdjY;
 
 								AdjustEditPos(AdjX, AdjY);	//?
 
@@ -4215,6 +4222,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 						X2 = OldX2;
 						Y1 = OldY1;
 						Y2 = OldY2;
+						MaxY2 = OldMaxY2;
 						DialogMode.Clear(DMODE_DRAGGED);
 						DlgProc((HANDLE)this, DN_DRAGGED, 1, TRUE);
 
@@ -5117,9 +5125,6 @@ void Dialog::Process()
 		}
 	}
 
-	// VK: todo: update hints as dioalog is completed
-	// HintBeginContainer();
-
 	if (pSaveItemEx)
 		for (unsigned i = 0; i < ItemCount; i++)
 			DialogItemExToDialogItemEx(Item[i], &pSaveItemEx[i]);
@@ -5246,6 +5251,16 @@ void Dialog::ResizeConsole()
 		c.Y = y1;
 		SendDlgMessage(reinterpret_cast<HANDLE>(this), DM_MOVEDIALOG, TRUE, reinterpret_cast<LONG_PTR>(&c));
 		Dialog::SetComboBoxPos();
+
+		Y2 = MaxY2;
+    	if (Y2 >= ScrY && Opt.Backend.UseModernLook) {
+    		// scroll is here
+    		// cut dialog
+    		ScrollY = 0;
+    		Y2 = ScrY - 1;
+    	}
+		Hide();
+		Show();
 	}
 };
 
@@ -5443,6 +5458,7 @@ LONG_PTR SendDlgMessageSynched(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2
 			Dlg->OldY1 = Dlg->Y1;
 			Dlg->OldX2 = Dlg->X2;
 			Dlg->OldY2 = Dlg->Y2;
+			Dlg->OldMaxY2 = Dlg->MaxY2;
 
 			// переместили
 			if (Param1 > 0)		// абсолютно?

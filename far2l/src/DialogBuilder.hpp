@@ -107,7 +107,7 @@ public:
 	//   когда Parent->Selected равно false - сбрасывает флаги.
 	// Если LinkLabels установлено в true, то текстовые элементы, добавленные к элементу Target
 	// методами AddTextBefore и AddTextAfter, также связываются с элементом Parent.
-	void LinkFlags(DialogItemEx *Parent, DialogItemEx *Target, FarDialogItemFlags Flags, bool LinkLabels = true,
+	virtual void LinkFlags(DialogItemEx *Parent, DialogItemEx *Target, FarDialogItemFlags Flags, bool LinkLabels = true,
 			bool bParentChecked = true);
 
 	void AddOKCancel() { DialogBuilderBase<DialogItemEx>::AddOKCancel(Msg::Ok, Msg::Cancel); }

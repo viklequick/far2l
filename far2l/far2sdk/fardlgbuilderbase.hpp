@@ -147,7 +147,7 @@ checkbox и radio button вычисляется автоматически, дл
 template<class T>
 class DialogBuilderBase
 {
-	public:
+public:
 	friend class ItemReference;
 
 	class ItemReference
@@ -188,6 +188,7 @@ class DialogBuilderBase
 		int ColumnStartIndex;
 		int ColumnBreakIndex;
 		int ColumnStartY;
+		int ColumnStartX {0};
 		int ColumnEndY;
 		int ColumnMinWidth;
 		BOOL UseModernLook;
@@ -276,7 +277,7 @@ class DialogBuilderBase
 			Title->X1 = 3;
 			Title->Y1 = 1;
 
-			if (UseModernLook) AddEmptyLine();
+			// if (UseModernLook) AddEmptyLine();
 		}
 
 		void UpdateBorderSize()
@@ -449,6 +450,35 @@ class DialogBuilderBase
 			return Item;
 		}
 
+		ItemReference AddCheckboxBefore(ItemReference RelativeTo, FarLangMsg TextMessageId, BOOL *Value, int Mask = 0)
+		{
+			auto Item = AddDialogItem(DI_CHECKBOX, GetLangString(TextMessageId));
+
+			Item->Y1 = Item->Y2 = RelativeTo->Y1;
+			Item->X1 = 5;
+			Item->X2 = Item->X1 + ItemWidth(*Item) - 1;
+
+			int RelativeToWidth = RelativeTo->X2 - RelativeTo->X1;
+			RelativeTo->X1 = Item->X2 + 2;
+			RelativeTo->X2 = RelativeTo->X1 + RelativeToWidth;
+
+			DialogItemBinding<T> *Binding = FindBinding(RelativeTo);
+			if (Binding)
+				Binding->BeforeLabelID = GetItemID(Item);
+
+			if (!Mask)
+				Item->Selected = *Value;
+			else
+				Item->Selected = (*Value & Mask) ;
+
+			SetLastItemBinding(CreateCheckBoxBinding(Value, Mask));
+
+			DialogItemBinding<T> *Binding2 = FindBinding(RelativeTo);
+			if (Binding2)
+				Binding2->AfterLabelID = GetItemID(Item);
+
+			return Item;
+		}
 
 		// Добавляет группу радиокнопок.
 		void AddRadioButtons(int *Value, int OptionCount, FarLangMsg MessageIDs[])
@@ -464,6 +494,39 @@ class DialogBuilderBase
 					Item->Selected = TRUE;
 				SetLastItemBinding(CreateRadioButtonBinding(Value));
 			}
+		}
+
+		void AddCheckboxAndLabeledEdit(FarLangMsg cbTextMessageId, BOOL *cbValue, int cbMask, 
+			FarLangMsg LabelId, 
+			int *tValue, int tWidth, int tFlags = 0) 
+		{
+			auto cbItem = AddDialogItem(DI_CHECKBOX, GetLangString(cbTextMessageId));
+			// SetNextY(Item);
+			cbItem->X2 = cbItem->X1 + ItemWidth(*cbItem);
+			cbItem->X1 = 5;
+			cbItem->Y1 = cbItem->Y2 = NextY;
+			if (!cbMask)
+				cbItem->Selected = *cbValue;
+			else
+				cbItem->Selected = (*cbValue & cbMask) ;
+			SetLastItemBinding(CreateCheckBoxBinding(cbValue, cbMask));
+			
+			auto tItem = AddDialogItem(DI_TEXT, GetLangString(LabelId));
+			tItem->Y1 = tItem->Y2 = cbItem->Y1;
+			tItem->X1 = cbItem->X2 + 2;
+			tItem->X2 = tItem->X1 + ItemWidth(*tItem);
+
+			DialogItemBinding<T> *Binding = FindBinding(cbItem);
+			if (Binding)
+				Binding->AfterLabelID = GetItemID(tItem);
+
+			auto edit = this->AddIntEditField(tValue, tWidth, tFlags);
+			edit->Y1 = edit->Y2 = cbItem->Y1;
+			edit->X1 = tItem->X2 + 2;
+			edit->X2 = edit->X1 + tWidth - 1;
+
+			LinkFlags(cbItem, edit, DIF_DISABLE);
+			LinkFlags(cbItem, tItem, DIF_DISABLE);
 		}
 
 		// Добавляет горизонтальную группу радиокнопок.
@@ -531,10 +594,11 @@ class DialogBuilderBase
 		// Начинает располагать поля диалога в две колонки.
 		void StartColumns()
 		{
-			if (UseModernLook) AddEmptyLine();
+			// if (UseModernLook) AddEmptyLine();
 
 			ColumnStartIndex = DialogItemsCount;
 			ColumnStartY = NextY;
+			ColumnStartX = 0;
 		}
 
 		// Завершает колонку полей в диалоге и переходит к следующей колонке.
@@ -543,12 +607,19 @@ class DialogBuilderBase
 			ColumnBreakIndex = DialogItemsCount;
 			ColumnEndY = NextY;
 			NextY = ColumnStartY;
+
+			ColumnStartX = 0;
+			for(int i = ColumnStartIndex; i < ColumnBreakIndex; i++) {
+				ColumnStartX = std::max(
+					ColumnStartX, 
+					std::max(ItemWidth(DialogItems [i]) + DialogItems [i].X1 + 2, DialogItems[i].X2 + 2));
+			}
 		}
 
 		// Завершает расположение полей диалога в две колонки.
 		void EndColumns()
 		{
-			for(int i=ColumnStartIndex; i<DialogItemsCount; i++)
+			for(int i = ColumnStartIndex; i < DialogItemsCount; i++)
 			{
 				int Width = ItemWidth(DialogItems [i]);
 				if (Width > ColumnMinWidth)
@@ -559,6 +630,13 @@ class DialogBuilderBase
 					DialogItems [i].X2 = SECOND_COLUMN + Width;
 				}
 			}
+
+            /*
+			for(int i = ColumnBreakIndex; i < DialogItemsCount; i++)
+			{
+				DialogItems [i].X1 += ColumnStartX;
+				DialogItems [i].X2 += ColumnStartX;
+			}*/
 
 			ColumnStartIndex = -1;
 			ColumnBreakIndex = -1;
@@ -603,7 +681,7 @@ class DialogBuilderBase
 		// Добавляет сепаратор.
 		void AddSeparator(FarLangMsg MessageId=FarLangMsg{-1})
 		{
-			if (UseModernLook) AddEmptyLine();
+			// if (UseModernLook) AddEmptyLine();
 
 			ItemReference Separator = AddDialogItem(DI_TEXT, MessageId == -1 ? EMPTY_TEXT : GetLangString(MessageId));
 			Separator->Flags = DIF_SEPARATOR;
@@ -645,6 +723,9 @@ class DialogBuilderBase
 				return true;
 			}
 			return false;
+		}
+
+		virtual void LinkFlags(T *Parent, T *Target, FarDialogItemFlags Flags, bool LinkLabels = true,	bool bParentChecked = true) {
 		}
 };
 #endif // __FAR2SDK_FARDLGBUILDERBASE_H__

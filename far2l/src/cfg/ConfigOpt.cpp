@@ -155,6 +155,7 @@ const ConfigOpt g_cfg_opts[] {
 	{OST_COMMON, NSecCmdline, "Splitter", &Opt.CmdLine.Splitter, 1},
 	{OST_COMMON, NSecCmdline, "WaitKeypress", &Opt.CmdLine.WaitKeypress, 1},
 	{OST_COMMON, NSecCmdline, "VTLogLimitKB", &Opt.CmdLine.VTLogLimit, 1024},
+	{OST_COMMON, NSecCmdline, "ShowStartupBanner",&Opt.ShowStartupBanner, 1},
 	{OST_NONE,   NSecCmdline, "AskOnMultilinePaste", &Opt.CmdLine.AskOnMultilinePaste, 1},
 
 	{OST_COMMON, NSecInterface, "Mouse", &Opt.Mouse, 1},
@@ -846,45 +847,61 @@ void ConfigOptSaveAutoOptions()
 	cfg_writer.SetUInt(NParamAutoSavePanels, Opt.AutoSavePanels);
 }
 
+
+static bool ConfigOptSaveAsk(BOOL &SaveCommon, BOOL &SavePanels, BOOL &SaveMacros)
+{
+	// Msg::SaveSetupTitle, Msg::SaveSetupAsk1, Msg::SaveSetupAsk2, Msg::SaveSetup, Msg::Cancel
+	DialogBuilder Builder(Msg::SaveSetupTitle, nullptr);
+
+	Builder.AddText(Msg::SaveSetupAsk1);
+	Builder.AddText(Msg::SaveSetupAsk2);
+	Builder.AddCheckbox(Msg::SaveSetupCommon, &SaveCommon);
+	Builder.AddCheckbox(Msg::SaveSetupPanels, &SavePanels);
+	Builder.AddCheckbox(Msg::SaveSetupMacros, &SaveMacros);
+
+	Builder.DialogBuilderBase<DialogItemEx>::AddOKCancel(Msg::SaveSetup, Msg::Cancel);
+
+	return Builder.ShowDialog();
+}
+
 void ConfigOptSave(bool Ask)
 {
 	if (Opt.Policies.DisabledOptions&0x20000) // Bit 17 - Сохранить параметры
 		return;
 
+   	BOOL SavePanels = Ask || Opt.AutoSaveSetup || Opt.AutoSavePanels;
+   	BOOL SaveCommon = Ask || Opt.AutoSaveSetup;
+
+	if (!SavePanels && !SaveCommon)
+		return;
+
+   	BOOL SaveMacros = Ask;
+
+	if (Ask && !ConfigOptSaveAsk(SaveCommon, SavePanels, SaveMacros))
+			return;
+
 	const unsigned SaveFlags
-			= (Ask || Opt.AutoSaveSetup) ? (OST_COMMON | OST_PANELS)
-			: (Opt.AutoSavePanels ? OST_PANELS : OST_NONE);
-
-	if (SaveFlags == OST_NONE)
-		return;
-
-	if (Ask && Message(0, 2, Msg::SaveSetupTitle, Msg::SaveSetupAsk1, Msg::SaveSetupAsk2, Msg::SaveSetup, Msg::Cancel))
-		return;
-
-	WINPORT(SaveConsoleWindowState)();
+			= (SaveCommon ? OST_COMMON : 0) | (SavePanels ? OST_PANELS : 0);
 
 	/* <ПРЕПРОЦЕССЫ> *************************************************** */
-	if (SaveFlags & OST_COMMON)
+	if (SaveCommon)
 	{
 		WINPORT(SaveConsoleWindowState)();
 		CtrlObject->HiFiles->SaveHiData();
 	}
 
-	if (SaveFlags & OST_PANELS)
+	if (SavePanels)
 		SavePanelsToOpt();
 	/* *************************************************** </ПРЕПРОЦЕССЫ> */
 
 	OptConfigWriter cfg_writer;
 	for (size_t i = ConfigOptCount(); i--;)
-		cfg_writer.SaveOpt(g_cfg_opts[i], SaveFlags);
+		cfg_writer.SaveOpt(g_cfg_opts[i], SaveFlags );
 
 	/* <ПОСТПРОЦЕССЫ> *************************************************** */
-	if (SaveFlags & OST_COMMON) {
+	if (SaveCommon) {
 		FileFilter::SaveFilters(cfg_writer);
 		FileList::SavePanelModes(cfg_writer);
-
-		if (Ask)
-			CtrlObject->Macro.SaveMacros();
 
 	    if (Opt.IsColorsChanged || Ask) 
 	    {
@@ -893,4 +910,7 @@ void ConfigOptSave(bool Ask)
 		}
 	}
 	/* *************************************************** </ПОСТПРОЦЕССЫ> */
+
+	if (SaveMacros)
+		CtrlObject->Macro.SaveMacros();
 }

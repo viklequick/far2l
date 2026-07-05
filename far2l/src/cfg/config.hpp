@@ -518,6 +518,7 @@ struct Options
 	int ShowScreensNumber;
 	int ShowSortMode;
 	int ShowMenuBar;
+	int ShowStartupBanner;
 	int FormatNumberSeparators;
 	int CleanAscii;
 	int NoGraphics;

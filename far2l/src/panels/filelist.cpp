@@ -2774,6 +2774,8 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	}
 
 	if ((MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) && MouseEvent->dwEventFlags != MOUSE_MOVED) {
+
+		FarKey Key = KEY_ENTER;
 		if (MouseEvent->dwControlKeyState & SHIFT_PRESSED) {
 			Key|= KEY_SHIFT;
 		}

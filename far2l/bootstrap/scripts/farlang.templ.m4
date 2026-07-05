@@ -17183,14 +17183,14 @@ MenuOptionsTitle
 
 MenuObjectTitle
 "&Объекты"
-"&Objects"
-"upd:&Objects"
-"upd:&Objects"
-"upd:&Objects"
-"upd:&Objects"
-"upd:&Objects"
-"upd:&Objects"
-"upd:&Objects"
+"O&bjects"
+"upd:O&bjects"
+"upd:O&bjects"
+"upd:O&bjects"
+"upd:O&bjects"
+"upd:O&bjects"
+"upd:O&bjects"
+"upd:O&bjects"
 
 MenuViewTitle
 "&Вид"

@@ -304,6 +304,7 @@ private:
 
 	// переменные для перемещения диалога
 	int OldX1, OldX2, OldY1, OldY2;
+	int ScrollY {0}, MaxY2 {-1};
 
 	wchar_t *HelpTopic;
 
@@ -325,6 +326,8 @@ private:
 	void DeleteDialogObjects();
 	int LenStrItem(int ID, const wchar_t *lpwszStr = nullptr);
 	int IsLastBevelPriorToButtons(int I);
+	bool IsOkCancelButtons(int I);
+	bool ScrollDialogUpDown(int deltaY);
 
 	void ShowDialog(unsigned ID = (unsigned)-1);	// ID=-1 - отрисовать весь диалог
 

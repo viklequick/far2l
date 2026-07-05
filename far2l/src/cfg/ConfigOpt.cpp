@@ -206,7 +206,7 @@ const ConfigOpt g_cfg_opts[] {
 	{OST_COMMON,  NSecInterface, "UseSoftenBevels", &Opt.Backend.UseSoftenBevels, 1},
 	{OST_COMMON,  NSecInterface, "Use3D", &Opt.Backend.Use3D, 1},
 
-	{OST_COMMON,  NSecInterface, "EliminateOuterBorders", &Opt.Dialogs.EliminateOuterBorders, 1},
+	{OST_COMMON,  NSecInterface, "EliminateOuterBorders", &Opt.Dialogs.EliminateOuterBorders, 0},
 
 	{OST_COMMON, NSecViewer, "ExternalViewerName", &Opt.strExternalViewer, L""},
 	{OST_COMMON, NSecViewer, "UseExternalViewer", &Opt.ViOpt.UseExternalViewer, 0},

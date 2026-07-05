@@ -2434,7 +2434,6 @@ void FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t
 	FARString strLocalTitle;
 	GetTitle(strLocalTitle);
 
-    size_t currentWidth = 0;
     tabPos.clear();
 
     --maxWidth; // first file has icon too
@@ -2490,7 +2489,7 @@ void FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t
         std::wstring leaf = shortenLeaf(leafs[i], leafWidths[i]);
 
 		FARString strTab = leafs[i];
-		tabPos.push_back({ strTab, WhereX(), strTab.CellsCount() });
+		tabPos.push_back({ strTab, WhereX(), (int)strTab.CellsCount() });
 
 		if(i > 0) FS << L"║";
 		FS << (active ? L"📜" : L"📝");

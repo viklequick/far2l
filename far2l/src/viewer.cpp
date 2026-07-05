@@ -1166,7 +1166,7 @@ void Viewer::ReadString(ViewerString &rString, int MaxSize, int StrSize)
 				break;
 		}	// TODO: ???
 
-		OutPtr = vread(piece, len);
+		OutPtr = vread(piece, len, true);
 		piece[OutPtr] = 0;
 		rString.SetChars(0, piece, (size_t)(OutPtr + 1));
 	} else {
@@ -2573,9 +2573,7 @@ LONG_PTR WINAPI ViewerSearchDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 {
 	switch (Msg) {
 		case DN_CLOSE:
-			if (Param1 >= 0
-					&& ((unsigned)(Param1) + 1) != reinterpret_cast<Dialog*>(hDlg)->GetAllItemCount()) // button Cancel is the last element
-			{
+			if (Param1 >= 0) {
 				int Pos = SendDlgMessage(hDlg, DM_SHOWITEM, SD_EDIT_TEXT, -1) ? SD_EDIT_TEXT : SD_EDIT_HEX;
 				const wchar_t *Txt = (const wchar_t*)SendDlgMessage(hDlg, DM_GETCONSTTEXTPTR, Pos, 0);
 				bool IsEmpty;

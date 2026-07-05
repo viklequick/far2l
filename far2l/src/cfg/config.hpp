@@ -279,6 +279,7 @@ struct DialogsOptions
 	int CBoxMaxHeight;		// максимальный размер открываемого списка (по умолчанию=8)
 	bool ShowArrowsInEdit;	// show arrows on text overflow in edit controls
 	bool EnforceColorCorrection; // for default themes, update colors to make it more contrast
+	bool EliminateOuterBorders; // Make doalogs like this: https://t.me/c/2241384293/23892
 };
 
 struct VMenuOptions

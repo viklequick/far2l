@@ -304,6 +304,7 @@ private:
 
 	// переменные для перемещения диалога
 	int OldX1, OldX2, OldY1, OldY2;
+	int ScrollY {0}, MaxY2 {-1};
 
 	wchar_t *HelpTopic;
 
@@ -318,6 +319,7 @@ private:
 	int AltState, CtrlState, ShiftState;
 	bool dialogBox;
 	int CloseX, CloseY;
+	bool Resizable {false};
 
 private:
 	void Init(FARWINDOWPROC DlgProc, LONG_PTR InitParam);
@@ -325,6 +327,9 @@ private:
 	void DeleteDialogObjects();
 	int LenStrItem(int ID, const wchar_t *lpwszStr = nullptr);
 	int IsLastBevelPriorToButtons(int I);
+	bool IsOkCancelButtons(int I);
+	bool ScrollDialogUpDown(int deltaY);
+	bool IsItemVisible(int I, int BorderY1, int BorderY2);
 
 	void ShowDialog(unsigned ID = (unsigned)-1);	// ID=-1 - отрисовать весь диалог
 
@@ -459,6 +464,9 @@ public:
 	LONG_PTR WINAPI DlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2);
 
 	virtual void SetPosition(int X1, int Y1, int X2, int Y2);
+
+	virtual bool IsResizable() { return Resizable; }
+	virtual void SetResizable(bool r) { Resizable = r; }
 
 	BOOL IsInited();
 	bool ProcessEvents();

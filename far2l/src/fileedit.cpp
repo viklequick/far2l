@@ -2343,6 +2343,158 @@ static const struct CharCodeFmtInfo
 	{ L"%04Xh", 6, L" (%X)", 5}
 };
 
+static std::wstring widestCommonPrefix(const std::vector<std::wstring>& paths) {
+    if (paths.empty())
+        return L"";
+
+    // Start with the first path as the candidate prefix
+    std::wstring prefix = paths[0];
+
+    for (size_t i = 1; i < paths.size(); ++i) {
+        const std::wstring& p = paths[i];
+        size_t j = 0;
+
+        // Walk until mismatch or end of one of the strings
+        while (j < prefix.size() && j < p.size() && prefix[j] == p[j])
+            ++j;
+        prefix.resize(j); // shrink to the matched part
+        if (prefix.empty())
+            break;
+    }
+    return prefix;
+}
+
+static std::wstring widestCommonDirectory(const std::vector<std::wstring>& paths) {
+    std::wstring prefix = widestCommonPrefix(paths);
+    if (prefix.empty())
+        return L"";
+
+    // Find last slash or backslash
+    size_t pos = prefix.find_last_of(L"/");
+    if (pos == std::wstring::npos)
+        return L"";
+
+    return prefix.substr(0, pos + 1); // include the slash
+}
+
+static std::wstring makeLeaf(const std::wstring& fullPath, const std::wstring& prefix) {
+    if (fullPath.size() <= prefix.size())
+        return fullPath;
+
+    std::wstring leaf = fullPath.substr(prefix.size());
+
+    // Remove leading slash/backslash if present
+    if (!leaf.empty() && (leaf[0] == L'/' || leaf[0] == L'\\'))
+        leaf.erase(0, 1);
+
+    return leaf;
+}
+
+static std::vector<std::wstring> compactifyFileNamesUpTo(std::vector<std::wstring> v) {
+	if (v.size() < 2) return v;
+
+	std::vector<std::wstring> r;
+	r.reserve(v.size());
+
+	std::wstring commonPrefix = widestCommonDirectory(v);
+	for(size_t i = 0; i < v.size(); ++i) {
+    	r.push_back(makeLeaf(v[i], commonPrefix));
+	}
+
+	return r;
+}
+
+static std::wstring shortenLeaf(const std::wstring& leaf, size_t maxLeafWidth) {
+    const wchar_t ell = L'…'; // L'\u2026' -- Unicode ellipsis
+
+    if (leaf.size() <= maxLeafWidth)
+        return leaf;
+
+    if (maxLeafWidth <= 1)
+        return std::wstring(1, ell);
+
+    // Split prefix/suffix
+    size_t prefixLen = maxLeafWidth / 4;
+    if (prefixLen < 1) prefixLen = 1;
+    size_t suffixLen = maxLeafWidth - prefixLen - 1; // -1 for ellipsis
+
+    std::wstring prefix = leaf.substr(0, prefixLen);
+    std::wstring suffix = leaf.substr(leaf.size() - suffixLen);
+
+    return prefix + ell + suffix;
+}
+
+void FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxWidth) 
+{
+    if (v.empty()) return;
+
+	std::vector<std::wstring> leafs = compactifyFileNamesUpTo(v);
+	FARString strLocalTitle;
+	GetTitle(strLocalTitle);
+
+    tabPos.clear();
+
+    --maxWidth; // first file has icon too
+    std::wstring separator = L"║📜";
+    size_t N = leafs.size();
+    size_t sepWidth = separator.size();
+
+    // Total width consumed by separators
+    size_t totalSepWidth = sepWidth * (N - 1);
+
+    if (maxWidth <= totalSepWidth) {
+        // Not enough space even for separators → return empty
+        return;
+    }
+
+    // Minimum width per leaf
+    size_t minLeafWidth = (maxWidth - totalSepWidth) / N;
+
+    // First pass: compute actual widths for each leaf
+    std::vector<size_t> leafWidths(N);
+
+    for (size_t i = 0; i < N; ++i) {
+        size_t full = leafs[i].size();
+        leafWidths[i] = std::max(minLeafWidth, std::min(full, minLeafWidth));
+    }
+
+    // Second pass: distribute remaining space
+    size_t usedWidth = totalSepWidth;
+    for (size_t w : leafWidths)
+        usedWidth += w;
+
+    size_t remaining = (maxWidth > usedWidth ? maxWidth - usedWidth : 0);
+
+    // Distribute remaining space greedily
+    for (size_t i = 0; i < N && remaining > 0; ++i) {
+        size_t full = leafs[i].size();
+        size_t current = leafWidths[i];
+
+        if (current < full) {
+            size_t add = std::min(full - current, remaining);
+            leafWidths[i] += add;
+            remaining -= add;
+        }
+    }
+
+    // Third pass: render
+    for (size_t i = 0; i < N; ++i) {
+
+		bool active = v[i] == strLocalTitle.CPtr();
+		uint64_t color2 = SoftenItemColor(FarColorToReal(COL_EDITORSTATUS), active ? 1 : 0, i + 1 == (size_t)TabHovered, active ? 0 : 1, 0);
+		SetColor(color2);
+
+        std::wstring leaf = shortenLeaf(leafs[i], leafWidths[i]);
+
+		FARString strTab = leafs[i];
+		tabPos.push_back({ strTab, WhereX(), (int)strTab.CellsCount() });
+
+		if(i > 0) FS << L"║";
+		FS << (active ? L"📜" : L"📝");
+		FS << strTab;
+    }
+}
+
 void FileEditor::ShowStatus()
 {
 	if (m_editor->Locked() || !TitleBarVisible)
@@ -2431,34 +2583,9 @@ void FileEditor::ShowStatus()
 	if (TitleCells > 0) {
 		if (Opt.Backend.UseModernLook) {
 			// list of tabs
-			std::vector<std::wstring> v;
-			FrameManager->enumerateWindowsByType(v, MODALTYPE_EDITOR);
-
-			for(int i = 0; i < (int)v.size(); ++i) {
-				if (TitleCells <= 5) break;
-
-				bool active = v[i] == strLocalTitle.CPtr();
-				uint64_t color2 = SoftenItemColor(FarColorToReal(COL_EDITORSTATUS), active ? 1 : 0, i + 1 == TabHovered, active ? 0 : 1, 0);
-				SetColor(color2);
-
-				FARString strTab = v[i];
-				int len = v.size() > 1 ? std::min(15, (int)strTab.CellsCount()) : (int)strTab.CellsCount();
-				if (strTab.CellsCount() > (size_t)len) TruncStr(strTab, len);
-
-				tabPos.push_back({ strTab, WhereX(), (int)strTab.CellsCount() });
-
-				// case with many tabs and status under clock
-				int left = TitleCells - (len + 1 + (i > 0 ? 1 : 0));
-				if (left < 0) {
-					TruncStr(strTab, len + left);
-				}
-
-				if(i > 0) FS << L"║";
-				FS << (active ? L"📜" : L"📝");
-				FS << strTab;
-
-				TitleCells -= len + 1 + (i > 0 ? 1 : 0) ;
-			}
+			std::vector<std::wstring> v1;
+			FrameManager->enumerateWindowsByType(v1, MODALTYPE_EDITOR);
+    		joinLeafsWithOffsets(v1, TitleCells);
 
 			SetFarColor(COL_EDITORSTATUS);
 			if (TitleCells > 0) FS << fmt::LeftAlign() << fmt::Cells() << fmt::Expand(TitleCells) << L" ";
@@ -3005,6 +3132,7 @@ void FileEditor::ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey)
 		}
 		return;
 	}
+	// handle commands without accelerated keys
 	else if (hMenu == MENU_FILE && vMenu == MENU_FILE_PRINTER) {
 		PrinterSupport ps;
 		if (ps.IsPrinterSetupDialogSupported()) {

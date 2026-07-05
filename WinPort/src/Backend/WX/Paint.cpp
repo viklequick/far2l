@@ -643,17 +643,24 @@ void ConsolePainter::FlushText(unsigned int cx_end)
 {
 	if (!_buffer.empty()) {
 		if (_prev_bold) {
-			wxFont normal = _dc.GetFont();
-			wxFont bold = normal;
-			bold.MakeBold(); 
-			//bold.SetWeight(wxFONTWEIGHT_SEMIBOLD);
-			bold.SetPixelSize(normal.GetPixelSize());
-			_dc.SetFont(bold);
-			_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
-			_dc.DrawText(_buffer, _start_cx * _context->FontWidth(), _start_y);
-			_dc.SetFont(normal);
-
-			_prev_bold = false;
+			if (WXCustomDrawChar::options->UseEmbossAsBold) {
+				WinPortRGB emboss = GetEmbossColor(_clr_text);
+				_dc.SetTextForeground(wxColour(emboss.r, emboss.g, emboss.b));
+				_dc.DrawText(_buffer, _start_cx * _context->FontWidth() + 1, _start_y + 1);
+				_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
+				_dc.DrawText(_buffer, _start_cx * _context->FontWidth(), _start_y);
+			}
+			else {
+				wxFont normal = _dc.GetFont();
+				wxFont bold = normal;
+				bold.MakeBold(); 
+				//bold.SetWeight(wxFONTWEIGHT_SEMIBOLD);
+				bold.SetPixelSize(normal.GetPixelSize());
+				_dc.SetFont(bold);
+				_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
+				_dc.DrawText(_buffer, _start_cx * _context->FontWidth(), _start_y);
+				_dc.SetFont(normal);
+			}
 		}
 		else {
 			_dc.SetTextForeground(wxColour(_clr_text.r, _clr_text.g, _clr_text.b));
@@ -1006,7 +1013,7 @@ void ConsolePainter::NextChar(unsigned int cx, DWORD64 attributes, const wchar_t
 	const bool strikeout = (attributes & COMMON_LVB_STRIKEOUT) != 0;
 	const bool bold = (attributes & COMMON_LVB_BOLD) != 0;
 
-	if (!strikeout && !underlined && wcz[0] == L' ' && !wcz[1]) {
+	if (!strikeout && !underlined && wcz[0] == L' ' && !wcz[1]) { /* bold does not impact on space */
 		return;
 	}
 

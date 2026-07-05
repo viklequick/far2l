@@ -651,7 +651,7 @@ void KeyBar::ShowContextMenu()
 	if (key) {
 		FrameManager->ProcessKey(key);
 		if (key == KEY_F9){ 
-			FrameManager->ProcessKey(KEY_DOWN);
+			// FrameManager->ProcessKey(KEY_DOWN);
 		}
 	}
 }

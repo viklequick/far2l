@@ -3922,7 +3922,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			else if (!(MouseEvent->dwButtonState & RIGHTMOST_BUTTON_PRESSED)
 					&& (PrevMouseButtonState & RIGHTMOST_BUTTON_PRESSED)
 					&& (Opt.Dialogs.MouseButton & DMOUSEBUTTON_RIGHT))
-				ProcessKey(Opt.Dialogs.EnableAccidentalConfirmation ? KEY_ENTER : KEY_ESC);
+				ProcessKey(/* Opt.Dialogs.EnableAccidentalConfirmation ? */ KEY_ENTER  /*: KEY_ESC */);
 		}
 
 		if (MouseEvent->dwButtonState)

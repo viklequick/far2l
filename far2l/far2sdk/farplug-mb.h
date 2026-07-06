@@ -1856,6 +1856,7 @@ namespace oldfar
 		const struct KeyBarTitles *KeyBar;
 		const char           *ShortcutData;
 		const char           *CurURL;
+		const char           *CurPath;
 		long                  Reserved;
 	};
 

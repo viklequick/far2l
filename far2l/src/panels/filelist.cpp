@@ -1130,7 +1130,7 @@ int FileList::ProcessKey(FarKey Key)
 						if (PanelMode != PLUGIN_PANEL) {
 							CreateFullPathName(strFileName, strFileName, Key == KEY_CTRLALTF);
 						} else {
-							PluginGetURL(strFileName, strFileName);
+							PluginGetURL(strFileName, strFileName, Key == KEY_CTRLALTF);
 						}
 					}
 
@@ -3796,16 +3796,20 @@ void FileList::CopyNames(bool FullPathName, bool RealName)
 	free(CopyData);
 }
 
-FARString &FileList::PluginGetURL(const wchar_t *Name, FARString &strDest)
+FARString &FileList::PluginGetURL(const wchar_t *Name, FARString &strDest, bool as_url)
 {
 	OpenPluginInfo Info = {0};
 	CtrlObject->Plugins.GetOpenPluginInfo(hPlugin, &Info);
-	if (Info.CurURL && Info.CurURL[0]) {
+	// Ctrl-Alt-F pastes the portable URL (CurURL); Ctrl-F pastes the bare path (CurPath).
+	// Fall back to less specific fields for plugins that don't provide them.
+	if (!as_url && Info.CurPath && Info.CurPath[0]) {
+		strDest = Info.CurPath;
+	} else if (Info.CurURL && Info.CurURL[0]) {
 		strDest = Info.CurURL;
 	} else if (Info.CurDir && Info.CurDir[0]) {
 		strDest = Info.CurDir;
 	} else {
-		//fprintf(stderr, "Both CurDir and CurURL are empty or null\n");
+		//fprintf(stderr, "CurPath, CurURL and CurDir are all empty or null\n");
 	}
 
 	if (!strDest.IsEmpty())

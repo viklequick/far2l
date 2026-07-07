@@ -604,10 +604,11 @@ void VMenu::SetCheck(uint32_t Check, int Position)
 
 void VMenu::RestoreFilteredItems()
 {
-	for (int i = 0; i < ItemCount; i++) if (Item[i]->FilteredOut) {
-		Item[i]->Flags&= ~LIF_HIDDEN;
-		Item[i]->FilteredOut = false;
-	}
+	for (int i = 0; i < ItemCount; i++) 
+		if (Item[i]->FilteredOut) {
+			Item[i]->Flags&= ~LIF_HIDDEN;
+			Item[i]->FilteredOut = false;
+		}
 
 	ItemHiddenCount = 0;
 
@@ -617,7 +618,6 @@ void VMenu::RestoreFilteredItems()
 
 void VMenu::FilterStringUpdated(bool bLonger)
 {
-
 	if (bLonger) {
 		// строка фильтра увеличилась
 		for (int i = 0; i < ItemCount; i++) {
@@ -666,6 +666,11 @@ void VMenu::FilterStringUpdated(bool bLonger)
 			}
 			i = j - 1; // loop will ++
 		}
+	}
+
+	if (strFilter.GetLength() == 0) {
+		RestoreFilteredItems();
+		DisplayObject();
 	}
 
 	if (SelectPos < 0)
@@ -875,7 +880,7 @@ bool VMenu::AddToFilter(const wchar_t *str)
 				if (Key == KEY_BS && !strFilter.IsEmpty())
 					strFilter.Truncate(strFilter.GetLength() - 1);
 				else
-					strFilter+= Key;
+					strFilter += Key;
 			}
 			++str;
 		}
@@ -1137,6 +1142,7 @@ int VMenu::ProcessKey(FarKey Key)
 							return TRUE;
 						}
 					} else {
+						DisplayObject();
 						return TRUE;
 					}
 				} else {

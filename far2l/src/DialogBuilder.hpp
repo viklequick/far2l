@@ -84,19 +84,19 @@ public:
 	~DialogBuilder();
 
 	// Добавляет поле типа DI_EDIT для редактирования указанного строкового значения.
-	ItemReference AddEditField(FARString *Value, int Width, const wchar_t *HistoryID = nullptr, int Flags = 0);
+	virtual ItemReference AddEditField(FARString *Value, int Width, const wchar_t *HistoryID = nullptr, int Flags = 0, bool newLine = true);
 
 	LONG_PTR UserData;
 	bool SetUserDlgProc(FARWINDOWPROC UserProc, LONG_PTR UserParam2);
 
 	// Добавляет поле типа DI_FIXEDIT для редактирования указанного числового значения.
-	virtual ItemReference AddIntEditField(int *Value, int Width, int Flags = 0);
+	virtual ItemReference AddIntEditField(int *Value, int Width, int Flags = 0, bool newLine = true);
 
 	// Добавляет выпадающий список с указанными значениями.
-	ItemReference AddComboBox(int *Value, int Width, DialogBuilderListItem *Items, int ItemCount, DWORD Flags = DIF_NONE);
+	virtual ItemReference AddComboBox(int *Value, int Width, DialogBuilderListItem *Items, int ItemCount, DWORD Flags = DIF_NONE, bool newLine = true);
 
 	// Добавляет выпадающий список с code pages.
-	ItemReference AddCodePagesBox(UINT *Value, int Width, bool allowAuto, bool allowAll);
+	virtual ItemReference AddCodePagesBox(UINT *Value, int Width, bool allowAuto, bool allowAll, bool newLine = true);
 
 	// Связывает состояние элементов Parent и Target.
 	// При bParentChecked == true:
@@ -110,5 +110,5 @@ public:
 	virtual void LinkFlags(DialogItemEx *Parent, DialogItemEx *Target, FarDialogItemFlags Flags, bool LinkLabels = true,
 			bool bParentChecked = true);
 
-	void AddOKCancel() { DialogBuilderBase<DialogItemEx>::AddOKCancel(Msg::Ok, Msg::Cancel); }
+	virtual void AddOKCancel() { DialogBuilderBase<DialogItemEx>::AddOKCancel(Msg::Ok, Msg::Cancel); }
 };

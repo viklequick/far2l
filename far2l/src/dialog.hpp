@@ -120,6 +120,7 @@ struct DialogItemEx
 	int Focus;
 	int Hover;
 	int Pressed;
+	int Width {-1};
 
 	union
 	{

@@ -298,20 +298,19 @@ static void ConfigureChangeDriveMode()
 	//	ShowSizeFloat->Indent(3);
 	//	Builder.LinkFlags(ShowSize, ShowSizeFloat, DIF_DISABLE);
 
-	auto ShowMountsItem =
-			Builder.AddCheckbox(Msg::ChangeDriveShowMounts, &Opt.ChangeDriveMode, DRIVE_SHOW_MOUNTS);
+	auto ShowMountsItem = Builder.AddCheckbox(Msg::ChangeDriveShowMounts, &Opt.ChangeDriveMode, DRIVE_SHOW_MOUNTS);
 
+	Builder.AddText(Msg::ChangeDriveExceptions, false);
 	auto EditItem = Builder.AddEditField(&Opt.ChangeDriveExceptions, 28);
 	Builder.LinkFlags(ShowMountsItem, EditItem, DIF_DISABLE);
-	Builder.AddTextBefore(EditItem, Msg::ChangeDriveExceptions);
 
+	Builder.AddText(Msg::ChangeDriveColumn2, false);
 	EditItem = Builder.AddEditField(&Opt.ChangeDriveColumn2, 28);
 	Builder.LinkFlags(ShowMountsItem, EditItem, DIF_DISABLE);
-	Builder.AddTextBefore(EditItem, Msg::ChangeDriveColumn2);
 
+	Builder.AddText(Msg::ChangeDriveColumn3, false);
 	EditItem = Builder.AddEditField(&Opt.ChangeDriveColumn3, 28);
 	Builder.LinkFlags(ShowMountsItem, EditItem, DIF_DISABLE);
-	Builder.AddTextBefore(EditItem, Msg::ChangeDriveColumn3);
 
 	Builder.AddCheckbox(Msg::ChangeDriveShowShortcuts, &Opt.ChangeDriveMode, DRIVE_SHOW_BOOKMARKS);
 	Builder.AddCheckbox(Msg::ChangeDriveShowPlugins, &Opt.ChangeDriveMode, DRIVE_SHOW_PLUGINS);

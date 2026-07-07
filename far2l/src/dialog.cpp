@@ -220,6 +220,7 @@ void DialogItemExToDialogItemEx(DialogItemEx *pSrc, DialogItemEx *pDest)
 	pDest->UCData = pSrc->UCData;
 	pDest->SelStart = pSrc->SelStart;
 	pDest->SelEnd = pSrc->SelEnd;
+	pDest->Width = pSrc->Width;
 
 	std::copy(pSrc->customItemColor,
 		pSrc->customItemColor + DLG_ITEM_MAX_CUST_COLORS,
@@ -238,6 +239,7 @@ void ConvertItemSmall(FarDialogItem *Item, DialogItemEx *Data)
 	Item->DefaultButton = Data->DefaultButton;
 	Item->MaxLen = Data->nMaxLength;
 	Item->PtrData = nullptr;
+	Item->Width = Data->Width;
 
 	Item->Param.History = nullptr;
 	if (Data->Type == DI_LISTBOX || Data->Type == DI_COMBOBOX) {
@@ -311,6 +313,7 @@ bool ConvertItemEx(CVTITEMFLAGS FromPlugin, FarDialogItem *Item, DialogItemEx *D
 				Data->Y2 = Item->Y2;
 				Data->Focus = Item->Focus;
 				Data->Reserved = 0;
+				Data->Width = Item->Width;
 				if ((Item->Type == DI_EDIT || Item->Type == DI_FIXEDIT) && Item->Flags & DIF_HISTORY) {
 					Data->strHistory = Item->Param.History;
 				} else if (Item->Type == DI_FIXEDIT && Item->Flags & DIF_MASKEDIT) {

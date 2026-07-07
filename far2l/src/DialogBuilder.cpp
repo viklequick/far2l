@@ -97,6 +97,7 @@ void DialogBuilder::InitDialogItem(DialogItemEx *Item, const TCHAR *Text)
 	Item->Clear();
 	Item->ID = DialogItemsCount - 1;
 	Item->strData = Text;
+	Item->Width = 0;
 }
 
 int DialogBuilder::TextWidth(const DialogItemEx &Item)
@@ -119,11 +120,14 @@ DialogItemBinding<DialogItemEx> *DialogBuilder::CreateRadioButtonBinding(int *Va
 	return new RadioButtonBinding<DialogItemEx>(Value);
 }
 
-DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddEditField(FARString *Value, int Width, const wchar_t *HistoryID, int Flags)
+DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddEditField(FARString *Value, int Width, const wchar_t *HistoryID, int Flags, bool newLine)
 {
 	auto Item = AddDialogItem(DI_EDIT, *Value);
-	SetNextY(Item);
-	Item->X2 = Item->X1 + Width;
+	Item->Width = Width;
+
+	Add(Item);
+	if (newLine) AddNL();
+
 	if (HistoryID) {
 		Item->strHistory = HistoryID;
 		Item->Flags|= DIF_HISTORY;
@@ -134,14 +138,16 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddEditField(FARSt
 	return Item;
 }
 
-DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddIntEditField(int *Value, int Width, int Flags)
+DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddIntEditField(int *Value, int Width, int Flags, bool newLine)
 {
 	auto Item = AddDialogItem(DI_FIXEDIT, L"");
 	FormatString ValueText;
 	ValueText << *Value;
 	Item->strData = ValueText;
-	SetNextY(Item);
-	Item->X2 = Item->X1 + Width - 1;
+	Item->Width = Width;
+
+	Add(Item);
+	if (newLine) AddNL();
 
 	EditFieldIntBinding *Binding = new EditFieldIntBinding(Value, Width);
 	SetLastItemBinding(Binding);
@@ -151,11 +157,13 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddIntEditField(in
 	return Item;
 }
 
-DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddComboBox(int *Value, int Width, DialogBuilderListItem *Items, int ItemCount, DWORD Flags)
+DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddComboBox(int *Value, int Width, DialogBuilderListItem *Items, int ItemCount, DWORD Flags, bool newLine)
 {
 	auto Item = AddDialogItem(DI_COMBOBOX, L"");
-	SetNextY(Item);
-	Item->X2 = Item->X1 + Width;
+	Item->Width = Width;
+
+	Add(Item);
+	if (newLine) AddNL();
 	Item->Flags|= Flags;
 
 	FarListItem *ListItems = new FarListItem[ItemCount];
@@ -173,12 +181,14 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddComboBox(int *V
 	return Item;
 }
 
-DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddCodePagesBox(UINT *Value, int Width, bool allowAuto, bool allowAll)
+DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddCodePagesBox(UINT *Value, int Width, bool allowAuto, bool allowAll, bool newLine)
 {
 	CodePageBoxes.emplace_back(CodePageBox{DialogItemsCount, *Value, allowAuto, allowAll});
 	auto Item = AddDialogItem(DI_COMBOBOX, L"");
-	SetNextY(Item);
-	Item->X2 = Item->X1 + Width;
+	Item->Width = Width;
+
+	Add(Item);
+	if (newLine) AddNL();
 	Item->Flags|= DIF_DROPDOWNLIST | DIF_LISTWRAPMODE | DIF_LISTAUTOHIGHLIGHT;
 	SetLastItemBinding(new CodePageBoxBinding<DialogItemEx>(Value, &CodePageBoxes.back().Value));
 	return Item;

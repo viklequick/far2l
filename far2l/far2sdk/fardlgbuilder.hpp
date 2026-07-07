@@ -256,10 +256,11 @@ public:
 #endif
 		}
 
-		virtual ItemReference AddIntEditField(int *Value, int Width, int Flags = 0)
+		virtual ItemReference AddIntEditField(int *Value, int Width, int Flags = 0, bool newLine = true)
 		{
 			auto Item = AddDialogItem(DI_FIXEDIT, EMPTY_TEXT);
 			Item->Flags |= DIF_MASKEDIT;
+			Item->Width = Width;
 			PluginIntEditFieldBinding *Binding;
 			Binding = new PluginIntEditFieldBinding(Info, &DialogHandle, DialogItemsCount-1, Value, Width);
 			Item->PtrData = Binding->GetBuffer();
@@ -270,17 +271,17 @@ public:
 #else
 			Item->Mask = Binding->GetMask();
 #endif
-			SetNextY(Item);
-			Item->X2 = Item->X1 + Width - 1;
+			Add(Item);
+			if (newLine) AddNL();
 			SetLastItemBinding(Binding);
 			return Item;
 		}
 
-		ItemReference AddEditField(TCHAR *Value, int MaxSize, int Width, const TCHAR *HistoryID = nullptr)
+		ItemReference AddEditField(TCHAR *Value, int MaxSize, int Width, const TCHAR *HistoryID = nullptr, bool newLine = true)
 		{
 			auto Item = AddDialogItem(DI_EDIT, Value);
-			SetNextY(Item);
-			Item->X2 = Item->X1 + Width;
+			Item->Width = Width;
+
 			if (HistoryID)
 			{
 #ifdef _FAR_NO_NAMELESS_UNIONS
@@ -290,6 +291,9 @@ public:
 #endif
 				Item->Flags |= DIF_HISTORY;
 			}
+
+			Add(Item);
+			if (newLine) AddNL();
 
 #ifdef UNICODE
 			SetLastItemBinding(new PluginEditFieldBinding(Info, &DialogHandle, DialogItemsCount-1, Value, MaxSize));

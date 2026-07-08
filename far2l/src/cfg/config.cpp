@@ -71,12 +71,15 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Options Opt = {0};
 
+void SystemSettings(DialogBuilder& Builder);
+void PanelSettings_HighlightMarks(DialogBuilder& Builder);
+
 int &Confirmation::ExitEffective()
 {
 	return WINPORT(ConsoleBackgroundMode)(FALSE) ? ExitOrBknd : Exit;
 }
 
-static DWORD ApplyConsoleTweaks()
+DWORD ApplyConsoleTweaks()
 {
 	DWORD64 tweaks = 0;
 	if (Opt.ExclusiveCtrlLeft)
@@ -100,7 +103,7 @@ static DWORD ApplyConsoleTweaks()
 	return WINPORT(SetConsoleTweaks)(tweaks);
 }
 
-static void ApplySudoConfiguration()
+void ApplySudoConfiguration()
 {
 	const std::string &sudo_app = GetHelperPathName("far2l_sudoapp");
 	const std::string &askpass_app = GetHelperPathName("far2l_askpass");
@@ -115,17 +118,13 @@ static void ApplySudoConfiguration()
 			Wide2MB(Msg::SudoConfirm).c_str());
 }
 
-static void AddHistorySettings(DialogBuilder &Builder, FarLangMsg MTitle, int *OptEnabled, int *OptCount)
+void AddHistorySettings(DialogBuilder &Builder, FarLangMsg MTitle, int *OptEnabled, int *OptCount)
 {
 	auto EnabledCheckBox = Builder.AddCheckbox(MTitle, OptEnabled, false);
 	auto CountText = Builder.AddText(Msg::ConfigMaxHistoryCount, false);
 	auto CountEdit = Builder.AddIntEditField(OptCount, 6);
-	//CountEdit->Indent(4);
-	//CountText->Indent(4);
 	Builder.LinkFlags(EnabledCheckBox, CountEdit, DIF_DISABLE);
 	Builder.LinkFlags(EnabledCheckBox, CountText, DIF_DISABLE);
-
-	// Builder.AddCheckboxAndLabeledEdit(MTitle, OptEnabled, 0, Msg::ConfigMaxHistoryCount, OptCount, 6, 0);
 }
 
 void SanitizeHistoryCounts()
@@ -147,8 +146,12 @@ void SanitizeIndentationCounts()
 void SystemSettings()
 {
 	DialogBuilder Builder(Msg::ConfigSystemTitle, L"SystemSettings");
+	SystemSettings(Builder);
+}
 
-	// Builder.StartColumns();
+void SystemSettings(DialogBuilder& Builder)
+{
+ 	// Builder.StartColumns();
 
 	auto SudoEnabledItem = Builder.AddCheckbox(Msg::ConfigSudoEnabled, &Opt.SudoEnabled, false);
 	auto SudoPasswordExpirationText = Builder.AddText(Msg::ConfigSudoPasswordExpiration, false);
@@ -160,10 +163,8 @@ void SystemSettings()
 	Builder.LinkFlags(SudoEnabledItem, SudoConfirmModifyItem, DIF_DISABLE);
 	Builder.LinkFlags(SudoEnabledItem, SudoPasswordExpirationEdit, DIF_DISABLE);
 
-
 	auto DeleteToRecycleBin = Builder.AddCheckbox(Msg::ConfigRecycleBin, &Opt.DeleteToRecycleBin, false);
 	auto DeleteLinks = Builder.AddCheckbox(Msg::ConfigRecycleBinLink, &Opt.DeleteToRecycleBinKillLink);
-	//DeleteLinks->Indent(4);
 	Builder.LinkFlags(DeleteToRecycleBin, DeleteLinks, DIF_DISABLE);
 
 	//	Builder.AddCheckbox(MSudoParanoic, &Opt.SudoParanoic);
@@ -173,8 +174,8 @@ void SystemSettings()
 
 	auto InactivityExit = Builder.AddCheckbox(Msg::ConfigInactivity, &Opt.InactivityExit, false);
 	auto InactivityExitTime = Builder.AddIntEditField(&Opt.InactivityExitTime, 2, 0, false);
+	Builder.Indent(1);
 	Builder.AddText(Msg::ConfigInactivityMinutes);
-	//InactivityExitTime->Indent(4);
 	Builder.LinkFlags(InactivityExit, InactivityExitTime, DIF_DISABLE);
 
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
@@ -185,7 +186,6 @@ void SystemSettings()
 	Builder.AddText(Msg::ConfigMakeLinkSuggest, false);
 	auto MakeLinkSuggest = Builder.AddComboBox((int *)&Opt.MakeLinkSuggestSymlinkAlways, 48, CAListItems, ARRAYSIZE(CAListItems),
 				DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE);
-	MakeLinkSuggest->Indent(4);
 
 	Builder.AddSeparator();
 
@@ -211,7 +211,6 @@ void SystemSettings()
 
 	auto AutoSaveSetup = Builder.AddCheckbox(Msg::ConfigAutoSave, &Opt.AutoSaveSetup, false);
 	auto AutoSavePanels = Builder.AddCheckbox(Msg::ConfigAutoSavePanels, &Opt.AutoSavePanels);
-	//AutoSavePanels->Indent(4);
 	Builder.LinkFlags(AutoSaveSetup, AutoSavePanels, DIF_DISABLE, false, false);
 
 	Builder.AddOKCancel();
@@ -226,33 +225,33 @@ void SystemSettings()
 void PanelSettings_HighlightMarks()
 {
 	DialogBuilder Builder(Msg::ConfigPanelHighlightMarksTitle, L"PanelSettings");
+	PanelSettings_HighlightMarks(Builder);
+}
 
+void PanelSettings_HighlightMarks(DialogBuilder& Builder)
+{
 	auto CbShowFilenameMarks = Builder.AddCheckbox(Msg::ConfigFilenameMarks, &Opt.ShowFilenameMarks);
+	Builder.Indent(4);
 	auto CbFilenameMarksAlign = Builder.AddCheckbox(Msg::ConfigFilenameMarksAlign, &Opt.FilenameMarksAlign);
-	CbFilenameMarksAlign->Indent(1);
 	Builder.LinkFlags(CbShowFilenameMarks, CbFilenameMarksAlign, DIF_DISABLE);
+	Builder.Indent(4);
+	auto CbShowFilenameMarksStatusLine = Builder.AddCheckbox(Msg::ConfigFilenameMarksStatusLine, &Opt.FilenameMarksInStatusBar);
+	Builder.LinkFlags(CbShowFilenameMarks, CbShowFilenameMarksStatusLine, DIF_DISABLE);
 
 	auto tShowFilenameMarksHint = Builder.AddText(Msg::ConfigFilenameMarksHint);
 	tShowFilenameMarksHint->Flags = DIF_CENTERGROUP | DIF_DISABLE;
-
-	Builder.AddSeparator();
-
-	auto CbShowFilenameMarksStatusLine
-		= Builder.AddCheckbox(Msg::ConfigFilenameMarksStatusLine, &Opt.FilenameMarksInStatusBar);
-	CbShowFilenameMarksStatusLine->Indent(1);
-	Builder.LinkFlags(CbShowFilenameMarks, CbShowFilenameMarksStatusLine, DIF_DISABLE);
 	auto tShowFilenameMarksInStatusLineHint = Builder.AddText(Msg::ConfigFilenameMarksStatusLineHint);
 	tShowFilenameMarksInStatusLineHint->Flags = DIF_CENTERGROUP | DIF_DISABLE;
 
 	Builder.AddSeparator();
 
 	auto IndentationMinEdit = Builder.AddIntEditField((int *)&Opt.MinFilenameIndentation, 2, 0, false);
+	Builder.Indent(1);
 	Builder.AddText(Msg::ConfigFilenameMinIndentation);
-	IndentationMinEdit->Indent(1);
 
 	auto IndentationMaxEdit = Builder.AddIntEditField((int *)&Opt.MaxFilenameIndentation, 2, 0, false);
+	Builder.Indent(1);
 	Builder.AddText(Msg::ConfigFilenameMaxIndentation);
-	IndentationMaxEdit->Indent(1);
 
 	Builder.AddOKCancel();
 
@@ -286,12 +285,11 @@ void PanelSettings()
 
 		Builder.AddEmptyLine();
 
-		auto AutoUpdateEnabled = Builder.AddCheckbox(Msg::ConfigAutoUpdateLimit, &AutoUpdate);
+		auto AutoUpdateEnabled = Builder.AddCheckbox(Msg::ConfigAutoUpdateLimit, &AutoUpdate, false);
 		auto AutoUpdateText = Builder.AddText(Msg::ConfigAutoUpdateLimit2, false);
-		AutoUpdateText->Indent(4);
-		auto AutoUpdateLimit = Builder.AddIntEditField((int *)&Opt.AutoUpdateLimit, 6, 0, false);
-		//AutoUpdateLimit->Indent(4);
+		auto AutoUpdateLimit = Builder.AddIntEditField((int *)&Opt.AutoUpdateLimit, 6);
 		Builder.LinkFlags(AutoUpdateEnabled, AutoUpdateLimit, DIF_DISABLE, false);
+		Builder.Indent(4);
 		Builder.AddCheckbox(Msg::ConfigAutoUpdateRemoteDrive, &Opt.AutoUpdateRemoteDrive);
 
 		Builder.AddEmptyLine();
@@ -665,20 +663,17 @@ void InterfaceSettings()
 		Builder.AddCheckbox(Msg::PasteFromPrimarySelection, &Opt.PasteFromPrimarySelection);
 		Builder.EndColumns();
 
-    	// if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
-		Builder.AddText(Msg::ConfigWindowTitle);
+    	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+		Builder.AddText(Msg::ConfigWindowTitle, false);
 		Builder.AddEditField(&Opt.strWindowTitle, 47);
 
-		Builder.AddSeparator();
+		// Builder.AddSeparator();
 
 		const DWORD supported_tweaks = ApplyConsoleTweaks();
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_BLINK_RATE) {
-
 			Builder.AddIntEditField(&Opt.CursorBlinkTime, 3, 0, false);
 			Builder.AddText(Msg::ConfigCursorBlinkInt);
 		}
-
-		Builder.StartColumns();
 
 		int ChangeFontID = -1;
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) 
@@ -686,6 +681,9 @@ void InterfaceSettings()
 
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_PAINT_SHARP) 
 			Builder.AddCheckbox(Msg::ConfigConsolePaintSharp, &Opt.ConsolePaintSharp);
+
+    	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
+		Builder.StartColumns();
 
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_OSC52CLIP_SET) 
 			Builder.AddCheckbox(Msg::ConfigOSC52ClipSet, &Opt.OSC52ClipSet);

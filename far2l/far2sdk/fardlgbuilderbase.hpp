@@ -258,6 +258,10 @@ public:
 			current = prev;
 		}
 
+		void Indent(int deltax) {
+			current.NextX += deltax;
+		}
+
 	protected:
 
 		void ReallocDialogItems() {
@@ -483,6 +487,7 @@ public:
 			auto Button = AddDialogItem(DI_BUTTON, GetLangString(MessageId));
 			Add(Button);
 			if (newLine) AddNL();
+			id = DialogItemsCount - 1;
 			return Button;
 		}
 

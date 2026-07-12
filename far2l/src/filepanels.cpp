@@ -46,6 +46,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "infolist.hpp"
 #include "help.hpp"
 #include "filefilter.hpp"
+#include "filediff.hpp"
 #include "findfile.hpp"
 #include "savescr.hpp"
 #include "manager.hpp"
@@ -695,6 +696,10 @@ int FilePanels::ProcessKey(FarKey Key)
 		}
 		case KEY_ALTF7: {
 			FindFiles::Present();
+			break;
+		}
+		case KEY_CTRLD: {
+			PresentFileDiff();
 			break;
 		}
 		case KEY_CTRLUP:

@@ -700,3 +700,5 @@ void InfoPanelSettings();
 void AutoCompleteSettings();
 void LanguageSettings();
 void DirectoryNameSettings();
+
+void AllSystemSettings();

@@ -20,6 +20,15 @@ struct DialogBuilderListItem
 	int ItemValue;
 };
 
+struct DialogBuilderListItemWide
+{
+	// Next to render
+	wchar_t* Text;
+
+	// Значение, которое будет записано в поле Value при выборе этой строчки.
+	int ItemValue;
+};
+
 template<class T>
 struct DialogItemBinding
 {
@@ -195,16 +204,18 @@ public:
 			int ColumnX{5};
 			int ColumnY{2};
 
-			int PlaneWidth {0};
-			int PlaneHeight {0};
+			int MaxX{0};
+			int MaxY{0};
+			int FirstColumnX{5};
+			int FirstRowY{2};
 		};
 
 		std::vector<StackedPlace> place;
 		StackedPlace current {};
 
 		void UpdateNewSizes() {
-			current.PlaneHeight = std::max(current.PlaneHeight, current.NextY /*- current.ColumnY*/);
-			current.PlaneWidth = std::max(current.PlaneWidth, current.NextX /*- current.ColumnX*/);
+			current.MaxY = std::max(current.MaxY, current.NextY);
+			current.MaxX = std::max(current.MaxX, current.NextX);
 		}
 
 	public:
@@ -212,10 +223,11 @@ public:
 		void Add(ItemReference item) {
 			item->Y1 = item->Y2 = current.NextY;
 			item->X1 = current.NextX;
-			current.NextX += ItemWidth(*item) + 2;
-			item->X2 = current.NextX;
+			current.NextX += item->Width > 0 ? item->Width : ItemWidth(*item);
+			item->X2 = current.NextX++;
 
 			UpdateNewSizes();
+			current.NextX++; // add gap between elements
 		}
 
 		void AddNL() {
@@ -230,16 +242,14 @@ public:
 
 			current = StackedPlace {};
 
-			current.ColumnX = prev.ColumnX;
+			current.ColumnX = current.FirstColumnX = current.NextX = prev.NextX;
 			current.Column = prev.Column + 1;
-			current.NextY = current.ColumnY = prev.NextY;
-			current.PlaneHeight = current.PlaneWidth = 0;
+			current.NextY = current.ColumnY = current.FirstRowY = prev.NextY;
 		}
 
 		void AddNewColumn() {
 			current.NextY = current.ColumnY;
-			current.ColumnX += current.PlaneWidth;
-			current.PlaneWidth = 0;
+			current.ColumnX = current.MaxX;
 			current.NextX = current.ColumnX;
 		}
 
@@ -247,13 +257,13 @@ public:
 			StackedPlace prev = place.back();
 			place.pop_back();
 
-			int w = current.PlaneWidth;
-			int h = current.PlaneHeight - current.ColumnY;
+			// int w = current.MaxX - current.FirstColumnX;
+			int h = current.MaxY - current.FirstRowY;
 
 			prev.NextY += h;
-			prev.PlaneHeight += h;
-			prev.PlaneWidth = std::max(w, prev.PlaneWidth);
-			prev.NextX = prev.ColumnX;
+			prev.MaxY = std::max(current.MaxY, prev.MaxY);
+			prev.MaxX = std::max(current.MaxX, prev.MaxX);
+			prev.NextX = prev.FirstColumnX;
 
 			current = prev;
 		}
@@ -344,7 +354,7 @@ public:
 
 		int MaxTextWidth() {
 			int MaxWidth = ItemWidth(DialogItems [0]); // text in dialog title
-			MaxWidth = std::max(MaxWidth, current.PlaneWidth + 3);
+			MaxWidth = std::max(MaxWidth, current.MaxX + 3);
 			return MaxWidth;
 		}
 
@@ -504,7 +514,7 @@ public:
 		}
 
 		// Добавляет сепаратор, кнопки OK и Cancel.
-		void AddOKCancel(FarLangMsg OKMessageId, FarLangMsg CancelMessageId) {
+		void AddOKCancel(FarLangMsg OKMessageId, FarLangMsg CancelMessageId, int* ok = nullptr, int* cancel = nullptr) {
 			if (UseModernLook) 
 				AddNL();
 			else
@@ -515,10 +525,12 @@ public:
 			OKButton->DefaultButton = TRUE;
 			Add(OKButton);
 			OKButtonID = DialogItemsCount - 1;
+			if (ok) *ok = OKButtonID;
 
 			auto CancelButton = AddDialogItem(DI_BUTTON, GetLangString(CancelMessageId));
 			CancelButton->Flags = DIF_CENTERGROUP;
 			Add(CancelButton);
+			if (cancel) *cancel = DialogItemsCount - 1;
 
 			AddNL();
 		}

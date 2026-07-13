@@ -187,7 +187,9 @@ enum enumOptionsMenu
 	MENU_OPTIONS_FILESHIGHLIGHTING,
 	MENU_OPTIONS_NOTIFICATIONSSETTINGS,
 	MENU_OPTIONS_SEPARATOR4,
-	MENU_OPTIONS_SAVESETUP
+	MENU_OPTIONS_SAVESETUP,
+	MENU_OPTIONS_SEPARATOR5,
+	MENU_OPTIONS_ALLOPTS
 };
 
 enum enumNavigateMenu {
@@ -405,7 +407,9 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::MenuFilesHighlighting,      0,             0          },
 		{Msg::MenuNotifications,          0,             0          },
 		{L"",                             LIF_SEPARATOR, 0          },
-		{Msg::MenuSaveSetup,              0,             KEY_SHIFTF9}
+		{Msg::MenuSaveSetup,              0,             KEY_SHIFTF9},
+		{L"",                             LIF_SEPARATOR, 0          },
+		{Msg::AllOptsMenuItem, 0, 0}
 	};
 	MenuDataEx ObjectsMenu[] = {
 		{Msg::PanelSelectFile,	0,	KEY_INS  },
@@ -843,6 +847,9 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 					break;
 				case MENU_OPTIONS_SAVESETUP:	// Save setup
 					ConfigOptSave(true);
+					break;
+				case MENU_OPTIONS_ALLOPTS:
+					AllSystemSettings();
 					break;
 			}
 

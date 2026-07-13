@@ -131,6 +131,7 @@ src/cfg/ConfigLegacy.cpp
 src/cfg/HotkeyLetterDialog.cpp
 src/cfg/language.cpp
 src/cfg/MaskGroups.cpp
+src/cfg/config_all.cpp
 
 src/hist/history.cpp
 src/hist/poscache.cpp

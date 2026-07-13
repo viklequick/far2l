@@ -94,6 +94,7 @@ public:
 
 	// Добавляет выпадающий список с указанными значениями.
 	virtual ItemReference AddComboBox(int *Value, int Width, DialogBuilderListItem *Items, int ItemCount, DWORD Flags = DIF_NONE, bool newLine = true);
+	virtual ItemReference AddComboBox(int *Value, int Width, DialogBuilderListItemWide *Items, int ItemCount, DWORD Flags = DIF_NONE, bool newLine = true);
 
 	// Добавляет выпадающий список с code pages.
 	virtual ItemReference AddCodePagesBox(UINT *Value, int Width, bool allowAuto, bool allowAll, bool newLine = true);
@@ -110,5 +111,5 @@ public:
 	virtual void LinkFlags(DialogItemEx *Parent, DialogItemEx *Target, FarDialogItemFlags Flags, bool LinkLabels = true,
 			bool bParentChecked = true);
 
-	virtual void AddOKCancel() { DialogBuilderBase<DialogItemEx>::AddOKCancel(Msg::Ok, Msg::Cancel); }
+	virtual void AddOKCancel(int* ok = nullptr, int* cancel = nullptr) { DialogBuilderBase<DialogItemEx>::AddOKCancel(Msg::Ok, Msg::Cancel, ok, cancel); }
 };

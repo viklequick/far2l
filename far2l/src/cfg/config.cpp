@@ -154,12 +154,9 @@ void SystemSettings(DialogBuilder& Builder)
  	// Builder.StartColumns();
 
 	auto SudoEnabledItem = Builder.AddCheckbox(Msg::ConfigSudoEnabled, &Opt.SudoEnabled, false);
-	auto SudoPasswordExpirationText = Builder.AddText(Msg::ConfigSudoPasswordExpiration, false);
+	Builder.AddText(Msg::ConfigSudoPasswordExpiration, false);
 	auto SudoPasswordExpirationEdit = Builder.AddIntEditField(&Opt.SudoPasswordExpiration, 4, 0, false);
-	//SudoPasswordExpirationText->Indent(4);
-	//SudoPasswordExpirationEdit->Indent(4);
 	auto SudoConfirmModifyItem = Builder.AddCheckbox(Msg::ConfigSudoConfirmModify, &Opt.SudoConfirmModify);
-	// SudoConfirmModifyItem->Indent(4);
 	Builder.LinkFlags(SudoEnabledItem, SudoConfirmModifyItem, DIF_DISABLE);
 	Builder.LinkFlags(SudoEnabledItem, SudoPasswordExpirationEdit, DIF_DISABLE);
 
@@ -174,7 +171,6 @@ void SystemSettings(DialogBuilder& Builder)
 
 	auto InactivityExit = Builder.AddCheckbox(Msg::ConfigInactivity, &Opt.InactivityExit, false);
 	auto InactivityExitTime = Builder.AddIntEditField(&Opt.InactivityExitTime, 2, 0, false);
-	Builder.Indent(1);
 	Builder.AddText(Msg::ConfigInactivityMinutes);
 	Builder.LinkFlags(InactivityExit, InactivityExitTime, DIF_DISABLE);
 
@@ -184,7 +180,7 @@ void SystemSettings(DialogBuilder& Builder)
 			{Msg::ConfigMakeLinkSuggestSymlinkAlways,  1},
 	};
 	Builder.AddText(Msg::ConfigMakeLinkSuggest, false);
-	auto MakeLinkSuggest = Builder.AddComboBox((int *)&Opt.MakeLinkSuggestSymlinkAlways, 48, CAListItems, ARRAYSIZE(CAListItems),
+	Builder.AddComboBox((int *)&Opt.MakeLinkSuggestSymlinkAlways, 48, CAListItems, ARRAYSIZE(CAListItems),
 				DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE);
 
 	Builder.AddSeparator();
@@ -245,12 +241,10 @@ void PanelSettings_HighlightMarks(DialogBuilder& Builder)
 
 	Builder.AddSeparator();
 
-	auto IndentationMinEdit = Builder.AddIntEditField((int *)&Opt.MinFilenameIndentation, 2, 0, false);
-	Builder.Indent(1);
+	Builder.AddIntEditField((int *)&Opt.MinFilenameIndentation, 2, 0, false);
 	Builder.AddText(Msg::ConfigFilenameMinIndentation);
 
-	auto IndentationMaxEdit = Builder.AddIntEditField((int *)&Opt.MaxFilenameIndentation, 2, 0, false);
-	Builder.Indent(1);
+	Builder.AddIntEditField((int *)&Opt.MaxFilenameIndentation, 2, 0, false);
 	Builder.AddText(Msg::ConfigFilenameMaxIndentation);
 
 	Builder.AddOKCancel();
@@ -286,7 +280,7 @@ void PanelSettings()
 		Builder.AddEmptyLine();
 
 		auto AutoUpdateEnabled = Builder.AddCheckbox(Msg::ConfigAutoUpdateLimit, &AutoUpdate, false);
-		auto AutoUpdateText = Builder.AddText(Msg::ConfigAutoUpdateLimit2, false);
+		Builder.AddText(Msg::ConfigAutoUpdateLimit2, false);
 		auto AutoUpdateLimit = Builder.AddIntEditField((int *)&Opt.AutoUpdateLimit, 6);
 		Builder.LinkFlags(AutoUpdateEnabled, AutoUpdateLimit, DIF_DISABLE, false);
 		Builder.Indent(4);
@@ -308,9 +302,7 @@ void PanelSettings()
 
 		Builder.AddEmptyLine();
 		int ChangeSizeColumnStyleID = -1;
-		auto ChangeSizeColumnStyleItem = Builder.AddButton(Msg::DirSettingsTitle, ChangeSizeColumnStyleID);
-		//ChangeSizeColumnStyleItem->Flags = DIF_CENTERGROUP;
-		// ChangeSizeColumnStyleItem->Indent(1);
+		Builder.AddButton(Msg::DirSettingsTitle, ChangeSizeColumnStyleID);
 
 		Builder.EndColumns();
 
@@ -375,7 +367,6 @@ enum enumDirCfgDialog
 };
 
 typedef struct dircfg_data_s {
-
 	int DirNameStyle;
 	int SurrIndex;
 	bool bCentered;

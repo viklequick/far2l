@@ -181,6 +181,30 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddComboBox(int *V
 	return Item;
 }
 
+DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddComboBox(int *Value, int Width, DialogBuilderListItemWide *Items, int ItemCount, DWORD Flags, bool newLine)
+{
+	auto Item = AddDialogItem(DI_COMBOBOX, L"");
+	Item->Width = Width;
+
+	Add(Item);
+	if (newLine) AddNL();
+	Item->Flags|= Flags;
+
+	FarListItem *ListItems = new FarListItem[ItemCount];
+	for (int i = 0; i < ItemCount; i++) {
+		ListItems[i].Text = Items[i].Text;
+		ListItems[i].Flags = (*Value == Items[i].ItemValue) ? LIF_SELECTED : 0;
+		ListItems[i].Reserved[0] = Items[i].ItemValue;
+	}
+	FarList *List = new FarList;
+	List->Items = ListItems;
+	List->ItemsNumber = ItemCount;
+	Item->ListItems = List;
+
+	SetLastItemBinding(new ComboBoxBinding<DialogItemEx>(Value, List));
+	return Item;
+}
+
 DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddCodePagesBox(UINT *Value, int Width, bool allowAuto, bool allowAll, bool newLine)
 {
 	CodePageBoxes.emplace_back(CodePageBox{DialogItemsCount, *Value, allowAuto, allowAll});

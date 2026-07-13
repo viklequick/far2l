@@ -3392,15 +3392,15 @@ upd:"Del removes blocks"
 "Del выдаляе б&локі"
 
 ConfigCmdlineAutoComplete
-"&Автозавершение"
-"&AutoComplete"
-upd:"AutoComplete"
-upd:"AutoComplete"
-upd:"AutoComplete"
-upd:"AutoComplete"
-"&AutoCompletar"
-"&Автозавершення"
-"С&амазавяршэнне"
+"&Автозавершение in command line"
+"&AutoComplete in command line"
+upd:"AutoComplete in command line"
+upd:"AutoComplete in command line"
+upd:"AutoComplete in command line"
+upd:"AutoComplete in command line"
+"&AutoCompletar in command line"
+"&Автозавершення in command line"
+"С&амазавяршэнне in command line"
 
 ConfigCmdlineSplitter
 "&Разделитель вывода команд"
@@ -30170,6 +30170,17 @@ upd:"Folder settings...                  Ctrl+Alt+D"
 upd:"Folder settings...                  Ctrl+Alt+D"
 upd:"Folder settings...                  Ctrl+Alt+D"
 upd:"Folder settings...                  Ctrl+Alt+D"
+
+AllOptsMenuItem
+upd:"All settings..."
+"All settings..."
+upd:"All settings..."
+upd:"All settings..."
+upd:"All settings..."
+upd:"All settings..."
+upd:"All settings..."
+upd:"All settings..."
+upd:"All settings..."
 
 #Must be the last
 NewFileName

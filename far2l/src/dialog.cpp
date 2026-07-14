@@ -3881,10 +3881,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 						else
 							ProcessKey(KEY_ENTER, I);
 					}
-
 #endif
 				}
-
 				return TRUE;
 			} else {
 				if (!MouseEvent->dwButtonState
@@ -4279,7 +4277,6 @@ int Dialog::ProcessOpenComboBox(int Type, DialogItemEx *CurItem, unsigned CurFoc
 	{
 		SelectFromComboBox(CurItem, CurEditLine, CurItem->ListPtr);
 	}
-
 	return TRUE;
 }
 
@@ -5065,6 +5062,17 @@ void Dialog::AdjustEditPos(int dx, int dy)
 			y1+= dy;
 			y2+= dy;
 			DialogScrObject->SetPosition(x1, y1, x2, y2);
+
+            /*
+			if (Type == DI_COMBOBOX) {
+				DialogScrObject = (ScreenObject *)CurItem->ListPtr;
+    			DialogScrObject->GetPosition(x1, y1, x2, y2);
+    			x1+= dx;
+    			x2+= dx;
+    			y1+= dy;
+    			y2+= dy;
+    			DialogScrObject->SetPosition(x1, y1, x2, y2);
+			}*/
 		}
 	}
 

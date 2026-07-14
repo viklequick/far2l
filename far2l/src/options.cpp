@@ -409,7 +409,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{L"",                             LIF_SEPARATOR, 0          },
 		{Msg::MenuSaveSetup,              0,             KEY_SHIFTF9},
 		{L"",                             LIF_SEPARATOR, 0          },
-		{Msg::AllOptsMenuItem, 0, 0}
+		{Msg::AllOptsMenuItem, (Opt.Backend.UseModernLook ? 0 : LIF_DISABLE), 0 }
 	};
 	MenuDataEx ObjectsMenu[] = {
 		{Msg::PanelSelectFile,	0,	KEY_INS  },
@@ -490,7 +490,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::PanelSortByGroups,	0,	KEY_SHIFTF11  },
 		{Msg::PanelSortBySelected,	0,	KEY_SHIFTF12  },
 		{L"",	LIF_SEPARATOR,	0  },
-		{Msg::PanelToggleFullScreen,	0,	KEY_F5  },
+		{Msg::PanelToggleFullScreen,	0,	KEY_ALTF9  },
 		{Msg::PanelDirectoryNameSettings,	0,	KEY_CTRLALTD  }
 	};
 	MenuDataEx RightMenu[] = {

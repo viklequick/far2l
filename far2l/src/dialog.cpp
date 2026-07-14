@@ -1964,7 +1964,7 @@ void Dialog::ShowDialog(unsigned ID)
 			if (CurItem->Type == DI_DOUBLEBOX) 
 				BorderY1 = Y1 + CurItem->Y1 + 1;
 		}
-		fprintf(stderr, "Y in [%d, %d] in [%d, %d/%d]\n", BorderY1, BorderY2, Y1, Y2, MaxY2);
+		// fprintf(stderr, "Y in [%d, %d] in [%d, %d/%d]\n", BorderY1, BorderY2, Y1, Y2, MaxY2);
 	}
 
 	HintBeginContainer();
@@ -4614,68 +4614,101 @@ void Dialog::ChangeFocus2(unsigned SetFocusPos)
 	CriticalSectionLock Lock(CS);
 	int FocusPosNeed = -1;
 
-	if (IsItemFocusable(Item[SetFocusPos])) {
-		if (DialogMode.Check(DMODE_INITOBJECTS)) {
-			FocusPosNeed = (int)DlgProc((HANDLE)this, DN_KILLFOCUS, FocusPos, 0);
+	if (!IsItemFocusable(Item[SetFocusPos])) return;
 
-			if (!DialogMode.Check(DMODE_SHOW))
-				return;
+	if (DialogMode.Check(DMODE_INITOBJECTS)) {
+		FocusPosNeed = (int)DlgProc((HANDLE)this, DN_KILLFOCUS, FocusPos, 0);
+
+		if (!DialogMode.Check(DMODE_SHOW))
+			return;
+	}
+
+	if (FocusPosNeed >= 0 && FocusPosNeed < (int)ItemCount && IsItemFocusable(Item[FocusPosNeed]))
+		SetFocusPos = FocusPosNeed;
+
+	Item[FocusPos]->Focus = 0;
+
+	// "снимать выделение при потере фокуса?"
+	if (FarIsEdit(Item[FocusPos]->Type)
+			&& !(Item[FocusPos]->Type == DI_COMBOBOX && (Item[FocusPos]->Flags & DIF_DROPDOWNLIST))) {
+		DlgEdit *EditPtr = (DlgEdit *)Item[FocusPos]->ObjPtr;
+		EditPtr->GetSelection(Item[FocusPos]->SelStart, Item[FocusPos]->SelEnd);
+
+		if ((Opt.Dialogs.EditLine & DLGEDITLINE_CLEARSELONKILLFOCUS)) {
+			EditPtr->Select(-1, 0);
+		}
+	}
+
+	Item[SetFocusPos]->Focus = 1;
+
+	// "не восстанавливать выделение при получении фокуса?"
+	if (FarIsEdit(Item[SetFocusPos]->Type)
+			&& !(Item[SetFocusPos]->Type == DI_COMBOBOX
+					&& (Item[SetFocusPos]->Flags & DIF_DROPDOWNLIST))) {
+		DlgEdit *EditPtr = (DlgEdit *)Item[SetFocusPos]->ObjPtr;
+
+		if (!(Opt.Dialogs.EditLine & DLGEDITLINE_NOTSELONGOTFOCUS)) {
+			if (Opt.Dialogs.EditLine & DLGEDITLINE_SELALLGOTFOCUS)
+				EditPtr->Select(0, EditPtr->GetStrSize());
+			else
+				EditPtr->Select(Item[SetFocusPos]->SelStart, Item[SetFocusPos]->SelEnd);
+		} else {
+			EditPtr->Select(-1, 0);
 		}
 
-		if (FocusPosNeed >= 0 && FocusPosNeed < (int)ItemCount && IsItemFocusable(Item[FocusPosNeed]))
-			SetFocusPos = FocusPosNeed;
+		// при получении фокуса ввода переместить курсор в конец строки?
+		if (Opt.Dialogs.EditLine & DLGEDITLINE_GOTOEOLGOTFOCUS) {
+			EditPtr->SetCurPos(EditPtr->GetStrSize());
+		}
+	}
 
-		Item[FocusPos]->Focus = 0;
+	// проинформируем листбокс, есть ли у него фокус
+	if (Item[FocusPos]->Type == DI_LISTBOX)
+		Item[FocusPos]->ListPtr->ClearFlags(VMENU_LISTHASFOCUS);
 
-		// "снимать выделение при потере фокуса?"
-		if (FarIsEdit(Item[FocusPos]->Type)
-				&& !(Item[FocusPos]->Type == DI_COMBOBOX && (Item[FocusPos]->Flags & DIF_DROPDOWNLIST))) {
-			DlgEdit *EditPtr = (DlgEdit *)Item[FocusPos]->ObjPtr;
-			EditPtr->GetSelection(Item[FocusPos]->SelStart, Item[FocusPos]->SelEnd);
+	if (Item[SetFocusPos]->Type == DI_LISTBOX)
+		Item[SetFocusPos]->ListPtr->SetFlags(VMENU_LISTHASFOCUS);
 
-			if ((Opt.Dialogs.EditLine & DLGEDITLINE_CLEARSELONKILLFOCUS)) {
-				EditPtr->Select(-1, 0);
-			}
+	SelectOnEntry(FocusPos, FALSE);
+	SelectOnEntry(SetFocusPos, TRUE);
+
+	PrevFocusPos = FocusPos;
+	FocusPos = SetFocusPos;
+
+	if (DialogMode.Check(DMODE_INITOBJECTS))
+		DlgProc((HANDLE)this, DN_GOTFOCUS, FocusPos, 0);
+
+	// adjust scrolling to focused element
+	if (Y2 != MaxY2) {
+
+    	int BorderY1 = Y1, BorderY2 = Y2;
+		for (unsigned int I = 0; I < ItemCount; I++) {
+			if (Item[I]->Flags & DIF_HIDDEN) continue;
+
+			if (IsOkCancelButtons(I)) 
+				BorderY2 = std::min(BorderY2, Y1 + Item[I]->Y2 - (MaxY2 - Y2) - 1);
+			if (Item[I]->Type == DI_DOUBLEBOX) 
+				BorderY1 = Y1 + Item[I]->Y1 + 1;
 		}
 
-		Item[SetFocusPos]->Focus = 1;
+		short CY2 = Item[FocusPos]->Y2;
+		short CY1 = Item[FocusPos]->Y1;
+		if (CY1 > MaxY2 - Y1) CY1 = MaxY2 - Y1;
+		if (CY2 > MaxY2 - Y1) CY2 = MaxY2 - Y1;
 
-		// "не восстанавливать выделение при получении фокуса?"
-		if (FarIsEdit(Item[SetFocusPos]->Type)
-				&& !(Item[SetFocusPos]->Type == DI_COMBOBOX
-						&& (Item[SetFocusPos]->Flags & DIF_DROPDOWNLIST))) {
-			DlgEdit *EditPtr = (DlgEdit *)Item[SetFocusPos]->ObjPtr;
+		fprintf(stderr, "focus: [%d] %d..%d, dialog=%d,%d..%d,%d/%d, scroll=%d, box=%d..%d top=%c bottom=%c\n", FocusPos, CY1, CY2,
+			X1, Y1, X2, Y2, MaxY2, 
+			ScrollY, BorderY1, BorderY2, 
+			CY2 + ScrollY < BorderY1 ? 'Y' : 'n',
+			CY1 + ScrollY > BorderY2 ? 'Y' : 'n');
 
-			if (!(Opt.Dialogs.EditLine & DLGEDITLINE_NOTSELONGOTFOCUS)) {
-				if (Opt.Dialogs.EditLine & DLGEDITLINE_SELALLGOTFOCUS)
-					EditPtr->Select(0, EditPtr->GetStrSize());
-				else
-					EditPtr->Select(Item[SetFocusPos]->SelStart, Item[SetFocusPos]->SelEnd);
-			} else {
-				EditPtr->Select(-1, 0);
-			}
-
-			// при получении фокуса ввода переместить курсор в конец строки?
-			if (Opt.Dialogs.EditLine & DLGEDITLINE_GOTOEOLGOTFOCUS) {
-				EditPtr->SetCurPos(EditPtr->GetStrSize());
-			}
+		if (CY2 + ScrollY < BorderY1) {
+			ScrollDialogUpDown(- (CY1 + ScrollY - BorderY1 - 1));
 		}
 
-		// проинформируем листбокс, есть ли у него фокус
-		if (Item[FocusPos]->Type == DI_LISTBOX)
-			Item[FocusPos]->ListPtr->ClearFlags(VMENU_LISTHASFOCUS);
-
-		if (Item[SetFocusPos]->Type == DI_LISTBOX)
-			Item[SetFocusPos]->ListPtr->SetFlags(VMENU_LISTHASFOCUS);
-
-		SelectOnEntry(FocusPos, FALSE);
-		SelectOnEntry(SetFocusPos, TRUE);
-
-		PrevFocusPos = FocusPos;
-		FocusPos = SetFocusPos;
-
-		if (DialogMode.Check(DMODE_INITOBJECTS))
-			DlgProc((HANDLE)this, DN_GOTFOCUS, FocusPos, 0);
+		if (CY1 + ScrollY > BorderY2) {
+			ScrollDialogUpDown(- (CY2 + ScrollY - BorderY2 + 1));
+		}
 	}
 }
 

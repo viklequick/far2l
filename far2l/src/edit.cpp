@@ -514,7 +514,7 @@ void Edit::FastShow()
 				FS << fmt::Cells() << fmt::Expand(BlankLength) << L"";
 			}
 		} else {
-			fprintf(stderr, "\tlen=%d c=%ls\n", (int)EditLength, (const wchar_t*)OutStr.data());
+			// fprintf(stderr, "\tlen=%d c=%ls\n", (int)EditLength, (const wchar_t*)OutStr.data());
 			FS << fmt::LeftAlign() << fmt::Cells() << fmt::Size(EditLength < 0 ? 0 : EditLength) << OutStr.data();
 		}
 	} else {

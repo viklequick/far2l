@@ -2074,8 +2074,9 @@ void Dialog::ShowDialog(unsigned ID)
                 	CloseX = X1 + CX2 - 1; // - (IsWxBackend() ? 0 : 1);
                     CloseY = Y1 + CY1;
                     dialogBox = true;
+
 					GotoXY(CloseX, CloseY);
-                    strStr = L"✖"; // IsWxBackend() ? L"✖" : L"❌";
+                    strStr = L"✘"; // IsWxBackend() ? L"✖" : L"❌";
                     SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, CurItem->Hover, CurItem->Pressed, 0));
 					Text(strStr);
 				}
@@ -2117,6 +2118,20 @@ void Dialog::ShowDialog(unsigned ID)
 						Text(strStr);
 					else
 						HiText(strStr, ItemColor[1]);
+
+					if (Opt.Backend.UseModernLook) {
+						MiniToolX = X + strStr.CellsCount();
+						MiniToolY = Y1 + CY1 + CScrollY;
+						GotoXY(MiniToolX, MiniToolY);
+
+						strStr = L"📎";
+    	                SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, MiniToolHover == 0, CurItem->Pressed, 0));
+						Text(strStr);
+
+						strStr = L"🔍";
+    	                SetColor(SoftenItemColor(ItemColor[0], CurItem->Focus, MiniToolHover == 1, CurItem->Pressed, 0));
+						Text(strStr);
+					}
 					
 					Hint(X1 + CX1, Y1 + CY1 + CScrollY, X1 + CX2, Y1 + CY1 + CScrollY, HintDialog, HintBox);
 					Hint(X1 + CX1, Y1 + CY1 + CScrollY, X1 + CX1, Y1 + CY2 + CScrollY, HintDialog, HintBox);
@@ -2554,15 +2569,15 @@ void Dialog::ShowDialog(unsigned ID)
 				EditPtr->GetPosition(EditX1, EditY1, EditX2, EditY2);
 				if (ItemHasDropDownArrow(CurItem)) {
 					// Text((CurItem->Type == DI_COMBOBOX?"\x1F":"\x19"));
-					Text(EditX2 + 1, EditY1 + CScrollY, ItemColor[3], L"\x2193");
+					Text(EditX2 + 1, EditY1, ItemColor[3], L"\x2193");
                     ++EditX2;
 				}
 
-				if (CurItem->Type == DI_COMBOBOX && GetDropDownOpened() && CurItem->ListPtr->IsVisible())		// need redraw VMenu?
-				{
+				if (CurItem->Type == DI_COMBOBOX && GetDropDownOpened() && CurItem->ListPtr->IsVisible()) { // need redraw VMenu?
 					CurItem->ListPtr->Hide();
 					CurItem->ListPtr->Show();
 				}
+
 				Hint(EditX1, EditY1 + CScrollY, EditX2, EditY2 + CScrollY, HintDialog, HintMemoEdit, CurItem->Focus, false, (CurItem->Flags & DIF_DISABLE) != 0);
 
 				break;
@@ -3702,15 +3717,20 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	// vk: Hover effect processing
 	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
 		int oldHover = -1, newHover = -1;
+		MiniToolHover = -1;
 		for (I = ItemCount - 1; I != (unsigned)-1; I--) {
 			if (Item[I]->Hover) oldHover = I;
 			Item[I]->Hover = 0;
 			Item[I]->Pressed = 0;
 
-			// hover for close button
+			// hover for close button / mini tool bar
 			if (dialogBox && (Item[I]->Type == DI_SINGLEBOX || Item[I]->Type == DI_DOUBLEBOX )) {
 				if (MsOY == CloseY && (MsX == CloseX || MsX == CloseX + 1)) {
 					Item[I]->Hover = 1;
+					newHover = I;
+				}
+				else if (MsOY == MiniToolY && (MsX == MiniToolX || MsX == MiniToolX + 1)) {
+					MiniToolHover = MsX == MiniToolX ? 0 : 1;
 					newHover = I;
 				}
 			}
@@ -3750,7 +3770,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
     	// ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
 		if (MsOY >= BorderY1 && MsOY <= BorderY2) {
 			// we are on the scroll bar
-			if (MsOY == BorderY1 || MsOY == BorderY2) { // arrows
+			if (MsOY == BorderY1 || MsOY == BorderY2) { // scroll bar arrows
 				if (ScrollDialogUpDown(MsOY == BorderY2 ? -1 : 1))
 					return TRUE;
 			}
@@ -3766,10 +3786,14 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 	// vk: middle click, pinned buttons, close dialog button, scroll bar events
 	for (I = ItemCount - 1; I != (unsigned)-1; I--) {
-
+		// close button / mini tool bar is here
 		if (dialogBox && (Item[I]->Type == DI_SINGLEBOX || Item[I]->Type == DI_DOUBLEBOX )) {
 			if (MsOY == CloseY && (MsX == CloseX || MsX == CloseX + 1) && MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) {
 				ProcessKey(KEY_ESC);
+				return TRUE;
+			}
+			else if (MsOY == MiniToolY && (MsX == MiniToolX || MsX == MoniToolX + 1) && MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) {
+				ProcessMiniToolBar(MsX == MiniToolX ? 0 : 1);
 				return TRUE;
 			}
 		}
@@ -4061,15 +4085,36 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 						DlgEdit *EditLine = (DlgEdit *)(Item[I]->ObjPtr);
 						EditLine->GetPosition(EditX1, EditY1, EditX2, EditY2);
 
-						if (MsY == EditY1 && Type == DI_COMBOBOX && (Item[I]->Flags & DIF_DROPDOWNLIST)
-								&& MsX >= EditX1 && MsX <= EditX2 + 1) {
+						if (Type == DI_COMBOBOX) {
+							fprintf(stderr, "combo: %d,%d..%d,%d of %d,%d..%d,%d/%d, ev=%d,%d scroll=%d\n",
+								EditX1, EditY1, EditX2, EditY2, 
+								X1, Y1, X2, Y2, MaxY2, 
+								MsX, MsY, 
+								ScrollY);
+
+						}
+
+						// open combo by clicking on arrow
+						if (Type == DI_COMBOBOX && (Item[I]->Flags & DIF_DROPDOWNLIST)) {
 							EditLine->SetClearFlag(0);
+
+							int EcX1, EcY1, EcX2, EcY2;
+							Item[I]->ListPtr->GetPosition(EcX1, EcY1, EcX2, EcY2);
+
+							fprintf(stderr, "combo arrow: %d,%d..%d,%d of %d,%d..%d,%d/%d, ev=%d,%d scroll=%d combo=%d,%d..%d,%d\n",
+								EditX1, EditY1, EditX2, EditY2, 
+								X1, Y1, X2, Y2, MaxY2, 
+								MsX, MsY, 
+								ScrollY,
+								EcX1, EcY1, EcX2, EcY2);
 
 							ChangeFocus2(I);
 							ShowDialog();
 
 							ProcessOpenComboBox(Item[I]->Type, Item[I], I);
 
+							// Item[I]->ListPtr->SetPosition(EditX1, EditY1 - ScrollY, EditX2, EditY2 - ScrollY);
+							// Item[I]->ListPtr->Show();
 							return TRUE;
 						}
 
@@ -7136,8 +7181,8 @@ void Dialog::SetComboBoxPos(DialogItemEx *CurItem)
 		}
 		int EditX1, EditY1, EditX2, EditY2;
 		((DlgEdit *)CurItem->ObjPtr)->GetPosition(EditX1, EditY1, EditX2, EditY2);
-		EditY1 += ScrollY;
-		EditY2 += ScrollY;
+		// EditY1 += ScrollY;
+		// EditY2 += ScrollY;
 
 		if (EditX2 - EditX1 < 20)
 			EditX2 = EditX1 + 20;
@@ -7161,4 +7206,10 @@ void Dialog::SetId(const GUID &Id)
 {
 	this->Id = Id;
 	IdExist = true;
+}
+
+int Dialog::ProcessMiniToolBar(int ToolIndex) {
+	// vk: todo: handle search / navigate here
+
+	return 0;
 }

@@ -213,7 +213,7 @@ private:
 	FARString ComposeCacheName();
 	void SaveToCache();
 
-	void joinLeafsWithOffsets(const std::vector<std::wstring>& leafs, size_t maxWidth);
+	int joinLeafsWithOffsets(const std::vector<std::wstring>& leafs, size_t maxWidth);
 };
 
 bool dlgOpenEditor(FARString &strFileName, UINT &codepage);

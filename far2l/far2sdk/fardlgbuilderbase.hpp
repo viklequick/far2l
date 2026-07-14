@@ -535,6 +535,10 @@ public:
 			AddNL();
 		}
 
+		ItemReference AddNone()	{
+			return ItemReference(*this);
+		}
+
 		bool ShowDialog(int *id = nullptr) {
 			UpdateBorderSize();
 			int Result = DoShowDialog();

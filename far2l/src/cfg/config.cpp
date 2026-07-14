@@ -632,6 +632,8 @@ void InterfaceSettings()
 		Builder.AddCheckbox(Msg::ConfigMenuBar, &Opt.ShowMenuBar);
 		Builder.AddCheckbox(Msg::EnforceColorCorrection, (BOOL *)&Opt.Dialogs.EnforceColorCorrection);
 		Builder.AddCheckbox(Msg::UseModernLook, (BOOL *)&Opt.Backend.UseModernLook);
+		Builder.AddCheckbox(Msg::CopyToPrimarySelection, &Opt.CopyToPrimarySelection);
+		Builder.AddCheckbox(Msg::PasteFromPrimarySelection, &Opt.PasteFromPrimarySelection);
 		auto SaverCheckbox = Builder.AddCheckbox(Msg::ConfigSaver, &Opt.ScreenSaver);
 
 		Builder.Indent(4);

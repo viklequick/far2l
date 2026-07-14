@@ -320,6 +320,8 @@ private:
 	int AltState, CtrlState, ShiftState;
 	bool dialogBox;
 	int CloseX, CloseY;
+	int MiniToolX, MiniToolY;
+	int MiniToolHover {-1};
 	bool Resizable {false};
 
 private:
@@ -379,6 +381,8 @@ private:
 
 	int ProcessOpenComboBox(int Type, DialogItemEx *CurItem, unsigned CurFocusPos);
 	int ProcessMoveDialog(DWORD Key);
+
+	int ProcessMiniToolBar(int ToolIndex);
 
 	int Do_ProcessTab(int Next);
 	int Do_ProcessNextCtrl(int Next, BOOL IsRedraw = TRUE);

@@ -2426,13 +2426,15 @@ static std::wstring shortenLeaf(const std::wstring& leaf, size_t maxLeafWidth) {
     return prefix + ell + suffix;
 }
 
-void FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxWidth) 
+int FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxWidth) 
 {
-    if (v.empty()) return;
+    if (v.empty()) return 0;
 
 	std::vector<std::wstring> leafs = compactifyFileNamesUpTo(v);
 	FARString strLocalTitle;
 	GetTitle(strLocalTitle);
+
+	int x1 = WhereX();
 
     tabPos.clear();
 
@@ -2446,7 +2448,7 @@ void FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t
 
     if (maxWidth <= totalSepWidth) {
         // Not enough space even for separators → return empty
-        return;
+        return 0;
     }
 
     // Minimum width per leaf
@@ -2495,6 +2497,7 @@ void FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t
 		FS << (active ? L"📜" : L"📝");
 		FS << strTab;
     }
+    return WhereX() - x1;
 }
 
 void FileEditor::ShowStatus()
@@ -2587,7 +2590,8 @@ void FileEditor::ShowStatus()
 			// list of tabs
 			std::vector<std::wstring> v1;
 			FrameManager->enumerateWindowsByType(v1, MODALTYPE_EDITOR);
-    		joinLeafsWithOffsets(v1, TitleCells);
+    		int consumed = joinLeafsWithOffsets(v1, TitleCells);
+            TitleCells -= consumed;
 
 			SetFarColor(COL_EDITORSTATUS);
 			if (TitleCells > 0) FS << fmt::LeftAlign() << fmt::Cells() << fmt::Expand(TitleCells) << L" ";

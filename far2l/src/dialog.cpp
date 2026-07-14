@@ -2146,6 +2146,17 @@ void Dialog::ShowDialog(unsigned ID)
 					else
 						HiText(strStr, ItemColor[1]);
 **/
+					if (findEditBox) {
+
+        				DlgEdit *EditPtr = findEditBox;
+       					EditPtr->SetOverflowArrowsColor(0);
+   						SetCursorType(1, -1);
+       					EditPtr->Show();
+
+						int EditX1, EditY1, EditX2, EditY2;
+        				EditPtr->GetPosition(EditX1, EditY1, EditX2, EditY2);
+        				Hint(EditX1, EditY1, EditX2, EditY2, HintDialog, HintMemoEdit, true, false, false);
+					}
 				}
 
 				break;
@@ -3792,8 +3803,9 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				ProcessKey(KEY_ESC);
 				return TRUE;
 			}
-			else if (MsOY == MiniToolY && (MsX == MiniToolX || MsX == MoniToolX + 1) && MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) {
-				ProcessMiniToolBar(MsX == MiniToolX ? 0 : 1);
+			else if (MsOY == MiniToolY && (MsX >= MiniToolX && MsX <= MiniToolX + 5) && MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) {
+				fprintf(stderr, ".mini tool bar %d\n", MsX - MiniToolX);
+				ProcessMiniToolBar(MsX - MiniToolX);
 				return TRUE;
 			}
 		}
@@ -4724,37 +4736,7 @@ void Dialog::ChangeFocus2(unsigned SetFocusPos)
 		DlgProc((HANDLE)this, DN_GOTFOCUS, FocusPos, 0);
 
 	// adjust scrolling to focused element
-	if (Y2 != MaxY2) {
-
-    	int BorderY1 = Y1, BorderY2 = Y2;
-		for (unsigned int I = 0; I < ItemCount; I++) {
-			if (Item[I]->Flags & DIF_HIDDEN) continue;
-
-			if (IsOkCancelButtons(I)) 
-				BorderY2 = std::min(BorderY2, Y1 + Item[I]->Y2 - (MaxY2 - Y2) - 1);
-			if (Item[I]->Type == DI_DOUBLEBOX) 
-				BorderY1 = Y1 + Item[I]->Y1 + 1;
-		}
-
-		short CY2 = Item[FocusPos]->Y2;
-		short CY1 = Item[FocusPos]->Y1;
-		if (CY1 > MaxY2 - Y1) CY1 = MaxY2 - Y1;
-		if (CY2 > MaxY2 - Y1) CY2 = MaxY2 - Y1;
-
-		fprintf(stderr, "focus: [%d] %d..%d, dialog=%d,%d..%d,%d/%d, scroll=%d, box=%d..%d top=%c bottom=%c\n", FocusPos, CY1, CY2,
-			X1, Y1, X2, Y2, MaxY2, 
-			ScrollY, BorderY1, BorderY2, 
-			CY2 + ScrollY < BorderY1 ? 'Y' : 'n',
-			CY1 + ScrollY > BorderY2 ? 'Y' : 'n');
-
-		if (CY2 + ScrollY < BorderY1) {
-			ScrollDialogUpDown(- (CY1 + ScrollY - BorderY1 - 1));
-		}
-
-		if (CY1 + ScrollY > BorderY2) {
-			ScrollDialogUpDown(- (CY2 + ScrollY - BorderY2 + 1));
-		}
-	}
+	ScrollDialogUpTo(FocusPos);
 }
 
 /*
@@ -7210,6 +7192,203 @@ void Dialog::SetId(const GUID &Id)
 
 int Dialog::ProcessMiniToolBar(int ToolIndex) {
 	// vk: todo: handle search / navigate here
+	if (findEditBox) return -1;
+
+	fprintf(stderr, "tool button: %d\n", ToolIndex);
+
+	DlgEdit* DialogEdit = findEditBox = new DlgEdit(this, 0, DLGEDIT_SINGLELINE);
+
+    /*
+	if (Type == DI_COMBOBOX) {
+		CurItem->ListPtr = new VMenu(L"", nullptr, 0, Opt.Dialogs.CBoxMaxHeight,
+			VMENU_ALWAYSSCROLLBAR | VMENU_NOTCHANGE, nullptr, this);
+		CurItem->ListPtr->SetVDialogItemID(I);
+
+		if (CurItem->ListPtr) {
+			VMenu *ListPtr = CurItem->ListPtr;
+			ListPtr->SetBoxType(SHORT_SINGLE_BOX);
+			DialogEdit->SetDropDownBox(ItemFlags & DIF_DROPDOWNLIST);
+			ListPtr->ChangeFlags(VMENU_WRAPMODE, ItemFlags & DIF_LISTWRAPMODE);
+			ListPtr->ChangeFlags(VMENU_DISABLED, ItemFlags & DIF_DISABLE);
+			ListPtr->ChangeFlags(VMENU_SHOWAMPERSAND, !(ItemFlags & DIF_LISTNOAMPERSAND));
+			ListPtr->ChangeFlags(VMENU_AUTOHIGHLIGHT, ItemFlags & DIF_LISTAUTOHIGHLIGHT);
+
+			if (ItemFlags & DIF_LISTAUTOHIGHLIGHT)
+				ListPtr->AssignHighlights(FALSE);
+
+			if (CurItem->ListItems && !DialogMode.Check(DMODE_CREATEOBJECTS))
+				ListPtr->AddItem(CurItem->ListItems);
+
+			ListPtr->SetFlags(VMENU_COMBOBOX);
+			ListPtr->SetDialogStyle(DialogMode.Check(DMODE_WARNINGSTYLE));
+		}
+	}*/
+
+	int sw = std::min(X2 - X1 - 4, 40);
+
+	DialogEdit->SetDialogParent(FEDITLINE_PARENT_SINGLELINE);
+	DialogEdit->SetReadOnly(0);
+	DialogEdit->SetMaxLength(sw);
+	DialogEdit->SetPosition(X1 + 1, Y1 + 1, X1 + 1 + sw, Y1 + 1);
+	DialogEdit->SetObjectColor(FarColorToReal(COL_DIALOGEDIT), FarColorToReal(COL_DIALOGEDITSELECTED));
+
+	/*	
+	if (CurItem->Type == DI_COMBOBOX)
+		DialogEdit->SetClearFlag(1);*/
+
+	DialogEdit->SetString(L"");
+
+	DialogEdit->SetPersistentBlocks(Opt.Dialogs.EditBlock);
+	DialogEdit->SetDelRemovesBlocks(Opt.Dialogs.DelRemovesBlocks);
+
+	DialogEdit->Show();
+
+	fprintf(stderr, "tool button: %d -> edift field is here\n", ToolIndex);
+
+	// ShowDialog();
+
+	INPUT_RECORD rec;
+	DWORD Key;
+	FARString oldstr;
+
+	fprintf(stderr, "tool button: %d run input cycle\n", ToolIndex);
+
+	for (;;) {
+		Key = GetInputRecord(&rec);
+
+		if (rec.EventType == MOUSE_EVENT) { 
+			int MsX = rec.Event.MouseEvent.dwMousePosition.X;
+			int MsY = rec.Event.MouseEvent.dwMousePosition.Y;
+			
+			if (rec.Event.MouseEvent.dwButtonState && (MsY != Y1 + 1 || MsX < X1 + 1 || MsX > X1 + sw + 1 ))
+				break;
+
+			DialogEdit->ProcessMouse(&rec.Event.MouseEvent);
+		}
+		else if (rec.EventType == KEY_EVENT) {
+			if (Key != KEY_ESC && Key != KEY_ENTER && Key != KEY_NONE && Key != KEY_IDLE) {
+				DialogEdit->ProcessKey(Key);
+
+				FARString str;
+				DialogEdit->GetString(str);
+
+				if (oldstr == str) continue;
+				oldstr = str;
+
+				int id = Do_DlgSearch(str, ToolIndex);
+				fprintf(stderr, "tool button: %d: look for `%ls` => %d\n", ToolIndex, str.CPtr(), id);
+				if(id >= 0 && id < (int)ItemCount) {
+					ScrollDialogUpTo(id);
+					ShowDialog();
+				}
+
+				continue;
+			}
+
+			if(Key == KEY_NONE || Key == KEY_IDLE) 
+				continue;
+
+			if (Key == KEY_ENTER) {
+				FARString str;
+				DialogEdit->GetString(str);
+
+				int id = Do_DlgSearch(str, ToolIndex);
+				if(id >= 0 && id < (int)ItemCount) {
+					if(ScrollDialogUpTo(id))
+						ChangeFocus2(id);
+				}
+			}
+			// some unknown, let's stop
+			break;
+		}
+	}
+
+	fprintf(stderr, "tool button: %d run input cycle ended\n", ToolIndex);
+
+	DialogEdit->Hide();
+	findEditBox = nullptr;
+
+	ShowDialog();
 
 	return 0;
+}
+
+bool Dialog::ScrollDialogUpTo(int ID) 
+{
+	if (MaxY2 == Y2) return true; // dialog has no scroll bar active
+
+	int BorderY1 = Y1, BorderY2 = Y2;
+	for (unsigned int I = 0; I < ItemCount; I++) {
+		if (Item[I]->Flags & DIF_HIDDEN) continue;
+
+		if (IsOkCancelButtons(I)) 
+			BorderY2 = std::min(BorderY2, Y1 + Item[I]->Y2 - (MaxY2 - Y2) - 1);
+		if (Item[I]->Type == DI_DOUBLEBOX) 
+			BorderY1 = Y1 + Item[I]->Y1 + 1;
+	}
+
+	short CY2 = Item[FocusPos]->Y2;
+	short CY1 = Item[FocusPos]->Y1;
+	if (CY1 > MaxY2 - Y1) CY1 = MaxY2 - Y1;
+	if (CY2 > MaxY2 - Y1) CY2 = MaxY2 - Y1;
+
+    /*
+	fprintf(stderr, "focus: [%d] %d..%d, dialog=%d,%d..%d,%d/%d, scroll=%d, box=%d..%d top=%c bottom=%c\n", FocusPos, CY1, CY2,
+		X1, Y1, X2, Y2, MaxY2, 
+		ScrollY, BorderY1, BorderY2, 
+		CY2 + ScrollY < BorderY1 ? 'Y' : 'n',
+		CY1 + ScrollY > BorderY2 ? 'Y' : 'n');
+    */
+
+	if (CY2 + ScrollY < BorderY1) {
+		ScrollDialogUpDown(- (CY1 + ScrollY - BorderY1 - 2));
+	}
+	else if (CY1 + ScrollY > BorderY2) {
+		ScrollDialogUpDown(- (CY2 + ScrollY - BorderY2 + 2));
+	}
+
+	return true;
+}
+
+/* 0 -- only headers, 1 - all */
+int Dialog::Do_DlgSearch(FARString& str, int ToolIndex) 
+{
+	if (str.GetLength() < 1) return -1;
+
+	for(int I = 0; I < (int)ItemCount; ++I) {
+		if (Item[I]->Flags & DIF_HIDDEN) continue;
+
+		FARString strStr;
+		if (!Item[I]->strData.IsEmpty()) 
+			strStr = Item[I]->strData;
+
+		// in this mode we have only sections to do
+		if (ToolIndex == 0) {
+			if (Item[I]->Type != DI_SINGLEBOX && Item[I]->Type != DI_DOUBLEBOX && Item[I]->Type != DI_TEXT)
+				continue;
+			if (Item[I]->Type == DI_TEXT && !(Item[I]->Flags & (DIF_SEPARATORUSER | DIF_SEPARATOR | DIF_SEPARATOR2)))
+				continue;
+		}
+
+		DlgEdit *EditPtr;
+		if (FarIsEdit(Item[I]->Type)) {
+			EditPtr = (DlgEdit *)(Item[I]->ObjPtr);
+			if(EditPtr) EditPtr->GetString(strStr);
+		}
+
+		if (Item[I]->Type == DI_LISTBOX) {
+			// todo: need to search against all texts?
+			continue;
+		}
+
+		if (strStr.GetLength() == 0)
+			continue;
+		
+		size_t nPos;
+		if ( strStr.Pos(nPos, str.CPtr()) ) {
+			// match! we need scroll to it
+			return I;
+		}
+	}
+	return -1;
 }

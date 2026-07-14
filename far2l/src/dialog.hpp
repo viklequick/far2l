@@ -324,6 +324,8 @@ private:
 	int MiniToolHover {-1};
 	bool Resizable {false};
 
+	DlgEdit* findEditBox {nullptr};
+
 private:
 	void Init(FARWINDOWPROC DlgProc, LONG_PTR InitParam);
 	virtual void DisplayObject();
@@ -333,6 +335,9 @@ private:
 	bool IsOkCancelButtons(int I);
 	bool ScrollDialogUpDown(int deltaY);
 	bool IsItemVisible(int I, int BorderY1, int BorderY2);
+
+	int Do_DlgSearch(FARString& str, int ToolIndex);
+	bool ScrollDialogUpTo(int ID);
 
 	void ShowDialog(unsigned ID = (unsigned)-1);	// ID=-1 - отрисовать весь диалог
 

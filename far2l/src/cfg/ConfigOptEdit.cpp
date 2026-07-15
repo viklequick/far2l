@@ -228,7 +228,6 @@ public:
 			mi.strName.Format(L"%s.%s", _opt.section, _opt.key);
 			fsn.Format(L"%-*ls", len_sections_keys, mi.strName.CPtr());
 		}
-		fssave = (_opt.save == OST_COMMON ? "c" : (_opt.save == OST_PANELS ? "p" : "-"));
 		const wchar_t* ChangedMark = Opt.Backend.UseModernLook ? L"★" : L"*";
 
 		FormatString out1;

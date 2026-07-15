@@ -88,6 +88,11 @@ int ReplaceTabsBySpaces(FARString &strStr, size_t TabSize = 1);
 
 const wchar_t *GetCommaWord(const wchar_t *Src, FARString &strWord, wchar_t Separator = L',');
 
+enum FFTMODE
+{
+	FFTM_BREAKLONGWORD = 0x00000001,
+};
+
 FARString &WINAPI
 FarFormatText(const wchar_t *SrcText, int Width, FARString &strDestText, const wchar_t *Break, DWORD Flags);
 

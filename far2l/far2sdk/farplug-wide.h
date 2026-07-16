@@ -2433,6 +2433,7 @@ struct OpenPluginInfo
 	const struct KeyBarTitles *KeyBar;
 	const wchar_t           *ShortcutData;
 	const wchar_t           *CurURL;
+	const wchar_t           *CurPath;
 	long                  Reserved;
 };
 

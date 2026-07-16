@@ -490,6 +490,13 @@ int FilePanels::ProcessKey(FarKey Key)
 	if (!Key)
 		return TRUE;
 
+	if (CtrlObject->CmdLine->IsMultiline()
+			&& (Key == KEY_UP || Key == KEY_NUMPAD8 || Key == KEY_DOWN || Key == KEY_NUMPAD2
+					|| Key == KEY_LEFT || Key == KEY_NUMPAD4 || Key == KEY_RIGHT || Key == KEY_NUMPAD6)) {
+		CtrlObject->CmdLine->ProcessKey(Key);
+		return TRUE;
+	}
+
 	if ((Key == KEY_CTRLLEFT || Key == KEY_CTRLRIGHT || Key == KEY_CTRLNUMPAD4 || Key == KEY_CTRLNUMPAD6
 				/* || Key==KEY_CTRLUP || Key==KEY_CTRLDOWN || Key==KEY_CTRLNUMPAD8 || Key==KEY_CTRLNUMPAD2 */)
 			&& (CtrlObject->CmdLine->IsNotEmpty() || (!LeftPanel->IsVisible() && !RightPanel->IsVisible()))) {

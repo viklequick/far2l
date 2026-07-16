@@ -58,6 +58,12 @@ struct PushPopRecord
 class CommandLine : public ScreenObject
 {
 private:
+	struct HereDocDelimiter
+	{
+		FARString text;
+		bool strip_tabs;
+	};
+
 	EditControl CmdStr;
 	ConsoleForkScope BackgroundConsole;
 	FARString strCurDir;
@@ -66,6 +72,7 @@ private:
 	int LastCmdPartLength;
 	int PushDirStackSize;
 	std::vector<FARString> m_multilineLines;
+	std::vector<HereDocDelimiter> m_hereDocDelimiters;
 	int m_multilineExtraLines;
 	int m_multilineActiveLine;
 
@@ -88,13 +95,22 @@ private:
 	int ProcessKey_Enter(FarKey Key);
 	int ProcessKeyIfVisible(FarKey Key);
 	bool IsContinuationLine(const FARString &line) const;
+	bool AddHereDocDelimiters(const FARString &line);
+	bool IsHereDocTerminator(const FARString &line) const;
 	FARString BuildMultilineCommand(const FARString &line) const;
+	void ContinueMultilineInput(const FARString &line);
 	bool MoveMultilineLine(int delta);
+	void SetActiveMultilineLine(int line, int cursor_pos);
 	void SyncActiveMultilineLine();
 	void UpdateMultilineLayout();
-	void ApplyMultilineText(const FARString &text);
+	void ApplyMultilineText(const FARString &text, BOOL Redraw);
 	void ClearMultilineState();
 	void SetMultilineExtraLines(int extra_lines);
+	int GetMaxVisibleMultilineLines() const;
+	int GetMultilineLineOffset(int line) const;
+	int GetMultilineViewTop(int &visible_lines) const;
+	void GetMultilinePrompt(int line, FARString &prompt);
+	void AddHistory(const wchar_t *Str);
 
 public:
 	CommandLine();
@@ -105,6 +121,7 @@ public:
 	virtual int ProcessKey(FarKey Key);
 	virtual int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
 	virtual int64_t VMProcess(MacroOpcode OpCode, void *vParam = nullptr, int64_t iParam = 0);
+	virtual void ResizeConsole();
 
 	virtual void Show();
 
@@ -112,8 +129,9 @@ public:
 	int GetCurDir(FARString &strCurDir);
 	BOOL SetCurDir(const wchar_t *CurDir);
 
-	void GetString(FARString &strStr) { CmdStr.GetString(strStr); };
-	bool IsNotEmpty() const { return CmdStr.CalcRTrimmedStrSize() > 0; };
+	void GetString(FARString &strStr);
+	bool IsNotEmpty() const;
+	bool IsMultiline() const { return !m_multilineLines.empty(); }
 	void SetString(const wchar_t *Str, BOOL Redraw = TRUE);
 	void InsertString(const wchar_t *Str);
 
@@ -127,9 +145,9 @@ public:
 	void ShowViewEditHistory();
 
 	void SetCurPos(int Pos, int LeftPos = 0);
-	int GetCurPos() { return CmdStr.GetCurPos(); };
+	int GetCurPos();
 	int GetLeftPos() { return CmdStr.GetLeftPos(); };
-	int GetExtraLines() const { return m_multilineExtraLines; }
+	int GetExtraLines() const;
 
 	void SetPersistentBlocks(int Mode);
 	void SetDelRemovesBlocks(int Mode);
@@ -137,8 +155,8 @@ public:
 	void SetWaitKeypress(int Mode);
 
 	void GetSelString(FARString &strStr) { CmdStr.GetSelString(strStr); };
-	void GetSelection(int &Start, int &End) { CmdStr.GetSelection(Start, End); };
-	void Select(int Start, int End) { CmdStr.Select(Start, End); };
+	void GetSelection(int &Start, int &End);
+	void Select(int Start, int End);
 
 	void SaveBackground();
 	void ShowBackground(bool showanyway = false);

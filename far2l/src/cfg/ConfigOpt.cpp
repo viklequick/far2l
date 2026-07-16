@@ -200,7 +200,6 @@ const ConfigOpt g_cfg_opts[] {
 	{OST_COMMON, NSecInterface, "CtrlPgUp", &Opt.PgUpChangeDisk, 1,
 		L"InterfSettings", L"Allows Ctrl+PgUp to open the drive or location menu from panels" },
 
-<<<<<<< HEAD
 	{OST_COMMON, NSecInterface, "ConsolePaintSharp", &Opt.ConsolePaintSharp, 0,
 		L"InterfSettings", L"Antialiasing: uses sharper console painting (GUI-backend only)" },
 	{OST_COMMON, NSecInterface, "ExclusiveCtrlLeft", &Opt.ExclusiveCtrlLeft, 0,

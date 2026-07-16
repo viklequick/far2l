@@ -1362,7 +1362,8 @@ namespace oldfar
 		DWORD CurState;
 		int WindowX;
 		int WindowY;
-		DWORD Reserved[4];
+		DWORD IsMemoEdit;
+		DWORD Reserved[3];
 	};
 
 	struct EditorBookMarks

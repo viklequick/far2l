@@ -1363,6 +1363,11 @@ int Editor::ProcessKey(FarKey Key)
 	if (Key == KEY_NONE)
 		return TRUE;
 
+	if (Flags.Check(FEDITOR_DIALOGMEMOEDIT)) {
+		if (CtrlObject->Plugins.ProcessEditorInput(FrameManager->GetLastInputRecord()))
+			return TRUE;
+	}
+
 	_KEYMACRO(CleverSysLog SL(L"Editor::ProcessKey()"));
 	_KEYMACRO(SysLog(L"Key=%ls", _FARKEY_ToName(Key)));
 	int CurPos, CurVisPos, I;
@@ -7000,6 +7005,7 @@ int Editor::EditorControl(int Command, void *Param)
 				Info->CodePage = m_codepage;
 				Info->WindowX = X1;
 				Info->WindowY = Y1;
+				Info->IsMemoEdit = Flags.Check(FEDITOR_DIALOGMEMOEDIT) ? 1 : 0;
 				if (m_bWordWrap)
 				{
 					// For plugins (e.g., Colorer) to correctly process long lines that are wrapped,
@@ -7280,6 +7286,21 @@ int Editor::EditorControl(int Command, void *Param)
 				}
 			}
 			return TRUE;
+		}
+		case ECTL_PROCESSINPUT: {
+			if (Param) {
+				INPUT_RECORD *rec = (INPUT_RECORD *)Param;
+				if (CtrlObject->Plugins.ProcessEditorInput(rec))
+					return TRUE;
+				if (rec->EventType == MOUSE_EVENT)
+					ProcessMouse(&rec->Event.MouseEvent);
+				else {
+					FarKey Key = CalcKeyCode(rec, false);
+					ProcessKey(Key);
+				}
+				return TRUE;
+			}
+			return FALSE;
 		}
 		// должно выполняется в FileEditor::EditorControl()
 		case ECTL_PROCESSKEY: {

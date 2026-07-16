@@ -1527,6 +1527,7 @@ int FileEditor::LoadFile(const wchar_t *Name, int &UserBreak)
 	UINT64 FileSize = 0;
 	EditFile.GetSize(FileSize);
 	DWORD StartTime = WINPORT(GetTickCount)();
+	bool ProgressShown = false;
 
 	// Enable bulk loading mode for faster file loading
 	m_editor->BeginBulkLoad();
@@ -1556,7 +1557,9 @@ int FileEditor::LoadFile(const wchar_t *Name, int &UserBreak)
 					Percent = 100;
 				}
 			}
-			Editor::EditorShowMsg(Msg::EditTitle, Msg::EditReading, Name, Percent);
+			Editor::EditorShowMsg(Msg::EditTitle, Msg::EditReading, Name, Percent,
+					ProgressShown ? MSG_KEEPBACKGROUND : 0);
+			ProgressShown = true;
 
 			if (CheckForEscSilent()) {
 				if (ConfirmAbortOp()) {
@@ -1643,7 +1646,7 @@ bool FileEditor::ReloadFile(const wchar_t *Name)
 
 // TextFormat и Codepage используются ТОЛЬКО, если bSaveAs = true!
 void FileEditor::SaveContent(const wchar_t *Name, BaseContentWriter *Writer, bool bSaveAs, int TextFormat,
-		UINT codepage, bool AddSignature, int Phase)
+		UINT codepage, bool AddSignature, int Phase, bool &ProgressShown)
 {
 	DWORD dwSignature = 0;
 	DWORD SignLength = 0;
@@ -1690,12 +1693,14 @@ void FileEditor::SaveContent(const wchar_t *Name, BaseContentWriter *Writer, boo
 
 		if (CurTime - StartTime > RedrawTimeout) {
 			StartTime = CurTime;
+			DWORD MsgFlags = ProgressShown ? MSG_KEEPBACKGROUND : 0;
+			ProgressShown = true;
 			if (Phase == 0)
 				Editor::EditorShowMsg(Msg::EditTitle, Msg::EditSaving, Name,
-						(int)(LineNumber * 50 / m_editor->NumLastLine));
+						(int)(LineNumber * 50 / m_editor->NumLastLine), MsgFlags);
 			else
 				Editor::EditorShowMsg(Msg::EditTitle, Msg::EditSaving, Name,
-						(int)(50 + (LineNumber * 50 / m_editor->NumLastLine)));
+						(int)(50 + (LineNumber * 50 / m_editor->NumLastLine)), MsgFlags);
 		}
 
 		const wchar_t *SaveStr, *EndSeq;
@@ -1988,9 +1993,10 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 		SetCursorType(FALSE, 0);
 		TPreRedrawFuncGuard preRedrawFuncGuard(Editor::PR_EditorShowMsg);
 
+		bool ProgressShown = false;
 		try {
 			ContentMeasurer cm;
-			SaveContent(Name, &cm, bSaveAs, TextFormat, codepage, AddSignature, 0);
+			SaveContent(Name, &cm, bSaveAs, TextFormat, codepage, AddSignature, 0, ProgressShown);
 
 			try {
 				File EditFile;
@@ -2015,7 +2021,7 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 				}
 
 				ContentSaver cs(EditFile);
-				SaveContent(Name, &cs, bSaveAs, TextFormat, codepage, AddSignature, 1);
+				SaveContent(Name, &cs, bSaveAs, TextFormat, codepage, AddSignature, 1, ProgressShown);
 				cs.Flush();
 
 				EditFile.SetEnd();

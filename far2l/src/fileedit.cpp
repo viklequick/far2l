@@ -2494,7 +2494,7 @@ int FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t 
 		tabPos.push_back({ strTab, WhereX(), (int)strTab.CellsCount() });
 
 		if(i > 0) FS << L"║";
-		FS << (active ? L"📜" : L"📝");
+		FS << (active ? L"📲" /* L"📜" */ : L"📱" /* L"📝" */);
 		FS << strTab;
     }
     return WhereX() - x1;

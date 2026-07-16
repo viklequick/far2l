@@ -433,11 +433,11 @@ static void SetFileOwnerFromTargetOrParent(int fd, const std::string &filename)
 			throw std::runtime_error("stat target file failed");
 
 		std::string parent_dir = filename;
-		const size_t slash = parent_dir.rfind('/');
+		const size_t slash = parent_dir.rfind(GOOD_SLASH);
 		if (slash == std::string::npos)
 			parent_dir = ".";
 		else if (slash == 0)
-			parent_dir = "/";
+			parent_dir = GOOD_SLASH;
 		else
 			parent_dir.resize(slash);
 

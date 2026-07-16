@@ -20,8 +20,6 @@ add_library(mtp MODULE ${SOURCES})
 # resolves when libmtp_static is an INTERFACE wrapper around system libmtp.
 #target_link_libraries(mtp utils far2l libmtp_static libusb_static)
 
-target_link_libraries(mtp utils far2l)
-
 if(APPLE)
     # CoreFoundation: CFPreferences{SetValue,Synchronize} for icdd bypass.
     target_link_libraries(mtp "-framework CoreFoundation")
@@ -43,9 +41,11 @@ check_symbol_exists(LIBMTP_FreeMemory "libmtp.h" HAVE_LIBMTP_FREEMEMORY)
 
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LIBUSB REQUIRED libusb-1.0)
+pkg_check_modules(LIBMTP REQUIRED libmtp)
 
-target_include_directories(mtp PRIVATE ${LIBUSB_INCLUDE_DIRS})
-# target_link_libraries(mtp PRIVATE ${LIBUSB_LIBRARIES})
+target_include_directories(mtp PRIVATE ${LIBUSB_INCLUDE_DIRS} ${LIBMTP_INCLUDE_DIRS})
+target_link_libraries(mtp PRIVATE utils far2l ${LIBUSB_LIBRARIES})
+target_link_options(mtp PRIVATE "-l${LIBMTP_LIBRARIES}")
 
 find_path(LIBUSB_INCLUDE_DIR libusb.h)
 

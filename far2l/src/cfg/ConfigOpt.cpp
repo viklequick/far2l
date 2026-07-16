@@ -200,6 +200,7 @@ const ConfigOpt g_cfg_opts[] {
 	{OST_COMMON, NSecInterface, "CtrlPgUp", &Opt.PgUpChangeDisk, 1,
 		L"InterfSettings", L"Allows Ctrl+PgUp to open the drive or location menu from panels" },
 
+<<<<<<< HEAD
 	{OST_COMMON, NSecInterface, "ConsolePaintSharp", &Opt.ConsolePaintSharp, 0,
 		L"InterfSettings", L"Antialiasing: uses sharper console painting (GUI-backend only)" },
 	{OST_COMMON, NSecInterface, "ExclusiveCtrlLeft", &Opt.ExclusiveCtrlLeft, 0,
@@ -214,6 +215,8 @@ const ConfigOpt g_cfg_opts[] {
 		L"InputSettings", L"Captures the left Win or Super key exclusively when the backend supports it" },
 	{OST_COMMON, NSecInterface, "ExclusiveWinRight", &Opt.ExclusiveWinRight, 0,
 		L"InputSettings", L"Captures the right Win or Super key exclusively when the backend supports it" },
+	{OST_COMMON, NSecInterface, "UseRightAltAsAltGr", &Opt.UseRightAltAsAltGr, 0,
+		L"Treat right Alt as AltGr, GUI only"},
 
 	{OST_COMMON,  NSecInterface, "CopyToPrimarySelection", &Opt.CopyToPrimarySelection, 1,
 		L"InterfaceSettings", L"Supports 2 clipboards for selection"},

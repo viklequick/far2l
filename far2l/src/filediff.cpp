@@ -18,6 +18,8 @@
 #include "exitcode.hpp"
 #include "farcolors.hpp"
 #include "farwinapi.hpp"
+#include "fileholder.hpp"
+#include "filelist.hpp"
 #include "filepanels.hpp"
 #include "filestr.hpp"
 #include "format.hpp"
@@ -26,6 +28,7 @@
 #include "lang.hpp"
 #include "manager.hpp"
 #include "message.hpp"
+#include "mix.hpp"
 #include "pathmix.hpp"
 #include "strmix.hpp"
 #include "panel.hpp"
@@ -61,6 +64,14 @@ struct ScreenRow
 {
 	size_t Row = 0;
 	size_t Part = 0;
+};
+
+struct DiffFileSource
+{
+	FARString LocalPath;
+	FARString DisplayPath;
+	FileHolderPtr Holder;
+	std::shared_ptr<PluginTempFileHolder> UploadHolder;
 };
 
 struct InlineRange
@@ -294,21 +305,91 @@ bool IsEditorSearchKey(FarKey Key)
 	}
 }
 
-bool ResolvePanelFile(Panel *Source, FARString &Path)
+bool ResolvePluginPanelFile(Panel *Source, DiffFileSource &File)
 {
-	if (!Source || !Source->IsVisible() || Source->GetType() != FILE_PANEL || Source->GetMode() != NORMAL_PANEL)
+	if (!Source || Source->GetType() != FILE_PANEL || Source->GetMode() != PLUGIN_PANEL)
+		return false;
+
+	HANDLE hPlugin = Source->GetPluginHandle();
+	if (hPlugin == INVALID_HANDLE_VALUE)
+		return false;
+
+	FileList *FilePanel = static_cast<FileList *>(Source);
+	const int CurrentPos = FilePanel->GetCurrentPos();
+	const size_t ItemSize = FilePanel->PluginGetPanelItem(CurrentPos, nullptr);
+	if (!ItemSize)
+		return false;
+
+	std::unique_ptr<void, decltype(&free)> ItemStorage(malloc(ItemSize), free);
+	if (!ItemStorage)
+		return false;
+	PluginPanelItem *Item = static_cast<PluginPanelItem *>(ItemStorage.get());
+	if (FilePanel->PluginGetPanelItem(CurrentPos, Item) != ItemSize || !Item->FindData.lpwszFileName)
+		return false;
+
+	if (Item->FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+		return false;
+
+	FARString TempDir;
+	if (!FarMkTempEx(TempDir))
+		return false;
+	apiCreateDirectory(TempDir, nullptr);
+
+	FARString LocalPath = Item->FindData.lpwszFileName;
+	const int Result = CtrlObject->Plugins.GetFile(hPlugin, Item, TempDir, LocalPath, OPM_SILENT | OPM_EDIT);
+	if (!Result) {
+		apiRemoveDirectory(TempDir);
+		return false;
+	}
+
+	FARString DisplayPath;
+	Source->GetCurDirPluginAware(DisplayPath);
+	if (!DisplayPath.IsEmpty())
+		AddEndSlash(DisplayPath);
+	DisplayPath+= Item->FindData.lpwszFileName;
+
+	auto Holder = std::make_shared<PluginTempFileHolder>(LocalPath, hPlugin);
+	File.LocalPath = LocalPath;
+	File.DisplayPath = DisplayPath;
+	File.Holder = Holder;
+	File.UploadHolder = Holder;
+	return true;
+}
+
+bool ResolvePanelFile(Panel *Source, DiffFileSource &File)
+{
+	if (!Source || !Source->IsVisible() || Source->GetType() != FILE_PANEL)
+		return false;
+
+	if (Source->GetMode() == PLUGIN_PANEL) {
+		HANDLE hPlugin = Source->GetPluginHandle();
+		if (hPlugin == INVALID_HANDLE_VALUE)
+			return false;
+		if (!CtrlObject->Plugins.UseFarCommand(hPlugin, PLUGIN_FARGETFILE))
+			return ResolvePluginPanelFile(Source, File);
+	}
+
+	if (Source->GetMode() != NORMAL_PANEL && Source->GetMode() != PLUGIN_PANEL)
 		return false;
 
 	FARString Name;
 	if (!Source->GetCurName(Name) || Name.IsEmpty())
 		return false;
 
+	FARString Path;
 	Source->GetCurDir(Path);
 	AddEndSlash(Path);
 	Path+= Name;
 
 	const DWORD Attr = apiGetFileAttributes(Path.CPtr());
-	return Attr != INVALID_FILE_ATTRIBUTES && !(Attr & FILE_ATTRIBUTE_DIRECTORY);
+	if (Attr == INVALID_FILE_ATTRIBUTES || (Attr & FILE_ATTRIBUTE_DIRECTORY))
+		return false;
+
+	File.LocalPath = Path;
+	File.DisplayPath = Path;
+	File.Holder = std::make_shared<FileHolder>(Path);
+	File.UploadHolder.reset();
+	return true;
 }
 
 constexpr size_t MaxInlineLcsCells = 65536;
@@ -791,6 +872,9 @@ class DiffEditorPane
 {
 	ScreenObject *m_owner = nullptr;
 	FARString m_path;
+	FARString m_displayPath;
+	FileHolderPtr m_holder;
+	std::shared_ptr<PluginTempFileHolder> m_uploadHolder;
 	UINT m_codepage = CP_AUTODETECT;
 	bool m_signatureFound = false;
 	std::vector<FARString> m_lines;
@@ -824,9 +908,16 @@ class DiffEditorPane
 	};
 
 public:
-	DiffEditorPane(ScreenObject *Owner, const FARString &Path)
-		: m_owner(Owner), m_path(Path)
+	DiffEditorPane(ScreenObject *Owner, const DiffFileSource &Source)
+		:
+		m_owner(Owner),
+		m_path(Source.LocalPath),
+		m_displayPath(Source.DisplayPath),
+		m_holder(Source.Holder),
+		m_uploadHolder(Source.UploadHolder)
 	{
+		if (m_displayPath.IsEmpty())
+			m_displayPath = m_path;
 	}
 
 	~DiffEditorPane()
@@ -840,7 +931,7 @@ public:
 		if (!m_editor)
 			return false;
 
-		m_editor->SetVirtualFileName(m_path.CPtr());
+		m_editor->SetVirtualFileName(m_displayPath.CPtr());
 
 		std::vector<FARString> EditorLines;
 		if (!LoadTextFile(m_path, m_lines, &EditorLines, &m_codepage, &m_signatureFound))
@@ -882,7 +973,7 @@ public:
 		}
 	}
 
-	const FARString &Path() const { return m_path; }
+	const FARString &Path() const { return m_displayPath; }
 	const std::vector<FARString> &Lines() const { return m_lines; }
 	bool Modified() const { return m_editor && m_editor->IsFileModified(); }
 	void SetActive(bool Active)
@@ -993,6 +1084,13 @@ public:
 		}
 
 		free(RawData);
+		if (Ok && m_holder) {
+			if (m_uploadHolder)
+				m_uploadHolder->PutCode = -1;
+			m_holder->OnFileEdited(m_path.CPtr());
+			if (m_uploadHolder && m_uploadHolder->PutCode == 0)
+				Ok = false;
+		}
 		if (Ok) {
 			RefreshLinesFromEditor();
 			m_editor->MarkSaved();
@@ -1234,8 +1332,12 @@ class FileDiffFrame : public Frame
 	std::vector<StatusButton> m_statusButtons;
 
 public:
-	FileDiffFrame(const FARString &LeftPath, const FARString &RightPath)
-		: m_leftPath(LeftPath), m_rightPath(RightPath), m_leftPane(this, m_leftPath), m_rightPane(this, m_rightPath)
+	FileDiffFrame(const DiffFileSource &Left, const DiffFileSource &Right)
+		:
+		m_leftPath(Left.DisplayPath),
+		m_rightPath(Right.DisplayPath),
+		m_leftPane(this, Left),
+		m_rightPane(this, Right)
 	{
 		SetCanLoseFocus(TRUE);
 		SetRestoreScreenMode(TRUE);
@@ -2676,13 +2778,14 @@ void PresentFileDiff()
 	Panel *Active = CtrlObject->Cp()->ActivePanel;
 	Panel *Passive = CtrlObject->Cp()->GetAnotherPanel(Active);
 
-	FARString LeftPath, RightPath;
-	if (!ResolvePanelFile(Active, LeftPath) || !ResolvePanelFile(Passive, RightPath)) {
-		Message(MSG_WARNING, 1, L"Compare files", L"Select regular local files on both file panels.", Msg::Ok);
+	DiffFileSource LeftSource;
+	DiffFileSource RightSource;
+	if (!ResolvePanelFile(Active, LeftSource) || !ResolvePanelFile(Passive, RightSource)) {
+		Message(MSG_WARNING, 1, L"Compare files", L"Select files on both file panels.", Msg::Ok);
 		return;
 	}
 
-	FileDiffFrame *Diff = new (std::nothrow) FileDiffFrame(LeftPath, RightPath);
+	FileDiffFrame *Diff = new (std::nothrow) FileDiffFrame(LeftSource, RightSource);
 	if (!Diff) {
 		Message(MSG_WARNING, 1, L"Compare files", L"Cannot allocate compare view.", Msg::Ok);
 		return;

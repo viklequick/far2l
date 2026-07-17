@@ -29775,6 +29775,17 @@ upd:"Select by name                      Alt+ +"
 upd:"Select by name                      Alt+ +"
 upd:"Select by name                      Alt+ +"
 
+PanelLaunchUserMenu
+"Пользовательское меню...            F2"
+"User menu...                        F2"
+"User menu...                        F2"
+"User menu...                        F2"
+"User menu...                        F2"
+"User menu...                        F2"
+"User menu...                        F2"
+"User menu...                        F2"
+"User menu...                        F2"
+
 FolderTreeNext
 upd:"Next                                Ctrl+Enter"
 "Next                                Ctrl+Enter"

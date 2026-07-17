@@ -861,6 +861,7 @@ void ImageView::ShowExifInfo()
 	if (!g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &fr, 0)) {
 		return;
 	}
+    --fr.Bottom;
 
 	const int DLG_X1 = fr.Left + 2;
 	const int DLG_Y1 = fr.Top + 1;

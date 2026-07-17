@@ -147,6 +147,7 @@ static LONG_PTR WINAPI ImageDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR P
 			g_far.SendDlgMessage(hDlg, DM_SETDLGDATA, 0, Param2);
 			SMALL_RECT rc;
 			g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &rc, 0);
+            --rc.Bottom;
 
 			ImageViewAtFull *iv = (ImageViewAtFull *)Param2;
 			if (!iv->full_size) {

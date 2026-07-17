@@ -163,9 +163,11 @@ void FileList::ReadFileNames(int KeepSelection, int IgnoreVisible, int DrawMessa
 			CacheSelIndex = -1;
 			CacheSelClearIndex = -1;
 			MarkLM = 0;
+			if (!IsLocalRootPath(strCurDir) && !IsLocalPrefixRootPath(strCurDir)
+					&& !IsLocalVolumeRootPath(strCurDir)) {
+				ListData.AddParentPoint();
+			}
 
-			if (!WinPortTesting())
-				FlushInputBuffer();		// Очистим буффер ввода, т.к. мы уже можем быть в другом месте...
 			return;
 		}
 	}

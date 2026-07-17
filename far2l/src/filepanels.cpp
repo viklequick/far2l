@@ -706,7 +706,11 @@ int FilePanels::ProcessKey(FarKey Key)
 			break;
 		}
 		case KEY_CTRLD: {
-			PresentFileDiff();
+			if (!CtrlObject->CmdLine->IsNotEmpty()) 
+				PresentFileDiff();
+			else
+				CtrlObject->CmdLine->ProcessKey(Key);
+
 			break;
 		}
 		case KEY_CTRLUP:

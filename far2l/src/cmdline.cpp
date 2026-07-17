@@ -1009,7 +1009,7 @@ void CommandLine::ProcessKey_ShowCommandsHistory()
 		}
 
 	} else if ((SelectType > 0 && SelectType <= 3) || SelectType == 7) {
-		size_t multiline_pos = 0;
+		//size_t multiline_pos = 0;
 		//const bool is_multiline = strStr.Pos(multiline_pos, L'\n');
 		if (SelectType < 3 || SelectType == 7) {
 			CmdStr.DisableAC();

@@ -120,7 +120,8 @@ static FarTrueColor index_to_FarTrueColor(int i) {
         return { 
         	(unsigned char)(r ? r * 40 + 55 : 0),
         	(unsigned char)(g ? g * 40 + 55 : 0), 
-        	(unsigned char)(b ? b * 40 + 55 : 0, 1) };
+        	(unsigned char)(b ? b * 40 + 55 : 0), 
+        	1 };
     } else {
         // Grayscale ramp
         int gray = (i - 232) * 10 + 8;

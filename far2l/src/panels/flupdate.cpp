@@ -149,8 +149,25 @@ void FileList::ReadFileNames(int KeepSelection, int IgnoreVisible, int DrawMessa
 	apiGetCurrentDirectory(strSaveDir);
 	{
 		if (!SetCurPath()) {
-			if (!WinPortTesting())
-				FlushInputBuffer();		// Очистим буффер ввода, т.к. мы уже можем быть в другом месте...
+			// Do not leave a list read from another directory visible when the
+			// panel's current directory cannot be entered.
+			ListData.Clear();
+			SymlinksCache.clear();
+			CurFile = CurTopFile = 0;
+			LastCurFile = -1;
+			SelFileCount = 0;
+			SelFileSize = 0;
+			TotalFileCount = 0;
+			TotalFileSize = TotalFilePhysSize = LargestFilSize = LargestFilSizeL = LargestFilPhysSize = 0;
+			FreeDiskSize = 0;
+			CacheSelIndex = -1;
+			CacheSelClearIndex = -1;
+			MarkLM = 0;
+			if (!IsLocalRootPath(strCurDir) && !IsLocalPrefixRootPath(strCurDir)
+					&& !IsLocalVolumeRootPath(strCurDir)) {
+				ListData.AddParentPoint();
+			}
+
 			return;
 		}
 	}

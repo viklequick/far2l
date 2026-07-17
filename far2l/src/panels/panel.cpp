@@ -1402,7 +1402,7 @@ int Panel::SetCurPath()
 	}
 
 	if (!FarChDir(strCurDir)) {
-		while (!FarChDir(strCurDir)) {
+		for (;;) {
 			int Result = TestFolder(strCurDir);
 
 			if (Result == TSTFLD_NOTFOUND) {

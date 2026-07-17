@@ -97,6 +97,12 @@ DWORD ApplyConsoleTweaks()
 		tweaks|= CONSOLE_OSC52CLIP_SET;
 	if (Opt.TTYPaletteOverride)
 		tweaks|= CONSOLE_TTY_PALETTE_OVERRIDE;
+	Opt.TTYCursorShapeInsert = std::clamp(Opt.TTYCursorShapeInsert,
+			CONSOLE_TTY_CURSOR_SHAPE_BAR, CONSOLE_TTY_CURSOR_SHAPE_UNDERLINE);
+	Opt.TTYCursorShapeOvertype = std::clamp(Opt.TTYCursorShapeOvertype,
+			CONSOLE_TTY_CURSOR_SHAPE_BAR, CONSOLE_TTY_CURSOR_SHAPE_UNDERLINE);
+	tweaks|= CONSOLE_TTY_CURSOR_SHAPE_INSERT(Opt.TTYCursorShapeInsert);
+	tweaks|= CONSOLE_TTY_CURSOR_SHAPE_OVERTYPE(Opt.TTYCursorShapeOvertype);
 	return WINPORT(SetConsoleTweaks)(tweaks);
 }
 
@@ -631,8 +637,8 @@ void InterfaceSettings()
 		Builder.AddCheckbox(Msg::ConfigViewerEditorClock, &Opt.ViewerEditorClock);
 		Builder.AddCheckbox(Msg::ConfigKeyBar, &Opt.ShowKeyBar);
 		Builder.AddCheckbox(Msg::ConfigMenuBar, &Opt.ShowMenuBar);
-		Builder.AddCheckbox(Msg::EnforceColorCorrection, (BOOL *)&Opt.Dialogs.EnforceColorCorrection);
-		Builder.AddCheckbox(Msg::UseModernLook, (BOOL *)&Opt.Backend.UseModernLook);
+		Builder.AddCheckbox(Msg::EnforceColorCorrection, &Opt.Dialogs.EnforceColorCorrection);
+		Builder.AddCheckbox(Msg::UseModernLook, &Opt.Backend.UseModernLook);
 		Builder.AddCheckbox(Msg::CopyToPrimarySelection, &Opt.CopyToPrimarySelection);
 		Builder.AddCheckbox(Msg::PasteFromPrimarySelection, &Opt.PasteFromPrimarySelection);
 		auto SaverCheckbox = Builder.AddCheckbox(Msg::ConfigSaver, &Opt.ScreenSaver);
@@ -717,6 +723,19 @@ void InterfaceSettings()
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_TTY_PALETTE) {
 			Builder.AddCheckbox(Msg::ConfigTTYPaletteOverride, &Opt.TTYPaletteOverride);
 		}
+
+		if (supported_tweaks & TWEAK_STATUS_SUPPORT_TTY_CURSOR_SHAPE) {
+			static FarLangMsg CursorShapeOptions[] = {Msg::ConfigCursorShapeBar,
+					Msg::ConfigCursorShapeBlock, Msg::ConfigCursorShapeUnderline};
+			Builder.AddText(Msg::ConfigTTYCursorShapeInsert);
+			Builder.AddRadioButtonsHorz(&Opt.TTYCursorShapeInsert,
+					ARRAYSIZE(CursorShapeOptions), CursorShapeOptions);
+			Builder.AddText(Msg::ConfigTTYCursorShapeOvertype);
+			Builder.AddRadioButtonsHorz(&Opt.TTYCursorShapeOvertype,
+					ARRAYSIZE(CursorShapeOptions), CursorShapeOptions);
+		}
+
+		Builder.AddCheckbox(Msg::EnforceColorCorrection, &Opt.Dialogs.EnforceColorCorrection);
 
 		Builder.AddText(Msg::ConfigWindowTitle);
 		Builder.AddEditField(&Opt.strWindowTitle, 47);
@@ -932,7 +951,7 @@ void DialogSettings()
 	Builder.AddCheckbox(Msg::ConfigDialogsAutoComplete, &Opt.Dialogs.AutoComplete);
 	Builder.AddCheckbox(Msg::ConfigDialogsEULBsClear, &Opt.Dialogs.EULBsClear);
 	Builder.AddCheckbox(Msg::ConfigDialogsMouseButton, &Opt.Dialogs.MouseButton);
-	Builder.AddCheckbox(Msg::ConfigDialogsShowArrowsInEdit, (BOOL *)&Opt.Dialogs.ShowArrowsInEdit);
+	Builder.AddCheckbox(Msg::ConfigDialogsShowArrowsInEdit, &Opt.Dialogs.ShowArrowsInEdit);
 	Builder.AddOKCancel();
 
 	if (Builder.ShowDialog()) {
@@ -962,7 +981,7 @@ void VMenuSettings()
 	Builder.AddComboBox((int *)&Opt.VMenu.MBtnClick, 40, CAListItems, ARRAYSIZE(CAListItems),
 			DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE);
 
-	Builder.AddCheckbox(Msg::ConfigVMenuStopEdge, (BOOL *)&Opt.VMenu.MenuLoopScroll);
+	Builder.AddCheckbox(Msg::ConfigVMenuStopEdge, &Opt.VMenu.MenuLoopScroll);
 
 	Builder.AddOKCancel();
 	Builder.ShowDialog();

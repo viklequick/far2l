@@ -530,6 +530,8 @@ struct Options
 	BOOL UseRightAltAsAltGr;
 	int OSC52ClipSet;
 	int TTYPaletteOverride;
+	int TTYCursorShapeInsert;
+	int TTYCursorShapeOvertype;
 
 	Confirmation Confirm;
 	PluginConfirmation PluginConfirm;

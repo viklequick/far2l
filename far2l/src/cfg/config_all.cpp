@@ -196,6 +196,17 @@ static int Do_AllSystemSettings()
 	if (supported_tweaks & TWEAK_STATUS_SUPPORT_TTY_PALETTE) 
 		Builder.AddCheckbox(Msg::ConfigTTYPaletteOverride, &Opt.TTYPaletteOverride);
 
+	if (supported_tweaks & TWEAK_STATUS_SUPPORT_TTY_CURSOR_SHAPE) {
+		static FarLangMsg CursorShapeOptions[] = {Msg::ConfigCursorShapeBar,
+				Msg::ConfigCursorShapeBlock, Msg::ConfigCursorShapeUnderline};
+		Builder.AddText(Msg::ConfigTTYCursorShapeInsert, false);
+		Builder.AddRadioButtonsHorz(&Opt.TTYCursorShapeInsert,
+				ARRAYSIZE(CursorShapeOptions), CursorShapeOptions);
+		Builder.AddText(Msg::ConfigTTYCursorShapeOvertype, false);
+		Builder.AddRadioButtonsHorz(&Opt.TTYCursorShapeOvertype,
+				ARRAYSIZE(CursorShapeOptions), CursorShapeOptions);
+	}
+
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	Builder.AddCheckbox(Msg::EnforceColorCorrection, &Opt.Dialogs.EnforceColorCorrection);
 

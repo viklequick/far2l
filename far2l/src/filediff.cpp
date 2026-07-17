@@ -98,7 +98,7 @@ void StripEol(FARString &Line)
 
 bool LoadTextFile(const FARString &Path, std::vector<FARString> &Lines,
 		std::vector<FARString> *EditorLines = nullptr, UINT *DetectedCodePage = nullptr,
-		bool *DetectedSignature = nullptr)
+		bool *DetectedSignature = nullptr, bool *DetectedByHeuristics = nullptr)
 {
 	File Src;
 	if (!Src.Open(Path.CPtr(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
@@ -112,12 +112,18 @@ bool LoadTextFile(const FARString &Path, std::vector<FARString> &Lines,
 
 	UINT CodePage = 0;
 	bool SignatureFound = false;
-	if (!GetFileFormat(Src, CodePage, &SignatureFound, Opt.EdOpt.AutoDetectCodePage != 0) || !IsCodePageSupported(CodePage))
+	// A comparison must decode both sides as accurately as possible, regardless
+	// of the editor's interactive auto-detection preference.
+	const bool FormatDetected = GetFileFormat(Src, CodePage, &SignatureFound, true);
+	const bool HeuristicallyDetected = FormatDetected && !SignatureFound && IsCodePageSupported(CodePage);
+	if (!FormatDetected || !IsCodePageSupported(CodePage))
 		CodePage = Opt.EdOpt.DefaultCodePage;
 	if (DetectedCodePage)
 		*DetectedCodePage = CodePage;
 	if (DetectedSignature)
 		*DetectedSignature = SignatureFound;
+	if (DetectedByHeuristics)
+		*DetectedByHeuristics = HeuristicallyDetected;
 
 	if (!IsUnicodeOrUtfCodePage(CodePage))
 		Src.SetPointer(0, nullptr, FILE_BEGIN);
@@ -877,6 +883,8 @@ class DiffEditorPane
 	std::shared_ptr<PluginTempFileHolder> m_uploadHolder;
 	UINT m_codepage = CP_AUTODETECT;
 	bool m_signatureFound = false;
+	bool m_codepageDetectedByHeuristics = false;
+	bool m_heuristicEncodingSaveConfirmed = false;
 	std::vector<FARString> m_lines;
 	std::unique_ptr<Editor> m_editor;
 	bool m_colorerOpened = false;
@@ -934,7 +942,8 @@ public:
 		m_editor->SetVirtualFileName(m_displayPath.CPtr());
 
 		std::vector<FARString> EditorLines;
-		if (!LoadTextFile(m_path, m_lines, &EditorLines, &m_codepage, &m_signatureFound))
+		if (!LoadTextFile(m_path, m_lines, &EditorLines, &m_codepage, &m_signatureFound,
+					&m_codepageDetectedByHeuristics))
 			return false;
 
 		m_editor->FreeAllocatedData(false);
@@ -976,6 +985,20 @@ public:
 	const FARString &Path() const { return m_displayPath; }
 	const std::vector<FARString> &Lines() const { return m_lines; }
 	bool Modified() const { return m_editor && m_editor->IsFileModified(); }
+	bool ConfirmSaveWithDetectedEncoding() const
+	{
+		if (!m_codepageDetectedByHeuristics || m_heuristicEncodingSaveConfirmed)
+			return true;
+
+		FARString CodePageName;
+		ShortReadableCodepageName(m_codepage, CodePageName);
+		FARString DetectedEncoding;
+		DetectedEncoding.Format(L"The encoding was detected heuristically as %ls. Save using it?", CodePageName.CPtr());
+		FARString FileName = L"File: ";
+		FileName+= m_displayPath;
+		return Message(MSG_WARNING, 2, L"Compare files", DetectedEncoding.CPtr(), FileName.CPtr(),
+				Msg::HYes, Msg::HNo) == 0;
+	}
 	void SetActive(bool Active)
 	{
 		if (m_editor)
@@ -1094,6 +1117,7 @@ public:
 		if (Ok) {
 			RefreshLinesFromEditor();
 			m_editor->MarkSaved();
+			m_heuristicEncodingSaveConfirmed = true;
 		}
 		return Ok;
 	}
@@ -1990,6 +2014,8 @@ private:
 				SaveFile.CPtr(), Msg::HYes, Msg::HNo);
 		if (Choice != 0)
 			return;
+		if (!ActiveEditorPane().ConfirmSaveWithDetectedEncoding())
+			return;
 
 		if (!ActiveEditorPane().Save()) {
 			Message(MSG_WARNING | MSG_ERRORTYPE, 1, L"Compare files", L"Cannot save file.",
@@ -2032,16 +2058,24 @@ private:
 
 	bool SaveModifiedPanes()
 	{
-		if (m_leftPane.Modified() && !m_leftPane.Save()) {
-			Message(MSG_WARNING | MSG_ERRORTYPE, 1, L"Compare files", L"Cannot save file.",
-					m_leftPane.Path().CPtr(), Msg::Ok);
-			return false;
+		if (m_leftPane.Modified()) {
+			if (!m_leftPane.ConfirmSaveWithDetectedEncoding())
+				return false;
+			if (!m_leftPane.Save()) {
+				Message(MSG_WARNING | MSG_ERRORTYPE, 1, L"Compare files", L"Cannot save file.",
+						m_leftPane.Path().CPtr(), Msg::Ok);
+				return false;
+			}
 		}
 
-		if (m_rightPane.Modified() && !m_rightPane.Save()) {
-			Message(MSG_WARNING | MSG_ERRORTYPE, 1, L"Compare files", L"Cannot save file.",
-					m_rightPane.Path().CPtr(), Msg::Ok);
-			return false;
+		if (m_rightPane.Modified()) {
+			if (!m_rightPane.ConfirmSaveWithDetectedEncoding())
+				return false;
+			if (!m_rightPane.Save()) {
+				Message(MSG_WARNING | MSG_ERRORTYPE, 1, L"Compare files", L"Cannot save file.",
+						m_rightPane.Path().CPtr(), Msg::Ok);
+				return false;
+			}
 		}
 
 		RebuildDiffFromEditors();

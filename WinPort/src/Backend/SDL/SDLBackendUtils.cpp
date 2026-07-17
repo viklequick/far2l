@@ -238,7 +238,7 @@ void drawHorizontalGradientBox(SDL_Renderer * renderer,
     for(int i = 0; i < steps ; i++)
     {
         /* Create an horizontal rectangle sliced by the number of steps */
-        SDL_Rect rect = { x, yt, w, ys+1 };
+        SDL_Rect rect = { x, (int)yt, w, (int)ys+1 };
 
         /* Sets the rectangle color based on iteration */
         SDL_SetRenderDrawColor(renderer, rt, gt, bt, at);

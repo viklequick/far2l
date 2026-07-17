@@ -1101,7 +1101,7 @@ void FileList::ShowList(int ShowStatus, int StartColumn, OpenPluginInfo &Info)
 							if (LastHoveredIndex == ListPos && ListPos >= 0) {
 								DWORD64 color = GetColor();
 								// highlight full bar
-								if (wcslen(NamePtr) >= Width || TooLong || CurFile == LastHoveredIndex || ListData[ListPos]->Selected) {
+								if ((int)wcslen(NamePtr) >= Width || TooLong || CurFile == LastHoveredIndex || ListData[ListPos]->Selected) {
 									SetColor(SoftenItemColor(color, 0, 1, 0, 0));
 									Text(strName);
 								}

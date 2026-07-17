@@ -179,8 +179,7 @@ void SystemSettings()
 	};
 	Builder.AddText(Msg::ConfigMakeLinkSuggest);
 	Builder.Indent(4);
-	auto MakeLinkSuggest =
-		Builder.AddComboBox((int *)&Opt.MakeLinkSuggestSymlinkAlways, 48, CAListItems, ARRAYSIZE(CAListItems),
+	Builder.AddComboBox((int *)&Opt.MakeLinkSuggestSymlinkAlways, 48, CAListItems, ARRAYSIZE(CAListItems),
 				DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE);
 
 	Builder.AddSeparator();
@@ -195,8 +194,7 @@ void SystemSettings()
 	};
 
 	Builder.AddText(Msg::ConfigHistoryRemoveDupsRule, false);
-	auto HistRemove =
-		Builder.AddComboBox((int *)&Opt.HistoryRemoveDupsRule, 20, CAHistRemoveListItems, ARRAYSIZE(CAHistRemoveListItems),
+	Builder.AddComboBox((int *)&Opt.HistoryRemoveDupsRule, 20, CAHistRemoveListItems, ARRAYSIZE(CAHistRemoveListItems),
 				DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE);
 
 	Builder.AddCheckbox(Msg::ConfigAutoHighlightHistory, &Opt.AutoHighlightHistory);
@@ -239,11 +237,11 @@ void PanelSettings_HighlightMarks()
 	Builder.AddSeparator();
 
 	Builder.Indent(1);
-	auto IndentationMinEdit = Builder.AddIntEditField((int *)&Opt.MinFilenameIndentation, 2, 0, false);
+	Builder.AddIntEditField((int *)&Opt.MinFilenameIndentation, 2, 0, false);
 	Builder.AddText(Msg::ConfigFilenameMinIndentation);
 	
 	Builder.Indent(1);
-	auto IndentationMaxEdit = Builder.AddIntEditField((int *)&Opt.MaxFilenameIndentation, 2, 0, false);
+	Builder.AddIntEditField((int *)&Opt.MaxFilenameIndentation, 2, 0, false);
 	Builder.AddText(Msg::ConfigFilenameMaxIndentation);
 
 	Builder.AddOKCancel();
@@ -699,7 +697,7 @@ void InterfaceSettings()
 		const DWORD supported_tweaks = ApplyConsoleTweaks();
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_BLINK_RATE) {
 
-			auto CursorEdit = Builder.AddIntEditField(&Opt.CursorBlinkTime, 3, 0, false);
+			Builder.AddIntEditField(&Opt.CursorBlinkTime, 3, 0, false);
 			Builder.AddText(Msg::ConfigCursorBlinkInt);
 		}
 
@@ -894,16 +892,16 @@ void AutoCompleteSettings()
 	Builder.AddText(Msg::ConfigSaveHistoryOpt);
 	int cmdHist_optAssSys = !(Opt.ExcludeCmdHistory & EXCLUDECMDHISTORY_NOTWINASS);
 	Builder.Indent(4);
-	auto CmdHistOptAssSys = Builder.AddCheckbox(Msg::ConfigSaveHistoryOptAssSys, &cmdHist_optAssSys);
+	Builder.AddCheckbox(Msg::ConfigSaveHistoryOptAssSys, &cmdHist_optAssSys);
 	int cmdHist_optAssFar = !(Opt.ExcludeCmdHistory & EXCLUDECMDHISTORY_NOTFARASS);
 	Builder.Indent(4);
-	auto CmdHistOptAssFar = Builder.AddCheckbox(Msg::ConfigSaveHistoryOptAssFar, &cmdHist_optAssFar);
+	Builder.AddCheckbox(Msg::ConfigSaveHistoryOptAssFar, &cmdHist_optAssFar);
 	int cmdHist_optExecPanel = !(Opt.ExcludeCmdHistory & EXCLUDECMDHISTORY_NOTPANEL);
 	Builder.Indent(4);
-	auto CmdHistOptExecPanel = Builder.AddCheckbox(Msg::ConfigSaveHistoryOptExecPanel, &cmdHist_optExecPanel);
+	Builder.AddCheckbox(Msg::ConfigSaveHistoryOptExecPanel, &cmdHist_optExecPanel);
 	int cmdHist_optExecCmdLine = !(Opt.ExcludeCmdHistory & EXCLUDECMDHISTORY_NOTCMDLINE);
 	Builder.Indent(4);
-	auto CmdHistOptExecCmdLine = Builder.AddCheckbox(Msg::ConfigSaveHistoryOptExecCmdLine, &cmdHist_optExecCmdLine);
+	Builder.AddCheckbox(Msg::ConfigSaveHistoryOptExecCmdLine, &cmdHist_optExecCmdLine);
 
 	Builder.AddOKCancel();
 	if (Builder.ShowDialog()) {
@@ -986,7 +984,7 @@ void CmdlineSettings()
 	Builder.AddCheckbox(Msg::ConfigCmdlineSplitter, &Opt.CmdLine.Splitter);
 
 	Builder.AddText(Msg::ConfigCmdlineVTLogLimit, false);
-	auto LimitEdit = Builder.AddIntEditField(&Opt.CmdLine.VTLogLimit, 8);
+	Builder.AddIntEditField(&Opt.CmdLine.VTLogLimit, 8);
 
 	Builder.AddText(Msg::ConfigCmdlineWaitKeypress);
 	Builder.AddComboBox((int *)&Opt.CmdLine.WaitKeypress, 40, CMWListItems, ARRAYSIZE(CMWListItems),
@@ -1052,11 +1050,9 @@ void PluginsManagerSettings()
 	auto ConfirmOFP = Builder.AddCheckbox(Msg::PluginsManagerOFP, &Opt.PluginConfirm.OpenFilePlugin);
 	ConfirmOFP->Flags|= DIF_3STATE;
 	Builder.Indent(2);
-	auto StandardAssoc =
-			Builder.AddCheckbox(Msg::PluginsManagerStdAssoc, &Opt.PluginConfirm.StandardAssociation);
+	Builder.AddCheckbox(Msg::PluginsManagerStdAssoc, &Opt.PluginConfirm.StandardAssociation);
 	Builder.Indent(2);
-	auto EvenIfOnlyOne =
-			Builder.AddCheckbox(Msg::PluginsManagerEvenOne, &Opt.PluginConfirm.EvenIfOnlyOnePlugin);
+	Builder.AddCheckbox(Msg::PluginsManagerEvenOne, &Opt.PluginConfirm.EvenIfOnlyOnePlugin);
 
 	Builder.AddCheckbox(Msg::PluginsManagerSFL, &Opt.PluginConfirm.SetFindList);
 	Builder.AddCheckbox(Msg::PluginsManagerPF, &Opt.PluginConfirm.Prefix);

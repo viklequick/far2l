@@ -165,12 +165,12 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 	}
 
 	int MacroMenuSize = v.size() + 2;
-	MenuDataEx MacroMenu[MacroMenuSize] = {
+	MenuDataEx MacroMenu[128] = {
 		{Msg::EditorMenuMacroRecord,	0,	KEY_CTRLB  },
 		{L"", LIF_SEPARATOR, 0  }
 	};
 
-	for(size_t i = 0; i < v.size(); ++i) {
+	for(size_t i = 0; i < v.size() && i < 128; ++i) {
 		MacroMenu[i+2].Name = v[i].GetBuffer();
 		MacroMenu[i+2].Flags = 0;
 		MacroMenu[i+2].AccelKey = 0;

@@ -284,6 +284,7 @@ static EXITED_DUE ShowImageAtFullInternal(size_t initial_file, std::vector<std::
 	for (;;) {
 		SMALL_RECT rc;
 		g_far.AdvControl(g_far.ModuleNumber, ACTL_GETFARRECT, &rc, 0);
+		--rc.Bottom; // do not override over key bar
 
 		std::wstring hint;
 		hint+= L' ';

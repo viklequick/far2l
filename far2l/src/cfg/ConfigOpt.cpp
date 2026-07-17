@@ -239,6 +239,8 @@ const ConfigOpt g_cfg_opts[] {
 
 	{OST_COMMON,  NSecDialog, "EnableAccidentalConfirmation", &Opt.Dialogs.EnableAccidentalConfirmation, 0,
 		L"InterfaceSettings", L"Enable right click outside pof the dialog as operation confirmation (dangerous)"},
+	{OST_COMMON,  NSecInterface, "EliminateOuterBorders", &Opt.Dialogs.EliminateOuterBorders, 0,
+		L"InterfaceSettings", L"Border-less dialogs"},
 
 	{OST_COMMON, NSecInterface, "DateFormat", &Opt.DateFormat, GetDateFormatDefault(),
 		L"InterfSettings", L"Selects the date display format used by panels and dialogs: 0=MM-DD-YYYY, 1=DD-MM-YYYY, 2=YYYY-MM-DD" },

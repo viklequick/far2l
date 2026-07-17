@@ -21,13 +21,13 @@ protected:
 	}
 };
 
-class PluginCheckBoxBinding: public DialogAPIBinding
+template<class B> class PluginCheckBoxBinding: public DialogAPIBinding
 {
-	BOOL *Value;
+	B *Value;
 	int Mask;
 
 public:
-	PluginCheckBoxBinding(const PluginStartupInfo &aInfo, HANDLE *aHandle, int aID, BOOL *aValue, int aMask)
+	PluginCheckBoxBinding(const PluginStartupInfo &aInfo, HANDLE *aHandle, int aID, B *aValue, int aMask)
 		: DialogAPIBinding(aInfo, aHandle, aID),
 		  Value(aValue), Mask(aMask)
 	{
@@ -233,6 +233,15 @@ class PluginDialogBuilder: public DialogBuilderBase<FarDialogItem>
 #endif
 		}
 
+		virtual DialogItemBinding<FarDialogItem> *CreateCheckBoxBinding(bool *Value, int Mask)
+		{
+#ifdef UNICODE
+			return new PluginCheckBoxBinding(Info, &DialogHandle, DialogItemsCount-1, Value, Mask);
+#else
+			return new CheckBoxBinding<FarDialogItem>(Value, Mask);
+#endif
+		}
+
 		virtual DialogItemBinding<FarDialogItem> *CreateRadioButtonBinding(BOOL *Value)
 		{
 #ifdef UNICODE
@@ -273,7 +282,7 @@ public:
 #endif
 			Add(Item);
 			if (newLine) AddNL();
-			SetLastItemBinding(Binding);
+			SetItemBinding(Item, Binding);
 			return Item;
 		}
 
@@ -296,9 +305,9 @@ public:
 			if (newLine) AddNL();
 
 #ifdef UNICODE
-			SetLastItemBinding(new PluginEditFieldBinding(Info, &DialogHandle, DialogItemsCount-1, Value, MaxSize));
+			SetItemBinding(Item, new PluginEditFieldBinding(Info, &DialogHandle, DialogItemsCount-1, Value, MaxSize));
 #else
-			SetLastItemBinding(new PluginEditFieldBinding(Value, MaxSize));
+			SetItemBinding(Item, new PluginEditFieldBinding(Value, MaxSize));
 #endif
 			return Item;
 		}

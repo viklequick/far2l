@@ -29204,14 +29204,14 @@ upd:"Apply changes when clicked outside by right mouse click"
 
 EliminateOuterBorders
 "Открытый заголовок у диалога"
-"Open dialog titles"
-upd:"Open dialog titles"
-upd:"Open dialog titles"
-upd:"Open dialog titles"
-upd:"Open dialog titles"
-upd:"Open dialog titles"
-upd:"Open dialog titles"
-upd:"Open dialog titles"
+"Border-less dialogs"
+upd:"Border-less dialogs"
+upd:"Border-less dialogs"
+upd:"Border-less dialogs"
+upd:"Border-less dialogs"
+upd:"Border-less dialogs"
+upd:"Border-less dialogs"
+upd:"Border-less dialogs"
 
 ConfigGrepFilterTitle
 "Grep-фильтр"

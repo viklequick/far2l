@@ -77,6 +77,7 @@ protected:
 	virtual int DoShowDialog();
 
 	virtual DialogItemBinding<DialogItemEx> *CreateCheckBoxBinding(BOOL *Value, int Mask);
+	virtual DialogItemBinding<DialogItemEx> *CreateCheckBoxBinding(bool *Value, int Mask);
 	virtual DialogItemBinding<DialogItemEx> *CreateRadioButtonBinding(int *Value);
 
 public:

@@ -49,21 +49,21 @@ struct DialogItemBinding
 	}
 };
 
-template<class T>
+template<class T, class B>
 struct CheckBoxBinding: public DialogItemBinding<T>
 {
 	private:
-		BOOL *Value;
+		B *Value;
 		int Mask;
 
 	public:
-		CheckBoxBinding(BOOL *aValue, int aMask) : Value(aValue), Mask(aMask) { }
+		CheckBoxBinding(B *aValue, int aMask) : Value(aValue), Mask(aMask) { }
 
 		virtual void SaveValue(T *Item, int RadioGroupIndex)
 		{
 			if (!Mask)
 			{
-				*Value = Item->Selected;
+				*Value = Item->Selected != 0;
 			}
 			else
 			{
@@ -361,8 +361,8 @@ public:
 		virtual void InitDialogItem(T *NewDialogItem, const TCHAR *Text) {}
 		virtual int TextWidth(const T &Item){ return -1; }
 
-		void SetLastItemBinding(DialogItemBinding<T> *Binding){
-			Bindings [DialogItemsCount-1] = Binding;
+		void SetItemBinding(T* Item, DialogItemBinding<T> *Binding){
+			Bindings [GetItemID(Item)] = Binding;
 		}
 
 		int GetItemID(T *Item) {
@@ -400,6 +400,7 @@ public:
 		virtual int DoShowDialog(){ return -1; }
 
 		virtual DialogItemBinding<T> *CreateCheckBoxBinding(BOOL *Value, int Mask){	return nullptr;	}
+		virtual DialogItemBinding<T> *CreateCheckBoxBinding(bool *Value, int Mask){	return nullptr;	}
 		virtual DialogItemBinding<T> *CreateRadioButtonBinding(int *Value){	return nullptr;	}
 
 		DialogBuilderBase(){}
@@ -438,9 +439,27 @@ public:
 
 			Add(Item);
 			if (newLine) AddNL();
-			SetLastItemBinding(CreateCheckBoxBinding(Value, Mask));
+			SetItemBinding(Item, CreateCheckBoxBinding(Value, Mask));
 			return Item;
 		}
+
+		virtual ItemReference AddCheckbox(FarLangMsg TextMessageId, bool *Value, bool newLine) {
+			return this->AddCheckbox(TextMessageId, Value, 0, newLine);
+		}
+
+		virtual ItemReference AddCheckbox(FarLangMsg TextMessageId, bool *Value, int Mask = 0, bool newLine = true) {
+			auto Item = AddDialogItem(DI_CHECKBOX, GetLangString(TextMessageId));
+			if (!Mask)
+				Item->Selected = *Value;
+			else
+				Item->Selected = (*Value & Mask) ;
+
+			Add(Item);
+			if (newLine) AddNL();
+			SetItemBinding(Item, CreateCheckBoxBinding(Value, Mask));
+			return Item;
+		}
+
 
 		// Добавляет группу радиокнопок vertically
 		virtual void AddRadioButtons(int *Value, int OptionCount, FarLangMsg MessageIDs[]) {
@@ -453,7 +472,7 @@ public:
 					Item->Flags |= DIF_GROUP;
 				if (*Value == i)
 					Item->Selected = TRUE;
-				SetLastItemBinding(CreateRadioButtonBinding(Value));
+				SetItemBinding(Item, CreateRadioButtonBinding(Value));
 			}
 		}
 
@@ -464,7 +483,7 @@ public:
 				Add(Item);
 				if (!i) Item->Flags |= DIF_GROUP;
 				if (*Value == i) Item->Selected = TRUE;
-				SetLastItemBinding(CreateRadioButtonBinding(Value));
+				SetItemBinding(Item, CreateRadioButtonBinding(Value));
 			}
 			AddNL();
 		}

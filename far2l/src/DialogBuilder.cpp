@@ -112,7 +112,12 @@ const TCHAR *DialogBuilder::GetLangString(FarLangMsg MessageID)
 
 DialogItemBinding<DialogItemEx> *DialogBuilder::CreateCheckBoxBinding(BOOL *Value, int Mask)
 {
-	return new CheckBoxBinding<DialogItemEx>(Value, Mask);
+	return new CheckBoxBinding<DialogItemEx, BOOL>(Value, Mask);
+}
+
+DialogItemBinding<DialogItemEx> *DialogBuilder::CreateCheckBoxBinding(bool *Value, int Mask)
+{
+	return new CheckBoxBinding<DialogItemEx, bool>(Value, Mask);
 }
 
 DialogItemBinding<DialogItemEx> *DialogBuilder::CreateRadioButtonBinding(int *Value)
@@ -134,7 +139,7 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddEditField(FARSt
 	}
 	Item->Flags|= Flags;
 
-	SetLastItemBinding(new EditFieldBinding(Value));
+	SetItemBinding(Item, new EditFieldBinding(Value));
 	return Item;
 }
 
@@ -150,7 +155,7 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddIntEditField(in
 	if (newLine) AddNL();
 
 	EditFieldIntBinding *Binding = new EditFieldIntBinding(Value, Width);
-	SetLastItemBinding(Binding);
+	SetItemBinding(Item, Binding);
 	Item->Flags|= Flags;
 	Item->Flags|= DIF_MASKEDIT;
 	Item->strMask = Binding->GetMask();
@@ -177,7 +182,7 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddComboBox(int *V
 	List->ItemsNumber = ItemCount;
 	Item->ListItems = List;
 
-	SetLastItemBinding(new ComboBoxBinding<DialogItemEx>(Value, List));
+	SetItemBinding(Item, new ComboBoxBinding<DialogItemEx>(Value, List));
 	return Item;
 }
 
@@ -201,7 +206,7 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddComboBox(int *V
 	List->ItemsNumber = ItemCount;
 	Item->ListItems = List;
 
-	SetLastItemBinding(new ComboBoxBinding<DialogItemEx>(Value, List));
+	SetItemBinding(Item, new ComboBoxBinding<DialogItemEx>(Value, List));
 	return Item;
 }
 
@@ -214,7 +219,7 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddCodePagesBox(UI
 	Add(Item);
 	if (newLine) AddNL();
 	Item->Flags|= DIF_DROPDOWNLIST | DIF_LISTWRAPMODE | DIF_LISTAUTOHIGHLIGHT;
-	SetLastItemBinding(new CodePageBoxBinding<DialogItemEx>(Value, &CodePageBoxes.back().Value));
+	SetItemBinding(Item, new CodePageBoxBinding<DialogItemEx>(Value, &CodePageBoxes.back().Value));
 	return Item;
 }
 

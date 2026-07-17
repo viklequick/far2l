@@ -197,21 +197,21 @@ static int Do_AllSystemSettings()
 		Builder.AddCheckbox(Msg::ConfigTTYPaletteOverride, &Opt.TTYPaletteOverride);
 
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
-	Builder.AddCheckbox(Msg::EnforceColorCorrection, (BOOL *)&Opt.Dialogs.EnforceColorCorrection);
+	Builder.AddCheckbox(Msg::EnforceColorCorrection, &Opt.Dialogs.EnforceColorCorrection);
 
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
-	Builder.AddCheckbox(Msg::UseModernLook, (BOOL *)&Opt.Backend.UseModernLook);
-	Builder.AddCheckbox(Msg::EliminateOuterBorders, (BOOL*)&Opt.Dialogs.EliminateOuterBorders);
+	Builder.AddCheckbox(Msg::UseModernLook, &Opt.Backend.UseModernLook);
+	Builder.AddCheckbox(Msg::EliminateOuterBorders, &Opt.Dialogs.EliminateOuterBorders);
 
     if ((supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) && Opt.Backend.UseModernLook) {
         Builder.ColumnBreak();
 
-    	// Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, (BOOL *)&Opt.Backend.UseRoundedBorders);
-    	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, (BOOL *)&Opt.Backend.UseEmbossAsBold);
-    	Builder.AddCheckbox(Msg::UseModernLookUseSoftenBevels, (BOOL *)&Opt.Backend.UseSoftenBevels);
-    	Builder.AddCheckbox(Msg::UseModernLookUse3D, (BOOL *)&Opt.Backend.Use3D);
-       	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, (BOOL *)&Opt.Backend.UseSingleBordersOnly);
-	   	Builder.AddCheckbox(Msg::UseModernLookNoBorders, (BOOL *)&Opt.Backend.UseNoBorders);
+    	// Builder.AddCheckbox(Msg::UseModernLookRoundedBorders, &Opt.Backend.UseRoundedBorders);
+    	Builder.AddCheckbox(Msg::UseModernLookEmbossAsBold, &Opt.Backend.UseEmbossAsBold);
+    	Builder.AddCheckbox(Msg::UseModernLookUseSoftenBevels, &Opt.Backend.UseSoftenBevels);
+    	Builder.AddCheckbox(Msg::UseModernLookUse3D, &Opt.Backend.Use3D);
+       	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, &Opt.Backend.UseSingleBordersOnly);
+	   	Builder.AddCheckbox(Msg::UseModernLookNoBorders, &Opt.Backend.UseNoBorders);
     }
 
     Builder.EndColumns();
@@ -284,7 +284,7 @@ static int Do_AllSystemSettings()
 	Builder.ColumnBreak();
 
 	Builder.AddCheckbox(Msg::ConfigDialogsDelRemovesBlocks, &Opt.Dialogs.DelRemovesBlocks);
-	Builder.AddCheckbox(Msg::ConfigDialogsShowArrowsInEdit, (BOOL *)&Opt.Dialogs.ShowArrowsInEdit);
+	Builder.AddCheckbox(Msg::ConfigDialogsShowArrowsInEdit, &Opt.Dialogs.ShowArrowsInEdit);
 	auto m2 = Builder.AddCheckbox(Msg::EnableAccidentalConfirmation, (BOOL*)&Opt.Dialogs.EnableAccidentalConfirmation);
 	Builder.LinkFlags(m1, m2, DIF_DISABLE);
 
@@ -451,7 +451,7 @@ static int Do_AllSystemSettings()
 			DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE);
 	Builder.EndColumns();
 
-	Builder.AddCheckbox(Msg::ConfigVMenuStopEdge, (BOOL *)&Opt.VMenu.MenuLoopScroll);
+	Builder.AddCheckbox(Msg::ConfigVMenuStopEdge, &Opt.VMenu.MenuLoopScroll);
 
     /* panel settings */
 

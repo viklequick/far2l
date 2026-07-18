@@ -207,6 +207,7 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 			int pos = static_cast<int>(savepos->Cursor[i]);
 			FARString s = fileEditor->GetLine(line, pos, 50);
 			if (s.GetLength() < 2) s = L"-";
+			s = s.Format(L"[%d, %d] %ls", line, pos, s.GetBuffer());
 			bookmarks.push_back(s);
 		}
 		// now we have bookmark (if any) and we can replace it to the actual text

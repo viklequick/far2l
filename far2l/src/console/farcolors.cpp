@@ -276,7 +276,7 @@ void FarColors::AdjustContrastLevels() noexcept
 
 	fprintf(stderr, "FarColors::AdjustContrastLevels()\n");
 	for (size_t i = 0; i < SIZE_ARRAY_FARCOLORS; i++) {
-		if (ColorsInit[i].name == "Dialog.Box") continue;
+		if (endsWith(ColorsInit[i].name, ".Box")) continue;
 
 		uint64_t cc = FARColors.colors[i];
 

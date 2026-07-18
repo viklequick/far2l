@@ -210,6 +210,9 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 			bookmarks.push_back(s);
 		}
 		// now we have bookmark (if any) and we can replace it to the actual text
+		FARString s = bookmarks[i]; 
+		s = s.Format(L"%-35ls Ctrl+%d", s.GetBuffer(), i);
+		bookmarks[i] = s;
 		NavigateMenu[MENU_NAV_BM_0 + i].Name = bookmarks[i].GetBuffer();
 	}
 

@@ -54,6 +54,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "VT256ColorTable.h" // For g_VT256ColorTable[VT_256COLOR_TABLE_COUNT]
 
+#include "Colorspace.h"
+
 enum enumColorPanelElements
 {
 	ID_CP_CHECKBOX = 0,

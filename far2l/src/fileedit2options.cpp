@@ -193,6 +193,25 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		if (check) ViewMenu[i].SetCheck(1);
 	}
 
+	// Bookmarks highlighting
+	std::vector<FARString> bookmarks;
+
+	InternalEditorBookMark* savepos = fileEditor->GetBookmark();
+	for(int i = 0; i < 10; ++i) {
+		if (savepos->Line[i] == POS_NONE) {
+			bookmarks.push_back(L"-");
+			continue;
+		}
+		int line = static_cast<int>(savepos->Line[i]);
+		int pos = static_cast<int>(savepos->LeftPos[i]);
+		FARString s = fileEditor->GetLine(line, pos, 20);
+		if (s.GetLength() < 2) s = L"-";
+		bookmarks.push_back(s);
+
+		// now we have bookmark (if any) and we can replace it to the actual text
+		NavigateMenu[MENU_NAV_BM_0 + i].Name = bookmarks[i].GetBuffer();
+	}
+
 	// Навигация по меню
 	{
 		HMenu HOptMenu(MainMenu, ARRAYSIZE(MainMenu));

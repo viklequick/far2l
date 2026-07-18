@@ -297,7 +297,7 @@ private:
 	void ScrollUp();
 	BOOL Search(int Next);
 
-void GoToVisualLine(int VisualLine);
+	void GoToVisualLine(int VisualLine);
 	void GoToLine(int Line);
 	void GoToPosition();
 
@@ -465,8 +465,7 @@ public:
 	void FreeAllocatedData(bool FreeUndo = true);
 
 	Edit *CreateString(const wchar_t *lpwszStr, int nLength);
-	Edit *
-	InsertString(const wchar_t *lpwszStr, int nLength, Edit *pAfter = nullptr, int AfterLineNumber = -1);
+	Edit *InsertString(const wchar_t *lpwszStr, int nLength, Edit *pAfter = nullptr, int AfterLineNumber = -1);
 
 	void SetDialogParent(DWORD Sets);
 	void SetReadOnly(int NewReadOnly) { Flags.Change(FEDITOR_LOCKMODE, NewReadOnly); };
@@ -501,6 +500,9 @@ public:
 	int AutoGrabToClipboard();
 
 	virtual void SetPosition(int X1, int Y1, int X2, int Y2);
+
+	InternalEditorBookMark* GetBookmark(){ return &SavePos; }
+	FARString GetLine(int row, int col, int maxlen);
 };
 
 #define POSCACHE_EDIT_PARAM4_PACK(VALUE, CP, EXPAND_TABS, TAB_SIZE)                                            \

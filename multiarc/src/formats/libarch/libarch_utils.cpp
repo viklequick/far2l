@@ -152,23 +152,22 @@ ssize_t LibArchOpenRead::RawRead(void *data, size_t len, off_t ofs)
 	return sdc_pread(_fd, data, len, ofs);
 }
 
-
 void LibArchOpenRead::PrepareForOpen(const char *charset)
 {
+	int r = LibArchCall(archive_read_set_options, _arc, "read_mac_metadata=0");
+	if (r != 0) {
+		fprintf(stderr, "LibArchOpenRead::PrepareForOpen: read_mac_metadata=0 error %d (%s)\n",
+			r, archive_error_string(_arc));
+	}
+
 	if (charset && *charset)  {
 		const auto &opt_hdrcharset = StrPrintf("hdrcharset=%s", charset);
-		int r = LibArchCall(archive_read_set_options, _arc, opt_hdrcharset.c_str());
+		r = LibArchCall(archive_read_set_options, _arc, opt_hdrcharset.c_str());
 		if (r != 0) {
 			fprintf(stderr, "LibArchOpenRead::PrepareForOpen('%s') hdrcharset error %d (%s)\n",
 				charset, r, archive_error_string(_arc));
-		}/* else {
-			fprintf(stderr, "LibArchOpenRead::PrepareForOpen('%s') hdrcharset OK\n",
-				charset);
-		}*/
-	}/* else {
-		fprintf(stderr, "LibArchOpenRead::PrepareForOpen('%s') hdrcharset NOPE\n",
-			charset);
-	} */
+		}
+	}
 }
 
 void LibArchOpenRead::Open(const char *name)

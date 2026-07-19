@@ -1772,7 +1772,7 @@ static LONG_PTR WINAPI FindDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Pa
 			SMALL_RECT DlgRect;
 			SendDlgMessage(hDlg, DM_GETDLGRECT, 0, reinterpret_cast<LONG_PTR>(&DlgRect));
 			int DlgWidth = DlgRect.Right - DlgRect.Left + 1;
-			int DlgHeight = DlgRect.Bottom - DlgRect.Top + 1;
+			int DlgHeight = DlgRect.Bottom - DlgRect.Top /* + 1 */;
 			int IncX = pCoord->X - DlgWidth - 2;
 			int IncY = pCoord->Y - DlgHeight - 2;
 			SendDlgMessage(hDlg, DM_ENABLEREDRAW, FALSE, 0);
@@ -2441,7 +2441,7 @@ static bool FindFilesProcess(Vars &v)
 	}
 
 	int DlgWidth = ScrX + 1 - 2;
-	int DlgHeight = ScrY + 1 - 2;
+	int DlgHeight = ScrY + 1 - 2 - 2;
 	DialogDataEx FindDlgData[] = {
 		{DI_DOUBLEBOX, 3, 1, (short)(DlgWidth - 4), (short)(DlgHeight - 2), {}, DIF_SHOWAMPERSAND, strTitle},
 		{DI_LISTBOX,   4, 2, (short)(DlgWidth - 5), (short)(DlgHeight - 7), {}, DIF_LISTNOBOX | DIF_DISABLE, L""},

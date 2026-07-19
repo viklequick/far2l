@@ -863,7 +863,7 @@ uint64_t GetLinkColor(uint64_t attributes)
 {
    	RGB bg, fg;
    	extractColor(attributes, fg, bg);
-   	HoverResult r = ComputeControlAccent(bg, fg);
+   	HoverResult r = ComputeControlAccent(bg, fg); /* inverted for links */
     return assembleColor(r.bg_hover, bg) | (attributes & 0x0000FFFF);
 }
 
@@ -871,7 +871,7 @@ uint64_t SoftenItemColor(uint64_t attributes, int Focus, int Hover, int Pressed,
 {
    	RGB bg, fg;
    	extractColor(attributes, fg, bg);
-   	HoverResult r = ComputeControlAccent(bg, fg);
+   	HoverResult r = ComputeControlAccent(bg, fg) /* inverted colors */;
    	if (Pressed)
    		bg = SoftenToPressedState_LAB(bg, r.bg_hover);
    	
@@ -912,7 +912,7 @@ uint64_t GetAccentColors(uint64_t attributes)
 {
    	RGB bg, fg;
    	extractColor(attributes, fg, bg);
-   	HoverResult r = ComputeControlAccent(bg, fg);
+   	HoverResult r = ComputeControlAccent(fg, bg); // ComputeControlAccent(bg, fg);
    	return assembleColor(r.fg_hover, r.bg_hover) | (attributes & 0x0000FFFF);
 }
 

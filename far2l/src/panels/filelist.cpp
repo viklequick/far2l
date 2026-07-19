@@ -2710,11 +2710,11 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	if (Opt.Backend.UseModernLook && IsVisible() && (MouseEvent->dwEventFlags & MOUSE_MOVED) && !IsDragging() && 
 			!(MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) && !(MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
         /* vk: simple mouse move, highhlight the file */
-		int file = MouseToPosition(MouseEvent);
-		// ASSERT(file < ListData.Count());
-		// CurPtr = ListData[file];
-		LastHoveredIndex = file;
-		Redraw();
+        if (MouseEvent->dwMousePosition.X > X1 && MouseEvent->dwMousePosition.X < X2) {
+			int file = MouseToPosition(MouseEvent);
+			LastHoveredIndex = file;
+			Redraw();
+		}
         /* no return, continue processing */
 	}
 

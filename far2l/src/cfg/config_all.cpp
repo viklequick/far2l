@@ -282,6 +282,7 @@ static int Do_AllSystemSettings()
 		Msg::ConfigDialogsEditHistory, &Opt.Dialogs.EditHistory, &Opt.DialogsHistoryCount,
 		Msg::ConfigSaveHistory, &Opt.SaveHistory, &Opt.HistoryCount);
 	Builder.EndColumns();
+
     /* Dialog settings */
 
 	Builder.AddSeparator(Msg::ConfigDlgSetsTitle);
@@ -296,7 +297,7 @@ static int Do_AllSystemSettings()
 
 	Builder.AddCheckbox(Msg::ConfigDialogsDelRemovesBlocks, &Opt.Dialogs.DelRemovesBlocks);
 	Builder.AddCheckbox(Msg::ConfigDialogsShowArrowsInEdit, &Opt.Dialogs.ShowArrowsInEdit);
-	auto m2 = Builder.AddCheckbox(Msg::EnableAccidentalConfirmation, (BOOL*)&Opt.Dialogs.EnableAccidentalConfirmation);
+	auto m2 = Builder.AddCheckbox(Msg::EnableAccidentalConfirmation, &Opt.Dialogs.EnableAccidentalConfirmation);
 	Builder.LinkFlags(m1, m2, DIF_DISABLE);
 
 	Builder.EndColumns();
@@ -723,8 +724,6 @@ void AllSystemSettings()
     		ConfigOptSaveAutoOptions();
     		SanitizeHistoryCounts();
     		ApplySudoConfiguration();
-    		SanitizeHistoryCounts();
-    		ApplySudoConfiguration();
 
     		if (size_t(SelectedXLat) < xlats.size()) {
     			Opt.XLat.XLat = xlats[SelectedXLat];
@@ -736,11 +735,6 @@ void AllSystemSettings()
 				Opt.AutoUpdateLimit = 0;
 
 			SanitizeIndentationCounts();
-
-			if (size_t(SelectedXLat) < xlats.size()) {
-				Opt.XLat.XLat = xlats[SelectedXLat];
-			}
-			XlatReinit();
 
 			if (Opt.CMOpt.CopyTimeRule)
 				Opt.CMOpt.CopyTimeRule = 3;
@@ -757,7 +751,6 @@ void AllSystemSettings()
        			FarColors::FARColors.Set();
        		}
 
-			ApplyConsoleTweaks();
 			WINPORT(SetConsoleCursorBlinkTime)(NULL, Opt.CursorBlinkTime);
 
     		Opt.ExcludeCmdHistory
@@ -766,7 +759,6 @@ void AllSystemSettings()
     			| (cmdHist_optExecPanel ? 0 : EXCLUDECMDHISTORY_NOTPANEL)
     			| (cmdHist_optExecCmdLine ? 0 : EXCLUDECMDHISTORY_NOTCMDLINE);
 
-    		SanitizeHistoryCounts();
     		if (Opt.Dialogs.MouseButton) Opt.Dialogs.MouseButton = 0xFFFF;
 
 			CtrlObject->CmdLine->SetPersistentBlocks(Opt.CmdLine.EditBlock);

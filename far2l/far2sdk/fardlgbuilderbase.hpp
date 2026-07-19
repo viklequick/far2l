@@ -49,28 +49,42 @@ struct DialogItemBinding
 	}
 };
 
-template<class T, class B>
+template<class T>
 struct CheckBoxBinding: public DialogItemBinding<T>
 {
 	private:
-		B *Value;
-		int Mask;
+		BOOL *BValue { nullptr };
+		int Mask { 0 };
+		bool* bvalue { nullptr };
 
 	public:
-		CheckBoxBinding(B *aValue, int aMask) : Value(aValue), Mask(aMask) { }
+		CheckBoxBinding(BOOL *aValue, int aMask) : BValue(aValue), Mask(aMask), bvalue(nullptr) { }
+		CheckBoxBinding(bool *aValue, int aMask) : BValue(nullptr), Mask(aMask), bvalue(aValue) { }
 
 		virtual void SaveValue(T *Item, int RadioGroupIndex)
 		{
-			if (!Mask)
-			{
-				*Value = Item->Selected != 0;
+			if (BValue) {
+				if (!Mask) {
+					BOOL old = *BValue;
+					*BValue = Item->Selected != 0;
+					if (old != *BValue)
+						fprintf(stderr, "...save checkbox[%p]: selected=%d, BOOL=%d `%ls`\n", Item, Item->Selected, *BValue, Item->strData.CPtr());
+				}
+				else {
+					BOOL old = *BValue;
+					if (Item->Selected)
+						*BValue |= Mask;
+					else
+						*BValue &= ~Mask;
+					if (old != *BValue)
+						fprintf(stderr, "...save checkbox[%p]: selected=%d, mask=%d, BOOL=%d `%ls`\n", Item, Item->Selected, Mask, *BValue, Item->strData.CPtr());
+				}
 			}
-			else
-			{
-				if (Item->Selected)
-					*Value |= Mask;
-				else
-					*Value &= ~Mask;
+			if (bvalue) {
+				bool old = *bvalue;
+				*bvalue = Item->Selected != 0;
+				if (old != *bvalue)
+					fprintf(stderr, "...save checkbox[%p]: selected=%d, bool=%d `%ls`\n", Item, Item->Selected, (int)*bvalue, Item->strData.CPtr());
 			}
 		}
 };

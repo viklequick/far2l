@@ -21,32 +21,37 @@ protected:
 	}
 };
 
-template<class B> class PluginCheckBoxBinding: public DialogAPIBinding
+class PluginCheckBoxBinding: public DialogAPIBinding
 {
-	B *Value;
+	BOOL *Value;
 	int Mask;
+    bool* value;
 
 public:
-	PluginCheckBoxBinding(const PluginStartupInfo &aInfo, HANDLE *aHandle, int aID, B *aValue, int aMask)
+	PluginCheckBoxBinding(const PluginStartupInfo &aInfo, HANDLE *aHandle, int aID, BOOL *aValue, int aMask)
 		: DialogAPIBinding(aInfo, aHandle, aID),
-		  Value(aValue), Mask(aMask)
-	{
-	}
+		  Value(aValue), Mask(aMask), value(nullptr) { }
+	PluginCheckBoxBinding(const PluginStartupInfo &aInfo, HANDLE *aHandle, int aID, bool *aValue, int aMask)
+		: DialogAPIBinding(aInfo, aHandle, aID),
+		  Value(nullptr), Mask(aMask), value(aValue) { }
 
 	virtual void SaveValue(FarDialogItem *Item, int RadioGroupIndex)
 	{
 		BOOL Selected = static_cast<BOOL>(Info.SendDlgMessage(*DialogHandle, DM_GETCHECK, ID, 0));
-		if (!Mask)
-		{
-			*Value = Selected;
+		if (Value) {
+			if (!Mask) {
+				*Value = Selected;
+			}
+			else {
+				if (Selected)
+					*Value |= Mask;
+				else
+					*Value &= ~Mask;
+			}
 		}
-		else
-		{
-			if (Selected)
-				*Value |= Mask;
-			else
-				*Value &= ~Mask;
-		}
+
+		if (value)
+			*value = Selected > 0;
 	}
 };
 

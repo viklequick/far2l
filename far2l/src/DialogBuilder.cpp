@@ -112,12 +112,12 @@ const TCHAR *DialogBuilder::GetLangString(FarLangMsg MessageID)
 
 DialogItemBinding<DialogItemEx> *DialogBuilder::CreateCheckBoxBinding(BOOL *Value, int Mask)
 {
-	return new CheckBoxBinding<DialogItemEx, BOOL>(Value, Mask);
+	return new CheckBoxBinding<DialogItemEx>(Value, Mask);
 }
 
 DialogItemBinding<DialogItemEx> *DialogBuilder::CreateCheckBoxBinding(bool *Value, int Mask)
 {
-	return new CheckBoxBinding<DialogItemEx, bool>(Value, Mask);
+	return new CheckBoxBinding<DialogItemEx>(Value, Mask);
 }
 
 DialogItemBinding<DialogItemEx> *DialogBuilder::CreateRadioButtonBinding(int *Value)

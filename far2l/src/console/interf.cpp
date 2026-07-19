@@ -901,6 +901,10 @@ uint64_t SoftenItemColor(uint64_t attributes, int Focus, int Hover, int Pressed,
 		fg = LABtoRGB(topLab);
     }
 
+    RGB newFg = fg;
+    ComputeContrast(fg, bg, newFg);
+    fg = newFg;
+
    	return assembleColor(fg, bg) | (attributes & 0x0000FFFF);
 }
 

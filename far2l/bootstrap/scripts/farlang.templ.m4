@@ -5072,6 +5072,17 @@ upd:"&Macro"
 upd:"&Macro"
 upd:"&Macro"
 
+EditorMenuPluginsTitle
+"&Плагины"
+"&Plug-ins"
+upd:"&Plug-ins"
+upd:"&Plug-ins"
+upd:"&Plug-ins"
+upd:"&Plug-ins"
+upd:"&Plug-ins"
+upd:"&Plug-ins"
+upd:"&Plug-ins"
+
 EditorMenuFileOpen
 "&Открыть...                          Shift+F4"
 "&Open...                             Shift+F4"

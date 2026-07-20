@@ -164,7 +164,7 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		v.push_back(s);	
 	}
 
-	int MacroMenuSize = v.size() + 2;
+	int MacroMenuSize = std::min(128, (int)v.size() + 2);
 	MenuDataEx MacroMenu[128] = {
 		{Msg::EditorMenuMacroRecord,	0,	KEY_CTRLB  },
 		{L"", LIF_SEPARATOR, 0  }
@@ -176,12 +176,24 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		MacroMenu[i+2].AccelKey = 0;
 	}
 
+	// plugins menu
+	std::vector<MenuItemData> plugins = CtrlObject->Plugins.GetMenuItems(MODALTYPE_EDITOR);
+	int PluginsMenuSize = std::min(128, (int)plugins.size());
+	MenuDataEx PluginsMenu[128];
+
+	for(size_t i = 0; i < plugins.size() && i < 128; ++i) {
+		PluginsMenu[i].Name = plugins[i].name.c_str();
+		PluginsMenu[i].Flags = 0;
+		PluginsMenu[i].AccelKey = 0;
+	}
+
 	HMenuData MainMenu[] = {
 		{Msg::EditorMenuFileTitle,     1, FileMenu,    ARRAYSIZE(FileMenu),    L"Editor"},
 		{Msg::EditorMenuEditTitle,    0, EditMenu,   ARRAYSIZE(EditMenu),   L"Editor" },
 		{Msg::EditorMenuNavigateTitle, 0, NavigateMenu,     ARRAYSIZE(NavigateMenu),     L"Editor" },
 		{Msg::EditorMenuViewTitle,  0, ViewMenu, ARRAYSIZE(ViewMenu), L"Editor" },
-		{Msg::EditorMenuMacroTitle, 0, MacroMenu, MacroMenuSize, L"Editor" }
+		{Msg::EditorMenuMacroTitle, 0, MacroMenu, MacroMenuSize, L"Editor" },
+		{Msg::EditorMenuPluginsTitle, 0, PluginsMenu, PluginsMenuSize, L"Editor" }
 	};
 
 	static int LastHItem = -1, LastVItem = 0;
@@ -225,7 +237,7 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		HOptMenu.SetPosition(0, gap, ScrX, gap);
 
 		if (LastCommand) {
-			MenuDataEx *VMenuTable[] = {FileMenu, EditMenu, NavigateMenu, ViewMenu};
+			MenuDataEx *VMenuTable[] = {FileMenu, EditMenu, NavigateMenu, ViewMenu, MacroMenu, PluginsMenu };
 			int HItemToShow = LastHItem;
 
 			MainMenu[0].Selected = 0;
@@ -258,6 +270,11 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 			FrameManager->ProcessKey(KEY_F12);
 			break;
 		}
+	}
+	
+	if (HItem == MENU_PLUGINS) {
+		CtrlObject->Plugins.OpenPlugin(plugins[VItem].pluginItem.pPlugin, OPEN_EDITOR, plugins[VItem].pluginItem.nItem);
+		return;
 	}
 
 	if (HItem >= 0 && VItem >= 0) {

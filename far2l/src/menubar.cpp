@@ -74,7 +74,7 @@ void EditorMenuBar::DisplayObject()
 {
 	FARString strSpace = L"    ";
 	FARString strMsg = strSpace + Msg::EditorMenuFileTitle + strSpace + Msg::EditorMenuEditTitle + strSpace
-			+ Msg::EditorMenuNavigateTitle + strSpace + Msg::EditorMenuViewTitle;
+			+ Msg::EditorMenuNavigateTitle + strSpace + Msg::EditorMenuViewTitle + strSpace + Msg::EditorMenuPluginsTitle;
 	RemoveHighlights(strMsg);
 	int Length = X2 - X1 + 1;
 	FARString strFullMsg;

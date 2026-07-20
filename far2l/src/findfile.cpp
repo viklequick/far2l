@@ -1764,6 +1764,7 @@ static LONG_PTR WINAPI FindDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Pa
 			if (Result) {
 				StopFlag = true;
 			}
+			fprintf(stderr, "dn_close: %d\n", Result);
 			return Result;
 		} break;
 

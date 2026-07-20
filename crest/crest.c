@@ -19,7 +19,6 @@ enum CrestLanguage {
     lngNum,
     lngScroll,
     lngOpt,
-    lngColorerCor,
     lngDrawV,
     lngDrawH,
     lngShCfg,
@@ -47,7 +46,6 @@ enum CrestLanguage {
 #define CRLS_NUM       0x0002
 #define CRLS_SCROLL    0x0004
 
-#define CRF_COLORER    0x0001
 #define CRF_VERT       0x0002
 #define CRF_HORZ       0x0004
 #define CRF_CURSOR     0x0008
@@ -75,7 +73,6 @@ static struct LastPos{
 static CROptions Options;
 //- Options getters
 
-#define isColorer()     (Options.Flags&CRF_COLORER)
 #define isCursor()      (Options.Flags&CRF_CURSOR)
 #define isPluginMenu()  (Options.Flags&CRF_PLUGINMENU)
 #define isCrest()       (Options.Flags&(CRF_VERT|CRF_HORZ))
@@ -213,11 +210,6 @@ __inline static void SetColorize()
 
 __inline static void DelColorize( int x,int y )
 {
-     if ( last.LastFlags == MAX_WORD || //not setted
-          isColorer()                   //Colorer process full redraw - not need to delete color sections
-        )
-        return;
-
     DoColorize(x,y,FALSE,last.LastFlags);
 }
 //- CONFIG
@@ -264,12 +256,11 @@ static BOOL DoConfigure( void )
         { 0,    0,                      DI_CHECKBOX,16, 9, 0, lngScroll },
 
         { 0,    DIF_LEFTTEXT,          DI_SINGLEBOX,32, 1,68, lngOpt },
-        { 0,    DIF_GROUP,              DI_CHECKBOX,33, 2, 0, lngColorerCor },
-        { 0,    0,                      DI_CHECKBOX,33, 3, 0, lngDrawV },
-        { 0,    0,                      DI_CHECKBOX,33, 4, 0, lngDrawH },
-        { 0,    0,                      DI_CHECKBOX,33, 5, 0, lngCLRCursor },
-        { 0,    0,                      DI_CHECKBOX,33, 6, 0, lngShowRuler },
-        { 0,    0,                      DI_CHECKBOX,33, 7, 0, lngShCfg },
+        { 0,    DIF_GROUP,              DI_CHECKBOX,33, 2, 0, lngDrawV },
+        { 0,    0,                      DI_CHECKBOX,33, 3, 0, lngDrawH },
+        { 0,    0,                      DI_CHECKBOX,33, 4, 0, lngCLRCursor },
+        { 0,    0,                      DI_CHECKBOX,33, 5, 0, lngShowRuler },
+        { 0,    0,                      DI_CHECKBOX,33, 6, 0, lngShCfg },
 
         { 0,    DIF_CENTERGROUP,          DI_BUTTON,0, 11, 0, lngOk },
         { 0,    DIF_CENTERGROUP,          DI_BUTTON,0, 11, 0, lngCancel },
@@ -292,15 +283,14 @@ static BOOL DoConfigure( void )
 #define CD_SCROLL     15
 
 #define CD_OPT        16
-#define CD_COLORER    17
-#define CD_VERT       18
-#define CD_HORZ       19
-#define CD_CURSOR     20
-#define CD_SHOWRULER  21
-#define CD_CONFIG     22
+#define CD_VERT       17
+#define CD_HORZ       18
+#define CD_CURSOR     19
+#define CD_SHOWRULER  20
+#define CD_CONFIG     21
 
-#define CD_OK         23
-#define CD_CANCEL     24
+#define CD_OK         22
+#define CD_CANCEL     23
 
     zero_mem(&itm,sizeof(itm));
     for( i=0; i<sizeof(itm_tpl)/sizeof(itm_tpl[0]); i++ ){
@@ -313,7 +303,7 @@ static BOOL DoConfigure( void )
         if( itm_tpl[i].LngNum!=255 )
             itm[i].PtrData = Info.GetMsg(Info.ModuleNumber,itm_tpl[i].LngNum);
     }
-    itm[CD_OPT].Y2=9;
+    itm[CD_OPT].Y2=8;
 //OS caption
     itm[CD_OS].PtrData = szTitle;
 //Main tasks
@@ -337,7 +327,6 @@ static BOOL DoConfigure( void )
     itm[CD_NUM].Selected       = IS_FLAG(Options.LockShow,CRLS_NUM);
     itm[CD_SCROLL].Selected    = IS_FLAG(Options.LockShow,CRLS_SCROLL);
 //Flags
-    itm[CD_COLORER].Selected   = IS_FLAG(Options.Flags,CRF_COLORER);
     itm[CD_VERT].Selected      = IS_FLAG(Options.Flags,CRF_VERT);
     itm[CD_HORZ].Selected      = IS_FLAG(Options.Flags,CRF_HORZ);
     itm[CD_CONFIG].Selected    = IS_FLAG(Options.Flags,CRF_PLUGINMENU);
@@ -382,7 +371,6 @@ static BOOL DoConfigure( void )
     if ( itm[CD_NUM].Selected    )  SET_FLAG(Options.LockShow,CRLS_NUM);
     if ( itm[CD_SCROLL].Selected )  SET_FLAG(Options.LockShow,CRLS_SCROLL);
 //Flags
-    if ( itm[CD_COLORER].Selected )  SET_FLAG(Options.Flags,CRF_COLORER);
     if ( itm[CD_VERT].Selected )     SET_FLAG(Options.Flags,CRF_VERT);
     if ( itm[CD_HORZ].Selected )     SET_FLAG(Options.Flags,CRF_HORZ);
     if ( itm[CD_CONFIG].Selected )   SET_FLAG(Options.Flags,CRF_PLUGINMENU);
@@ -393,14 +381,6 @@ static BOOL DoConfigure( void )
 // !!Save config
     SaveConfig(&Options);
     return TRUE;
-}
-
-//- REDRAWS
-__inline static void DoEventRedraw(void)
-{
-    last.TopLine = EInfo.TopScreenLine;
-    if (last.isHilight) SetColorize();
-    else if (isCursor()) EditSetCursor();
 }
 
 static void DoEventFull( void *Param )
@@ -487,42 +467,19 @@ SHAREDSYMBOL int WINAPI EXP_NAME(ProcessEditorEvent)( int Event, void *Param )
 
     Info.EditorControl( ECTL_GETINFO, &EInfo );
 
-    if (isColorer())
-        DoEventRedraw();
-    else
-        DoEventFull(Param);
+    DoEventFull(Param);
 
     return 0;
 }
 
 SHAREDSYMBOL HANDLE WINAPI EXP_NAME(OpenPlugin)( int from, INT_PTR Item)
 {
-    BOOL center, crest;
-
     (void)Item;
 //Process emulated config
     if ( from != OPEN_EDITOR ) return INVALID_HANDLE_VALUE;
-  //Save current status
-    center = Options.Enabled && isCursor();
-    crest  = Options.Enabled && last.isHilight;
-  //Do configure
+//Do configure
     if ( !DoConfigure() ) return INVALID_HANDLE_VALUE;
-  //Check statuses disabled
-    if ( last.curX != -1 && !isColorer() ) {       //Not drawed
-        Info.EditorControl( ECTL_GETINFO, &EInfo );
-        //Crest disabled|changed
-        if ( crest > (Options.Enabled && last.isHilight) ) {
-            if (last.curX != -1)
-                DelColorize( last.curX,last.curY );
-            last.curX = -1;
-      } else
-      //Center disabled|changed
-        if ( center > (Options.Enabled && isCursor()) ) {
-            if (last.curX != -1) DelCursor( last.curX,last.curY );
-            last.curX = -1;
-        }
-    }
-  //Do repaint
+//Do repaint
     Info.EditorControl( ECTL_REDRAW,EEREDRAW_ALL );
     return INVALID_HANDLE_VALUE;
 }
@@ -539,7 +496,7 @@ SHAREDSYMBOL void WINAPI EXP_NAME(SetStartupInfo)( const struct PluginStartupInf
     Options.Color         =0x47;
     Options.TempShow      =CRTS_ALT;
     Options.LockShow      =CRLS_SCROLL;
-    Options.Flags         =CRF_VERT | CRF_HORZ | CRF_PLUGINMENU | CRF_SHOWRULER | CRF_COLORER;
+    Options.Flags         =CRF_VERT | CRF_HORZ | CRF_PLUGINMENU | CRF_SHOWRULER;
     Options.CenterColor   =0xF0;
     Options.RulerColor    =0x0F;
     last.curX      = -1;

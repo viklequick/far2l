@@ -157,20 +157,23 @@ void LibArchOpenRead::PrepareForOpen(const char *charset)
 {
 	// libarchive's tar reader hides any entry whose basename starts with
 	// "._" by default on macOS builds (HAVE_COPYFILE_H), treating it as
-	// an AppleDouble metadata blob belonging to the following entry. That
-	// heuristic misfires for archives that legitimately contain standalone
-	// "._*" files (e.g. AppleDouble sidecars synced from a filesystem
-	// without native resource-fork support), silently dropping them on
-	// read/list/extract. Disable it.
+	// an AppleDouble metadata blob belonging to the following entry --
+	// without checking that such an entry actually follows. Archives that
+	// legitimately contain standalone "._*" files (e.g. AppleDouble
+	// sidecars synced from a filesystem without native resource-fork
+	// support) silently lose them on read/list/extract. Disable it.
 	//
-	// Note: the option is "mac-ext", not "read_mac_metadata" (that key
-	// doesn't exist for any format and archive_read_set_options() fails
-	// with "Undefined option"). Also, per libarchive's option-value
-	// convention any non-empty value is truthy, so "mac-ext=0" would
-	// actually *enable* it; disabling requires the "!key" negation syntax.
-	int r = LibArchCall(archive_read_set_options, _arc, "!mac-ext");
+	// Scoped to the tar module on purpose: zip supports the same option,
+	// but there the heuristic requires a "__MACOSX/" prefix, so it doesn't
+	// misfire -- and disabling it there would expose that service folder
+	// in listings of ordinary Mac-made zips.
+	//
+	// Note the "!key" negation syntax: libarchive treats any non-empty
+	// option value (including "0") as truthy, so "mac-ext=0" would
+	// actually *enable* the heuristic rather than disable it.
+	int r = LibArchCall(archive_read_set_options, _arc, "tar:!mac-ext");
 	if (r != 0) {
-		fprintf(stderr, "LibArchOpenRead::PrepareForOpen: !mac-ext error %d (%s)\n",
+		fprintf(stderr, "LibArchOpenRead::PrepareForOpen: tar:!mac-ext error %d (%s)\n",
 			r, archive_error_string(_arc));
 	}
 

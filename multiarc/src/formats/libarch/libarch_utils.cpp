@@ -155,9 +155,28 @@ ssize_t LibArchOpenRead::RawRead(void *data, size_t len, off_t ofs)
 
 void LibArchOpenRead::PrepareForOpen(const char *charset)
 {
+	// libarchive's tar reader hides any entry whose basename starts with
+	// "._" by default on macOS builds (HAVE_COPYFILE_H), treating it as
+	// an AppleDouble metadata blob belonging to the following entry. That
+	// heuristic misfires for archives that legitimately contain standalone
+	// "._*" files (e.g. AppleDouble sidecars synced from a filesystem
+	// without native resource-fork support), silently dropping them on
+	// read/list/extract. Disable it.
+	//
+	// Note: the option is "mac-ext", not "read_mac_metadata" (that key
+	// doesn't exist for any format and archive_read_set_options() fails
+	// with "Undefined option"). Also, per libarchive's option-value
+	// convention any non-empty value is truthy, so "mac-ext=0" would
+	// actually *enable* it; disabling requires the "!key" negation syntax.
+	int r = LibArchCall(archive_read_set_options, _arc, "!mac-ext");
+	if (r != 0) {
+		fprintf(stderr, "LibArchOpenRead::PrepareForOpen: !mac-ext error %d (%s)\n",
+			r, archive_error_string(_arc));
+	}
+
 	if (charset && *charset)  {
 		const auto &opt_hdrcharset = StrPrintf("hdrcharset=%s", charset);
-		int r = LibArchCall(archive_read_set_options, _arc, opt_hdrcharset.c_str());
+		r = LibArchCall(archive_read_set_options, _arc, opt_hdrcharset.c_str());
 		if (r != 0) {
 			fprintf(stderr, "LibArchOpenRead::PrepareForOpen('%s') hdrcharset error %d (%s)\n",
 				charset, r, archive_error_string(_arc));

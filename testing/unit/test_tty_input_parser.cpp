@@ -23,6 +23,7 @@ public:
 	void OnCursorShape(int) override {}
 	void OnInputBroken() override {}
 	void OnGetCellSize(unsigned int, unsigned int) override {}
+	void OnOSC52PasteReply(const std::string& s, bool is_primary_buffer) override {}
 
 	void OnInspectKeyEvent(KEY_EVENT_RECORD &event) override {
 		inspected.push_back(event);

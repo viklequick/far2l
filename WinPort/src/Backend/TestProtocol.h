@@ -99,9 +99,3 @@ struct TestReplySync
 	uint8_t waited;
 };
 
-struct TestRequestSendRaw
-{
-	uint32_t cmd;
-	uint32_t len; // number of raw bytes (max 2048)
-	char data[2048];
-};

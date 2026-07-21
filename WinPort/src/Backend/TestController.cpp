@@ -88,11 +88,6 @@ void TestController::ClientLoop(const std::string &ipc_client)
 			case TEST_CMD_SEND_RAW:
 				len = ClientDispatchSendRaw(len);
 				break;
-
-			case TEST_CMD_SEND_RAW:
-				len = ClientDispatchSendRaw(len);
-				break;
-
 			default:
 				throw std::runtime_error(StrPrintf("bad command %u", _buf.cmd));
 		}

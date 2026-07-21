@@ -281,6 +281,7 @@ struct DialogsOptions
 	bool EnforceColorCorrection; // for default themes, update colors to make it more contrast
 	bool EnableAccidentalConfirmation; // when clicked by right mouse button outside of the dialog, treat it as confirmation
 	bool EliminateOuterBorders; // Make doalogs like this: https://t.me/c/2241384293/23892
+	bool EnforceThemeCorrection;
 };
 
 struct VMenuOptions

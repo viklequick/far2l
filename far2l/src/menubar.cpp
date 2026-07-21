@@ -60,7 +60,7 @@ void ViewerMenuBar::DisplayObject()
 {
 	FARString strSpace = L"    ";
 	FARString strMsg = strSpace + Msg::ViewerMenuFileTitle + strSpace + Msg::ViewerMenuToolsTitle + strSpace
-			+ Msg::ViewerMenuNavigateTitle + strSpace + Msg::ViewerMenuViewTitle;
+			+ Msg::ViewerMenuNavigateTitle + strSpace + Msg::ViewerMenuViewTitle + strSpace + Msg::EditorMenuPluginsTitle;
 	RemoveHighlights(strMsg);
 	int Length = X2 - X1 + 1;
 	FARString strFullMsg;

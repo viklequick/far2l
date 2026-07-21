@@ -209,6 +209,7 @@ static int Do_AllSystemSettings()
 
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	Builder.AddCheckbox(Msg::EnforceColorCorrection, &Opt.Dialogs.EnforceColorCorrection);
+	Builder.AddCheckbox(Msg::EnforceThemeCorrection, &Opt.Dialogs.EnforceThemeCorrection);
 
 	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
 	Builder.AddCheckbox(Msg::UseModernLook, &Opt.Backend.UseModernLook);

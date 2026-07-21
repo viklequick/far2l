@@ -40,7 +40,8 @@ enum enumViewerMenus
 	MENU_VIEW_FILE,
 	MENU_VIEW_TOOLS,
 	MENU_VIEW_NAVIGATE,
-	MENU_VIEW_VIEW
+	MENU_VIEW_VIEW,
+	MENU_VIEW_PLUGINS
 };
 
 enum enumViewFileMenu

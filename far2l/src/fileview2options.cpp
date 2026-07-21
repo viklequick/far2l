@@ -135,11 +135,23 @@ void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileVie
 		{Msg::ViewerMenuFileOptions,	0,	KEY_ALTSHIFTF9  },
 	};
 
+	// plugins menu
+	std::vector<MenuItemData> plugins = CtrlObject->Plugins.GetMenuItems(MODALTYPE_VIEWER);
+	int PluginsMenuSize = std::min(128, (int)plugins.size());
+	MenuDataEx PluginsMenu[128];
+
+	for(size_t i = 0; i < plugins.size() && i < 128; ++i) {
+		PluginsMenu[i].Name = plugins[i].name.c_str();
+		PluginsMenu[i].Flags = 0;
+		PluginsMenu[i].AccelKey = 0;
+	}
+
 	HMenuData MainMenu[] = {
 		{Msg::ViewerMenuFileTitle,     1, FileMenu,      ARRAYSIZE(FileMenu),       L"Viewer"},
 		{Msg::ViewerMenuToolsTitle,    0, ToolsMenu,     ARRAYSIZE(ToolsMenu),      L"Viewer" },
 		{Msg::ViewerMenuNavigateTitle, 0, NavigateMenu,  ARRAYSIZE(NavigateMenu),   L"Viewer" },
-		{Msg::ViewerMenuViewTitle,     0, ViewMenu,      ARRAYSIZE(ViewMenu),       L"Viewer" }
+		{Msg::ViewerMenuViewTitle,     0, ViewMenu,      ARRAYSIZE(ViewMenu),       L"Viewer" },
+		{Msg::EditorMenuPluginsTitle, 0, PluginsMenu, PluginsMenuSize, L"Viewer" }
 	};
 
 	static int LastHItem = -1, LastVItem = 0;
@@ -159,7 +171,7 @@ void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileVie
 		HOptMenu.SetPosition(0, gap, ScrX, gap);
 
 		if (LastCommand) {
-			MenuDataEx *VMenuTable[] = {FileMenu, ToolsMenu, NavigateMenu, ViewMenu};
+			MenuDataEx *VMenuTable[] = {FileMenu, ToolsMenu, NavigateMenu, ViewMenu, PluginsMenu};
 			int HItemToShow = LastHItem;
 
 			MainMenu[0].Selected = 0;
@@ -192,6 +204,11 @@ void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileVie
 			FrameManager->ProcessKey(KEY_F12);
 			break;
 		}
+	}
+
+	if (HItem == MENU_VIEW_PLUGINS) {
+		CtrlObject->Plugins.OpenPlugin(plugins[VItem].pluginItem.pPlugin, OPEN_VIEWER, plugins[VItem].pluginItem.nItem);
+		return;
 	}
 
 	if (HItem >= 0 && VItem >= 0) {

@@ -92,6 +92,8 @@ public:
 
 	static std::vector<std::string> GetKnownUserThemes ();
 	static std::vector<std::string> GetKnownSystemThemes ();
+
+	uint64_t lookupBaseColor(const char* name, uint64_t dfl);
 };
 
 inline uint64_t FarColorToReal(unsigned int FarColor)

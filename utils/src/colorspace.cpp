@@ -1061,3 +1061,130 @@ RGB computeAccentColorBySample(const RGB& bg, const RGB& canonicalAccentC) {
 
     return rgb_final;
 }
+
+static LCH computeHighlight(const LCH& text, const LCH& bg, const LCH& accent)
+{
+    LCH hl = text;
+
+    // Neutral text → use accent hue
+    if (text.C < 5.0)
+        hl.H = accent.H;
+    else
+        hl.H = fmod(text.H + 20.0, 360.0);
+
+    // Lightness adjustment
+    if (bg.L < 50.0)
+        hl.L = std::clamp(text.L + 20.0, 0.0, 100.0);
+    else
+        hl.L = std::clamp(text.L + 10.0, 0.0, 100.0);
+
+    // Chroma adjustment
+    hl.C = std::clamp(text.C + 15.0, 0.0, 60.0);
+    return hl;
+}
+
+static LCH computeHighlight2(const LCH& text, const LCH& bg, const LCH& accent)
+{
+    LCH hl;
+
+    // Special case: black text on light gray background
+    if (text.L < 10 && bg.L > 65 && bg.C < 5)
+    {
+        hl.H = accent.H;
+        hl.C = 40;                 // strong chroma
+        hl.L = 45;                 // mid-lightness highlight
+        return hl;
+    }
+
+    // Neutral text → use accent hue
+    if (text.C < 5.0)
+        hl.H = accent.H;
+    else
+        hl.H = fmod(text.H + 20.0, 360.0);
+
+    // Lightness adjustment
+    if (bg.L < 50.0)
+        hl.L = std::clamp(text.L + 20.0, 0.0, 100.0);
+    else
+        hl.L = std::clamp(text.L + 10.0, 0.0, 100.0);
+
+    // Chroma adjustment
+    hl.C = std::clamp(text.C + 15.0, 0.0, 60.0);
+
+    return hl;
+}
+
+RGB computeHighlight(const RGB& fg, const RGB& bg) 
+{
+	HoverResult h = ComputeControlAccent(fg, bg);
+
+	RGB canonicalAccent = h.fg_hover;
+
+    LAB lab_bg = RGBtoLAB(bg);
+    LCH lch_bg = labToLch(lab_bg);
+
+    LAB lab_accent = RGBtoLAB(canonicalAccent);
+    LCH lch_accent = labToLch(lab_accent);
+
+    LAB lab_fg = RGBtoLAB(fg);
+    LCH lch_fg = labToLch(lab_fg);
+
+    LCH lch_hi = computeHighlight2(lch_fg, lch_bg, lch_accent);
+
+    LAB lab_final = lchToLab(lch_hi);
+    RGB rgb_final = LABtoRGB(lab_final);
+
+    return rgb_final;
+}
+
+static LCH computeSelection(const LCH& fg, const LCH& bg, const LCH& accent)
+{
+    LCH sel;
+
+    // Special case: black text on light gray background
+    if (fg.L < 10 && bg.L > 65 && bg.C < 5)
+    {
+        sel.H = accent.H;
+        sel.C = 40;
+        sel.L = 55;
+        return sel;
+    }
+
+    // Normal case: use accent hue
+    sel.H = accent.H;
+
+    // Chroma: boost from background
+    sel.C = std::clamp(bg.C + 25.0, 10.0, 50.0);
+
+    // Lightness: move away from background
+    if (bg.L < 50.0)
+        sel.L = std::clamp(bg.L + 20.0, 10.0, 90.0);
+    else
+        sel.L = std::clamp(bg.L - 20.0, 10.0, 90.0);
+
+    return sel;
+}
+
+RGB computeSelected(const RGB& fg, const RGB& bg) 
+{
+	HoverResult h = ComputeControlAccent(fg, bg);
+
+	RGB canonicalAccent = h.fg_hover;
+
+    LAB lab_bg = RGBtoLAB(bg);
+    LCH lch_bg = labToLch(lab_bg);
+
+    LAB lab_accent = RGBtoLAB(canonicalAccent);
+    LCH lch_accent = labToLch(lab_accent);
+
+    LAB lab_fg = RGBtoLAB(fg);
+    LCH lch_fg = labToLch(lab_fg);
+
+    LCH lch_hi = computeSelection(lch_fg, lch_bg, lch_accent);
+
+    LAB lab_final = lchToLab(lch_hi);
+    RGB rgb_final = LABtoRGB(lab_final);
+
+    return rgb_final;
+}
+

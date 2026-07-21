@@ -273,6 +273,35 @@ uint64_t assembleColor(RGB& fg, RGB& bg) {
 	return color | FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR;
 }
 
+static char* truncateEnd(char* s, const char* v) {
+	int slen = strlen(s), vlen = strlen(v);
+    if (slen < vlen) return s;
+    if (strcmp(s + slen - vlen, v)) return s;
+    s[slen - vlen] = 0;
+    return s;
+}
+
+uint64_t FarColors::lookupBaseColor(const char* name, uint64_t dfl) {
+	char buf[256];
+	strcpy(buf, name);
+
+	truncateEnd(buf, ".Selected");
+	truncateEnd(buf, ".Disabled");
+	truncateEnd(buf, ".GrayText");
+	truncateEnd(buf, ".Highlight");
+
+	if (!strcmp(buf, name)) 
+		return dfl;
+
+	for (size_t i = 0; i < SIZE_ARRAY_FARCOLORS; i++)
+		if (!strcmp(ColorsInit[i].name.c_str(), buf)) {
+			// fprintf(stderr, "%s %lx -> %s %lx\n", name, dfl, buf, FARColors.colors[i]);
+			return FARColors.colors[i];
+		}
+	fprintf(stderr, "%s %lx -> %s ?\n", name, dfl, buf);
+	return dfl;
+}
+
 void FarColors::AdjustContrastLevels() noexcept 
 {
 	if (!Opt.Dialogs.EnforceColorCorrection){ 
@@ -287,11 +316,47 @@ void FarColors::AdjustContrastLevels() noexcept
 
 		RGB fg, bg, newFg;
 		extractColor(cc, fg, bg);
+
+		iRGB ofg = toIRGB(fg);
+
+		if (Opt.Dialogs.EnforceThemeCorrection) {
+			uint64_t cc2 = lookupBaseColor(ColorsInit[i].name.c_str(), cc);
+			if (cc2 != cc){ 
+				extractColor(cc2, fg, bg);
+
+				if (endsWith(ColorsInit[i].name, ".Highlight") || endsWith(ColorsInit[i].name, ".Highlight.Selected") 
+						|| endsWith(ColorsInit[i].name, ".Highlight.Disabled")) {
+					// highlight first
+					fg = computeHighlight(fg, bg);
+					iRGB xfg = toIRGB(fg);
+					fprintf(stderr, "highlight: %s %lx -> %lx -> %x,%x, %x\n", 
+						ColorsInit[i].name.c_str(), cc, cc2,
+						(unsigned int)xfg.r, (unsigned int)xfg.g, (unsigned int)xfg.b);
+				}
+
+                /*
+				if (endsWith(ColorsInit[i].name, ".Selected")) {
+					fg = computeSelected(bg, fg); // swap colors as we need inverted ones
+					iRGB xfg = toIRGB(fg);
+					fprintf(stderr, "selected: %s %lx -> %lx -> %x,%x,%x\n", 
+						ColorsInit[i].name.c_str(), cc, cc2,
+						(unsigned int)xfg.r, (unsigned int)xfg.g, (unsigned int)xfg.b);
+				}
+				else */
+				if (endsWith(ColorsInit[i].name, ".Disabled") || endsWith(ColorsInit[i].name, ".GrayText")) {
+					fg = SoftenToDisabledState_LAB(fg);
+					iRGB xfg = toIRGB(fg);
+					fprintf(stderr, "grayed: %s %lx -> %lx -> %x,%x, %x\n", 
+						ColorsInit[i].name.c_str(), cc, cc2,
+						(unsigned int)xfg.r, (unsigned int)xfg.g, (unsigned int)xfg.b);
+				}
+			}
+		}
         
 		ContrastLevel level = ::ComputeContrast(fg, bg, newFg);
 
-		iRGB ofg = toIRGB(fg);
 		iRGB nfg = toIRGB(newFg);
+
 		if (nfg.r != ofg.r || nfg.g != ofg.g || nfg.b != ofg.b) {
 
 			uint64_t cc2 = assembleColor(newFg, bg);

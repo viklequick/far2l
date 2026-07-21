@@ -100,3 +100,6 @@ LAB lchToLab(const LCH& lch);
 // Compute accent color based on background
 RGB computeAccentColorByDegree(const RGB& bg, double accentHueDeg);
 RGB computeAccentColorBySample(const RGB& bg, const RGB& canonicalAccent);
+
+RGB computeHighlight(const RGB& fg, const RGB& bg);
+RGB computeSelected(const RGB& fg, const RGB& bg);

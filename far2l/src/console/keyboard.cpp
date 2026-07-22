@@ -709,12 +709,13 @@ static DWORD GetInputRecordInner(INPUT_RECORD *rec, bool ExcludeMacro, bool Proc
 			}
 
 #endif
+			/* vk: revoke
 			if (rec->EventType == NOOP_EVENT) {
 				Console.ReadInput(*rec);
 				DispatchInterThreadCalls();
 				CheckForPendingCtrlHandleEvent();
 				break;
-			}
+			}*/
 			break;
 		}
 

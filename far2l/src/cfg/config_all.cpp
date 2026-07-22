@@ -179,6 +179,7 @@ static int Do_AllSystemSettings()
 	}
 
 	if (supported_tweaks & TWEAK_STATUS_SUPPORT_CHANGE_FONT) {
+		Builder.AddEmptyLine();
 		Builder.AddButton(Msg::ConfigConsoleChangeFont, ChangeFontID, false);
 		if (supported_tweaks & TWEAK_STATUS_SUPPORT_PAINT_SHARP) 
 			Builder.AddCheckbox(Msg::ConfigConsolePaintSharp, &Opt.ConsolePaintSharp);
@@ -186,8 +187,7 @@ static int Do_AllSystemSettings()
 			Builder.AddEmptyLine();
 	}
 
-	if(Opt.Backend.UseModernLook) Builder.AddEmptyLine();
-
+	Builder.AddEmptyLine();
 	Builder.StartColumns();
 
 	if (supported_tweaks & TWEAK_STATUS_SUPPORT_OSC52CLIP_SET) 
@@ -334,6 +334,8 @@ static int Do_AllSystemSettings()
 		Builder.AddCheckbox(Msg::ConfigExclusiveWinRight, &Opt.ExclusiveWinRight);
 		Builder.EndColumns();
 	}
+
+	Builder.AddCheckbox(Msg::ConfigUseRightAltAsAltGr, &Opt.UseRightAltAsAltGr);
 
     /* system settings */
 

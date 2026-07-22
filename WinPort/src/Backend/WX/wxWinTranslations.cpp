@@ -342,7 +342,7 @@ bool KeyTracker::OnKeyUp(wxKeyEvent& event)
 		_right_control = false;
 	}
 	if (event.GetKeyCode() == WXK_ALT || event.GetKeyCode() == 0) {
-		_composing = _right_alt = false;
+		_right_alt = false;
 	}
 #endif
 

@@ -1473,6 +1473,8 @@ void WinPortPanel::OnKeyDown( wxKeyEvent& event )
 
 	fprintf(stderr, "\n");
 
+	// _last_keydown_enqueued = false;
+
 	// dont check for alt key sudden keyup cuz it breaks Win key Alt behaviour
 	// also it didnt cause problems yet
 	if ( (_key_tracker.Shift() && !event.ShiftDown())
@@ -1671,11 +1673,14 @@ void WinPortPanel::OnChar( wxKeyEvent& event )
 	if (_key_tracker.LastKeydown().GetTimestamp() != event.GetTimestamp()) {
 		fprintf(stderr, "\n");
 	}
-	fprintf(stderr, "\nOnChar: %s %s raw=%x code=%x uni=%x \"%lc\" ts=%lu lke=%u",
+	fprintf(stderr, "\nOnChar: %s %s raw=%x code=%x uni=%x \"%lc\" ts=%lu lke=%u none=%c ts_eq=%c compose=%c",
 		FormatWxKeyState(event.GetModifiers()),
 		GetWxVirtualKeyCodeName(event.GetKeyCode()),
 		event.GetRawKeyCode(), event.GetKeyCode(),
-		uni, (uni > 0x1f) ? uni : L'?', event.GetTimestamp(), _last_keydown_enqueued);
+		uni, (uni > 0x1f) ? uni : L'?', event.GetTimestamp(), _last_keydown_enqueued,
+		event.GetUnicodeKey() != WXK_NONE ? 'N' : 'y',
+		_key_tracker.LastKeydown().GetTimestamp() == event.GetTimestamp() ? 'y': 'N',
+		_key_tracker.Composing() ? 'Y': 'n');
 	_exclusive_hotkeys.OnKeyUp(event);
 
 	if (event.GetSkipped()) {
@@ -1714,23 +1719,32 @@ void WinPortPanel::OnChar( wxKeyEvent& event )
 		{
 			// Likely an IME-generated event or a desynchronized event. Use the safe fallback.
 			ir.Event.KeyEvent.wVirtualKeyCode = VK_NONAME;
+			//fprintf(stderr, " IBus? -> VK_NONAME");
 		}
 		else
 		{
 			// The event seems to be a direct result of a key press.
 			// Use the new logic to get a more precise virtual key code.
 			ir.Event.KeyEvent.wVirtualKeyCode = wxKeyCode2WinKeyCode(last_keydown.GetKeyCode());
+			//fprintf(stderr, " direct keypress -> %s", GetWxVirtualKeyCodeName(ir.Event.KeyEvent.wVirtualKeyCode));
 			if (ir.Event.KeyEvent.wVirtualKeyCode == 0 && event.GetKeyCode() == 0) {
 				ir.Event.KeyEvent.wVirtualKeyCode = VK_NONAME;
+				//fprintf(stderr, " -> VK_NONAME");
 			}
 		}
 
 		if (event.GetUnicodeKey() <= 0x7f) {
+			//fprintf(stderr, " uni=%x", event.GetUnicodeKey());
 			if (_key_tracker.LastKeydown().GetTimestamp() == event.GetTimestamp()) {
 				wx2INPUT_RECORD irx(TRUE, _key_tracker.LastKeydown(), _key_tracker);
 				ir.Event.KeyEvent.wVirtualKeyCode = irx.Event.KeyEvent.wVirtualKeyCode;
 				ir.Event.KeyEvent.wVirtualScanCode = irx.Event.KeyEvent.wVirtualScanCode;
 				ir.Event.KeyEvent.dwControlKeyState = irx.Event.KeyEvent.dwControlKeyState;
+				/*
+				fprintf(stderr, " ir vk=%x %s key=%x scan=%x", event.GetUnicodeKey(), 
+					GetWxVirtualKeyCodeName(ir.Event.KeyEvent.wVirtualKeyCode),
+					ir.Event.KeyEvent.wVirtualKeyCode, 
+					ir.Event.KeyEvent.wVirtualScanCode);*/
 			}
 		}
 
@@ -1755,6 +1769,7 @@ void WinPortPanel::OnChar( wxKeyEvent& event )
 #endif
 
 		ir.Event.KeyEvent.uChar.UnicodeChar = event.GetUnicodeKey();
+		//fprintf(stderr, " uc=%x", ir.Event.KeyEvent.uChar.UnicodeChar);
 
 #if !defined(__WXOSX__) && wxCHECK_VERSION(3, 2, 3)
 		if (event.AltDown() && !_key_tracker.RightAlt() && isLayoutDependentKey(event)) {
@@ -1791,10 +1806,15 @@ void WinPortPanel::OnChar( wxKeyEvent& event )
 		ir.Event.KeyEvent.bKeyDown = TRUE;
 		wxConsoleInputShim::Enqueue(&ir, 1);
 
+		//fprintf(stderr, " DOWN");
+
 		ir.Event.KeyEvent.bKeyDown = FALSE;
 		wxConsoleInputShim::Enqueue(&ir, 1);
 
+		//fprintf(stderr, " UP");
+
 		_enqueued_in_onchar = true;
+		//fprintf(stderr, " ENQUEUED");
 
 #if !defined(__WXOSX__)
 		// avoid double up event in ResetInputState()

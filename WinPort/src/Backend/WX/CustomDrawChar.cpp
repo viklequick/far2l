@@ -462,8 +462,9 @@ namespace WXCustomDrawChar
 		p.FillRectangle(m.middle_x, m.top, m.middle_x + p.thickness - 1, m.bottom);
 		p.SetColorEmboss();
 		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.right, m.middle_y + p.thickness);
-		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y - p.thickness);
-		p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.middle_x + p.thickness, m.middle_y + p.thickness);
+		//p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.middle_y - p.thickness);
+		//p.FillRectangle(m.middle_x + p.thickness, m.middle_y + p.thickness, m.middle_x + p.thickness, m.bottom);
+		p.FillRectangle(m.middle_x + p.thickness, m.top, m.middle_x + p.thickness, m.bottom);
 	}
 
 	static void Draw_2524_new(Painter &p, unsigned int start_y, unsigned int cx) /* ┤ */

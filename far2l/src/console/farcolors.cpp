@@ -285,7 +285,7 @@ uint64_t FarColors::lookupBaseColor(const char* name, uint64_t dfl) {
 	char buf[256];
 	strcpy(buf, name);
 
-	truncateEnd(buf, ".Selected");
+	// truncateEnd(buf, ".Selected");
 	truncateEnd(buf, ".Disabled");
 	truncateEnd(buf, ".GrayText");
 	truncateEnd(buf, ".Highlight");
@@ -324,7 +324,7 @@ void FarColors::AdjustContrastLevels() noexcept
 			if (cc2 != cc){ 
 				extractColor(cc2, fg, bg);
 
-				if (endsWith(ColorsInit[i].name, ".Highlight") || endsWith(ColorsInit[i].name, ".Highlight.Selected") 
+				if (endsWith(ColorsInit[i].name, ".Highlight") /* || endsWith(ColorsInit[i].name, ".Highlight.Selected")*/ 
 						|| endsWith(ColorsInit[i].name, ".Highlight.Disabled")) {
 					// highlight first
 					fg = computeHighlight(fg, bg);

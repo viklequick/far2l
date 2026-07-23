@@ -2475,7 +2475,7 @@ void Dialog::ShowDialog(unsigned ID)
 				strStr = CurItem->strData;
 				SetColor(ItemColor[0]);
 //				SetColorNormal(Attr, CurItem->TrueColors);
-				if (IsOkCancelButtons(I))
+				if (IsOkCancelButtons(I) && Y2 != MaxY2)
 					GotoXY(X1 + CX1, Y1 + CY1 - (MaxY2 - Y2) + 1);
 				else
 					GotoXY(X1 + CX1, Y1 + CY1 + CScrollY);

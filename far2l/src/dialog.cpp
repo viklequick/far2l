@@ -565,6 +565,7 @@ void Dialog::CheckDialogCoord()
 	}
 
 	MaxY2 = Y2;
+	MaxHeight = Y2 - Y1 + 1;
 
 	if (Y2 >= ScrY && Opt.Backend.UseModernLook) {
 		// scroll is here
@@ -1864,6 +1865,28 @@ bool Dialog::IsOkCancelButtons(int _I) {
 	return I < ItemCount && Item[I]->Type == DI_BUTTON && (Item[I]->Flags & DIF_CENTERGROUP);
 }
 
+void Dialog::CountBorders(int& BorderY1, int& BorderY2) {
+	BorderY1 = Y1;
+	BorderY2 = Y2;
+	if (MaxY2 != Y2) {
+		// Actually
+
+		int deltaY = -Y1 + 1;
+		for (int I = 0; I < (int)ItemCount; I++) {
+			if (Item[I]->Flags & DIF_HIDDEN) continue;
+
+			if (IsOkCancelButtons(I)) {
+				BorderY2 = std::min(BorderY2, Y1 + Item[I]->Y2 - (MaxY2 - Y2) - 1);
+			}
+			if (Item[I]->Type == DI_DOUBLEBOX) 
+				BorderY1 = Y1 + Item[I]->Y1 + 1;
+		}
+		BorderY2 += deltaY;
+		BorderY1 += deltaY;
+		// fprintf(stderr, "Y in [%d, %d] in [%d, %d/%d]\n", BorderY1, BorderY2, Y1, Y2, MaxY2);
+	}
+}
+
 //////////////////////////////////////////////////////////////////////////
 /*
 	Private:
@@ -1954,19 +1977,7 @@ void Dialog::ShowDialog(unsigned ID)
 
 	// vk: count borders for scrolling
 	int BorderY1 = Y1, BorderY2 = Y2;
-	if (MaxY2 != Y2) {
-		for (I = 0; I < DrawItemCount; I++) {
-			CurItem = Item[I];
-			if (CurItem->Flags & DIF_HIDDEN) continue;
-
-			if (IsOkCancelButtons(I)) {
-				BorderY2 = std::min(BorderY2, Y1 + CurItem->Y2 - (MaxY2 - Y2) - 1);
-			}
-			if (CurItem->Type == DI_DOUBLEBOX) 
-				BorderY1 = Y1 + CurItem->Y1 + 1;
-		}
-		// fprintf(stderr, "Y in [%d, %d] in [%d, %d/%d]\n", BorderY1, BorderY2, Y1, Y2, MaxY2);
-	}
+	CountBorders(BorderY1, BorderY2);
 
 	HintBeginContainer();
 	Hint(X1, Y1, X2, Y2, HintDialog, HintObjectNone);
@@ -2002,6 +2013,10 @@ void Dialog::ShowDialog(unsigned ID)
 
 		short CW = CX2 - CX1 + 1;
 		short CH = CY2 - CY1 + 1;
+
+		/*if (IsOkCancelButtons(I)) {
+			CY1 = CY2 = BorderY2;
+		}*/
 
 		CtlColorDlgItem(I, CurItem, ItemColor);
 
@@ -2461,7 +2476,7 @@ void Dialog::ShowDialog(unsigned ID)
 				SetColor(ItemColor[0]);
 //				SetColorNormal(Attr, CurItem->TrueColors);
 				if (IsOkCancelButtons(I))
-					GotoXY(X1 + CX1, Y1 + CY1 - (MaxY2 - Y2));
+					GotoXY(X1 + CX1, Y1 + CY1 - (MaxY2 - Y2) + 1);
 				else
 					GotoXY(X1 + CX1, Y1 + CY1 + CScrollY);
 
@@ -3713,18 +3728,13 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	MsX = MouseEvent->dwMousePosition.X;
 	MsY = MouseEvent->dwMousePosition.Y - ScrollY;
 
-	int MsBY = MouseEvent->dwMousePosition.Y + (MaxY2 - Y2); /* last buttons that are pinned and not scrolled; no scroll  means MaxY2 == Y2 */
-	int MsOY = MouseEvent->dwMousePosition.Y;
-
   	// first, we need actual borders
 	int BorderY1 = Y1, BorderY2 = Y2;
-	for (int Ij = 0; Ij < (int)ItemCount; Ij++) {
-		if (Item[Ij]->Flags & DIF_HIDDEN) continue;
-		if (IsOkCancelButtons(Ij))
-			BorderY2 = std::min(BorderY2, Y1 + Item[Ij]->Y2 - (MaxY2 - Y2) - 1);
-		if (Item[Ij]->Type == DI_DOUBLEBOX) 
-			BorderY1 = Y1 + Item[Ij]->Y1 + 1;
-	}
+	CountBorders(BorderY1, BorderY2);
+
+	/* last buttons that are pinned and not scrolled; no scroll  means MaxY2 == Y2 */
+	int MsBY = MouseEvent->dwMousePosition.Y + (MaxY2 - Y2) - 1; 
+	int MsOY = MouseEvent->dwMousePosition.Y;
 
 	// vk: Hover effect processing
 	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
@@ -3764,7 +3774,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			}
 
 			if (IsOkCancelButtons(I) && IsItemFocusable(Item[I]) && 
-					MsX >= Rect.Left && MsBY >= Rect.Top && MsX <= Rect.Right && MsBY <= Rect.Bottom) {
+					MsX >= Rect.Left && MsX <= Rect.Right &&
+					MsBY >= Rect.Top && MsBY <= Rect.Bottom) {
 				newHover = I;
 				Item[I]->Hover = 1;
 			}
@@ -3824,14 +3835,19 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
  		// pinned buttons for scroll
  		if (Y2 != MaxY2 && Type == DI_BUTTON && (MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) && IsOkCancelButtons(I)) {
-			if (MsX >= Rect.Left && MsBY >= Rect.Top && MsX <= Rect.Right && MsBY <= Rect.Bottom) {
+			if (MsX >= Rect.Left && MsX <= Rect.Right &&
+					MsBY >= Rect.Top && MsBY <= Rect.Bottom) {
 	 			ChangeFocus2(I);
+ 				ShowDialog();
+
+				while (IsMouseButtonPressed()) ;
+
  				ShowDialog();
 
                 fprintf(stderr, "Click on pinned button %d: %d,%d/%d/%d in %d,%d..%d,%d/%d\n", I, MsX, MsOY, MsY, MsBY, X1, Y1, X2, Y2, MaxY2);
 
- 				ProcessKey(KEY_ENTER, I);
- 				return TRUE;
+				ProcessKey(KEY_ENTER, I);
+				return TRUE;
             }
  		}
 
@@ -4171,27 +4187,6 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 						if (MouseX < X1 || MouseX > X1 + Item[I]->X1 + HiStrCellsCount(Item[I]->strData) + 4
 								|| MouseY != Y1 + Item[I]->Y1) {
-							ChangeFocus2(I);
-							ShowDialog();
-
-							return TRUE;
-						}
-
-						ProcessKey(KEY_ENTER, I);
-						return TRUE;
-					}
-
-					// pinned buttons for scroll
-					if (Y2 != MaxY2 && Type == DI_BUTTON && IsOkCancelButtons(I) && MsBY == Y1 + Item[I]->Y1
-							&& MsX < X1 + Item[I]->X1 + HiStrCellsCount(Item[I]->strData)) {
-						ChangeFocus2(I);
-						ShowDialog();
-
-						while (IsMouseButtonPressed())
-							;
-
-						if (MouseX < X1 || MouseX > X1 + Item[I]->X1 + HiStrCellsCount(Item[I]->strData) + 4
-								|| MouseY != MsY) {
 							ChangeFocus2(I);
 							ShowDialog();
 
@@ -7343,14 +7338,7 @@ bool Dialog::ScrollDialogUpTo(int ID)
 	if (MaxY2 == Y2) return true; // dialog has no scroll bar active
 
 	int BorderY1 = Y1, BorderY2 = Y2;
-	for (unsigned int I = 0; I < ItemCount; I++) {
-		if (Item[I]->Flags & DIF_HIDDEN) continue;
-
-		if (IsOkCancelButtons(I)) 
-			BorderY2 = std::min(BorderY2, Y1 + Item[I]->Y2 - (MaxY2 - Y2) - 1);
-		if (Item[I]->Type == DI_DOUBLEBOX) 
-			BorderY1 = Y1 + Item[I]->Y1 + 1;
-	}
+	CountBorders(BorderY1, BorderY2);
 
 	short CY2 = Item[FocusPos]->Y2;
 	short CY1 = Item[FocusPos]->Y1;

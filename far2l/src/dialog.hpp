@@ -306,7 +306,7 @@ private:
 
 	// переменные для перемещения диалога
 	int OldX1, OldX2, OldY1, OldY2, OldMaxY2;
-	int ScrollY {0}, MaxY2 {-1};
+	int ScrollY {0}, MaxY2 {-1}, MaxHeight{0};
 
 	wchar_t *HelpTopic;
 
@@ -341,6 +341,7 @@ private:
 	bool ScrollDialogUpTo(int ID);
 
 	void ShowDialog(unsigned ID = (unsigned)-1);	// ID=-1 - отрисовать весь диалог
+	void CountBorders(int& BorderY1, int& BorderY2);
 
 	DWORD CtlColorDlgItem(int ItemPos, const DialogItemEx *CurItem, uint64_t *ItemColor);
 	/*

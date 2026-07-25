@@ -1092,7 +1092,7 @@ bool ScrollBarRequired(UINT Length, UINT64 ItemsCount)
 	return Length > 2 && ItemsCount && Length < ItemsCount;
 }
 
-// todo: check if it is being ued from dialogs
+// todo: check if it is being used from dialogs
 bool ScrollBarEx(UINT X1, UINT Y1, UINT Length, UINT64 TopItem, UINT64 ItemsCount)
 {
 	if (ScrollBarRequired(Length, ItemsCount)) {

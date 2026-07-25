@@ -2676,7 +2676,8 @@ void Dialog::ShowDialog(unsigned ID)
 
 	// add vertical scroll if needed
 	if (Y2 != MaxY2) {
-		ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
+		ScrollBar(X2 - 1, Y1 + 3, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
+		Hint(X2 - 1, Y1 + 3, X2 - 1, Y1 + 3 + BorderY2 - BorderY1 + 1, HintDialog, HintScrollBar);
 	}
 	HintEndContainer();
 
@@ -3789,7 +3790,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	}
 
 	// vk: scroll bar control
-    if (Y2 != MaxY2 && MsX == X2 - 1) {
+    if (Y2 != MaxY2 && MsX == X2 - 1 && (MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED))) {
     	// ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
 		if (MsOY >= BorderY1 && MsOY <= BorderY2) {
 			// we are on the scroll bar
@@ -7210,12 +7211,73 @@ void Dialog::SetId(const GUID &Id)
 	IdExist = true;
 }
 
-int Dialog::ProcessMiniToolBar(int ToolIndex) {
-	// vk: todo: handle search / navigate here
-	if (findEditBox) return -1;
+enum eToolIndexCommand {
+	ToolNavigate = 0,
+	ToolSearch,
+	ToolCommandsSize
+};
 
-	fprintf(stderr, "tool button: %d\n", ToolIndex);
+int Dialog::ProcessMiniToolBarNaviagate() 
+{
+	std::vector<std::wstring> v;
+	std::vector<int> idv;
 
+	for(int I = 1; I < (int)ItemCount; ++I) { // surrounding border is not needed
+		if (Item[I]->Flags & DIF_HIDDEN) continue;
+
+		// in this mode we have only sections to do
+		if (Item[I]->Type != DI_SINGLEBOX && Item[I]->Type != DI_DOUBLEBOX && Item[I]->Type != DI_TEXT)
+			continue;
+		if (Item[I]->Type == DI_TEXT && !(Item[I]->Flags & (DIF_SEPARATORUSER | DIF_SEPARATOR | DIF_SEPARATOR2)))
+			continue;
+
+		FARString strStr;
+		if (!Item[I]->strData.IsEmpty()) 
+			strStr = Item[I]->strData;
+
+		if (strStr.GetLength() == 0)
+			continue;
+		v.push_back(strStr.GetWide());
+		idv.push_back(I + 1 /* next element afyter label with separator */);
+	}
+
+	int GroupsLen = (int)v.size();
+	if (GroupsLen < 1) return 0; // nothing to display
+
+	MenuDataEx Groups[GroupsLen];
+	for (int j = 0; j < GroupsLen; ++j) {
+		Groups[j] = { v[j].c_str(), 0, 0 };
+	}
+
+	{
+		int GroupsCode;
+		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
+
+		GroupsMenu.SetPosition(X1 + 3, Y1 + 2, 0, 0);
+		GroupsMenu.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
+		GroupsMenu.ClearDone();
+		GroupsMenu.Process();
+
+		GroupsCode = GroupsMenu.Modal::GetExitCode();
+		if (GroupsCode < 0 || GroupsCode >= GroupsLen) return 0;
+
+		fprintf(stderr, "item to select = %d %d\n", GroupsCode, idv[GroupsCode]);
+
+		int id = idv[GroupsCode];
+		if(id >= 0 && id < (int)ItemCount) {
+			fprintf(stderr, "scroll = %d\n", id);
+			ScrollDialogUpTo(id);
+			fprintf(stderr, "focus = %d\n", id);
+			ChangeFocus2(id);
+			fprintf(stderr, "redraw = %d\n", id);
+			ShowDialog();
+		}
+	}
+	return 0;
+}
+
+int Dialog::ProcessMiniToolBarSearch(int ToolIndex) 
+{
 	DlgEdit* DialogEdit = findEditBox = new DlgEdit(this, 0, DLGEDIT_SINGLELINE);
 
     /*
@@ -7333,7 +7395,23 @@ int Dialog::ProcessMiniToolBar(int ToolIndex) {
 	return 0;
 }
 
-bool Dialog::ScrollDialogUpTo(int ID) 
+int Dialog::ProcessMiniToolBar(int ToolIndex) 
+{
+	// vk: todo: handle search / navigate here
+	if (findEditBox) return -1;
+
+	fprintf(stderr, "tool button: %d\n", ToolIndex);
+
+	if (ToolIndex == ToolNavigate) {
+		return ProcessMiniToolBarNaviagate();
+	}
+	else if (ToolIndex == ToolSearch) {
+		return ProcessMiniToolBarSearch(ToolIndex);
+	}
+	return -1;
+}
+
+bool Dialog::ScrollDialogUpTo(int FocusPos) 
 {
 	if (MaxY2 == Y2) return true; // dialog has no scroll bar active
 
@@ -7345,13 +7423,11 @@ bool Dialog::ScrollDialogUpTo(int ID)
 	if (CY1 > MaxY2 - Y1) CY1 = MaxY2 - Y1;
 	if (CY2 > MaxY2 - Y1) CY2 = MaxY2 - Y1;
 
-    /*
 	fprintf(stderr, "focus: [%d] %d..%d, dialog=%d,%d..%d,%d/%d, scroll=%d, box=%d..%d top=%c bottom=%c\n", FocusPos, CY1, CY2,
 		X1, Y1, X2, Y2, MaxY2, 
 		ScrollY, BorderY1, BorderY2, 
 		CY2 + ScrollY < BorderY1 ? 'Y' : 'n',
 		CY1 + ScrollY > BorderY2 ? 'Y' : 'n');
-    */
 
 	if (CY2 + ScrollY < BorderY1) {
 		ScrollDialogUpDown(- (CY1 + ScrollY - BorderY1 - 2));
@@ -7376,7 +7452,7 @@ int Dialog::Do_DlgSearch(FARString& str, int ToolIndex)
 			strStr = Item[I]->strData;
 
 		// in this mode we have only sections to do
-		if (ToolIndex == 0) {
+		if (ToolIndex == ToolNavigate) {
 			if (Item[I]->Type != DI_SINGLEBOX && Item[I]->Type != DI_DOUBLEBOX && Item[I]->Type != DI_TEXT)
 				continue;
 			if (Item[I]->Type == DI_TEXT && !(Item[I]->Flags & (DIF_SEPARATORUSER | DIF_SEPARATOR | DIF_SEPARATOR2)))

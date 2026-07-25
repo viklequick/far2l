@@ -1011,6 +1011,7 @@ static N ApplyScanFileLengthLimit(N v)
 
 static bool ScanFileByReading(const char *Name)
 {
+	//fprintf(stderr, "read file sequentially `%s`\n", Name);
 	uint8_t buf[FILE_SCAN_READING_SIZE];
 	FDScope fd(sdc_open(Name, O_RDONLY));
 	if (!fd.Valid())
@@ -1020,11 +1021,13 @@ static bool ScanFileByReading(const char *Name)
 	if (len == 0)
 		return false;
 
+	//fprintf(stderr, "read file `%s` -> %ld bytes\n", Name, len);
 	return (findPattern->FindMatch(buf, len, true, true).first != (size_t)-1);
 }
 
 static bool ScanFileByMapping(const char *Name)
 {
+	//fprintf(stderr, "read file by mmap() `%s`\n", Name);
 	off_t FileSize = 0, FilePos = 0;
 	try {
 		SafeMMap smm(Name, SafeMMap::M_READ, FILE_SCAN_MMAP_WINDOW);
@@ -1032,12 +1035,16 @@ static bool ScanFileByMapping(const char *Name)
 
 		const void *View = smm.View();
 		size_t Length = smm.Length();
-		for (UINT LastPercents = 0;!StopFlag;) {
+		for (UINT LastPercents = 0; !StopFlag; ) {
 			const bool FirstFragment = (FilePos == 0);
 			const bool LastFragment = (FilePos + off_t(smm.Length()) >= FileSize);
 			const size_t AnalyzeLength = LastFragment
 				? Length - (FilePos + off_t(smm.Length()) - FileSize) : Length;
+			
+			// fprintf(stderr, "read file `%s` -> %ld of %ld bytes, %u\n", Name, AnalyzeLength, Length, LastPercents);
+
 			if (findPattern->FindMatch(View, AnalyzeLength, FirstFragment, LastFragment).first != (size_t)-1) {
+				//fprintf(stderr, "read file by mmap() `%s` true\n", Name);
 				return true;
 			}
 			if (LastFragment) {
@@ -1071,7 +1078,7 @@ static bool ScanFileByMapping(const char *Name)
 		fprintf(stderr, "%s(%s) - %s [FilePos=%llx FileSize=%llx]\n", __FUNCTION__, Name, e.what(),
 				(long long)FilePos, (long long)FileSize);
 	}
-
+	//fprintf(stderr, "read file by mmap() `%s` false\n", Name);
 	return false;
 }
 
@@ -1097,6 +1104,7 @@ struct ScanFileWorkItem : IThreadedWorkItem
 
 		if (_Result)
 			AddMenuRecord(_hDlg, _FileToReport, _FindData, _ArcIndex);
+		//fprintf(stderr, "workproc~destroy \n");
 	}
 
 	// invoked within worker thread, so make sure no FARString copied within this function
@@ -1116,6 +1124,7 @@ struct ScanFileWorkItem : IThreadedWorkItem
 		} else {
 			_Result = ScanFileByReading(FileToScanMB.c_str());
 		}
+		//fprintf(stderr, "workproc did\n");
 	}
 
 private:
@@ -1131,33 +1140,45 @@ private:
 static void AnalyzeFileItem(HANDLE hDlg, PluginPanelItem *FileItem, const wchar_t *FileName,
 		const FAR_FIND_DATA_EX &FindData)
 {
+	// fprintf(stderr, "AnalyzeWorkItem: `%ls`\n", FileName);
 	// Если включен режим поиска содержимого, тогда в поиск включаем только обычные файлы
 	if ((FindData.dwFileAttributes & (FILE_ATTRIBUTE_DIRECTORY | FILE_ATTRIBUTE_DEVICE)) != 0
-			&& (SearchHex || !strFindStr.IsEmpty()))
+			&& (SearchHex || !strFindStr.IsEmpty())) {
+		fprintf(stderr, "AnalyzeWorkItem: `%ls` skip folder or device\n", FileName);
 		return;
-	if ((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 && !Opt.FindOpt.FindFolders)
-		return;
+	}
 
-	if (!FileMaskForFindFile.Compare(FileName, !Opt.FindOpt.FindCaseSensitiveFileMask))
+	if ((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 && !Opt.FindOpt.FindFolders) {
+		fprintf(stderr, "AnalyzeWorkItem: `%ls` skip folder and no search folders\n", FileName);
 		return;
+	}
+
+	if (!FileMaskForFindFile.Compare(FileName, !Opt.FindOpt.FindCaseSensitiveFileMask)) {
+		fprintf(stderr, "AnalyzeWorkItem: `%ls` skip by mask\n", FileName);
+		return;
+	}
 
 	size_t ArcIndex = itd.GetFindFileArcIndex();
 
 	FARString FileToReport = FileName;
 	if (ArcIndex != LIST_INDEX_NONE) {
 		FileToReport.Insert(0, strPluginSearchPath);
-	} else if ((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)
-
-	{	// If searching files content and file's size smaller than length of searched string's
+		fprintf(stderr, "AnalyzeWorkItem: `%ls` reported\n", FileName);
+	} 
+	else if ((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0)	{	
+		// If searching files content and file's size smaller than length of searched string's
 		// characters count - then file cannot contain it (in any codepage).
 		// This small optimization also resolves stuck on attempt to scan pseudo files like
 		// /proc/kmsg cuz they have zero size reported
-		if (findPattern && FindData.nFileSize < findPattern->MinPatternSize())
+		if (findPattern && FindData.nFileSize < findPattern->MinPatternSize()) {
+			fprintf(stderr, "AnalyzeWorkItem: `%ls` skip too small pattern\n", FileName);
 			return;
+		}
 	}
 
 	if (strFindStr.IsEmpty()) {
 		AddMenuRecord(hDlg, FileToReport, FindData, ArcIndex);
+		// fprintf(stderr, "AnalyzeWorkItem: `%ls` added\n", FileName);
 		return;
 	}
 
@@ -1183,6 +1204,7 @@ static void AnalyzeFileItem(HANDLE hDlg, PluginPanelItem *FileItem, const wchar_
 
 			if (!GetFileResult) {
 				apiRemoveDirectory(strTempDir);
+				fprintf(stderr, "AnalyzeWorkItem: `%ls` skip by remove folder\n", FileName);
 				return;
 			}
 			RemoveTemp = true;
@@ -1194,14 +1216,18 @@ static void AnalyzeFileItem(HANDLE hDlg, PluginPanelItem *FileItem, const wchar_
 	if (pMountInfo->IsMultiThreadFriendly(FileToScan.GetMB())) {
 		ScanFileWorkItem *wi = new (std::nothrow)
 				ScanFileWorkItem(hDlg, FileToScan, FileToReport, RemoveTemp, FindData, ArcIndex);
+		/*
 		if (wi) {	// do file contents scan and following logic asynchronously
 			pWorkQueue->Queue(wi);
+			//fprintf(stderr, "AnalyzeWorkItem: `%ls` queued\n", FileName);
 			return;
-		}
+		}*/
 	}
 
 	// fallback to synchronous logic
+	//fprintf(stderr, "\n");
 	ScanFileWorkItem(hDlg, FileToScan, FileToReport, RemoveTemp, FindData, ArcIndex).WorkProc();
+	fprintf(stderr, "AnalyzeWorkItem: `%ls` sync, processed\n", FileName);
 }
 
 static void AnalyzeFileItem(HANDLE hDlg, PluginPanelItem *FileItem, const wchar_t *FileName,
@@ -2320,6 +2346,7 @@ static void DoPrepareFileList(HANDLE hDlg)
 		strRoot = pwRoot;
 		DoScanTree(hDlg, strRoot);
 	}
+	fprintf(stderr, "DoPrepareFileList completed\n");
 }
 
 static void DoPreparePluginList(HANDLE hDlg)
@@ -2368,8 +2395,9 @@ public:
 	{
 		if (!bDone)
 			return false;
-
+		fprintf(stderr, "CheckForDone: WaitThread ON\n");
 		WaitThread();
+		fprintf(stderr, "CheckForDone: WaitThread OFF\n");
 		return true;
 	}
 
@@ -2380,26 +2408,35 @@ public:
 
 	virtual void *ThreadProc()
 	{
+		fprintf(stderr, "ThreadProc: ON\n");
 		InitInFileSearch();
+		fprintf(stderr, "ThreadProc: inited\n");
 		{
 			SudoClientRegion scr;
 			DWORD msec = GetProcessUptimeMSec();
 			pMountInfo.reset(new MountInfo);
+			fprintf(stderr, "ThreadProc: mount info: reset\n");
 			if (PluginMode) {
 				DoPreparePluginList(hDlg);
+				fprintf(stderr, "ThreadProc: plugin: list prepared\n");
 			} else {
 				DoPrepareFileList(hDlg);
+				fprintf(stderr, "ThreadProc: file: list prepared\n");
 			}
+			fprintf(stderr, "ThreadProc: file listed\n", msec);
 			msec = GetProcessUptimeMSec() - msec;
 			fprintf(stderr, "FindFiles complete in %u msec\n", msec);
 			itd.SetPercent(0);
 			StopFlag = true;
 			pMountInfo.reset();
+			fprintf(stderr, "ThreadProc: searched\n");
 		}
 		ReleaseInFileSearch();
+		fprintf(stderr, "ThreadProc: released\n");
 
 		InterThreadLockAndWake itlw;
 		bDone = true;
+		fprintf(stderr, "FindFiles: bDone = TRUE\n");
 		return nullptr;
 	}
 };
@@ -2408,6 +2445,9 @@ static bool FindFilesProcess(Vars &v)
 {
 	_ALGO(CleverSysLog clv(L"FindFiles::FindFilesProcess()"));
 	// Если используется фильтр операций, то во время поиска сообщаем об этом
+
+	fprintf(stderr, "FindFilesProcess\n");
+
 	FARString strTitle(Msg::FindFileTitle);
 	FARString strSearchStr;
 

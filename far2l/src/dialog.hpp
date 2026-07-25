@@ -390,6 +390,8 @@ private:
 	int ProcessMoveDialog(DWORD Key);
 
 	int ProcessMiniToolBar(int ToolIndex);
+	int ProcessMiniToolBarNaviagate();
+	int ProcessMiniToolBarSearch(int ToolIndex);
 
 	int Do_ProcessTab(int Next);
 	int Do_ProcessNextCtrl(int Next, BOOL IsRedraw = TRUE);

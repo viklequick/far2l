@@ -5549,19 +5549,17 @@ LONG_PTR SendDlgMessageSynched(HANDLE hDlg, int Msg, int Param1, LONG_PTR Param2
 			Dlg->OldMaxY2 = Dlg->MaxY2;
 
 			// переместили
-			if (Param1 > 0)		// абсолютно?
-			{
+			if (Param1 > 0)	{	// абсолютно?
 				Dlg->X1 = ((COORD *)Param2)->X;
 				Dlg->Y1 = ((COORD *)Param2)->Y;
 				Dlg->X2 = W1;
 				Dlg->Y2 = H1;
 				Dlg->CheckDialogCoord();
-			} else if (!Param1)		// значит относительно
-			{
+			} 
+			else if (!Param1) {		// значит относительно
 				Dlg->X1+= ((COORD *)Param2)->X;
 				Dlg->Y1+= ((COORD *)Param2)->Y;
-			} else		// Resize, Param2=width/height
-			{
+			} else {		// Resize, Param2=width/height
 				int OldW1, OldH1;
 				OldW1 = W1;
 				OldH1 = H1;
@@ -7253,8 +7251,9 @@ int Dialog::ProcessMiniToolBarNaviagate()
 		int GroupsCode;
 		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
 
-		GroupsMenu.SetPosition(X1 + 3, Y1 + 2, 0, 0);
+		GroupsMenu.SetPosition(X1 + 2, Y1 + 1, 0, 0);
 		GroupsMenu.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
+		GroupsMenu.SetBoxType(SHORT_DOUBLE_BOX);
 		GroupsMenu.ClearDone();
 		GroupsMenu.Process();
 

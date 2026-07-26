@@ -191,26 +191,32 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 		// а теперь проврапим
 		// PtrStr=FarFormatText(ErrStr,MaxLength-(MaxLength > MAX_WIDTH_MESSAGE/2?1:0),ErrStr,sizeof(ErrStr),"\n",0); //?? MaxLength ??
 		FarFormatText(strErrStr, LenErrStr, strErrStr, L"\n", 0);	//?? MaxLength ??
-		PtrStr = strErrStr.GetBuffer();
-
-		// BUGBUG: FARString не предназначен для хранения строк разделённых \0
-		while ((PtrStr = wcschr(PtrStr, L'\n'))) {
-			*PtrStr++ = 0;
-
-			if (*PtrStr)
-				CountErrorLine++;
-		}
-
-		strErrStr.ReleaseBuffer();
-
-		if (CountErrorLine > ADDSPACEFORPSTRFORMESSAGE)
-			CountErrorLine = ADDSPACEFORPSTRFORMESSAGE;		//??
 	}
+
+	// vk: hack with strErrStr makes buffer overflow
+	int bufSize = strErrStr.GetLength() + 2; /* we need to add \0\0 at the end */
+	wchar_t* ptrBuf = (wchar_t*)malloc(sizeof(wchar_t) * bufSize);
+	memset(ptrBuf, 0, bufSize);
+	wcscpy(ptrBuf, strErrStr.CPtr());
+
+	PtrStr = ptrBuf; // strErrStr.GetBuffer();
+
+	// BUGBUG: FARString не предназначен для хранения строк разделённых \0
+	while ((PtrStr = wcschr(PtrStr, L'\n'))) {
+		*PtrStr++ = 0;
+
+		if (*PtrStr)
+			CountErrorLine++;
+	}
+	*PtrStr++ = 0;
+	// strErrStr.ReleaseBuffer();
+
+	if (CountErrorLine > ADDSPACEFORPSTRFORMESSAGE)
+		CountErrorLine = ADDSPACEFORPSTRFORMESSAGE;		//??
 
 	// BUGBUG: FARString не предназначен для хранения строк разделённых \0
 	//  заполняем массив...
-	CPtrStr = strErrStr;
-
+	CPtrStr = ptrBuf;  // strErrStr;
 	for (I = 0; I < CountErrorLine; I++) {
 		Str[I] = CPtrStr;
 		CPtrStr+= StrLength(CPtrStr) + 1;
@@ -256,6 +262,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 
 		if (!MsgDlg) {
 			free(Str);
+			free(ptrBuf);
 			return -1;
 		}
 
@@ -368,6 +375,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 
 		delete[] MsgDlg;
 		free(Str);
+		free(ptrBuf);
 		return (RetCode < 0 ? RetCode : RetCode - StrCount - 1 - (Separator ? 1 : 0));
 	}
 

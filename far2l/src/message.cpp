@@ -209,7 +209,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 		if (*PtrStr)
 			CountErrorLine++;
 	}
-	*PtrStr++ = 0;
+	//*PtrStr++ = 0;
 	// strErrStr.ReleaseBuffer();
 
 	if (CountErrorLine > ADDSPACEFORPSTRFORMESSAGE)

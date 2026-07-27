@@ -25,11 +25,6 @@ $# Settings#
      keyboard event comes to plugin when these are pressed and there is no
      realistic way to check if these are on or off via FAR API.
 
-   #Colorer correction#
-
-     You really need to set this checkbox depending on if you use colorer or not,
-     otherwise there will be unwanted color artifacts specifically in a locker mode.
-
    #Colorize cursor#
 
      Always show symbol under cursor with #Cursor color# except when drawing a crest.

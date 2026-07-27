@@ -1461,14 +1461,16 @@ void ConsolePainter::DrawHint(const HintPos& x) {
 	int cx_end = x.nx;
 	int cy = x.cy;
 
-	if (cy < 0 || cy <= x.area.Top || cy >= x.area.Bottom) return;
+	if (cy < 0 || cy < x.area.Top || cy > x.area.Bottom) return;
 	if (cx_end < 0 || cx_end < x.area.Left) return;
 	if (cx_start > x.area.Right || (unsigned)cx_start > x.cw) return;
 
+    /*
 	if (cx_start < x.area.Left) cx_start = x.area.Left;
 	if (cx_start > x.area.Right) cx_start = x.area.Right;
 	if (cx_end < x.area.Left) cx_end = x.area.Left;
 	if (cx_end > x.area.Right) cx_end = x.area.Right;
+    */
 
 	if (cx_end <= cx_start) return;
 
@@ -1656,8 +1658,8 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 
 	wxCoord W = _X2 - _X1 + 1, H = _Y2 - _Y1 + 1;
 
-// #define OFFSCREEN_NITMAP	1
-#ifdef OFFSCREEN_NITMAP
+// #define OFFSCREEN_BITMAP	1
+#ifdef OFFSCREEN_BITMAP
 	wxCoord X1 = 0, Y1 = 0;
 	wxCoord X2 = W, Y2 = H;
 
@@ -1698,14 +1700,11 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
     	const bool underlined = (pos.attributes & COMMON_LVB_UNDERSCORE) != 0;
     	const bool strikeout = (pos.attributes & COMMON_LVB_STRIKEOUT) != 0;
 
-#ifdef COMMON_LVB_BOLD
     	const bool bold = (pos.attributes & COMMON_LVB_BOLD) != 0;
-#endif
 
         int ascent = _context->FontHeight() - _context->FontDescent();
 
     	// todo: highlight character to be displayed
-#ifdef COMMON_LVB_BOLD
     	if (bold) {
     		if (WXCustomDrawChar::options->UseEmbossAsBold) {
     			WinPortRGB emboss = GetEmbossColor(c_text);
@@ -1728,20 +1727,17 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
     		}
     	}
     	else {
-#endif
 			wxFont normal = _dc.GetFont();
 			gc->SetFont(normal, wxColour(c_text.r, c_text.g, c_text.b));
 			DrawTextBaseline(gc, pos.text.c_str(), X1, Y1 + ascent);
-#ifdef COMMON_LVB_BOLD
     	}
-#endif
 
     	if (underlined || strikeout) {
 	    	gc->SetPen(wxColour(c_text.r, c_text.g, c_text.b));
     		if (underlined) gc->StrokeLine(X1, Y2 - 3, X2, Y2 - 3);
     		if (strikeout)  gc->StrokeLine(X1, Y1 + H / 2, X2, Y1 + H / 2);
         }
-#ifdef OFFSCREEN_NITMAP
+#ifdef OFFSCREEN_BITMAP
     }
 
 	if (bmp.IsOk()) {

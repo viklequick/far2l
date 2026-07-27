@@ -102,6 +102,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 	wchar_t *PtrStr;
 	const wchar_t *CPtrStr = nullptr;
 	FARString strErrStr;
+	wchar_t* ptrBuf = nullptr;
 
 	if (Flags & MSG_ERRORTYPE)
 		ErrorSets = GetErrorString(strErrStr);
@@ -195,7 +196,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 
 	// vk: hack with strErrStr makes buffer overflow
 	int bufSize = strErrStr.GetLength() + 2; /* we need to add \0\0 at the end */
-	wchar_t* ptrBuf = (wchar_t*)malloc(sizeof(wchar_t) * bufSize);
+	ptrBuf = (wchar_t*)malloc(sizeof(wchar_t) * bufSize);
 	memset(ptrBuf, 0, bufSize);
 	wcscpy(ptrBuf, strErrStr.CPtr());
 

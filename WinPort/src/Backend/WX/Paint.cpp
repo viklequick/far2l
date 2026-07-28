@@ -1461,7 +1461,7 @@ void ConsolePainter::DrawHint(const HintPos& x) {
 	int cx_end = x.nx;
 	int cy = x.cy;
 
-	if (cy < 0 || cy < x.area.Top || cy > x.area.Bottom) return;
+	if (cy <= 0 || cy < x.area.Top || cy > x.area.Bottom || cy + 1 >= (int)x.ch) return;
 	if (cx_end < 0 || cx_end < x.area.Left) return;
 	if (cx_start > x.area.Right || (unsigned)cx_start > x.cw) return;
 

@@ -2297,7 +2297,7 @@ BOOL Edit::DoPaste(wchar_t* ClipText)
 		return FALSE;
 
 	if (!Flags.Check(FEDITLINE_PERSISTENTBLOCKS)) {
-		DisableCallback DC(m_Callback.Active);
+		DisableCallback DC(Flags);
 		DeleteBlock();
 	}
 
@@ -2372,13 +2372,15 @@ void Edit::AutoGrabToClipboard()
 
 			if (!Flags.Check(FEDITLINE_PASSWORDMODE)) {
 				if (SelStart == -1 || SelStart >= SelEnd) {
+					const wchar_t *Mask = GetInputMask();
 					if (Mask && *Mask) {
 						std::wstring TrimmedStr(Str, CalcRTrimmedStrSize());
 						clip.Copy(TrimmedStr.c_str());
 					} else {
 						clip.Copy(Str);
 					}
-				} else if (SelEnd <= StrSize)		// TODO: если в начало условия добавить "StrSize &&", то пропадет баг "Ctrl-Ins в пустой строке очищает клипборд"
+				} 
+				else if (SelEnd <= StrSize)		// TODO: если в начало условия добавить "StrSize &&", то пропадет баг "Ctrl-Ins в пустой строке очищает клипборд"
 				{
 					int Ch = Str[SelEnd];
 					Str[SelEnd] = 0;

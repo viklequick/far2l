@@ -8722,6 +8722,6 @@ FARString Editor::GetLine(int row, int col, int maxlen)
 	if (col >= Len2) return L"";
 	if (col + maxlen > Len2) maxlen = Len2 - col;
 	FARString x(CurStr + col);
-	if (x.GetLength() > maxlen) x.Truncate(maxlen);
+	if ((int)x.GetLength() > maxlen) x.Truncate(maxlen);
 	return x;
 }

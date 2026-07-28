@@ -478,9 +478,8 @@ int KeyBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	}
 
 	int KeyWidth = (X2 - X1 - 1) / 12;
-
-	if (KeyWidth < 8)
-		KeyWidth = 8;
+	if (KeyWidth < 8) KeyWidth = 8;
+	if (KeyWidth > 11) KeyWidth = 11;
 
 	int X = MsX - X1;
 
@@ -649,11 +648,6 @@ void KeyBar::ShowContextMenu()
 	}
 
 	if (key) {
-		if (key == KEY_F9){ 
-			FrameManager->ProcessKey(key);
-			FrameManager->ProcessKey(KEY_DOWN);
-		}
-		else
-			FrameManager->ProcessKey(key);
+		FrameManager->ProcessKey(key);
 	}
 }

@@ -585,6 +585,10 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 			HOptMenu.Show();
 			HOptMenu.ProcessMouse(MouseEvent);
 		}
+		else if (!LastCommand) {
+			HOptMenu.Show();
+			// HOptMenu.ProcessKey(KEY_DOWN);
+		}
 
 		{
 			ChangeMacroMode MacroMode(MACRO_MAINMENU);

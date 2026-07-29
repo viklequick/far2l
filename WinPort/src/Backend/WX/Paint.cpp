@@ -1543,7 +1543,7 @@ void ConsolePainter::DrawHint(const HintPos& x, unsigned cw, unsigned ch, const 
 void ConsolePainter::ConsumeBlockHintAt(const CHAR_INFO& ci, int cx, int cy) {
 	if (WXCustomDrawChar::options && !WXCustomDrawChar::options->UseModernLook) return;
 
-	if (ci.Extra.Hint.Container != HintDialog) return;
+	// if (ci.Extra.Hint.Container != HintDialog) return;
 	if (ci.Extra.Hint.Object == HintObjectNone) return;
 	if (ci.Extra.Hint.Object != HintScrollBar) return;
 
@@ -1556,7 +1556,9 @@ void ConsolePainter::ConsumeBlockHintAt(const CHAR_INFO& ci, int cx, int cy) {
 
 	if (block_hints.size() > 0) {
 		for(int i = block_hints.size() - 1; i >= 0; --i) {
-			if (block_hints[i].Object == ci.Extra.Hint.Object && block_hints[i].tag == ci.Extra.Hint.Tag) {
+			if (block_hints[i].Container == ci.Extra.Hint.Container 
+					&& block_hints[i].Object == ci.Extra.Hint.Object 
+					/* && block_hints[i].tag == ci.Extra.Hint.Tag */) {
 				block_hints[i].X2 = cx;
 				block_hints[i].Y2 = cy;
 
@@ -1601,6 +1603,7 @@ void ConsolePainter::DrawBlockHint(const HintBlock& x, unsigned cw, unsigned ch,
 	if (cx_end < 0 || cx_end < area.Left) return;
 	if (cx_start > area.Right || (unsigned)cx_start > cw) return;
 
+    /*
 	fprintf(stderr, "...hinted: (%d,%d): %d..%d, %d..%d in %d..%d, %d..%d /%dx%d/, tag=%d hover=%c\n", 
     	x.Container, x.Object,
     	x.X1, x.Y1, x.X2, x.Y2,
@@ -1613,7 +1616,7 @@ void ConsolePainter::DrawBlockHint(const HintBlock& x, unsigned cw, unsigned ch,
     		x.parts[j].X1, x.parts[j].Y1, x.parts[j].X2, x.parts[j].Y2,
 	        (int)area.Left, (int)area.Right, (int)area.Top, (int)area.Bottom,
     	    cw, ch);
-	}
+	}*/
 
 	WinPortRGB clr_back = WxConsoleBackground2RGB(x.attributes);
 	WinPortRGB clr_text = WxConsoleForeground2RGB(x.attributes);
@@ -1745,9 +1748,25 @@ void DrawScrollThumb(wxDC& dc, const wxRect& rect, const wxColour& colTop, const
 
 void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int cy_e, const WinPortRGB& c_text, const WinPortRGB& c_back, const HintBlock& block)
 {
-	wxCoord Y1 = cy_s * _context->FontHeight() + _context->FontHeight() * 3 / 4, 
-		Y2 = (cy_e - 1) * _context->FontHeight() + _context->FontHeight() / 8 - 1;
-	wxCoord X1 = cx_s * _context->FontWidth(), X2 = cx_e * _context->FontWidth() + _context->FontWidth() - 1;
+	// override position in case we're in list / menu
+	bool has_bar = false;
+	for(int j = 0; j < (int)block.parts.size(); ++j) {
+		if (block.parts[j].ch == L"▲") {
+			cy_s = block.parts[j].Y1;
+			has_bar = true;
+		}
+		else if (block.parts[j].ch == L"▼") {
+			cy_e = block.parts[j].Y1;
+			has_bar = true;
+		}
+	}
+
+	if (!has_bar) return;
+
+	wxCoord Y1 = (cy_s + 1) * _context->FontHeight() /* + _context->FontHeight() * 3 / 4 */, 
+		Y2 = (cy_e - 1 + 1 ) * _context->FontHeight() /* + _context->FontHeight() / 8*/ - 1;
+	wxCoord X1 = cx_s * _context->FontWidth(), 
+		X2 = cx_e * _context->FontWidth() + _context->FontWidth() - 1;
 	wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
 
 	WinPortRGB c_a_text, c_a_back;

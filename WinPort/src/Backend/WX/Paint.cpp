@@ -1916,7 +1916,7 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, const wxColour& colDark)
 {
     // Subtle vertical gradient
-    dc.GradientFillLinear(rect, colLight, colDark, wxSOUTH);
+    dc.GradientFillLinear(rect, WXCustomDrawChar::options->Use3D ? colLight : colDark, colDark, wxSOUTH);
 
     if(!WXCustomDrawChar::options->Use3D) {
     	wxRect r2(rect.GetLeft() + 2, rect.GetTop() + 2, rect.GetWidth() - 4, rect.GetHeight() - 4);

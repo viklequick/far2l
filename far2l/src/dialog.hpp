@@ -322,7 +322,7 @@ private:
 	bool dialogBox;
 	int CloseX, CloseY;
 	int MiniToolX, MiniToolY;
-	int MiniToolHover {-1};
+	int MiniToolHover {-1}, ScrollBarHover {0}, ScrollBarPressed {0};
 	bool Resizable {false};
 
 	DlgEdit* findEditBox {nullptr};

@@ -1601,7 +1601,6 @@ void ConsolePainter::DrawBlockHint(const HintBlock& x, unsigned cw, unsigned ch,
 	if (cx_end < 0 || cx_end < area.Left) return;
 	if (cx_start > area.Right || (unsigned)cx_start > cw) return;
 
-    /*
 	fprintf(stderr, "...hinted: (%d,%d): %d..%d, %d..%d in %d..%d, %d..%d /%dx%d/, tag=%d hover=%c\n", 
     	x.Container, x.Object,
     	x.X1, x.Y1, x.X2, x.Y2,
@@ -1614,7 +1613,7 @@ void ConsolePainter::DrawBlockHint(const HintBlock& x, unsigned cw, unsigned ch,
     		x.parts[j].X1, x.parts[j].Y1, x.parts[j].X2, x.parts[j].Y2,
 	        (int)area.Left, (int)area.Right, (int)area.Top, (int)area.Bottom,
     	    cw, ch);
-	}*/
+	}
 
 	WinPortRGB clr_back = WxConsoleBackground2RGB(x.attributes);
 	WinPortRGB clr_text = WxConsoleForeground2RGB(x.attributes);
@@ -1760,7 +1759,7 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 	wxColour c_d(c_a_back.r, c_a_back.g, c_a_back.b);
 	wxColour c_b(c_back.r, c_back.g, c_back.b);
 
-	DrawScrollTrack(_dc, scrollR, c_d, c_a);
+	DrawScrollTrack(_dc, scrollR, c_d, /* block.HintFlags.Hover ? c_t :*/ c_a);
 
 	// now we need to look for `▓` meaning this is the thumb position
 	for(int j = 0; j < (int)block.parts.size(); ++j) {

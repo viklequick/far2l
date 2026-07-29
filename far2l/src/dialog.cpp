@@ -2676,8 +2676,12 @@ void Dialog::ShowDialog(unsigned ID)
 
 	// add vertical scroll if needed
 	if (Y2 != MaxY2) {
+		auto color = FarColorToReal(COL_DIALOGLISTSCROLLBAR);
+		color = SoftenItemColor(color, false, ScrollBarHover, ScrollBarPressed, 0);
+		SetColor(color);
 		ScrollBar(X2 - 1, Y1 + 3, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
-		Hint(X2 - 1, Y1 + 3, X2 - 1, Y1 + 3 + BorderY2 - BorderY1 + 1, HintDialog, HintScrollBar);
+		Hint(X2 - 1, Y1 + 3, X2 - 1, Y1 + 3 + BorderY2 - BorderY1 + 1, HintDialog, HintScrollBar,
+			/* focused */ false, ScrollBarHover, /* disabled */ false, ScrollBarPressed);
 	}
 	HintEndContainer();
 
@@ -3715,6 +3719,9 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	int Type;
 	SMALL_RECT Rect;
 
+	ScrollBarHover = 0;
+	ScrollBarPressed = 0;
+
 	if (!DialogMode.Check(DMODE_SHOW))
 		return FALSE;
 
@@ -3756,6 +3763,14 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 					MiniToolHover = MsX == MiniToolX ? 0 : 1;
 					newHover = I;
 				}
+
+    			if (Y2 != MaxY2 && MsX == X2 - 1) {
+					if (MsOY >= BorderY1 && MsOY <= BorderY2) {
+						// we are on the scroll bar
+						ScrollBarHover = 1;
+						newHover = I;
+					}
+				}
 			}
 
 			if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN)) continue;
@@ -3794,17 +3809,24 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
     	// ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
 		if (MsOY >= BorderY1 && MsOY <= BorderY2) {
 			// we are on the scroll bar
-			if (MsOY == BorderY1 || MsOY == BorderY2) { // scroll bar arrows
-				if (ScrollDialogUpDown(MsOY == BorderY2 ? -1 : 1))
-					return TRUE;
+			ScrollBarPressed = 1;
+
+			if (ScrollBarPressed) {
+				if (MsOY == BorderY1 || MsOY == BorderY2) { // scroll bar arrows
+					if (ScrollDialogUpDown(MsOY == BorderY2 ? -1 : 1))
+						return TRUE;
+				}
+				else { /* band */
+					int page = (BorderY2 - BorderY1) / (MaxY2 - Y2);
+					int thumb = page * - ScrollY + BorderY1;
+					if (ScrollDialogUpDown(MsOY > thumb ? -1 : 1))
+						return TRUE;
+				}
 			}
-			else { /* band */
-				int page = (BorderY2 - BorderY1) / (MaxY2 - Y2);
-				int thumb = page * - ScrollY + BorderY1;
-				if (ScrollDialogUpDown(MsOY > thumb ? -1 : 1))
-					return TRUE;
-			}
-			return FALSE; // no further actions on top of scroll bar
+
+			ShowDialog();
+
+			return TRUE; // no further actions on top of scroll bar
 		}
     }
 

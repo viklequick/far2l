@@ -245,8 +245,7 @@ public:
 
 	inline void HintFlush() {
 		for(size_t x = 0; x < line_hints.size(); ++x) {
-			HintPos c = line_hints[x];
-			DrawHint(c, _cw, _ch, _clip);
+			DrawHint(line_hints[x], _cw, _ch, _clip);
 		}
 		line_hints.clear();
 	}
@@ -255,8 +254,8 @@ public:
 	inline void paintEnd(int cw, int ch, const SMALL_RECT& clip) 
 	{
 		for(size_t x = 0; x < block_hints.size(); ++x) {
-			HintBlock c = block_hints[x];
-			DrawBlockHint(c, cw, ch, clip);
+			DrawBlockHint(block_hints[x], cw, ch, clip);
+			block_hints[x].parts.clear();
 		}
 		block_hints.clear();
 	}

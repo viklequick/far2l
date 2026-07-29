@@ -1792,7 +1792,7 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 			H = Y2 - Y1 + 1;
 			wxRect scrollT(X1, Y1, W, H);
 
-			DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0, block.HintFlags.Hover > 0);
+			DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
 		}
 	}
 }
@@ -1918,6 +1918,12 @@ void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, co
     // Subtle vertical gradient
     dc.GradientFillLinear(rect, colLight, colDark, wxSOUTH);
 
+    if(!WXCustomDrawChar::options->Use3D) {
+    	wxRect r2(rect.GetLeft() + 2, rect.GetTop() + 2, rect.GetWidth() - 4, rect.GetHeight() - 4);
+        dc.SetBrush(colLight);
+        dc.DrawRectangle(r2);
+    }
+
     // Optional: inner shadow at top
     dc.SetPen(wxPen(wxColour(0,0,0,40), 1));
     dc.DrawLine(rect.x, rect.y, rect.x + rect.width, rect.y);
@@ -1939,7 +1945,7 @@ void DrawScrollThumb(wxDC& dc, const wxRect& rect,
     r.Deflate(1);
 
     // --- State adjustments ---
-    wxColour top = colTop;
+    wxColour top = WXCustomDrawChar::options->Use3D ? colTop : colBottom;
     wxColour bottom = colBottom;
 
     if (hover)

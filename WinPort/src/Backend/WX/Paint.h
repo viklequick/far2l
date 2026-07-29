@@ -161,19 +161,43 @@ class ConsolePainter
 
         int tag;
 
-    	int cx;
-    	int nx;
-        int cy;
+    	int cx;      /* X1 */
+    	int nx;      /* X2 */
+        int cy;      /* Y  */
 
-        unsigned int cw, ch;
-
-    	DWORD64 attributes;
-        std::wstring text;
-        SMALL_RECT area;
+    	DWORD64 attributes; /* attributes of the X1, Y */
+        std::wstring text;  /* text from region */
     };
+
+    struct HintRegion {
+    	int X1, Y1, X2, Y2;
+        DWORD64 attributes;
+        std::wstring ch;
+    };
+
+    struct HintBlock {
+        HintContainerType Container; /* e.g menu, dialog, console, editor, viewer, panels, ... */
+        HintObjectType Object; /* e.g push button, text, box, separator, combo box, ...  */
+        int tag;
+
+        struct {
+    	    int Hover: 1;
+        	int Enabled: 1;
+            int Checked: 1;
+		} HintFlags;
+
+        int X1, Y1, X2, Y2;
+    	DWORD64 attributes; /* attributes of the X1, Y1 */
+
+        std::vector<HintRegion> parts;
+    };
+
+    unsigned _cw, _ch;
+    SMALL_RECT _clip;
 
     std::vector<CustomCharPos> line_custom_chars;
     std::vector<HintPos> line_hints;
+    std::vector<HintBlock> block_hints;
 
 public:
 
@@ -213,22 +237,40 @@ public:
 		HintFlush();
 	}
 
-	inline void HintLineBegin(int cy, int cw, int ch) {}
+	inline void HintBegin(int cw, int ch, const SMALL_RECT& area) {
+		_cw = cw;
+		_ch = ch;
+		_clip = area;
+	}
 
 	inline void HintFlush() {
 		for(size_t x = 0; x < line_hints.size(); ++x) {
 			HintPos c = line_hints[x];
-			DrawHint(c);
+			DrawHint(c, _cw, _ch, _clip);
 		}
 		line_hints.clear();
 	}
 
-	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, unsigned int cw, unsigned int ch, const SMALL_RECT& area, const wchar_t* text);
-	void DrawHint(const HintPos& x);
+	inline void paintBegin() { block_hints.clear(); }
+	inline void paintEnd(int cw, int ch, const SMALL_RECT& clip) 
+	{
+		for(size_t x = 0; x < block_hints.size(); ++x) {
+			HintBlock c = block_hints[x];
+			DrawBlockHint(c, cw, ch, clip);
+		}
+		block_hints.clear();
+	}
+
+	void ConsumeHintAt(const CHAR_INFO& ci, int cx, int nx, int cy, const wchar_t* text);
+	void DrawHint(const HintPos& x, unsigned int cw, unsigned int ch, const SMALL_RECT& area);
+
+	void ConsumeBlockHintAt(const CHAR_INFO& ci, int cx, int cy);
+	void DrawBlockHint(const HintBlock& x, unsigned int cw, unsigned int ch, const SMALL_RECT& area);
 
 	void DrawButtonDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
 	void DrawCheckboxDecorations(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
 	void DrawButtonDecorationsAsNew(int cx_s, unsigned int cx_e, unsigned int cy, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintPos& pos);
+	void DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int cy_e, const WinPortRGB& clr_text, const WinPortRGB& clr_back, const HintBlock& block);
 
 	bool DrawCustomChar(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;
 	bool DrawCustomCharImpl(wchar_t cc, WXCustomDrawChar::DrawT custom_draw, DWORD64 attributes, unsigned cx, unsigned nx, bool prev_space) ;

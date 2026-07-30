@@ -8703,6 +8703,7 @@ void Editor::DrawScrollbar()
 			XX2 = X2 - (ScrollBarEx(X2, Y1, Y2 - Y1 + 1,
 					NumLine - CalcDistance(TopScreen, CurLine, -1), NumLastLine) ? 1 : 0);
 		}
+		Hint(X2, Y1, X2, Y2, HintEditor, HintScrollBar);
 	}
 	else
 	{

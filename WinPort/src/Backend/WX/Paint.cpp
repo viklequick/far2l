@@ -1752,10 +1752,12 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 	bool has_bar = false;
 	for(int j = 0; j < (int)block.parts.size(); ++j) {
 		if (block.parts[j].ch == L"▲") {
+			cx_s = cx_e = block.parts[j].X1;
 			cy_s = block.parts[j].Y1;
 			has_bar = true;
 		}
 		else if (block.parts[j].ch == L"▼") {
+			cx_s = cx_e = block.parts[j].X1;
 			cy_e = block.parts[j].Y1;
 			has_bar = true;
 		}

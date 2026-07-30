@@ -778,6 +778,7 @@ void Help::FastShow()
 	if (!Locked()) {
 		SetFarColor(COL_HELPSCROLLBAR);
 		ScrollBarEx(X2, Y1 + FixSize + 1, Y2 - Y1 - FixSize - 1, StackData.TopStr, StrCount - FixCount);
+		Hint(X2, Y1 + FixSize + 1, X2, Y2 - FixSize - 1, HintHelpViewer, HintScrollBar);
 	}
 }
 

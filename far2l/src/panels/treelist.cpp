@@ -335,6 +335,9 @@ void TreeList::DisplayTree(int Fast)
 	SetFarColor(COL_PANELTEXT);
 	SetScreen(X1 + 1, Y2 - (ModalMode ? 2 : 1), X2 - 1, Y2 - 1, L' ', FarColorToReal(COL_PANELTEXT));
 	Hint(X1, Y1, X2, Y2, HintTree, HintObjectNone);
+	if (Opt.ShowPanelScrollbar) {
+		Hint(X2, Y1 + 1, X2, Y1 + GetVisibleHeight(), HintTree, HintScrollBar);
+	}
 
 	if (TreeCount > 0 && CurFile >= 0 && CurFile < TreeCount && ListData[CurFile]) {
 		GotoXY(X1 + 1, Y2 - 1);

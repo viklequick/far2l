@@ -893,11 +893,13 @@ void Viewer::DrawScrollbar()
 		if (!VM.Hex) {
 			ScrollBar(X2 + (m_bQuickView ? 1 : 0), Y1, Y2 - Y1 + 1,
 					(LastPage ? (!FilePos ? 0 : 100) : ToPercent64(FilePos, FileSize)), 100);
+			Hint(X2 + (m_bQuickView ? 1 : 0), Y1, X2 + (m_bQuickView ? 1 : 0), Y2, HintViewer, HintScrollBar);
 		} else {
 			UINT64 Total = FileSize / 16 + (FileSize % 16 ? 1 : 0);
 			UINT64 Top = FilePos / 16 + (FilePos % 16 ? 1 : 0);
 			ScrollBarEx(X2 + (m_bQuickView ? 1 : 0), Y1, Y2 - Y1 + 1, LastPage ? Top ? Total : 0 : Top,
 					Total);
+			Hint(X2 + (m_bQuickView ? 1 : 0), Y1, X2 + (m_bQuickView ? 1 : 0), Y2, HintViewer, HintScrollBar);
 		}
 	}
 }

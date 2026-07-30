@@ -110,6 +110,8 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 	if (ItemsNumber < 0 || Buttons < 0 || ItemsNumber < Buttons)
 		return -1;
 
+    /* OnPaint here */
+
 	for (;;) {	// #1248
 		StrCount = ItemsNumber - Buttons;
 		if (int(ScrY) - int(StrCount) > 2 || ItemsNumber < Buttons + 1)
@@ -254,8 +256,8 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 	MessageY2 = Y2 = Y1 + int(StrCount) + 3;
 	FARString strHelpTopic(strMsgHelpTopic);
 	strMsgHelpTopic.Clear();
-	// *** Вариант с Диалогом ***
 
+	// *** Вариант с Диалогом ***
 	if (Buttons > 0) {
 		DWORD ItemCount = StrCount + Buttons + 1;
 		DialogItemEx *PtrMsgDlg;
@@ -352,6 +354,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 			Dialog Dlg(MsgDlg, ItemCount, MsgDlgProc);
 			Dlg.SetPosition(X1, Y1, X2, Y2);
 
+			// todo: do we need this?
 			Hint(X1, Y1, X2, Y2, HintDialog, HintObjectNone);
 
 			if (!strHelpTopic.IsEmpty())
@@ -380,6 +383,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 		return (RetCode < 0 ? RetCode : RetCode - StrCount - 1 - (Separator ? 1 : 0));
 	}
 
+    /* actual paint begins here */
 	Hint(X1, Y1, X2, Y2, HintDialog, HintObjectNone);
 
 	// *** Без Диалога! ***
@@ -390,8 +394,11 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 		MakeShadow(X1 + 2, Y2 + 1, X2, Y2 + 1);
 		MakeShadow(X2 + 1, Y1 + 1, X2 + 2, Y2 + 1);
 
-		Box(X1 + 3, Y1 + 1, X2 - 3, Y2 - 1, FarColorToReal((Flags & MSG_WARNING) ? COL_WARNDIALOGBOX : COL_DIALOGBOX),
-				DOUBLE_BOX);
+		Box(X1 + 3, Y1 + 1, X2 - 3, Y2 - 1, FarColorToReal((Flags & MSG_WARNING) ? COL_WARNDIALOGBOX : COL_DIALOGBOX),	DOUBLE_BOX);
+		Hint(X1 + 3, Y1 + 1, X2 - 3, Y1 + 1, HintDialog, HintBox);
+		Hint(X1 + 3, Y1 + 1, X1 + 3, Y2 - 1, HintDialog, HintBox);
+		Hint(X1 + 3, Y2 - 1, X2 - 3, Y2 - 1, HintDialog, HintBox);
+		Hint(X2 - 3, Y1 + 1, X2 - 3, Y2 - 1, HintDialog, HintBox);
 	}
 
 	SetFarColor((Flags & MSG_WARNING) ? COL_WARNDIALOGTEXT : COL_DIALOGTEXT);
@@ -402,8 +409,12 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 		if (strTempTitle.GetLength() > MaxLength)
 			strTempTitle.Truncate(MaxLength);
 
-		GotoXY(X1 + (X2 - X1 - 1 - (int)strTempTitle.GetLength()) / 2, Y1 + 1);
+		if (Opt.Backend.UseModernLook)
+			GotoXY(X1 + 3, Y1 + 1);
+		else
+			GotoXY(X1 + (X2 - X1 - 1 - (int)strTempTitle.GetLength()) / 2, Y1 + 1);
 		FS << L" " << strTempTitle << L" ";
+		HintAt(HintDialog, HintText);
 	}
 
 	for (I = 0; I < StrCount; I++) {
@@ -417,13 +428,17 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 			if (Length > 1) {
 				SetFarColor((Flags & MSG_WARNING) ? COL_WARNDIALOGBOX : COL_DIALOGBOX);
 				GotoXY(X1 + 3, Y1 + I + 2);
-				DrawLine(Length, (Chr == 2 ? 3 : 1));
+				if (!Opt.Backend.UseModernLook) DrawLine(Length, (Chr == 2 ? 3 : 1));
 				CPtrStr++;
 				int TextLength = StrLength(CPtrStr);
 
 				if (TextLength < Length) {
-					GotoXY(X1 + 3 + (Length - TextLength) / 2, Y1 + I + 2);
+					if (Opt.Backend.UseModernLook)
+						GotoXY(X1 + 3, Y1 + I + 2);
+					else
+						GotoXY(X1 + 3 + (Length - TextLength) / 2, Y1 + I + 2);
 					Text(CPtrStr);
+					HintAt(HintDialog, HintText);
 				}
 
 				SetFarColor((Flags & MSG_WARNING) ? COL_WARNDIALOGBOX : COL_DIALOGTEXT);
@@ -462,6 +477,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 
 		if (lpwszTemp) {
 			Text(lpwszTemp);
+			HintAt(HintDialog, HintText);
 			free(lpwszTemp);
 		}
 	}

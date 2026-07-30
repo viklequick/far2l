@@ -1694,8 +1694,7 @@ void VMenu::DrawBottomText()
 	FARString strTmpStr;
 	const int SepWidth = X2 - X1 + 1;
 	wchar_t *TmpStr = strTmpStr.GetBuffer(SepWidth + 1);
-	MakeSeparator(SepWidth, TmpStr,
-			BoxType == SINGLE_BOX || BoxType == SHORT_SINGLE_BOX ? 2 : 1);
+	MakeSeparator(SepWidth, TmpStr,	BoxType == SINGLE_BOX || BoxType == SHORT_SINGLE_BOX ? 13 : 12 /* 2 : 1 */);
 	strTmpStr.ReleaseBuffer();
 
 	SetColor(Colors[VMenuColorBox]);
@@ -1824,7 +1823,10 @@ void VMenu::DrawTitles()
 		if (WidthTitle >= MaxTitleLength)
 			WidthTitle = MaxTitleLength - 1;
 
-		GotoXY(X1 + (X2 - X1 - 1 - WidthTitle) / 2, Y1);
+		if (Opt.Backend.UseModernLook)
+			GotoXY(X1 + 2, Y1);
+		else
+			GotoXY(X1 + (X2 - X1 - 1 - WidthTitle) / 2, Y1);
 		SetColor(Colors[VMenuColorTitle]);
 
 		FS << L" " << fmt::Cells() << fmt::Size(WidthTitle) << strDisplayTitle << L" ";
@@ -1836,7 +1838,10 @@ void VMenu::DrawTitles()
 		if (WidthTitle >= MaxTitleLength)
 			WidthTitle = MaxTitleLength - 1;
 
-		GotoXY(X1 + (X2 - X1 - 1 - WidthTitle) / 2, Y2);
+		if (Opt.Backend.UseModernLook)
+			GotoXY(X1 + 2, Y2);
+		else
+			GotoXY(X1 + (X2 - X1 - 1 - WidthTitle) / 2, Y2);
 		SetColor(Colors[VMenuColorTitle]);
 
 		FS << L" " << fmt::Cells() << fmt::Size(WidthTitle) << strBottomTitle << L" ";
@@ -2051,8 +2056,14 @@ void VMenu::ShowMenu(bool IsParent, bool ForceFrameRedraw)
 					if (ItemWidth > X2 - X1 - 3)
 						ItemWidth = X2 - X1 - 3;
 
-					GotoXY(X1 + (X2 - X1 - 1 - ItemWidth) / 2, Y);
-					FS << L" " << fmt::Cells() << fmt::LeftAlign() << fmt::Size(ItemWidth) << Item[I]->strName << L" ";
+					if (Opt.Backend.UseModernLook) {
+						GotoXY(X1 + 2, Y);
+						FS << L" " << fmt::Cells() << fmt::LeftAlign() << fmt::Size(ItemWidth) << Item[I]->strName << L" ";
+					}
+					else {
+						GotoXY(X1 + (X2 - X1 - 1 - ItemWidth) / 2, Y);
+						FS << L" " << fmt::Cells() << fmt::LeftAlign() << fmt::Size(ItemWidth) << Item[I]->strName << L" ";
+					}
 				}
 
 				Hint(X1, Y, X2, Y, HintMenu, HintLine);

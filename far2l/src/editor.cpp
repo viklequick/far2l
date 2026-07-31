@@ -736,14 +736,14 @@ void Editor::ShowEditor(int CurLineOnly)
 			}
 		}
 
+		// VK: todo: is it correct for dialogs?
+		Hint(X1, Y1, X2, Y2, HintEditor, HintObjectNone);
+
 		DrawScrollbar();
 
 		Edit *CurLogicalLine = TopScreen;
 		int CurVisualLine = m_TopScreenVisualLine;
 		int CurLineNumber = GetTopScreenLineNumber() - 1;
-
-		// VK: todo: is it correct for dialogs?
-		Hint(X1, Y1, X2, Y2, HintEditor, HintObjectNone);
 
 		for (int Y = Y1; Y <= Y2; Y++)
 		{

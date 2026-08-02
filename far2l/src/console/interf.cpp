@@ -888,8 +888,9 @@ uint64_t SoftenColorToDisabled(uint64_t attributes) {
     //RGB newFg;
     fg = SoftenToDisabledState_LAB(fg);
 
-    //ComputeContrast(fg, bg, newFg);
-    //fg = newFg;
+	LAB bgl = RGBtoLAB(bg);
+    bgl.L = std::max(0.0, bgl.L - 3.0); // darken to 3%, nothing for black background
+	bg = LABtoRGB(bgl);
 
    	return assembleColor(fg, bg) | (attributes & 0x0000FFFF);
 }

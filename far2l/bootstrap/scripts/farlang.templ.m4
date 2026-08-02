@@ -29962,6 +29962,17 @@ upd:"Copy to command line                Ctrl+Enter"
 upd:"Copy to command line                Ctrl+Enter"
 upd:"Copy to command line                Ctrl+Enter"
 
+PanelCopyToCmdLineOrg
+upd:"Copy unescaped to command line      Alt+Enter"
+"Copy unescaped to command line      Alt+Enter"
+upd:"Copy unescaped to command line      Alt+Enter"
+upd:"Copy unescaped to command line      Alt+Enter"
+upd:"Copy unescaped to command line      Alt+Enter"
+upd:"Copy unescaped to command line      Alt+Enter"
+upd:"Copy unescaped to command line      Alt+Enter"
+upd:"Copy unescaped to command line      Alt+Enter"
+upd:"Copy unescaped to command line      Alt+Enter"
+
 PanelCopyClipboard
 upd:"Copy to clipboard                   Ctrl+Alt+Ins"
 "Copy to clipboard                   Ctrl+Alt+Ins"

@@ -839,6 +839,8 @@ int FileList::ProcessKey(FarKey Key)
 			case KEY_CTRLALTBACKBRACKET:
 			case KEY_ALTSHIFTBRACKET:
 			case KEY_ALTSHIFTBACKBRACKET:
+			case KEY_ALTENTER:
+			case KEY_ALTNUMENTER:
 				break;
 			case KEY_CTRLG:
 			case KEY_SHIFTF4:
@@ -1030,6 +1032,17 @@ int FileList::ProcessKey(FarKey Key)
 			SetCurPath();
 			return TRUE;
 		}
+		case KEY_ALTENTER:
+		case KEY_ALTNUMENTER: /* copy path without escaping */
+			if (!ListData.IsEmpty() && SetCurPath()) {
+				FARString strFileName;
+				ASSERT(CurFile < ListData.Count());
+				CurPtr = ListData[CurFile];
+				strFileName = CurPtr->strName;
+				strFileName+= L" ";
+				CtrlObject->CmdLine->InsertString(strFileName);
+			}
+			return TRUE;
 		case KEY_CTRLNUMENTER:
 		case KEY_CTRLSHIFTNUMENTER:
 		case KEY_CTRLENTER:

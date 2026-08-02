@@ -1510,6 +1510,8 @@ void WinPortPanel::OnKeyDown( wxKeyEvent& event )
 		activeMods &= ~LEFT_CTRL_PRESSED;
 	}
 
+    /* vk: damn switch off the alt-enter behavior */
+    /*
 	if (event.GetKeyCode() == WXK_RETURN && dwMods == LEFT_ALT_PRESSED
 		&& (_prev_key_code == WXK_ALT || _prev_key_code == WXK_RETURN)) {
 
@@ -1520,7 +1522,7 @@ void WinPortPanel::OnKeyDown( wxKeyEvent& event )
 			_resize_pending = RP_DEFER;
 		_last_keydown_enqueued = true;
 		return;
-	}
+	}*/
 
 #ifdef WX_ALT_NONLATIN
 	const bool alt_nonlatin_workaround = (

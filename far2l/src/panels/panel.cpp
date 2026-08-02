@@ -1489,12 +1489,15 @@ void Panel::Show()
 	ShowScreensCount();
 }
 
+void SetColorBlacked(DWORD64 attrs, bool focus = true);
+void SetFarColorBlacked(int what, bool focus = true);
+
 void Panel::DrawSeparator(int Y)
 {
 	if (Y < Y2) {
-		SetFarColor(COL_PANELBOX);
+		SetFarColorBlacked(COL_PANELBOX, Focus);
 		GotoXY(X1, Y);
-		ShowSeparator(X2 - X1 + 1, 12 /* strict; was re;axed e.g. was 1 */);
+		ShowSeparator(X2 - X1 + 1, 12 /* strict; was relaxed e.g. was 1 */);
 	}
 }
 

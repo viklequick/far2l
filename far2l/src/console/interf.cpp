@@ -867,6 +867,33 @@ uint64_t GetLinkColor(uint64_t attributes)
     return assembleColor(r.bg_hover, bg) | (attributes & 0x0000FFFF);
 }
 
+uint64_t SoftenColorToBlack(uint64_t attributes) {
+   	RGB bg, fg;
+   	extractColor(attributes, fg, bg);
+
+	iRGB blacked = SoftenBlackish_LAB(fg);
+
+    RGB newFg;
+    fg = toRGB(blacked);
+    ComputeContrast(fg, bg, newFg);
+    fg = newFg;
+
+   	return assembleColor(fg, bg) | (attributes & 0x0000FFFF);
+}
+
+uint64_t SoftenColorToDisabled(uint64_t attributes) {
+   	RGB bg, fg;
+   	extractColor(attributes, fg, bg);
+
+    //RGB newFg;
+    fg = SoftenToDisabledState_LAB(fg);
+
+    //ComputeContrast(fg, bg, newFg);
+    //fg = newFg;
+
+   	return assembleColor(fg, bg) | (attributes & 0x0000FFFF);
+}
+
 uint64_t SoftenItemColor(uint64_t attributes, int Focus, int Hover, int Pressed, int Selected) 
 {
    	RGB bg, fg;

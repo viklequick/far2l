@@ -2675,6 +2675,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	FileListItem *CurPtr;
 	int RetCode;
 
+    /* change disk */
 	if (IsVisible() && Opt.ShowColumnTitles && !MouseEvent->dwEventFlags
 			&& MouseEvent->dwMousePosition.Y == Y1 + 1 && MouseEvent->dwMousePosition.X > X1
 			&& MouseEvent->dwMousePosition.X < X1 + 3) {
@@ -2688,6 +2689,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		return TRUE;
 	}
 
+    /* scroll bar */
 	if (IsVisible() && Opt.ShowPanelScrollbar && MouseX == X2
 			&& (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 			&& !(MouseEvent->dwEventFlags & MOUSE_MOVED) && !IsDragging()) {
@@ -2720,6 +2722,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 	}
 
+    /* mouse hover over the panel */
 	if (Opt.Backend.UseModernLook && IsVisible() && (MouseEvent->dwEventFlags & MOUSE_MOVED) && !IsDragging() && 
 			!(MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) && !(MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
         /* vk: simple mouse move, highhlight the file */
@@ -2731,8 +2734,10 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
         /* no return, continue processing */
 	}
 
+    /* paste from clipboard if clicked outside of the file list */
 	if ((MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) && MouseEvent->dwEventFlags != MOUSE_MOVED) {
-		if (Opt.PasteFromPrimarySelection && !MouseEvent->dwControlKeyState) {
+		if (Opt.PasteFromPrimarySelection && !MouseEvent->dwControlKeyState 
+				&& MouseEvent->dwMousePosition.Y < Y2 - 2 * Opt.ShowPanelStatus /* command line area */) {
 			// CopyToPrimarySelection -- let EditorControl to do the rest
 			return FALSE;
 		}
@@ -2770,8 +2775,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			if (PanelMode == PLUGIN_PANEL) {
 				if (!WinPortTesting())
 					FlushInputBuffer();		// !!!
-				int ProcessCode =
-						CtrlObject->Plugins.ProcessKey(hPlugin, VK_RETURN, ShiftPressed ? PKF_SHIFT : 0);
+				int ProcessCode = CtrlObject->Plugins.ProcessKey(hPlugin, VK_RETURN, ShiftPressed ? PKF_SHIFT : 0);
 				ProcessPluginCommand();
 
 				if (ProcessCode)

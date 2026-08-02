@@ -56,6 +56,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "strmix.hpp"
 #include "mix.hpp"
 
+void SetColorBlacked(DWORD64 attrs, bool focus = true);
+void SetFarColorBlacked(int what, bool focus = true);
+
 // Флаги для ReadDiz()
 enum ReadDizFlags
 {
@@ -333,9 +336,11 @@ void FileList::ReadFileNames(int KeepSelection, int IgnoreVisible, int DrawMessa
 
 					if (!IsShowTitle) {
 						if (!DrawMessage) {
-							Text(X1 + 1, Y1, FarColorToReal(COL_PANELBOX), Title);
+							auto color1 = FarColorToReal(COL_PANELBOX);
+							if (Opt.Backend.UseModernLook && !Focus) color1 = SoftenColorToDisabled(color1);
+							Text(X1 + 1, Y1, color1, Title);
 							IsShowTitle = TRUE;
-							SetFarColor(Focus ? COL_PANELSELECTEDTITLE : COL_PANELTITLE);
+							SetFarColorBlacked(Focus ? COL_PANELSELECTEDTITLE : COL_PANELTITLE, Focus);
 						}
 					}
 

@@ -70,7 +70,7 @@ static const wchar_t* prefixes[] = {
 #if MAC_CHARS
 	L"",
 	L"⇧",    // L"Shift+",
-	L"^",    // L"Ctrl+",
+	L"^",    // L"Ctrl+", // or ⎈
 	L"⌥",    // L"Alt+",
 	L"^⇧",   // L"Ctrl+Shift+",
 	L"⌥⇧",   // L"Alt+Shift+",

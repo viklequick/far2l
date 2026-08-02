@@ -128,7 +128,7 @@ void FileList::ShowFileList(int Fast)
 	auto color1 = FarColorToReal(COL_PANELTEXT);
 	if (Opt.Backend.UseModernLook && !Focus) color1 = SoftenColorToDisabled( color1 );
 	SetScreen(X1 + 1, Y1 + 1, X2 - 1, Y2 - 1, L' ', color1 );
-	Hint(X1, Y1, X2, Y2, HintPanel, HintObjectNone);
+	Hint(X1, Y1, X2, Y2, HintPanel, HintText);
 
 	auto color = FarColorToReal(COL_PANELBOX);
 	if (Opt.Backend.UseModernLook && !Focus) color = SoftenColorToDisabled(color);

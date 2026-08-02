@@ -3774,22 +3774,25 @@ FARString &FileList::PluginGetURL(const wchar_t *Name, FARString &strDest, bool 
 {
 	OpenPluginInfo Info = {0};
 	CtrlObject->Plugins.GetOpenPluginInfo(hPlugin, &Info);
+	FARString result;
+
 	// Ctrl-Alt-F pastes the portable URL (CurURL); Ctrl-F pastes the bare path (CurPath).
 	// Fall back to less specific fields for plugins that don't provide them.
 	if (!as_url && Info.CurPath && Info.CurPath[0]) {
-		strDest = Info.CurPath;
+		result = Info.CurPath;
 	} else if (Info.CurURL && Info.CurURL[0]) {
-		strDest = Info.CurURL;
+		result = Info.CurURL;
 	} else if (Info.CurDir && Info.CurDir[0]) {
-		strDest = Info.CurDir;
+		result = Info.CurDir;
 	} else {
 		//fprintf(stderr, "CurPath, CurURL and CurDir are all empty or null\n");
 	}
 
-	if (!strDest.IsEmpty())
-		AddEndSlash(strDest);
+	if (!result.IsEmpty())
+		AddEndSlash(result);
 
-	strDest += Name;
+	result += Name;
+	strDest = result;
 	return strDest;
 }
 

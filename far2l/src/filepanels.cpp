@@ -469,6 +469,12 @@ int64_t FilePanels::VMProcess(MacroOpcode OpCode, void *vParam, int64_t iParam)
 	return ActivePanel->VMProcess(OpCode, vParam, iParam);
 }
 
+void FilePanels::RetryActivePanelRead()
+{
+	if (ActivePanel->GetType() == FILE_PANEL)
+		static_cast<FileList *>(ActivePanel)->RetryFailedRead();
+}
+
 int FilePanels::ProcessKey(FarKey Key)
 {
 	if (!Key)
@@ -824,6 +830,7 @@ int FilePanels::ProcessKey(FarKey Key)
 		}
 	}
 
+	RetryActivePanelRead();
 	return TRUE;
 }
 

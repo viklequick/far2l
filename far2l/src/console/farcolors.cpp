@@ -219,12 +219,6 @@ uint64_t FarColors::setcolors[SIZE_ARRAY_FARCOLORS];
 uint32_t FarColors::GammaCorrection = 0;
 bool FarColors::GammaChanged = false;
 
-static bool endsWith(const std::string& s, const std::string& suffix)
-{
-    return s.size() >= suffix.size() &&
-           s.compare(s.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
-
 void extractColorComponents(int color, int& r, int& g, int& b) {
 	r = (color >> 16) & 0xFF;
 	g = (color >> 8)  & 0xFF;
@@ -310,7 +304,7 @@ void FarColors::AdjustContrastLevels() noexcept
 
 	fprintf(stderr, "FarColors::AdjustContrastLevels()\n");
 	for (size_t i = 0; i < SIZE_ARRAY_FARCOLORS; i++) {
-		if (endsWith(ColorsInit[i].name, ".Box")) continue;
+		if (StrEndsBy(ColorsInit[i].name, ".Box")) continue;
 
 		uint64_t cc = FARColors.colors[i];
 
@@ -324,8 +318,8 @@ void FarColors::AdjustContrastLevels() noexcept
 			if (cc2 != cc){ 
 				extractColor(cc2, fg, bg);
 
-				if (endsWith(ColorsInit[i].name, ".Highlight") /* || endsWith(ColorsInit[i].name, ".Highlight.Selected")*/ 
-						|| endsWith(ColorsInit[i].name, ".Highlight.Disabled")) {
+				if (StrEndsBy(ColorsInit[i].name, ".Highlight") /* || StrEndsBy(ColorsInit[i].name, ".Highlight.Selected")*/ 
+						|| StrEndsBy(ColorsInit[i].name, ".Highlight.Disabled")) {
 					// highlight first
 					fg = computeHighlight(fg, bg);
 					iRGB xfg = toIRGB(fg);
@@ -335,7 +329,7 @@ void FarColors::AdjustContrastLevels() noexcept
 				}
 
                 /*
-				if (endsWith(ColorsInit[i].name, ".Selected")) {
+				if (StrEndsBy(ColorsInit[i].name, ".Selected")) {
 					fg = computeSelected(bg, fg); // swap colors as we need inverted ones
 					iRGB xfg = toIRGB(fg);
 					fprintf(stderr, "selected: %s %lx -> %lx -> %x,%x,%x\n", 
@@ -343,7 +337,7 @@ void FarColors::AdjustContrastLevels() noexcept
 						(unsigned int)xfg.r, (unsigned int)xfg.g, (unsigned int)xfg.b);
 				}
 				else */
-				if (endsWith(ColorsInit[i].name, ".Disabled") || endsWith(ColorsInit[i].name, ".GrayText")) {
+				if (StrEndsBy(ColorsInit[i].name, ".Disabled") || StrEndsBy(ColorsInit[i].name, ".GrayText")) {
 					fg = SoftenToDisabledState_LAB(fg);
 					iRGB xfg = toIRGB(fg);
 					fprintf(stderr, "grayed: %s %lx -> %lx -> %x,%x, %x\n", 

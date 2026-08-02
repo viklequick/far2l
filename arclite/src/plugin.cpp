@@ -2088,8 +2088,6 @@ SHAREDSYMBOL int WINAPI SetDirectoryW(HANDLE hPlugin, const wchar_t *Dir, int Op
 	// CriticalSectionLock lock(GetExportSync());
 	FAR_ERROR_HANDLER_BEGIN
 
-	//fprintf(stderr, " +++ <<<<<<<<<<< SetDirectoryW( %ls ) OpMode = %i        >>>>>>>>>>>\n", Dir,  OpMode);
-
 	if (ArcAPI::have_virt_destructor())
 		reinterpret_cast<Plugin<true> *>(hPlugin)->get_tail()->set_dir(Dir);
 	else

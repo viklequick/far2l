@@ -220,6 +220,7 @@ void PluginImpl::UpdatePathInfo()
 		_cur_URL[0] = _cur_path[0] = 0;
 		tmp = StrMB2Wide(_sites_cfg_location.TranslateToPath(false));
 		wcsncpy(_cur_dir, tmp.c_str(), ARRAYSIZE(_cur_dir) - 1);
+		_cur_URL[0] = 0;
 		if (!_standalone_config.empty()) {
 			tmp = ExtractFileName(_standalone_config);
 

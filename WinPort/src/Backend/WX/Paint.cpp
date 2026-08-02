@@ -1834,8 +1834,8 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 			// there is a thumb, draw it
 			Y1 = block.parts[j].Y1 * _context->FontHeight();
 			Y2 = block.parts[j].Y2 * _context->FontHeight() + _context->FontHeight() - 1;
-			X1 = cx_s;
-			X2 = cx_e;
+			X1 = cx_s * _context->FontWidth(); 
+			X2 = cx_e * _context->FontWidth() + _context->FontWidth() - 1;
 			W = X2 - X1 + 1;
 			H = Y2 - Y1 + 1;
 			wxRect scrollT(X1, Y1, W, H);

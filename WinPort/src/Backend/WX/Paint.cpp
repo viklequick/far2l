@@ -552,7 +552,7 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 			int w = img.GetWidth();
 			int h = img.GetHeight();
 
-			unsigned char* data  = img.GetData();
+			// unsigned char* data  = img.GetData();
 			unsigned char* alpha = img.GetAlpha();
 
 			for (int i = 0; i < w * h; ++i) if (alpha[i] > 50) alpha[i] = 50;
@@ -1792,56 +1792,93 @@ void ConsolePainter::DrawButtonDecorations(
 void DrawScrollTrack(wxDC& dc, const wxRect& rect, const wxColour& colLight, const wxColour& colDark);
 void DrawScrollThumb(wxDC& dc, const wxRect& rect, const wxColour& colTop, const wxColour& colBottom, bool pressed = false, bool hover = false);
 
-void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int cy_e, const WinPortRGB& c_text, const WinPortRGB& c_back, const HintBlock& block)
-{
-	// override position in case we're in list / menu
-	bool has_bar = false;
-	for(int j = 0; j < (int)block.parts.size(); ++j) {
-		if (block.parts[j].ch == L"▲") {
-			cx_s = cx_e = block.parts[j].X1;
-			cy_s = block.parts[j].Y1;
-			has_bar = true;
-		}
-		else if (block.parts[j].ch == L"▼") {
-			cx_s = cx_e = block.parts[j].X1;
-			cy_e = block.parts[j].Y1;
-			has_bar = true;
+struct ScrollParticle {
+	int x {-1};
+	int y1 {-1}, y2 {-1};
+	int thumbY1 {-1}, thumbY2 {-1};
+};
+
+ScrollParticle& give(std::vector<ScrollParticle>& scrolls, int x, int y1 = -1, int y2 = -1, int ty1 = -1, int ty2 = -1) {
+	for(size_t i = 0; i < scrolls.size(); ++i) {
+		if(scrolls[i].x == x) {
+			bool yes = true;
+			if (scrolls[i].y1 > 0) {
+				if (y1 > 0 && (y1 < scrolls[i].y1)) yes = false;
+				if (y2 > 0 && (y2 < scrolls[i].y1)) yes = false;
+				if (ty1 > 0 && (ty1 <= scrolls[i].y1)) yes = false;
+				if (ty2 > 0 && (ty2 <= scrolls[i].y1)) yes = false;
+			} 
+			if (scrolls[i].y2 > 0) {
+				if (y1 > 0 && (y1 > scrolls[i].y2)) yes = false;
+				if (y2 > 0 && (y2 > scrolls[i].y2)) yes = false;
+				if (ty1 > 0 && (ty1 >= scrolls[i].y2 - 1)) yes = false;
+				if (ty2 > 0 && (ty2 >= scrolls[i].y2 - 1)) yes = false;
+			} 
+			if (yes){ 
+				if(scrolls[i].y1 < 0 && y1 > 0) scrolls[i].y1 = y1;
+				if(scrolls[i].y2 < 0 && y2 > 0) scrolls[i].y2 = y2;
+				if(scrolls[i].thumbY1 < 0 && ty1 > 0) scrolls[i].thumbY1 = ty1;
+				if(scrolls[i].thumbY2 < 0 && ty2 > 0) scrolls[i].thumbY2 = ty2;
+				return scrolls[i];
+			}
 		}
 	}
 
-	if (!has_bar) return;
+	ScrollParticle r { x, y1, y2, ty1, ty2 };
+	scrolls.push_back(r);
+	return scrolls[scrolls.size() - 1];
+}
 
-	wxCoord Y1 = (cy_s + 1) * _context->FontHeight() /* + _context->FontHeight() * 3 / 4 */, 
-		Y2 = (cy_e - 1 + 1 ) * _context->FontHeight() /* + _context->FontHeight() / 8*/ - 1;
-	wxCoord X1 = cx_s * _context->FontWidth(), 
-		X2 = cx_e * _context->FontWidth() + _context->FontWidth() - 1;
-	wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
+void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int cy_e, const WinPortRGB& c_text, const WinPortRGB& c_back, const HintBlock& block)
+{
+	int j;
+	std::vector<ScrollParticle> scrolls;
+
+	// find scroll bars in captured block
+	for(j = 0; j < (int)block.parts.size(); ++j) {
+		if (block.parts[j].ch == L"▲") {
+			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1);
+		}
+		else if (block.parts[j].ch == L"▼") {
+			give(scrolls, block.parts[j].X1, -1, block.parts[j].Y1, -1, -1);
+		}
+	}
+
+	// and their thumbs
+	for(j = 0; j < (int)block.parts.size(); ++j) {
+		if (block.parts[j].ch == L"▓") {
+			give(scrolls, block.parts[j].X1, -1, -1, block.parts[j].Y1, block.parts[j].Y2);
+		}
+	}
+
+	if (scrolls.size() == 0) return;
 
 	WinPortRGB c_a_text, c_a_back;
 	ComputeAccents(c_text, c_back, c_a_text, c_a_back);
 
-	wxRect scrollR(X1, Y1, W, H);
 	wxColour c_a(c_a_text.r, c_a_text.g, c_a_text.b);
 	wxColour c_t(c_text.r, c_text.g, c_text.b);
 	wxColour c_d(c_a_back.r, c_a_back.g, c_a_back.b);
 	wxColour c_b(c_back.r, c_back.g, c_back.b);
 
-	DrawScrollTrack(_dc, scrollR, c_d, /* block.HintFlags.Hover ? c_t :*/ c_a);
+	// then paint waht we have found
+	for(size_t i = 0; i < scrolls.size(); ++i) {
+		wxCoord Y1 = (scrolls[i].y1 + 1) * _context->FontHeight();
+		wxCoord Y2 = (scrolls[i].y2 + 1 - 1 ) * _context->FontHeight() - 1;
+		wxCoord X1 = scrolls[i].x * _context->FontWidth();
+        wxCoord X2 = X1 + _context->FontWidth() - 1;
+		wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
 
-	// now we need to look for `▓` meaning this is the thumb position
-	for(int j = 0; j < (int)block.parts.size(); ++j) {
-		if (block.parts[j].ch == L"▓") {
-			// there is a thumb, draw it
-			Y1 = block.parts[j].Y1 * _context->FontHeight();
-			Y2 = block.parts[j].Y2 * _context->FontHeight() + _context->FontHeight() - 1;
-			X1 = cx_s * _context->FontWidth(); 
-			X2 = cx_e * _context->FontWidth() + _context->FontWidth() - 1;
-			W = X2 - X1 + 1;
-			H = Y2 - Y1 + 1;
-			wxRect scrollT(X1, Y1, W, H);
+		wxRect scrollR(X1, Y1, W, H);
+		DrawScrollTrack(_dc, scrollR, c_d, /* block.HintFlags.Hover ? c_t :*/ c_a);
 
-			DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
-		}
+		Y1 = (scrolls[i].thumbY1 ) * _context->FontHeight();
+		Y2 = (scrolls[i].thumbY2 + 1) * _context->FontHeight() - 1;
+
+		H = Y2 - Y1 + 1;
+		wxRect scrollT(X1, Y1, W, H);
+
+		DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
 	}
 }
 

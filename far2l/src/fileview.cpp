@@ -150,7 +150,7 @@ void FileViewer::Init(FileHolderPtr NewFileHolder, int EnableSwitch, int disable
 	F3KeyOnly = true;
 
 	MenuBar = new ViewerMenuBar();
-	MenuBar->SetPosition(0, (TitleBarVisible ? 1 : 0), ScrX, (TitleBarVisible ? 1 : 0));
+	MenuBar->SetPosition(0, 0, ScrX, 0);
 	if (!MenuBarVisible) 
 		MenuBar->Hide0();
 	else
@@ -194,7 +194,7 @@ void FileViewer::InitKeyBar()
 	ViewKeyBar.ReadRegGroup(L"Viewer", Opt.strLanguage);
 	ViewKeyBar.SetAllRegGroup();
 	SetKeyBar(&ViewKeyBar);
-	int gap = (Opt.ViOpt.ShowTitleBar ? 1 : 0) + (Opt.ViOpt.ShowMenuBar ? 1 : 0);
+	int gap = (TitleBarVisible ? 1 : 0) + (MenuBarVisible ? 1 : 0);
 	View.SetPosition(X1, Y1 + gap, X2, Y2 - (Opt.ViOpt.ShowKeyBar ? 1 : 0));
 	View.SetViewKeyBar(&ViewKeyBar);
 }
@@ -208,11 +208,11 @@ void FileViewer::Show()
 		}
 
 		SetPosition(0, 0, ScrX, ScrY - (Opt.ViOpt.ShowKeyBar ? 1 : 0));
-		int gap = (Opt.ViOpt.ShowTitleBar ? 1 : 0) + (Opt.ViOpt.ShowMenuBar ? 1 : 0);
+		int gap = (TitleBarVisible ? 1 : 0) + (MenuBarVisible ? 1 : 0);
 		View.SetPosition(0, gap, ScrX, ScrY - (Opt.ViOpt.ShowKeyBar ? 1 : 0));
 
 		if (MenuBar && MenuBarVisible) {
-			MenuBar->SetPosition(0, TitleBarVisible ? 1 : 0, ScrX, TitleBarVisible ? 1 : 0);
+			MenuBar->SetPosition(0, 0, ScrX, 0);
 			MenuBar->Show();
 		}
 	}
@@ -385,6 +385,7 @@ int FileViewer::ProcessKey(FarKey Key)
 			ViOpt.ClickableURLs = View.GetClickableURLs();
 			ViOpt.PersistentBlocks = View.GetPersistentBlocks();
 			ViOpt.ShowMenuBar = MenuBarVisible;
+			ViOpt.ShowTitleBar = TitleBarVisible;
 
 			ViewerConfig(ViOpt, true);
 
@@ -395,6 +396,7 @@ int FileViewer::ProcessKey(FarKey Key)
 			View.SetClickableURLs(ViOpt.ClickableURLs);
 			View.SetPersistentBlocks(ViOpt.PersistentBlocks);
 			MenuBarVisible = ViOpt.ShowMenuBar;
+			TitleBarVisible = ViOpt.ShowTitleBar;
 
 			ViewKeyBar.Refresh(ViOpt.ShowKeyBar);
 			Show();
@@ -473,8 +475,7 @@ int FileViewer::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	F3KeyOnly = false;
 
 	if (MenuBarVisible) {
-		int pos = TitleBarVisible ? 1 : 0;
-		if (MouseEvent->dwMousePosition.Y == pos && (MouseEvent->dwButtonState & 3) && !MouseEvent->dwEventFlags) {
+		if (MouseEvent->dwMousePosition.Y == 0 && (MouseEvent->dwButtonState & 3) && !MouseEvent->dwEventFlags) {
 			ViewerShellOptions(0, MouseEvent, this);
 			return TRUE;
 		}
@@ -556,6 +557,7 @@ void FileViewer::ShowStatus()
 
 	GetTitle(strName);
 	int NameLength = ScrX - 43;		//???41
+	int Y = Y1 + MenuBarVisible ? 1 : 0;
 
 	if (Opt.ViewerEditorClock && IsFullScreen())
 		NameLength-= 6;
@@ -583,7 +585,7 @@ void FileViewer::ShowStatus()
 			<< L'%';
 	strStatus = status_builder.strValue();
 	SetFarColor(COL_VIEWERSTATUS);
-	GotoXY(X1, Y1);
+	GotoXY(X1, Y);
 	FS << fmt::Cells() << fmt::LeftAlign() << fmt::Size(View.Width + (View.ViOpt.ShowScrollbar ? 1 : 0))
 		<< strStatus;
 
@@ -679,7 +681,7 @@ void FileViewer::ProcessMenuCommand(int hMenu, int vMenu, FarKey accelKey)
 }
 
 int FileViewer::MenuBarPosition() {
-	return TitleBarVisible && MenuBarVisible ? 1 : 0;
+	return 0; // TitleBarVisible && MenuBarVisible ? 1 : 0;
 }
 
 int FileViewer::IsOptionActive(int hMenu, int vMenu) {

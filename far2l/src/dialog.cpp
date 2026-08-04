@@ -2677,7 +2677,7 @@ void Dialog::ShowDialog(unsigned ID)
 	// add vertical scroll if needed
 	if (Y2 != MaxY2) {
 		auto color = FarColorToReal(COL_DIALOGLISTSCROLLBAR);
-		color = SoftenItemColor(color, false, ScrollBarHover, ScrollBarPressed, 0);
+		color = SoftenItemColor(color, false, ScrollBarHover ? 1 : 0, ScrollBarPressed ? 1 : 0, 0);
 		SetColor(color);
 		ScrollBar(X2 - 1, Y1 + 3, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
 		Hint(X2 - 1, Y1 + 3, X2 - 1, Y1 + 3 + BorderY2 - BorderY1 + 1, HintDialog, HintScrollBar,
@@ -3719,9 +3719,6 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	int Type;
 	SMALL_RECT Rect;
 
-	ScrollBarHover = 0;
-	ScrollBarPressed = 0;
-
 	if (!DialogMode.Check(DMODE_SHOW))
 		return FALSE;
 
@@ -3748,6 +3745,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	if (Opt.Backend.UseModernLook && MouseEvent->dwEventFlags == MOUSE_MOVED) {
 		int oldHover = -1, newHover = -1;
 		MiniToolHover = -1;
+		ScrollBarHover = false;
 		for (I = ItemCount - 1; I != (unsigned)-1; I--) {
 			if (Item[I]->Hover) oldHover = I;
 			Item[I]->Hover = 0;
@@ -3767,7 +3765,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
     			if (Y2 != MaxY2 && MsX == X2 - 1) {
 					if (MsOY >= BorderY1 && MsOY <= BorderY2) {
 						// we are on the scroll bar
-						ScrollBarHover = 1;
+						ScrollBarHover = true;
 						newHover = I;
 					}
 				}
@@ -3805,29 +3803,34 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	}
 
 	// vk: scroll bar control
-    if (Y2 != MaxY2 && MsX == X2 - 1 && (MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED))) {
-    	// ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
-		if (MsOY >= BorderY1 && MsOY <= BorderY2) {
-			// we are on the scroll bar
-			ScrollBarPressed = 1;
+	if(MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) {
+	    if (Y2 != MaxY2 && MsX == X2 - 1 && (MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED))) {
+	    	// ScrollBar(X2 - 1, BorderY1, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
+			if (MsOY >= BorderY1 && MsOY <= BorderY2) {
+				// we are on the scroll bar
+				ScrollBarPressed = true;
 
-			if (ScrollBarPressed) {
-				if (MsOY == BorderY1 || MsOY == BorderY2) { // scroll bar arrows
-					if (ScrollDialogUpDown(MsOY == BorderY2 ? -1 : 1))
-						return TRUE;
+				if (ScrollBarPressed) {
+					if (MsOY == BorderY1 || MsOY == BorderY2) { // scroll bar arrows
+						if (ScrollDialogUpDown(MsOY == BorderY2 ? -1 : 1))
+							return TRUE;
+					}
+					else { /* band */
+						int page = (BorderY2 - BorderY1) / (MaxY2 - Y2);
+						int thumb = page * - ScrollY + BorderY1;
+						if (ScrollDialogUpDown(MsOY > thumb ? -1 : 1))
+							return TRUE;
+					}
 				}
-				else { /* band */
-					int page = (BorderY2 - BorderY1) / (MaxY2 - Y2);
-					int thumb = page * - ScrollY + BorderY1;
-					if (ScrollDialogUpDown(MsOY > thumb ? -1 : 1))
-						return TRUE;
-				}
+
+				ShowDialog();
+				return TRUE; // no further actions on top of scroll bar
 			}
-
-			ShowDialog();
-
-			return TRUE; // no further actions on top of scroll bar
-		}
+	    }
+    	else {
+    		ScrollBarPressed = false;
+            ShowDialog();
+        }
     }
 
 	// vk: middle click, pinned buttons, close dialog button, scroll bar events

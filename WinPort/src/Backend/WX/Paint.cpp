@@ -1925,7 +1925,7 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 			H = Y2 - Y1 + 1;
 
 			wxRect scrollR(X1, Y1, W, H);
-			DrawScrollTrack(_dc, scrollR, c_t, /* block.HintFlags.Hover ? c_t :*/ c_a, c_b);
+			DrawScrollTrack(_dc, scrollR, c_t, c_a, c_b);
 		}
 
 		for(size_t j = 0; j < scrolls[i].thumbY.size(); ++j) {
@@ -2061,16 +2061,20 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 // Draws the scrollbar track (background)
 void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, const wxColour& colDark, const wxColour& colBorder)
 {
-    // Subtle vertical gradient
-    dc.GradientFillLinear(rect, WXCustomDrawChar::options->Use3D ? colLight : colDark, colDark, wxSOUTH);
-
     if(!WXCustomDrawChar::options->Use3D) {
+    	dc.SetBrush(colLight);
+        dc.DrawRectangle(rect);
+
     	wxRect r2(rect.GetLeft() + 2, rect.GetTop() + 2, rect.GetWidth() - 4, rect.GetHeight() - 4);
         dc.SetBrush(colBorder);
         dc.DrawRectangle(r2);
+
+        return;
     }
 
-    /*
+    // Subtle vertical gradient
+    dc.GradientFillLinear(rect, colLight, colDark, wxSOUTH);
+
     // Optional: inner shadow at top
     dc.SetPen(wxPen(wxColour(0,0,0,40), 1));
     dc.DrawLine(rect.x, rect.y, rect.x + rect.width, rect.y);
@@ -2079,7 +2083,6 @@ void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, co
     dc.SetPen(wxPen(wxColour(255,255,255,40), 1));
     dc.DrawLine(rect.x, rect.y + rect.height - 1,
                 rect.x + rect.width, rect.y + rect.height - 1);
-    */
 }
 
 

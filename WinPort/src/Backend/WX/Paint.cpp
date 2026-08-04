@@ -1590,7 +1590,7 @@ void ConsolePainter::ConsumeBlockHintAt(const CHAR_INFO& ci, int cx, int cy) {
 	if (WXCustomDrawChar::options && !WXCustomDrawChar::options->UseModernLook) return;
 
 	// if (ci.Extra.Hint.Container != HintDialog) return;
-	if (ci.Extra.Hint.Object == HintObjectNone) return;
+	// if (ci.Extra.Hint.Object == HintObjectNone) return;
 	if (ci.Extra.Hint.Object != HintScrollBar) return;
 
 	std::wstring text;
@@ -1608,13 +1608,14 @@ void ConsolePainter::ConsumeBlockHintAt(const CHAR_INFO& ci, int cx, int cy) {
 				block_hints[i].X2 = cx;
 				block_hints[i].Y2 = cy;
 
+                /*
 				for(int j = block_hints[i].parts.size() - 1; j >= 0; --j) {
 					if (block_hints[i].parts[j].attributes == ci.Attributes && block_hints[i].parts[j].ch == text) {
 						block_hints[i].parts[j].X2 = cx;
 						block_hints[i].parts[j].Y2 = cy;
 						return;
 					}
-				}
+				}*/
 
 				HintRegion r { cx, cy, cx, cy, ci.Attributes, text	};
 				block_hints[i].parts.push_back(r);
@@ -1649,7 +1650,6 @@ void ConsolePainter::DrawBlockHint(const HintBlock& x, unsigned cw, unsigned ch,
 	if (cx_end < 0 || cx_end < area.Left) return;
 	if (cx_start > area.Right || (unsigned)cx_start > cw) return;
 
-    /*
 	fprintf(stderr, "...hinted: (%d,%d): %d..%d, %d..%d in %d..%d, %d..%d /%dx%d/, tag=%d hover=%c\n", 
     	x.Container, x.Object,
     	x.X1, x.Y1, x.X2, x.Y2,
@@ -1662,7 +1662,7 @@ void ConsolePainter::DrawBlockHint(const HintBlock& x, unsigned cw, unsigned ch,
     		x.parts[j].X1, x.parts[j].Y1, x.parts[j].X2, x.parts[j].Y2,
 	        (int)area.Left, (int)area.Right, (int)area.Top, (int)area.Bottom,
     	    cw, ch);
-	}*/
+	}
 
 	WinPortRGB clr_back = WxConsoleBackground2RGB(x.attributes);
 	WinPortRGB clr_text = WxConsoleForeground2RGB(x.attributes);
@@ -1792,13 +1792,14 @@ void ConsolePainter::DrawButtonDecorations(
 void DrawScrollTrack(wxDC& dc, const wxRect& rect, const wxColour& colLight, const wxColour& colDark);
 void DrawScrollThumb(wxDC& dc, const wxRect& rect, const wxColour& colTop, const wxColour& colBottom, bool pressed = false, bool hover = false);
 
-struct ScrollParticle {
+struct ScrollParticle {                                               \
 	int x {-1};
 	int y1 {-1}, y2 {-1};
 	int thumbY1 {-1}, thumbY2 {-1};
+	DWORD64 attributes {0};
 };
 
-ScrollParticle& give(std::vector<ScrollParticle>& scrolls, int x, int y1 = -1, int y2 = -1, int ty1 = -1, int ty2 = -1) {
+ScrollParticle& give(std::vector<ScrollParticle>& scrolls, int x, int y1 = -1, int y2 = -1, int ty1 = -1, int ty2 = -1, DWORD64 attrs = 0) {
 	for(size_t i = 0; i < scrolls.size(); ++i) {
 		if(scrolls[i].x == x) {
 			bool yes = true;
@@ -1819,17 +1820,19 @@ ScrollParticle& give(std::vector<ScrollParticle>& scrolls, int x, int y1 = -1, i
 				if(scrolls[i].y2 < 0 && y2 > 0) scrolls[i].y2 = y2;
 				if(scrolls[i].thumbY1 < 0 && ty1 > 0) scrolls[i].thumbY1 = ty1;
 				if(scrolls[i].thumbY2 < 0 && ty2 > 0) scrolls[i].thumbY2 = ty2;
+				if(scrolls[i].attributes == 0 && attrs > 0) scrolls[i].attributes = attrs;
 				return scrolls[i];
 			}
 		}
 	}
 
-	ScrollParticle r { x, y1, y2, ty1, ty2 };
+	ScrollParticle r { x, y1, y2, ty1, ty2, attrs };
 	scrolls.push_back(r);
 	return scrolls[scrolls.size() - 1];
 }
 
-void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int cy_e, const WinPortRGB& c_text, const WinPortRGB& c_back, const HintBlock& block)
+void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int cy_e, 
+	const WinPortRGB& _c_text, const WinPortRGB& _c_back, const HintBlock& block)
 {
 	int j;
 	std::vector<ScrollParticle> scrolls;
@@ -1837,21 +1840,24 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 	// find scroll bars in captured block
 	for(j = 0; j < (int)block.parts.size(); ++j) {
 		if (block.parts[j].ch == L"▲") {
-			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1);
+			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1, block.parts[j].attributes);
 		}
 		else if (block.parts[j].ch == L"▼") {
-			give(scrolls, block.parts[j].X1, -1, block.parts[j].Y1, -1, -1);
+			give(scrolls, block.parts[j].X1, -1, block.parts[j].Y1, -1, -1, block.parts[j].attributes);
 		}
 	}
 
 	// and their thumbs
 	for(j = 0; j < (int)block.parts.size(); ++j) {
 		if (block.parts[j].ch == L"▓") {
-			give(scrolls, block.parts[j].X1, -1, -1, block.parts[j].Y1, block.parts[j].Y2);
+			give(scrolls, block.parts[j].X1, -1, -1, block.parts[j].Y1, block.parts[j].Y2, block.parts[j].attributes);
 		}
 	}
 
 	if (scrolls.size() == 0) return;
+
+	WinPortRGB c_back = WxConsoleBackground2RGB(scrolls[0].attributes);
+	WinPortRGB c_text = WxConsoleForeground2RGB(scrolls[0].attributes);
 
 	WinPortRGB c_a_text, c_a_back;
 	ComputeAccents(c_text, c_back, c_a_text, c_a_back);
@@ -1866,17 +1872,17 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 		wxCoord Y1 = (scrolls[i].y1 + 1) * _context->FontHeight();
 		wxCoord Y2 = (scrolls[i].y2 + 1 - 1 ) * _context->FontHeight() - 1;
 		wxCoord X1 = scrolls[i].x * _context->FontWidth();
-        wxCoord X2 = X1 + _context->FontWidth() - 1;
+        wxCoord X2 = scrolls[i].x * _context->FontWidth() + _context->FontWidth() - 1;
 		wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
 
 		wxRect scrollR(X1, Y1, W, H);
-		DrawScrollTrack(_dc, scrollR, c_d, /* block.HintFlags.Hover ? c_t :*/ c_a);
+		DrawScrollTrack(_dc, scrollR, c_b, /* block.HintFlags.Hover ? c_t :*/ c_a);
 
 		Y1 = (scrolls[i].thumbY1 ) * _context->FontHeight();
 		Y2 = (scrolls[i].thumbY2 + 1) * _context->FontHeight() - 1;
 
 		H = Y2 - Y1 + 1;
-		wxRect scrollT(X1, Y1, W, H);
+		wxRect scrollT(X1 - 2, Y1, W + 2, H);
 
 		DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
 	}

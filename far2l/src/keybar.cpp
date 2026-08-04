@@ -202,6 +202,7 @@ void KeyBar::RefreshObject(bool Render)
 		GotoXY(X1, Y1);
 
 	bool FKeyTitlesChanged = false;
+	bool palette = false;
 	for (int i = 0; i < (int)groups[group].keys.size(); i++) {
 		const wchar_t *Label = groups[group].keys[i].text.c_str();
 
@@ -241,10 +242,11 @@ void KeyBar::RefreshObject(bool Render)
 				uint64_t color1 = SoftenItemColor(FarColorToReal(COL_KEYBARNUM), 0, groups[group].keys[i].hover, 0, 0);
 				uint64_t color2 = SoftenItemColor(FarColorToReal(COL_KEYBARTEXT), 0, groups[group].keys[i].hover, 0, 0);
 
-				if (i == 0) {
+				if (!palette) {
 					SetColor(SoftenItemColor(FarColorToReal(COL_KEYBARTEXT), 0, SandwichHover, 0, 0));
 					FS << L"🦊☰";
 					groups[group].keys[i].x1 = WhereX();
+					palette = true;
 				}
 				SetColor(color2);
 				//FS << L"┋";

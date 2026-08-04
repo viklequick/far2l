@@ -1812,8 +1812,8 @@ ScrollParticle& give(std::vector<ScrollParticle>& scrolls, int x, int y1 = -1, i
 			if (scrolls[i].y2 > 0) {
 				if (y1 > 0 && (y1 > scrolls[i].y2)) yes = false;
 				if (y2 > 0 && (y2 > scrolls[i].y2)) yes = false;
-				if (ty1 > 0 && (ty1 >= scrolls[i].y2 - 1)) yes = false;
-				if (ty2 > 0 && (ty2 >= scrolls[i].y2 - 1)) yes = false;
+				if (ty1 > 0 && (ty1 > scrolls[i].y2 - 1)) yes = false;
+				if (ty2 > 0 && (ty2 > scrolls[i].y2 - 1)) yes = false;
 			} 
 			if (yes){ 
 				if(scrolls[i].y1 < 0 && y1 > 0) scrolls[i].y1 = y1;
@@ -1880,6 +1880,8 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 
 		wxRect scrollR(X1, Y1, W, H);
 		DrawScrollTrack(_dc, scrollR, c_t, /* block.HintFlags.Hover ? c_t :*/ c_a, c_b);
+
+		if (scrolls[i].thumbY1 < 0 || scrolls[i].thumbY2 < 0) continue;
 
 		Y1 = (scrolls[i].thumbY1 ) * _context->FontHeight();
 		Y2 = (scrolls[i].thumbY2 + 1) * _context->FontHeight() - 1;

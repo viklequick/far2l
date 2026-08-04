@@ -2141,11 +2141,11 @@ BOOL Edit::DoPaste(wchar_t* ClipText)
 		return FALSE;
 
 	if (!Flags.Check(FEDITLINE_PERSISTENTBLOCKS)) {
-		DisableCallback DC(Flags);
+		DisableListener DL(*this);
 		DeleteBlock();
 	}
 
-	for (int i = StrLength(Str) - 1; i >= 0 && IsEol(Str[i]); i--)
+	for (int i = StrLength(Str.CPtr()) - 1; i >= 0 && IsEol(Str[i]); i--)
 		Str[i] = 0;
 
 	for (int i = 0; ClipText[i]; i++) {
@@ -2218,17 +2218,17 @@ void Edit::AutoGrabToClipboard()
 				if (SelStart == -1 || SelStart >= SelEnd) {
 					const wchar_t *Mask = GetInputMask();
 					if (Mask && *Mask) {
-						std::wstring TrimmedStr(Str, CalcRTrimmedStrSize());
+						std::wstring TrimmedStr(Str.CPtr(), CalcRTrimmedStrSize());
 						clip.Copy(TrimmedStr.c_str());
 					} else {
-						clip.Copy(Str);
+						clip.Copy(Str.CPtr());
 					}
 				} 
-				else if (SelEnd <= StrSize)		// TODO: если в начало условия добавить "StrSize &&", то пропадет баг "Ctrl-Ins в пустой строке очищает клипборд"
+				else if (SelEnd <= Str.Size())		// TODO: если в начало условия добавить "StrSize &&", то пропадет баг "Ctrl-Ins в пустой строке очищает клипборд"
 				{
 					int Ch = Str[SelEnd];
 					Str[SelEnd] = 0;
-					clip.Copy(Str + SelStart);
+					clip.Copy(Str.CPtr() + SelStart);
 					Str[SelEnd] = Ch;
 				}
 			}

@@ -1792,14 +1792,30 @@ void ConsolePainter::DrawButtonDecorations(
 void DrawScrollTrack(wxDC& dc, const wxRect& rect, const wxColour& colLight, const wxColour& colDark, const wxColour& colBorder);
 void DrawScrollThumb(wxDC& dc, const wxRect& rect, const wxColour& colTop, const wxColour& colBottom, bool pressed = false, bool hover = false);
 
+struct TrackFragment {
+	int y1 {-1}, y2{-1};
+};
+
 struct ScrollParticle {                                               \
 	int x {-1};
 	int y1 {-1}, y2 {-1};
 	int thumbY1 {-1}, thumbY2 {-1};
 	DWORD64 attributes {0};
+
+	std::vector<int> track;
+	std::vector<TrackFragment> trackY;
+
+	std::vector<int> thumb;
+	std::vector<TrackFragment> thumbY;
 };
 
-ScrollParticle& give(std::vector<ScrollParticle>& scrolls, int x, int y1 = -1, int y2 = -1, int ty1 = -1, int ty2 = -1, DWORD64 attrs = 0) {
+ScrollParticle& give(
+	std::vector<ScrollParticle>& scrolls, 
+	int x, int y1 = -1, int y2 = -1, 
+	int ty1 = -1, int ty2 = -1, 
+	DWORD64 attrs = 0, 
+	bool track = false) 
+{
 	for(size_t i = 0; i < scrolls.size(); ++i) {
 		if(scrolls[i].x == x) {
 			bool yes = true;
@@ -1821,14 +1837,38 @@ ScrollParticle& give(std::vector<ScrollParticle>& scrolls, int x, int y1 = -1, i
 				if(scrolls[i].thumbY1 < 0 && ty1 > 0) scrolls[i].thumbY1 = ty1;
 				if(scrolls[i].thumbY2 < 0 && ty2 > 0) scrolls[i].thumbY2 = ty2;
 				if(scrolls[i].attributes == 0 && attrs > 0) scrolls[i].attributes = attrs;
+				if (track && y1 > 0) scrolls[i].track.push_back(y1);
+				if (ty1 > 0) scrolls[i].thumb.push_back(ty1);
 				return scrolls[i];
 			}
 		}
 	}
 
 	ScrollParticle r { x, y1, y2, ty1, ty2, attrs };
+	if (track) r.track.push_back(y1);
 	scrolls.push_back(r);
 	return scrolls[scrolls.size() - 1];
+}
+
+static void joinToRegions(std::vector<int>& v, std::vector<TrackFragment>& r) {
+    if (v.empty()) return;
+
+    int start = v.front();
+    int prev  = start;
+
+    for (size_t i = 1; i < v.size(); ++i) {
+        if (v[i] == prev + 1) prev = v[i];
+        else {
+            r.emplace_back(TrackFragment{start, prev});
+            start = prev = v[i];
+        }
+    }
+    r.emplace_back(TrackFragment{start, prev});
+}
+
+static void joinTrackLine(ScrollParticle& p) {
+	joinToRegions(p.track, p.trackY);
+	joinToRegions(p.thumb, p.thumbY);
 }
 
 void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int cy_e, 
@@ -1852,7 +1892,9 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 		if (block.parts[j].ch == L"▓") {
 			give(scrolls, block.parts[j].X1, -1, -1, block.parts[j].Y1, block.parts[j].Y2, block.parts[j].attributes);
 		}
-
+		else if (block.parts[j].ch == L'░') { 
+			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1, 0, true);
+		}
 	}
 
 	if (scrolls.size() == 0) return;
@@ -1868,28 +1910,36 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 	wxColour c_d(c_a_back.r, c_a_back.g, c_a_back.b);
 	wxColour c_b(c_back.r, c_back.g, c_back.b);
 
+	wxCoord X1, Y1, X2, Y2, W, H;
 	// then paint waht we have found
 	for(size_t i = 0; i < scrolls.size(); ++i) {
-		if (scrolls[i].y1 < 0 || scrolls[i].y2 < 0 || scrolls[i].x < 0) continue;
+		// if (scrolls[i].y1 < 0 || scrolls[i].y2 < 0 || scrolls[i].x < 0) continue;
+		joinTrackLine(scrolls[i]);
+		for(size_t j = 0; j < scrolls[i].trackY.size(); ++j) {
+			X1 = scrolls[i].x * _context->FontWidth();
+	        X2 = scrolls[i].x * _context->FontWidth() + _context->FontWidth() - 1;
+			W = X2 - X1 + 1;
 
-		wxCoord Y1 = (scrolls[i].y1 + 1) * _context->FontHeight();
-		wxCoord Y2 = (scrolls[i].y2 + 1 - 1 ) * _context->FontHeight() - 1;
-		wxCoord X1 = scrolls[i].x * _context->FontWidth();
-        wxCoord X2 = scrolls[i].x * _context->FontWidth() + _context->FontWidth() - 1;
-		wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
+			Y1 = (scrolls[i].trackY[j].y1 ) * _context->FontHeight();
+			Y2 = (scrolls[i].trackY[j].y2 + 1 ) * _context->FontHeight() - 1;
+			H = Y2 - Y1 + 1;
 
-		wxRect scrollR(X1, Y1, W, H);
-		DrawScrollTrack(_dc, scrollR, c_t, /* block.HintFlags.Hover ? c_t :*/ c_a, c_b);
+			wxRect scrollR(X1, Y1, W, H);
+			DrawScrollTrack(_dc, scrollR, c_t, /* block.HintFlags.Hover ? c_t :*/ c_a, c_b);
+		}
 
-		if (scrolls[i].thumbY1 < 0 || scrolls[i].thumbY2 < 0) continue;
+		for(size_t j = 0; j < scrolls[i].thumbY.size(); ++j) {
+			X1 = scrolls[i].x * _context->FontWidth();
+	        X2 = scrolls[i].x * _context->FontWidth() + _context->FontWidth() - 1;
+			W = X2 - X1 + 1;
 
-		Y1 = (scrolls[i].thumbY1 ) * _context->FontHeight();
-		Y2 = (scrolls[i].thumbY2 + 1) * _context->FontHeight() - 1;
+			Y1 = (scrolls[i].thumbY[j].y1 ) * _context->FontHeight();
+			Y2 = (scrolls[i].thumbY[j].y2 + 1) * _context->FontHeight() - 1;
+			H = Y2 - Y1 + 1;
 
-		H = Y2 - Y1 + 1;
-		wxRect scrollT(X1 - 2, Y1, W + 2, H);
-
-		DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
+			wxRect scrollT(X1 - 2, Y1, W + 2, H);
+			DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
+		}
 	}
 }
 

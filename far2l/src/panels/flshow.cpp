@@ -408,7 +408,7 @@ void FileList::ShowFileList(int Fast)
 		SetFarColorBlacked(COL_PANELSCROLLBAR);
 		ScrollBarEx(X2, Y1 + 1 + Opt.ShowColumnTitles, Height, Round(CurTopFile, Columns),
 				Round(ListData.Count(), Columns));
-		Hint(X2, Y1 + 1 + Opt.ShowColumnTitles, X2, Y1 + 1 + Opt.ShowColumnTitles + Height, HintPanel, HintScrollBar);
+		Hint(X2, Y1 + 1 + Opt.ShowColumnTitles, X2, Y1 + 1 + Opt.ShowColumnTitles + Height, HintPanel, HintScrollBar, Focus, false /* hover */);
 	}
 
 	ShowScreensCount();

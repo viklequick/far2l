@@ -173,6 +173,12 @@ class ConsolePainter
     	int X1, Y1, X2, Y2;
         DWORD64 attributes;
         std::wstring ch;
+        struct {
+	        int Focus: 1;
+    	    int Hover: 1;
+        	int Enabled: 1;
+            int Checked: 1;
+		} HintFlags;
     };
 
     struct HintBlock {
@@ -181,6 +187,7 @@ class ConsolePainter
         int tag;
 
         struct {
+	        int Focus: 1;
     	    int Hover: 1;
         	int Enabled: 1;
             int Checked: 1;

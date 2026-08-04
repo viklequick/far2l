@@ -2681,7 +2681,7 @@ void Dialog::ShowDialog(unsigned ID)
 		SetColor(color);
 		ScrollBar(X2 - 1, Y1 + 3, BorderY2 - BorderY1 + 1, std::abs(ScrollY), MaxY2 - Y2);
 		Hint(X2 - 1, Y1 + 3, X2 - 1, Y1 + 3 + BorderY2 - BorderY1 + 1, HintDialog, HintScrollBar,
-			/* focused */ false, ScrollBarHover, /* disabled */ false, ScrollBarPressed);
+			/* focused */ true, ScrollBarHover, /* disabled */ false, ScrollBarPressed);
 	}
 	HintEndContainer();
 

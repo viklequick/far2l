@@ -1617,7 +1617,9 @@ void ConsolePainter::ConsumeBlockHintAt(const CHAR_INFO& ci, int cx, int cy) {
 					}
 				}*/
 
-				HintRegion r { cx, cy, cx, cy, ci.Attributes, text	};
+				HintRegion r { cx, cy, cx, cy, ci.Attributes, text,	
+					ci.Extra.Hint.Focus, ci.Extra.Hint.Hover, ci.Extra.Hint.Enabled, ci.Extra.Hint.Checked
+				};
 				block_hints[i].parts.push_back(r);
 
 				return;
@@ -1628,12 +1630,14 @@ void ConsolePainter::ConsumeBlockHintAt(const CHAR_INFO& ci, int cx, int cy) {
 	HintBlock b {
 		ci.Extra.Hint.Container, ci.Extra.Hint.Object, 
 		ci.Extra.Hint.Tag,
-		ci.Extra.Hint.Hover, ci.Extra.Hint.Enabled, ci.Extra.Hint.Checked,
+		ci.Extra.Hint.Focus, ci.Extra.Hint.Hover, ci.Extra.Hint.Enabled, ci.Extra.Hint.Checked,
 		cx, cy,
 		cx, cy,
 		ci.Attributes };
 
-	HintRegion r { cx, cy, cx, cy, ci.Attributes, text };
+	HintRegion r { cx, cy, cx, cy, ci.Attributes, text,
+		ci.Extra.Hint.Focus, ci.Extra.Hint.Hover, ci.Extra.Hint.Enabled, ci.Extra.Hint.Checked
+	};
 	b.parts.push_back(r);
 
 	block_hints.push_back(b);
@@ -1802,11 +1806,22 @@ struct ScrollParticle {                                               \
 	int thumbY1 {-1}, thumbY2 {-1};
 	DWORD64 attributes {0};
 
+    struct {
+        int Focus: 1;
+	    int Hover: 1;
+    	int Enabled: 1;
+        int Checked: 1;
+	} HintFlags;
+
 	std::vector<int> track;
 	std::vector<TrackFragment> trackY;
 
 	std::vector<int> thumb;
 	std::vector<TrackFragment> thumbY;
+
+	void init() {
+		HintFlags.Focus = HintFlags.Hover = HintFlags.Enabled = HintFlags.Checked = 0;
+	}
 };
 
 ScrollParticle& give(
@@ -1814,7 +1829,8 @@ ScrollParticle& give(
 	int x, int y1 = -1, int y2 = -1, 
 	int ty1 = -1, int ty2 = -1, 
 	DWORD64 attrs = 0, 
-	bool track = false) 
+	bool track = false,
+	bool focus = false, bool hover = false) 
 {
 	for(size_t i = 0; i < scrolls.size(); ++i) {
 		if(scrolls[i].x == x) {
@@ -1839,12 +1855,15 @@ ScrollParticle& give(
 				if(scrolls[i].attributes == 0 && attrs > 0) scrolls[i].attributes = attrs;
 				if (track && y1 > 0) scrolls[i].track.push_back(y1);
 				if (ty1 > 0) scrolls[i].thumb.push_back(ty1);
+				scrolls[i].HintFlags.Focus = focus ? 1 : 0;
+				scrolls[i].HintFlags.Hover = hover ? 1 : 0;
 				return scrolls[i];
 			}
 		}
 	}
 
 	ScrollParticle r { x, y1, y2, ty1, ty2, attrs };
+	r.init();
 	if (track) r.track.push_back(y1);
 	scrolls.push_back(r);
 	return scrolls[scrolls.size() - 1];
@@ -1880,40 +1899,70 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 	// find scroll bars in captured block
 	for(j = 0; j < (int)block.parts.size(); ++j) {
 		if (block.parts[j].ch == L"▲") {
-			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1, block.parts[j].attributes);
+			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1, block.parts[j].attributes, 
+				false, block.parts[j].HintFlags.Focus, block.parts[j].HintFlags.Hover);
 		}
 		else if (block.parts[j].ch == L"▼") {
-			give(scrolls, block.parts[j].X1, -1, block.parts[j].Y1, -1, -1, block.parts[j].attributes);
+			give(scrolls, block.parts[j].X1, -1, block.parts[j].Y1, -1, -1, block.parts[j].attributes, 
+				false, block.parts[j].HintFlags.Focus, block.parts[j].HintFlags.Hover);
 		}
 	}
 
 	// and their thumbs
 	for(j = 0; j < (int)block.parts.size(); ++j) {
 		if (block.parts[j].ch == L"▓") {
-			give(scrolls, block.parts[j].X1, -1, -1, block.parts[j].Y1, block.parts[j].Y2, block.parts[j].attributes);
+			give(scrolls, block.parts[j].X1, -1, -1, block.parts[j].Y1, block.parts[j].Y2, block.parts[j].attributes, 
+				false, block.parts[j].HintFlags.Focus, block.parts[j].HintFlags.Hover);
 		}
 		else if (block.parts[j].ch == L'░') { 
-			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1, 0, true);
+			give(scrolls, block.parts[j].X1, block.parts[j].Y1, -1, -1, -1, block.parts[j].attributes,
+				true, block.parts[j].HintFlags.Focus, block.parts[j].HintFlags.Hover);
 		}
 	}
 
 	if (scrolls.size() == 0) return;
 
-	WinPortRGB c_back = WxConsoleBackground2RGB(scrolls[0].attributes);
-	WinPortRGB c_text = WxConsoleForeground2RGB(scrolls[0].attributes);
-
-	WinPortRGB c_a_text, c_a_back;
-	ComputeAccents(c_text, c_back, c_a_text, c_a_back);
-
-	wxColour c_a(c_a_text.r, c_a_text.g, c_a_text.b);
-	wxColour c_t(c_text.r, c_text.g, c_text.b);
-	wxColour c_d(c_a_back.r, c_a_back.g, c_a_back.b);
-	wxColour c_b(c_back.r, c_back.g, c_back.b);
-
 	wxCoord X1, Y1, X2, Y2, W, H;
+
 	// then paint waht we have found
 	for(size_t i = 0; i < scrolls.size(); ++i) {
-		// if (scrolls[i].y1 < 0 || scrolls[i].y2 < 0 || scrolls[i].x < 0) continue;
+
+		WinPortRGB c_back = WxConsoleBackground2RGB(scrolls[i].attributes);
+		WinPortRGB c_text = WxConsoleForeground2RGB(scrolls[i].attributes);
+
+		if(!scrolls[i].HintFlags.Focus && !scrolls[i].HintFlags.Hover) {
+		   	RGB bg = FarToRGB(c_back);
+		   	RGB fg = FarToRGB(c_text);
+	    	fg = SoftenToDisabledState_LAB(fg);
+	        c_text = RGBtoFar(fg);
+
+			LAB bgl = RGBtoLAB(bg);
+	    	bgl.L = std::max(0.0, bgl.L - 3.0); // darken to 3%, nothing for black background
+			bg = LABtoRGB(bgl);
+			c_back = RGBtoFar(bg);
+		}
+
+		WinPortRGB c_a_text, c_a_back;
+		ComputeAccents(c_text, c_back, c_a_text, c_a_back);
+
+		if(!scrolls[i].HintFlags.Focus && !scrolls[i].HintFlags.Hover) {
+		   	RGB bg = FarToRGB(c_a_back);
+		   	RGB fg = FarToRGB(c_a_text);
+
+	    	fg = SoftenToDisabledState_LAB(fg);
+	        c_a_text = RGBtoFar(fg);
+
+			LAB bgl = RGBtoLAB(bg);
+	    	bgl.L = std::max(0.0, bgl.L - 3.0); // darken to 3%, nothing for black background
+			bg = LABtoRGB(bgl);
+			c_a_back = RGBtoFar(bg);
+		}
+
+		wxColour c_a(c_a_text.r, c_a_text.g, c_a_text.b);
+		wxColour c_t(c_text.r, c_text.g, c_text.b);
+		wxColour c_d(c_a_back.r, c_a_back.g, c_a_back.b);
+		wxColour c_b(c_back.r, c_back.g, c_back.b);
+
 		joinTrackLine(scrolls[i]);
 		for(size_t j = 0; j < scrolls[i].trackY.size(); ++j) {
 			X1 = scrolls[i].x * _context->FontWidth();
@@ -1925,7 +1974,10 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 			H = Y2 - Y1 + 1;
 
 			wxRect scrollR(X1, Y1, W, H);
-			DrawScrollTrack(_dc, scrollR, c_t, c_a, c_b);
+			if (scrolls[i].HintFlags.Focus || scrolls[i].HintFlags.Hover)
+				DrawScrollTrack(_dc, scrollR, c_a, c_d, c_b);
+			else
+				DrawScrollTrack(_dc, scrollR, c_t, c_a, c_b);
 		}
 
 		for(size_t j = 0; j < scrolls[i].thumbY.size(); ++j) {
@@ -1938,7 +1990,7 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 			H = Y2 - Y1 + 1;
 
 			wxRect scrollT(X1 - 2, Y1, W + 4, H);
-			DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
+			DrawScrollThumb(_dc, scrollT, c_b, c_d, false, block.HintFlags.Hover > 0);
 		}
 	}
 }

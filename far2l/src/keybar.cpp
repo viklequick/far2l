@@ -179,7 +179,7 @@ FarKey KeyBar::BuildShortcut(int group, int key) {
 		KEY_ALTF1,
 		KEY_CTRLSHIFTF1,
 		KEY_ALTSHIFTF1,
-		KEY_CTRLSHIFTF1,
+		KEY_CTRLALTF1,
 		KEY_CTRLSHIFTF1 | KEY_ALT,
 	};
 	return (prefixes[group]) + key;
@@ -474,7 +474,7 @@ static int GetGroupByEvent(MOUSE_EVENT_RECORD *MouseEvent) {
 }
 
 static int ComposeKey(int group, FarKey key) {
-	return key + KeyGroupMaps[group][1]; 
+	return key | KeyGroupMaps[group][1]; 
 }
 
 int KeyBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
@@ -529,7 +529,7 @@ int KeyBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	// out of region and no click
 	if (MsX < X1 || MsX > X2 || MouseEvent->dwMousePosition.Y != Y1)
 		return FALSE;
-	if (!(MouseEvent->dwButtonState & 3) || MouseEvent->dwEventFlags) 
+	if (!(MouseEvent->dwButtonState & 3) /* || MouseEvent->dwEventFlags */) 
 		return FALSE;
 
 	// Now click: just fire events, no magic like below

@@ -1789,7 +1789,7 @@ void ConsolePainter::DrawButtonDecorations(
 		DrawHorizontalGradientLine(X1 + 1, Y2 - 1, W - 2, c_a_text, emboss, 1);
 }
 
-void DrawScrollTrack(wxDC& dc, const wxRect& rect, const wxColour& colLight, const wxColour& colDark);
+void DrawScrollTrack(wxDC& dc, const wxRect& rect, const wxColour& colLight, const wxColour& colDark, const wxColour& colBorder);
 void DrawScrollThumb(wxDC& dc, const wxRect& rect, const wxColour& colTop, const wxColour& colBottom, bool pressed = false, bool hover = false);
 
 struct ScrollParticle {                                               \
@@ -1870,6 +1870,8 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 
 	// then paint waht we have found
 	for(size_t i = 0; i < scrolls.size(); ++i) {
+		if (scrolls[i].y1 < 0 || scrolls[i].y2 < 0 || scrolls[i].x < 0) continue;
+
 		wxCoord Y1 = (scrolls[i].y1 + 1) * _context->FontHeight();
 		wxCoord Y2 = (scrolls[i].y2 + 1 - 1 ) * _context->FontHeight() - 1;
 		wxCoord X1 = scrolls[i].x * _context->FontWidth();
@@ -1877,7 +1879,7 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 		wxCoord W = X2 - X1 + 1, H = Y2 - Y1 + 1;
 
 		wxRect scrollR(X1, Y1, W, H);
-		DrawScrollTrack(_dc, scrollR, c_b, /* block.HintFlags.Hover ? c_t :*/ c_a);
+		DrawScrollTrack(_dc, scrollR, c_t, /* block.HintFlags.Hover ? c_t :*/ c_a, c_b);
 
 		Y1 = (scrolls[i].thumbY1 ) * _context->FontHeight();
 		Y2 = (scrolls[i].thumbY2 + 1) * _context->FontHeight() - 1;
@@ -2005,17 +2007,18 @@ void ConsolePainter::DrawButtonDecorationsAsNew(
 }
 
 // Draws the scrollbar track (background)
-void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, const wxColour& colDark)
+void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, const wxColour& colDark, const wxColour& colBorder)
 {
     // Subtle vertical gradient
     dc.GradientFillLinear(rect, WXCustomDrawChar::options->Use3D ? colLight : colDark, colDark, wxSOUTH);
 
     if(!WXCustomDrawChar::options->Use3D) {
     	wxRect r2(rect.GetLeft() + 2, rect.GetTop() + 2, rect.GetWidth() - 4, rect.GetHeight() - 4);
-        dc.SetBrush(colLight);
+        dc.SetBrush(colBorder);
         dc.DrawRectangle(r2);
     }
 
+    /*
     // Optional: inner shadow at top
     dc.SetPen(wxPen(wxColour(0,0,0,40), 1));
     dc.DrawLine(rect.x, rect.y, rect.x + rect.width, rect.y);
@@ -2024,6 +2027,7 @@ void DrawScrollTrack(wxDC& dc, const wxRect& rect,  const wxColour& colLight, co
     dc.SetPen(wxPen(wxColour(255,255,255,40), 1));
     dc.DrawLine(rect.x, rect.y + rect.height - 1,
                 rect.x + rect.width, rect.y + rect.height - 1);
+    */
 }
 
 

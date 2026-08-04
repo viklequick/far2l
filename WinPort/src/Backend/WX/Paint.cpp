@@ -1937,7 +1937,7 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 			Y2 = (scrolls[i].thumbY[j].y2 + 1) * _context->FontHeight() - 1;
 			H = Y2 - Y1 + 1;
 
-			wxRect scrollT(X1 - 2, Y1, W + 2, H);
+			wxRect scrollT(X1 - 2, Y1, W + 2, H + 3);
 			DrawScrollThumb(_dc, scrollT, c_a, c_t, block.HintFlags.Checked > 0 /*, block.HintFlags.Hover > 0*/);
 		}
 	}

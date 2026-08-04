@@ -303,7 +303,7 @@ docker run -it far2l
 * `libicu-dev` (_optional_ - needed if using non-default ICU_MODE, see `-DICU_MODE` command line option)
 * `python3-dev` (_optional_ - needed for **python plugins** support, see `-DPYTHON` command line option)
 * `python3-cffi` (_optional_ - needed for **python plugins** support, see `-DPYTHON` command line option)
-* `cmake` ( >= 3.2.2 )
+* `cmake` ( >= 3.5.0 )
 * `pkg-config`
 * `g++`
 * `git` (needed for downloading source code)
@@ -394,7 +394,9 @@ There're also options to toggle other plugins build in same way:
 `-DGITGUTTER=no`,
 `-DHEXITOR=no`,
 `-DIMAGEVIEWER=no`, `-DINCSRCH=no`, `-DINSIDE=no`,
-`-DMEMO=no`, `-DMULTIARC=no`,
+`-DMEMO=no`,
+`-DMTP=no` (see additional flags in [MTP README](https://github.com/elfmz/far2l/blob/master/mtp/README.md)),
+`-DMULTIARC=no`,
 `-DNETROCKS=no`,
 `-DOPENWITH=no`,
 `-DSIMPLEINDENT=no`,
@@ -518,6 +520,7 @@ Terminals/SSH clients with support extended far2l keyboard shortcuts and clipboa
  * **Windows Terminal** (_TTY|w backend_: keys by win32-input-mode; turn on OSC 52 for clipboard support; has mouse bug: https://github.com/microsoft/terminal/issues/15083 )
 
  * _Original PuTTY_ does _not correctly send some keyboard shortcuts_. Please use putty forks with _special far2l TTY extensions support (fluent keypresses, clipboard sharing etc)_:
+    + **Putty-Zeroes-Mod** (Windows ssh-client): https://github.com/Zeroes1/Putty-Zeroes-Mod (_TTY|F backend_: keys and clipboard by FAR2L TTY extensions support)
     + **putty4far2l** (Windows ssh-client): https://github.com/ivanshatsky/putty4far2l/releases & https://github.com/unxed/putty4far2l (_TTY|F backend_: keys and clipboard by FAR2L TTY extensions support)
     + **cyd01's KiTTY** (Windows ssh-client): https://github.com/cyd01/KiTTY & https://www.9bis.net/kitty (_TTY|F backend_: keys and clipboard by FAR2L TTY extensions support)
     + **putty-nd** (Windows ssh-client): https://sourceforge.net/projects/putty-nd & https://github.com/noodle1983/putty-nd (_TTY|F backend_: keys and clipboard by FAR2L TTY extensions support)

@@ -1852,6 +1852,7 @@ void ConsolePainter::DrawScrollBarDecorations(int cx_s, int cy_s, int cx_e, int 
 		if (block.parts[j].ch == L"▓") {
 			give(scrolls, block.parts[j].X1, -1, -1, block.parts[j].Y1, block.parts[j].Y2, block.parts[j].attributes);
 		}
+
 	}
 
 	if (scrolls.size() == 0) return;

@@ -64,7 +64,7 @@ enum FLAGS_CLASS_EDITLINE
 	FEDITLINE_PARENT_SINGLELINE = 0x00100000,		// обычная строка ввода в диалоге
 	FEDITLINE_PARENT_MULTILINE  = 0x00200000,		// для будущего Memo-Edit (DI_EDITOR или DIF_MULTILINE)
 	FEDITLINE_PARENT_EDITOR     = 0x00400000,		// "вверху" обычный редактор
-	FEDITLINE_MY_SETTINGS       = 0x00800000,		// has own instance of settings
+	FEDITLINE_LOCAL_SETTINGS    = 0x00800000,		// has own instance of settings
 	FEDITLINE_HASSPECIALWIDTHCHARS = 0x01000000,
 	FEDITLINE_WORDWRAP          = 0x02000000,
 	FEDITLINE_EOLTYPE_MASK      = 0x1c000000,
@@ -134,7 +134,7 @@ class Edit : public ThinScreenObject
 	friend class Editor;
 	friend class CommandLine;
 	friend class EditControl;
-	friend class DisableListener;
+	friend class PauseEditListener;
 	friend class Edit2Settings;
 
 public:
@@ -153,17 +153,6 @@ private:
 	int SelStart;
 	int SelEnd;
 	int CursorPos;
-
-	class DisableListener
-	{
-		Edit &_edit;
-		IEditListener *_saved_listener;
-
-	public:
-		DisableListener(Edit &edit);
-		~DisableListener();
-		void Restore();
-	};
 
 private:
 	virtual void DisplayObject();
@@ -216,6 +205,8 @@ public:
 	void SetListener(IEditListener *Listener = nullptr);
 	IEditListener *GetListener();
 
+	void Compact();
+
 	DWORD SetCodePage(UINT codepage);	// BUGBUG
 	UINT GetCodePage();					// BUGBUG
 
@@ -242,16 +233,22 @@ public:
 	void SetShowWhiteSpace(int Mode) { Flags.Change(FEDITLINE_SHOWWHITESPACE, Mode); }
 
 	void GetString(wchar_t *Data, int MaxSize);
-	void GetString(FARString &strStr);
+	void GetString(FARString &dst, const wchar_t **EOL = nullptr);
+	void GetString(std::wstring &dst, const wchar_t **EOL = nullptr);
+	std::wstring GetString();
 
+	int GetStringLength(const wchar_t **EOL = nullptr);
+
+	// NB: GetStringAddr functions have implicit memory overhead due to they forcing uncompacting of underlying string
+	// so prefer use GetString()/GetStringLength() if need to massive-query multiple lines, or use Compact() afterwards
+	// to avoid memory usage surge
+	const wchar_t *GetStringAddr(int &Length, const wchar_t **EOL = nullptr);
 	const wchar_t *GetStringAddr();
 
 	void SetHiString(const wchar_t *Str);
 	void SetString(const wchar_t *Str, int Length = -1);
 
 	void SetBinaryString(const wchar_t *Str, int Length);
-
-	void GetBinaryString(const wchar_t **Data, const wchar_t **EOL, int &Length);
 
 	void SetEOL(const wchar_t *EOL);
 	const wchar_t *GetEOL();

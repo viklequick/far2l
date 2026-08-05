@@ -1692,6 +1692,7 @@ void FileEditor::SaveContent(const wchar_t *Name, BaseContentWriter *Writer, boo
 	DWORD StartTime = WINPORT(GetTickCount)();
 	size_t LineNumber = 0;
 
+	std::wstring s;
 	for (Edit *CurPtr = m_editor->TopList; CurPtr; CurPtr = CurPtr->m_next, LineNumber++) {
 		DWORD CurTime = WINPORT(GetTickCount)();
 
@@ -1707,11 +1708,8 @@ void FileEditor::SaveContent(const wchar_t *Name, BaseContentWriter *Writer, boo
 						(int)(50 + (LineNumber * 50 / m_editor->NumLastLine)), MsgFlags);
 		}
 
-		const wchar_t *SaveStr, *EndSeq;
-
-		int Length;
-
-		CurPtr->GetBinaryString(&SaveStr, &EndSeq, Length);
+		const wchar_t *EndSeq;
+		CurPtr->GetString(s, &EndSeq);
 
 		if (!*EndSeq && CurPtr->m_next)
 			EndSeq = *m_editor->GlobalEOL ? m_editor->GlobalEOL : DOS_EOL_fmt;
@@ -1721,8 +1719,11 @@ void FileEditor::SaveContent(const wchar_t *Name, BaseContentWriter *Writer, boo
 			CurPtr->SetEOL(EndSeq);
 		}
 
-		Writer->EncodeAndWrite(codepage, SaveStr, Length);
+		Writer->EncodeAndWrite(codepage, s.data(), s.size());
 		Writer->EncodeAndWrite(codepage, EndSeq, StrLength(EndSeq));
+		if (Phase > 0) {
+			CurPtr->Compact();
+		}
 	}
 }
 
@@ -1922,18 +1923,19 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 		// SaveScreen SaveScr;
 		CtrlObject->Plugins.CurEditor = this;
 		//_D(SysLog(L"%08d EE_SAVE",__LINE__));
+		EcoString::sDebugPrintStats("save start");
+		clock_t t = GetProcessUptimeMSec();
 
 		if (!IsUnicodeOrUtfCodePage(codepage)) {
 			int LineNumber = 0;
 			bool BadSaveConfirmed = false;
+			std::wstring s;
 			for (Edit *CurPtr = m_editor->TopList; CurPtr; CurPtr = CurPtr->m_next, LineNumber++) {
-				const wchar_t *SaveStr, *EndSeq;
-				int Length;
-				CurPtr->GetBinaryString(&SaveStr, &EndSeq, Length);
+				const wchar_t *EndSeq;
+				CurPtr->GetString(s, &EndSeq);
 				BOOL UsedDefaultCharStr = FALSE, UsedDefaultCharEOL = FALSE;
-				if (Length
-						&& !WINPORT(WideCharToMultiByte)(codepage, WC_NO_BEST_FIT_CHARS, SaveStr, Length,
-								nullptr, 0, nullptr, &UsedDefaultCharStr))
+				if (!s.empty() && !WINPORT(WideCharToMultiByte)(codepage, WC_NO_BEST_FIT_CHARS,
+						s.c_str(), s.size(), nullptr, 0, nullptr, &UsedDefaultCharStr))
 					return SAVEFILE_ERROR;
 
 				if (!*EndSeq && CurPtr->m_next)
@@ -1943,9 +1945,8 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 					EndSeq = m_editor->GlobalEOL;
 
 				int EndSeqLen = StrLength(EndSeq);
-				if (EndSeqLen
-						&& !WINPORT(WideCharToMultiByte)(codepage, WC_NO_BEST_FIT_CHARS, EndSeq, EndSeqLen,
-								nullptr, 0, nullptr, &UsedDefaultCharEOL))
+				if (EndSeqLen && !WINPORT(WideCharToMultiByte)(codepage, WC_NO_BEST_FIT_CHARS,
+						EndSeq, EndSeqLen, nullptr, 0, nullptr, &UsedDefaultCharEOL))
 					return SAVEFILE_ERROR;
 
 				if (!BadSaveConfirmed && (UsedDefaultCharStr || UsedDefaultCharEOL)) {
@@ -1960,10 +1961,10 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 						if (Result == 1) {
 							m_editor->GoToLine(LineNumber);
 							if (UsedDefaultCharStr) {
-								for (int Pos = 0; Pos < Length; Pos++) {
+								for (size_t Pos = 0; Pos < s.size(); Pos++) {
 									BOOL UseDefChar = 0;
 									WINPORT(WideCharToMultiByte)
-									(codepage, WC_NO_BEST_FIT_CHARS, SaveStr + Pos, 1, nullptr, 0, nullptr,
+									(codepage, WC_NO_BEST_FIT_CHARS, &s[Pos], 1, nullptr, 0, nullptr,
 											&UseDefChar);
 									if (UseDefChar) {
 										CurPtr->SetCurPos(Pos);
@@ -1999,6 +2000,7 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 
 		bool ProgressShown = false;
 		try {
+			EcoString::sDebugPrintStats("save phase 0");
 			ContentMeasurer cm;
 			SaveContent(Name, &cm, bSaveAs, TextFormat, codepage, AddSignature, 0, ProgressShown);
 
@@ -2024,6 +2026,7 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 						throw WINPORT(GetLastError)();
 				}
 
+				EcoString::sDebugPrintStats("save phase 1");
 				ContentSaver cs(EditFile);
 				SaveContent(Name, &cs, bSaveAs, TextFormat, codepage, AddSignature, 1, ProgressShown);
 				cs.Flush();
@@ -2044,6 +2047,8 @@ int FileEditor::SaveFile(const wchar_t *Name, int Ask, bool bSaveAs, int TextFor
 			SysErrorCode = ENOMEM;
 			RetCode = SAVEFILE_ERROR;
 		}
+		fprintf(stderr, "* Editor: save took %lu msec\n", (unsigned long)(GetProcessUptimeMSec() - t));
+		EcoString::sDebugPrintStats("saved");
 	}
 
 	if (FHP && RetCode != SAVEFILE_ERROR)
@@ -2525,9 +2530,8 @@ void FileEditor::ShowStatus()
 	size_t CharCodeWidth = 5;
 	{
 		const bool UCP = IsUnicodeOrUtfCodePage(m_codepage);
-		const wchar_t *Str = nullptr;
 		int Length = 0;
-		m_editor->CurLine->GetBinaryString(&Str, nullptr, Length);
+		const wchar_t *Str = m_editor->CurLine->GetStringAddr(Length);
 		int CurPos = m_editor->CurLine->GetCurPos();
 		const size_t CharCodeInfoIdx = (m_editor->EdOpt.CharCodeBase % ARRAYSIZE(s_CCFI));
 		CharCodeWidth = s_CCFI[CharCodeInfoIdx].wide_width;

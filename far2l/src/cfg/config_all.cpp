@@ -329,13 +329,12 @@ static int Do_AllSystemSettings()
 		Builder.ColumnBreak();
 		Builder.AddCheckbox(Msg::ConfigExclusiveAltLeft, &Opt.ExclusiveAltLeft);
 		Builder.AddCheckbox(Msg::ConfigExclusiveAltRight, &Opt.ExclusiveAltRight);
+		Builder.AddCheckbox(Msg::ConfigUseRightAltAsAltGr, &Opt.UseRightAltAsAltGr);
 		Builder.ColumnBreak();
 		Builder.AddCheckbox(Msg::ConfigExclusiveWinLeft, &Opt.ExclusiveWinLeft);
 		Builder.AddCheckbox(Msg::ConfigExclusiveWinRight, &Opt.ExclusiveWinRight);
 		Builder.EndColumns();
 	}
-
-	Builder.AddCheckbox(Msg::ConfigUseRightAltAsAltGr, &Opt.UseRightAltAsAltGr);
 
     /* system settings */
 
@@ -636,7 +635,98 @@ static int Do_AllSystemSettings()
 
 	Builder.EndColumns();
 
+    /* viewer settings */
+
+	Builder.AddSeparator(Msg::ViewConfigTitle);
+
+	Builder.AddCheckbox(Msg::ViewConfigExternalF3, &Opt.ViOpt.UseExternalViewer);
+	Builder.AddText(Msg::ViewConfigExternalCommand, false);
+	Builder.AddEditField(&Opt.strExternalViewer, 40, L"ExternalViewer", DIF_EDITPATH);
+
+	Builder.AddSeparator(Msg::ViewConfigInternal);
+
+	Builder.AddIntEditField(&Opt.ViOpt.TabSize, 3, 0, false);
+	Builder.AddText(Msg::ViewConfigTabSize);
+
+	Builder.AddText(Msg::ViewConfigDefaultCodePage, false);
+	Builder.AddCodePagesBox(&Opt.ViOpt.DefaultCodePage, 15, false, false);
+	Builder.AddCheckbox(Msg::ViewAutoDetectCodePage, &Opt.ViOpt.AutoDetectCodePage);
+
+	Builder.StartColumns();
+
+	Builder.AddCheckbox(Msg::ViewConfigPersistentSelection, &Opt.ViOpt.PersistentBlocks);
+	auto SavePos = Builder.AddCheckbox(Msg::ViewConfigSavePos, &Opt.ViOpt.SavePos, false);
+	auto SaveShortPos = Builder.AddCheckbox(Msg::ViewConfigSaveShortPos, &Opt.ViOpt.SaveShortPos);
+	Builder.LinkFlags(SavePos, SaveShortPos, DIF_DISABLE);
+	Builder.AddCheckbox(Msg::ViewClickableURLs, &Opt.ViOpt.ClickableURLs);
+
+	Builder.ColumnBreak();
+
+	Builder.AddCheckbox(Msg::ViewShowKeyBar, &Opt.ViOpt.ShowKeyBar);
+	Builder.AddCheckbox(Msg::ViewConfigArrows, &Opt.ViOpt.ShowArrows);
+	Builder.AddCheckbox(Msg::ViewConfigScrollbar, &Opt.ViOpt.ShowScrollbar);
+	Builder.AddCheckbox(Msg::ViewShowTitleBar, &Opt.ViOpt.ShowTitleBar);
+	Builder.AddCheckbox(Msg::ViewShowMenuBar, &Opt.ViOpt.ShowMenuBar);
+	
+	Builder.EndColumns();
+
+	/* editor settings */
+
+	Builder.AddSeparator(Msg::EditConfigTitle);
+
+	Builder.AddCheckbox(Msg::EditConfigEditorF4, &Opt.EdOpt.UseExternalEditor);
+	Builder.AddText(Msg::EditConfigEditorCommand, false);
+	Builder.AddEditField(&Opt.strExternalEditor, 40, L"ExternalEditor", DIF_EDITPATH);
+	
+	Builder.AddSeparator(Msg::EditConfigInternal);
+
+	Builder.AddIntEditField(&Opt.EdOpt.TabSize, 3,	0, false );
+	Builder.AddText(Msg::EditConfigTabSize, false);
+	Builder.AddText(Msg::EditConfigExpandTabsTitle, false);
+	DialogBuilderListItem ExpandTabsItems[] = {
+		{Msg::EditConfigDoNotExpandTabs,        EXPAND_NOTABS },
+		{Msg::EditConfigExpandTabs,             EXPAND_NEWTABS},
+		{Msg::EditConfigConvertAllTabsToSpaces, EXPAND_ALLTABS}
+	};
+	Builder.AddComboBox(&Opt.EdOpt.ExpandTabs, 24, ExpandTabsItems, 3,
+		DIF_DROPDOWNLIST | DIF_LISTAUTOHIGHLIGHT | DIF_LISTWRAPMODE );
+
+	Builder.AddText(Msg::EditConfigDefaultCodePage, false);
+	Builder.AddCodePagesBox(&Opt.EdOpt.DefaultCodePage, 15, false, false);
+	Builder.AddCheckbox(Msg::EditAutoDetectCodePage, &Opt.EdOpt.AutoDetectCodePage);
+	Builder.AddCheckbox(Msg::EditConfigAutoIndent, &Opt.EdOpt.AutoIndent);
+	Builder.AddCheckbox(Msg::EditWordWrap, &Opt.EdOpt.WordWrap);
+
+	Builder.AddEmptyLine();
+
+	Builder.StartColumns();
+
+	Builder.AddCheckbox(Msg::EditConfigPersistentBlocks, &Opt.EdOpt.PersistentBlocks);
+
+	SavePos = Builder.AddCheckbox(Msg::EditConfigSavePos, &Opt.EdOpt.SavePos, false);
+	SaveShortPos = Builder.AddCheckbox(Msg::EditConfigSaveShortPos, &Opt.EdOpt.SaveShortPos);
+	Builder.LinkFlags(SavePos, SaveShortPos, DIF_DISABLE);
+	
+	Builder.AddCheckbox(Msg::EditConfigDelRemovesBlocks, &Opt.EdOpt.DelRemovesBlocks);
+	Builder.AddCheckbox(Msg::EditCursorBeyondEnd, &Opt.EdOpt.CursorBeyondEOL);
+	Builder.AddCheckbox(Msg::EditConfigPickUpWord, &Opt.EdOpt.SearchPickUpWord);
+	Builder.AddCheckbox(Msg::EditUseEditorConfigOrg, &Opt.EdOpt.UseEditorConfigOrg);
+	Builder.AddCheckbox(Msg::EditLockROFileModification, &Opt.EdOpt.ReadOnlyLock, 1);
+	Builder.AddCheckbox(Msg::EditWarningBeforeOpenROFile, &Opt.EdOpt.ReadOnlyLock, 2);
+
+	Builder.ColumnBreak();
+
+	Builder.AddCheckbox(Msg::EditShowWhiteSpace, &Opt.EdOpt.ShowWhiteSpace);
+	Builder.AddCheckbox(Msg::EditShowKeyBar, &Opt.EdOpt.ShowKeyBar);
+	Builder.AddCheckbox(Msg::EditShowLineNumbers, &Opt.EdOpt.ShowLineNumbers);
+	Builder.AddCheckbox(Msg::EditConfigScrollbar, &Opt.EdOpt.ShowScrollBar);
+	Builder.AddCheckbox(Msg::EditShowTitleBar, &Opt.EdOpt.ShowTitleBar);
+	Builder.AddCheckbox(Msg::EditShowMenuBar, &Opt.EdOpt.ShowMenuBar);
+
+	Builder.EndColumns();
+
     /* plugins settings */
+
 	Builder.AddSeparator(Msg::PluginsManagerSettingsTitle);
 
 	Builder.AddText(Msg::PluginsManagerPersonalPath, false);
@@ -654,6 +744,12 @@ static int Do_AllSystemSettings()
 	Builder.ColumnBreak();
 	Builder.AddCheckbox(Msg::PluginsManagerEvenOne, &Opt.PluginConfirm.EvenIfOnlyOnePlugin);
 	Builder.EndColumns();
+
+    /* folder file-id settings */
+	Builder.AddSeparator(Msg::SetFolderInfoTitle);
+
+	Builder.AddText(Msg::SetFolderInfoNames);
+	Builder.AddEditField(&Opt.InfoPanel.strFolderInfoFiles, 65);
 
     /* file-id.diz settings */
 
@@ -775,6 +871,11 @@ void AllSystemSettings()
     		Opt.DirNameStyle |= DIRNAME_STYLE_CENTERED * dircfg_data.bCentered;
     		Opt.DirNameStyle |= DIRNAME_STYLE_SURR_CH * dircfg_data.bSurr;
     		UpdateDefaultColumnTypeWidths( );
+
+			if (Opt.ViOpt.TabSize < 1 || Opt.ViOpt.TabSize > 512)
+				Opt.ViOpt.TabSize = 8;
+			if (Opt.EdOpt.TabSize < 1 || Opt.EdOpt.TabSize > 512)
+				Opt.EdOpt.TabSize = 8;
 
 			// FrameManager->RefreshFrame();
 			CtrlObject->Cp()->LeftPanel->Update(UPDATE_KEEP_SELECTION);

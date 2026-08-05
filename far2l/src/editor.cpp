@@ -8708,15 +8708,15 @@ void Editor::DrawScrollbar()
 
 FARString Editor::GetLine(int row, int col, int maxlen)
 {
-	const wchar_t *CurStr = 0, *EndSeq = 0;
 	int Len2 = 0;
 	Edit *line = GetStringByNumber(row);
 	if (!line) return L"";
 
-	line->GetBinaryString(&CurStr, &EndSeq, Len2);
+	std::wstring s = line->GetString();
+	Len2 = line->GetStringLength();
 	if (col >= Len2) return L"";
 	if (col + maxlen > Len2) maxlen = Len2 - col;
-	FARString x(CurStr + col);
+	FARString x(s.c_str() + col);
 	if ((int)x.GetLength() > maxlen) x.Truncate(maxlen);
 	return x;
 }

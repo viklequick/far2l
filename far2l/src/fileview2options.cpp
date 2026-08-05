@@ -117,6 +117,12 @@ void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileVie
 		{Msg::ViewerMenuNavigatePin9,	0,	KEY_CTRLSHIFT9  },
 	};
 
+	std::vector<ViewerBookmark> bookmarks = fileView->GetActiveBookmarks();
+	for(size_t j = 0; j < bookmarks.size(); ++j) {
+		fprintf(stderr, "filevew bm %d: %lld, %lld, `%ls`\n", bookmarks[j].index, bookmarks[j].FilePos, bookmarks[j].LeftPos, bookmarks[j].preview);
+		NavigateMenu[bookmarks[j].index + MENU_VIEW_NAVIGATE_BM_0].Name = bookmarks[j].preview;
+	}
+
 	MenuDataEx ViewMenu[] = {
 		{Msg::ViewerMenuKeyBar,	0,	KEY_CTRLB  },
 		{Msg::ViewerMenuTitleBar,	0,	KEY_CTRLSHIFTB  },

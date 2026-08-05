@@ -280,6 +280,96 @@ enum enumViewMenu {
 	MENU_PANELDIRECTORYNAMESETTINGS
 };
 
+#include "Bookmarks.hpp"
+
+static std::vector<std::wstring> GetBookmarksList()
+{
+	Bookmarks b;
+	int I;
+	std::vector<std::wstring> r;
+
+	for (I = 0;; I++) {
+		FARString strFolderName, strPlugin;
+		FARString strValueName;
+		FARString strName;
+		b.Get(I, &strFolderName, &strPlugin);
+
+		if (strFolderName.IsEmpty()) {
+			strFolderName = strPlugin.IsEmpty() ? Msg::ShortcutNone : Msg::ShortcutPlugin;
+		}
+
+		if (I < 10) {
+			strName.Format(L"%-35.35ls %ls+&%d", strFolderName.CPtr(), Msg::RightCtrl.CPtr(), I);
+		} else {
+			strName.Format(L"%-35.35ls", strFolderName.CPtr());
+		}
+
+		if (I >= 10 && strFolderName == Msg::ShortcutNone) {
+			break;
+		}
+
+		r.push_back(strName.GetWide());
+	}
+	return r;
+}
+
+#include "Mounts.hpp"
+
+struct MenuPoint {
+	enum Kind {
+		UNSPECIFIED = 0,
+		MOUNTPOINT,
+		DIRECTORY
+	} kind = UNSPECIFIED;
+
+	std::wstring path;
+	std::wstring name;
+	int id;
+};
+
+static std::vector<MenuPoint> GetMountPoints() {
+	std::vector<MenuPoint> r;
+
+	FARString strDiskType, strRootDir, strDiskLetter;
+	FARString curdir, another_curdir, strName;
+
+	auto a_panel = CtrlObject->Cp()->ActivePanel;
+	a_panel->GetCurDirPluginAware(curdir);
+
+	auto another_panel = CtrlObject->Cp()->GetAnotherPanel(a_panel);
+	another_panel->GetCurDirPluginAware(another_curdir);
+	if (another_panel->GetPluginHandle() != INVALID_HANDLE_VALUE) {
+		another_curdir.Insert(0, L"{");
+		another_curdir.Append(L"}");
+	}
+
+	Mounts::Enum mounts(another_curdir);
+	for (const auto &m : mounts) {
+		MenuPoint item;
+		if (m.path == L"-") {
+			strName = m.col3;
+		} 
+		else {
+			strName = FixedSizeStr(m.path, std::min(mounts.max_path, (size_t)37), false, true);
+			strName += L' ';
+			strName += FixedSizeStr(m.col3, std::min(mounts.max_col3, (size_t)15), false, true);
+
+			item.path = m.path.CPtr();
+			item.id = m.id;
+
+			if (item.path[0] == L'{' && another_curdir == item.path
+					&& another_panel->GetPluginHandle() != INVALID_HANDLE_VALUE) {
+				continue; // we do not need plugins now
+			} 
+			item.kind = m.unmountable ? MenuPoint::MOUNTPOINT : MenuPoint::DIRECTORY;
+		}
+		item.name = strName;
+		if (item.kind != MenuPoint::UNSPECIFIED)
+			r.push_back(item);
+	}
+	return r;
+}
+
 void SetLeftRightMenuChecks(MenuDataEx *pMenu, bool bLeft)
 {
 	Panel *pPanel = bLeft ? CtrlObject->Cp()->LeftPanel : CtrlObject->Cp()->RightPanel;
@@ -446,7 +536,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::PanelCopyFnLeft,	0,	KEY_CTRLBRACKET  },
 		{Msg::PanelCopyFnRight,	0,	KEY_CTRLBACKBRACKET  }
 	};
-	MenuDataEx NavigateMenu[] = {
+	MenuDataEx NavigateMenu[128] = {
 		{Msg::PanelGoToHome,	0,	KEY_CTRL | '`'  },
 		{Msg::PanelGoToTop,	0,	KEY_CTRLBACKSLASH  },
 		{Msg::PanelUpTo,	0,	KEY_CTRLPGUP  },
@@ -474,8 +564,24 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::PanelGotoShortcut6,	0,	KEY_RCTRL6  },
 		{Msg::PanelGotoShortcut7,	0,	KEY_RCTRL7  },
 		{Msg::PanelGotoShortcut8,	0,	KEY_RCTRL8  },
-		{Msg::PanelGotoShortcut9,	0,	KEY_RCTRL9  }
+		{Msg::PanelGotoShortcut9,	0,	KEY_RCTRL9  },
+		{L"", LIF_SEPARATOR, 0 }
 	};
+
+	int NavMenuCount = MENU_PANELGOTOSHORTCUT9 + 2;
+
+	std::vector<std::wstring> bookmarks = GetBookmarksList();
+	for(size_t j = 0; j < bookmarks.size() && j < 10; ++j)
+		NavigateMenu[j + MENU_PANELGOTOSHORTCUT0].Name = bookmarks[j].c_str();
+
+	std::vector<MenuPoint> mounts = GetMountPoints();
+	for(size_t j = 0; j < mounts.size() && NavMenuCount < 128; ++j) {
+		NavigateMenu[j + MENU_PANELGOTOSHORTCUT9 + 2].Name = mounts[j].name.c_str();
+		NavigateMenu[j + MENU_PANELGOTOSHORTCUT9 + 2].Flags = 0;
+		NavigateMenu[j + MENU_PANELGOTOSHORTCUT9 + 2].AccelKey = 0;
+        ++NavMenuCount;
+	}
+
 	MenuDataEx ViewMenu[] = {
 		{Msg::PanelShowHidden,	0,	KEY_CTRLH  },
 		{Msg::PanelShowFileMarks,	0,	KEY_CTRLALTM  },
@@ -527,7 +633,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::MenuCommandsTitle, 0, CmdMenu,     ARRAYSIZE(CmdMenu),     L"CmdMenu"      },
 		{Msg::MenuObjectTitle, 0, ObjectsMenu,     ARRAYSIZE(ObjectsMenu),     L"ObjectsMenu"      },
 		{Msg::MenuOptionsTitle,  0, OptionsMenu, ARRAYSIZE(OptionsMenu), L"OptMenu"      },
-		{Msg::MenuNavigateTitle, 0, NavigateMenu,     ARRAYSIZE(NavigateMenu),     L"NavigateMenu"      },
+		{Msg::MenuNavigateTitle, 0, NavigateMenu,  NavMenuCount,     L"NavigateMenu"      },
 		{Msg::MenuViewTitle, 0, ViewMenu,     ARRAYSIZE(ViewMenu),     L"ViewMenu"      },
 		{Msg::MenuRightTitle,    0, RightMenu,   ARRAYSIZE(RightMenu),   L"LeftRightMenu"}
 	};
@@ -865,6 +971,18 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 
 			break;
 		}
+		case MENU_NAVIGATE:
+			if (VItem >= MENU_PANELGOTOSHORTCUT9 + 2) {	/* mount points  */
+				int j = VItem - (MENU_PANELGOTOSHORTCUT9 + 2);
+				if (j >= (int)mounts.size()) break;
+				MenuPoint& mp = mounts[j];
+
+				if (mp.kind == MenuPoint::MOUNTPOINT || mp.kind == MenuPoint::DIRECTORY) {
+					auto a_panel = CtrlObject->Cp()->ActivePanel;
+					a_panel -> SetLocation_Directory(mp.path.c_str());
+				}
+				break;
+			}
 		default:
 			if (key) FrameManager->ProcessKey(key);
 			break;

@@ -8,10 +8,15 @@
 #include <utils.h>
 #include <dlfcn.h>
 
-// #698: Mac: Copying to clipboard stopped working in wx 3.1 (not 100% sure about exact version).
-// The fix is submitted, supposedly, into 3.2: https://github.com/wxWidgets/wxWidgets/pull/1623/files
-// Guess the problem is only present in 3.1.
-#if defined(__APPLE__) && (wxMAJOR_VERSION == 3) && (wxMINOR_VERSION == 1)
+// wxOSX 3.3.3 pastes text with interleaved NULs, see https://github.com/wxWidgets/wxWidgets/issues/26680
+#if defined(__APPLE__) && (wxMAJOR_VERSION == 3) && (wxMINOR_VERSION == 3) && (wxRELEASE_NUMBER == 3)
+#define CLIPBOARD_NATIVE_ONLY 1
+#else
+#define CLIPBOARD_NATIVE_ONLY 0
+#endif
+
+// #698: Mac: Copying to clipboard stopped working in wx 3.1.
+#if defined(__APPLE__) && (wxMAJOR_VERSION == 3) && ((wxMINOR_VERSION == 1) || CLIPBOARD_NATIVE_ONLY)
 #define CLIPBOARD_HACK 1
 #include "Mac/pasteboard.h"
 #else
@@ -111,7 +116,7 @@ void wxClipboardBackend::OnClipboardClose()
 		fprintf(stderr, "CloseClipboard without data\n");
 	}
 
-#if !defined(__WXGTK__)
+#if !defined(__WXGTK__) && !CLIPBOARD_NATIVE_ONLY
 	// it never did what supposed to, and under Ubuntu 22.04/Wayland it started to kill gnome-shell
 	wxTheClipboard->Flush();
 #endif
@@ -314,22 +319,24 @@ static void setTextAsPrimarySelection(const wxString& text)
     gtk_clipboard_store(primary);
 }
 
-static void getTextFromPrimarySelectionStart(std::function<void(const wxString&)> callback)
+static void getPrimarySelectionAsync(std::function<void(const wxString&)> callback)
 {
     GtkClipboard* primary = gtk_clipboard_get(GDK_SELECTION_PRIMARY);
 
     // Allocate callback on heap so GTK can call it later
-    auto* cb = new std::function<void(const wxString&)>(callback);
+    auto* cb = new std::function<void(const wxString&)>(std::move(callback));
 
     gtk_clipboard_request_text(
         primary,
-        [](GtkClipboard* clipboard, const gchar* text, gpointer user_data)
+        [](GtkClipboard*, const gchar* text, gpointer user_data)
         {
             auto* cb = static_cast<std::function<void(const wxString&)>*>(user_data);
+
+            wxString result;
             if (text)
-                (*cb)(wxString::FromUTF8(text));
-            else
-                (*cb)(wxString());
+                result = wxString::FromUTF8(text);
+
+            (*cb)(result);
             delete cb;
         },
         cb
@@ -339,16 +346,28 @@ static void getTextFromPrimarySelectionStart(std::function<void(const wxString&)
 static wxString getTextFromPrimarySelection()
 {
     wxString result;
-    bool done = false;
+    bool finished = false;
 
-    getTextFromPrimarySelectionStart([&](const wxString& text) {
+    // Start async request
+    getPrimarySelectionAsync([&](const wxString& text) {
         result = text;
-        done = true;
+        finished = true;
     });
 
+    // Timeout timer (300 ms is typical)
+    wxTimer timer;
+    timer.Start(300, wxTIMER_ONE_SHOT);
+
+    // Event loop that exits on callback OR timeout
     wxEventLoop loop;
-    while (!done)
-        loop.Dispatch();
+
+    // Bind timeout
+    timer.Bind(wxEVT_TIMER, [&](wxTimerEvent&) {
+        finished = true;   // force exit
+    });
+
+    while (!finished)
+        loop.DispatchTimeout(50);   // non-blocking, safe
 
     return result;
 }
@@ -380,6 +399,14 @@ void *wxClipboardBackend::OnClipboardSetData(UINT format, void *data)
 		auto fn = std::bind(&wxClipboardBackend::OnClipboardSetData, this, format, data);
 		return CallInMain<void *>(fn);
 	}
+
+#if CLIPBOARD_NATIVE_ONLY
+	if (format == CF_UNICODETEXT)
+		CopyToPasteboard((const wchar_t *)data);
+	else if (format == CF_TEXT)
+		CopyToPasteboard((const char *)data);
+	return data;
+#endif
 
 #ifdef __WXQT__ 
 	if (wxClipboardType == WxClipboardType::Primary) {

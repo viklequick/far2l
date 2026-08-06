@@ -495,6 +495,17 @@ MultilinePaste
 "Вставка багаторядкового тексту"
 "Устаўка шматрадковага тэксту"
 
+AllowSelectionPlacement
+"Помещать список выделенных файлов в комстроку по ^Ввод"
+"Place the selected files from panel to command line on ^Enter"
+upd:"Place the selected files from panel to command line on ^Enter"
+upd:"Place the selected files from panel to command line on ^Enter"
+upd:"Place the selected files from panel to command line on ^Enter"
+upd:"Place the selected files from panel to command line on ^Enter"
+upd:"Place the selected files from panel to command line on ^Enter"
+upd:"Place the selected files from panel to command line on ^Enter"
+upd:"Place the selected files from panel to command line on ^Enter"
+
 EditCommand
 "Редактирование команды"
 "Edit command"

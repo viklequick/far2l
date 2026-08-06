@@ -1033,9 +1033,20 @@ int FileList::ProcessKey(FarKey Key)
 			return TRUE;
 		}
 		case KEY_ALTENTER:
-		case KEY_ALTNUMENTER: /* copy path without escaping */
-			if (!ListData.IsEmpty() && SetCurPath()) {
-				FARString strFileName;
+		case KEY_ALTNUMENTER: { /* copy path without escaping */
+			bool hasSelected = false;
+			FARString strFileName;
+			if (Opt.CmdLine.AllowSelectionPlacement) {
+				for (auto &item : ListData) {
+					if(item->Selected) {
+						hasSelected = true;
+						strFileName = item->strName;
+						strFileName += L" ";
+						CtrlObject->CmdLine->InsertString(strFileName);
+					}
+				}
+			}
+			if (!hasSelected && !ListData.IsEmpty() && SetCurPath()) {
 				ASSERT(CurFile < ListData.Count());
 				CurPtr = ListData[CurFile];
 				strFileName = CurPtr->strName;
@@ -1043,67 +1054,36 @@ int FileList::ProcessKey(FarKey Key)
 				CtrlObject->CmdLine->InsertString(strFileName);
 			}
 			return TRUE;
+		}
 		case KEY_CTRLNUMENTER:
 		case KEY_CTRLSHIFTNUMENTER:
 		case KEY_CTRLENTER:
 		case KEY_CTRLSHIFTENTER:
 		case KEY_CTRLJ:
 		case KEY_CTRLF:
-		case KEY_CTRLALTF:		// 29.01.2001 VVM + По CTRL+ALT+F в командную строку сбрасывается UNC-имя текущего файла.
-		{
-			if (!ListData.IsEmpty() && SetCurPath()) {
-				FARString strFileName;
-				bool localPath = true;
-
-				if (Key == KEY_CTRLSHIFTENTER || Key == KEY_CTRLSHIFTNUMENTER) {
-					_MakePath1(Key, strFileName, L" ");
-				} else {
-					int CurrentPath = FALSE;
-					ASSERT(CurFile < ListData.Count());
-					CurPtr = ListData[CurFile];
-
-					strFileName = CurPtr->strName;
-
-					if (TestParentFolderName(strFileName)) {
-						if (PanelMode == PLUGIN_PANEL) {
-							strFileName.Clear();
-						} else {
-							strFileName.Truncate(1);	// ".."->"."
-						}
-
-						if (Key != KEY_CTRLALTF)
-							Key = KEY_CTRLF;
-
-						CurrentPath = TRUE;
+		case KEY_CTRLALTF:{	// 29.01.2001 VVM + По CTRL+ALT+F в командную строку сбрасывается UNC-имя текущего файла.
+			bool hasSelected = false;
+			FARString strFileName;
+			if (Opt.CmdLine.AllowSelectionPlacement && Key != KEY_CTRLSHIFTENTER && Key != KEY_CTRLSHIFTNUMENTER) {
+				for (auto &item : ListData) {
+					if(item->Selected) {
+						hasSelected = true;
+						Process_PlaceOnCmdLine(item, Key);
 					}
-
-					if (Key == KEY_CTRLF || Key == KEY_CTRLALTF) {
-						// full paths aren't needed to be prefixed with ./
-						localPath = false;
-						if (PanelMode != PLUGIN_PANEL) {
-							CreateFullPathName(strFileName, strFileName, Key == KEY_CTRLALTF);
-						} else {
-							PluginGetURL(strFileName, strFileName, Key == KEY_CTRLALTF);
-						}
-					}
-
-					if (CurrentPath)
-						AddEndSlash(strFileName);
-
-					if (Opt.QuotedName & QUOTEDNAME_INSERT)
-						EscapeSpace(strFileName);
-
-					if (localPath) {
-						EnsurePathHasParentPrefix(strFileName);
-					}
-
-					strFileName+= L" ";
 				}
-
-				CtrlObject->CmdLine->InsertString(strFileName);
 			}
 
-			return TRUE;
+			if (!hasSelected && !ListData.IsEmpty() && SetCurPath()) {
+				if (Key == KEY_CTRLSHIFTENTER || Key == KEY_CTRLSHIFTNUMENTER) {
+					_MakePath1(Key, strFileName, L" ");
+				}
+				else {
+					ASSERT(CurFile < ListData.Count());
+					CurPtr = ListData[CurFile];
+					Process_PlaceOnCmdLine(CurPtr, Key);
+				}
+			}
+    		return TRUE;
 		}
 		case KEY_CTRLALTBRACKET:			// Вставить реальный (разрешенный) путь из левой панели
 		case KEY_CTRLALTBACKBRACKET:		// Вставить реальный (разрешенный) путь из правой панели
@@ -4710,4 +4690,53 @@ void FileList::ClearAllItem()
 #endif
 
 	SymlinksCache.clear();
+}
+
+void FileList::Process_PlaceOnCmdLine(FileListItem* item, FarKey Key) 
+{
+	bool localPath = true;
+	FARString strFileName;
+
+	int CurrentPath = FALSE;
+	ASSERT(CurFile < ListData.Count());
+	auto CurPtr = item;
+
+	strFileName = CurPtr->strName;
+
+	if (TestParentFolderName(strFileName)) {
+		if (PanelMode == PLUGIN_PANEL) {
+			strFileName.Clear();
+		} else {
+			strFileName.Truncate(1);	// ".."->"."
+		}
+
+		if (Key != KEY_CTRLALTF)
+			Key = KEY_CTRLF;
+
+		CurrentPath = TRUE;
+	}
+
+	if (Key == KEY_CTRLF || Key == KEY_CTRLALTF) {
+		// full paths aren't needed to be prefixed with ./
+		localPath = false;
+		if (PanelMode != PLUGIN_PANEL) {
+			CreateFullPathName(strFileName, strFileName, Key == KEY_CTRLALTF);
+		} else {
+			PluginGetURL(strFileName, strFileName, Key == KEY_CTRLALTF);
+		}
+	}
+
+	if (CurrentPath)
+		AddEndSlash(strFileName);
+
+	if (Opt.QuotedName & QUOTEDNAME_INSERT)
+		EscapeSpace(strFileName);
+
+	if (localPath) {
+		EnsurePathHasParentPrefix(strFileName);
+	}
+
+	strFileName+= L" ";
+
+	CtrlObject->CmdLine->InsertString(strFileName);
 }

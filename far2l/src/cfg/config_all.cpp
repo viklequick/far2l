@@ -471,18 +471,22 @@ static int Do_AllSystemSettings()
 
 	Builder.AddSeparator(Msg::ConfigPanelTitle);
 
-	Builder.StartColumns();
-
 	Builder.AddCheckbox(Msg::ConfigHidden, &Opt.ShowHidden);
 	Builder.AddCheckbox(Msg::ConfigSelectFolders, &Opt.SelectFolders);
-	Builder.AddCheckbox(Msg::ConfigCaseSensitiveCompareSelect, &Opt.PanelCaseSensitiveCompareSelect);
-	Builder.AddCheckbox(Msg::ConfigSortFolderExt, &Opt.SortFolderExt);
-	Builder.AddCheckbox(Msg::ConfigReverseSort, &Opt.ReverseSort);
+	Builder.AddCheckbox(Msg::AllowSelectionPlacement, &Opt.CmdLine.AllowSelectionPlacement);
 	Builder.AddCheckbox(Msg::ConfigClassicHotkeyLinkResolving, &Opt.ClassicHotkeyLinkResolving);
+	Builder.AddCheckbox(Msg::ConfigPgUpChangeDisk, &Opt.PgUpChangeDisk);
+
 	Builder.AddEmptyLine();
+	Builder.StartColumns();
+
 	Builder.AddCheckbox(Msg::ConfigShowScrollbar, &Opt.ShowPanelScrollbar);
 	Builder.AddCheckbox(Msg::ConfigShowScreensNumber, &Opt.ShowScreensNumber);
 	Builder.AddCheckbox(Msg::ConfigShowSortMode, &Opt.ShowSortMode);
+	Builder.AddCheckbox(Msg::ConfigShowColumns, &Opt.ShowColumnTitles);
+	Builder.AddCheckbox(Msg::ConfigShowStatus, &Opt.ShowPanelStatus);
+	Builder.AddCheckbox(Msg::ConfigShowTotal, &Opt.ShowPanelTotals);
+	Builder.AddCheckbox(Msg::ConfigShowFree, &Opt.ShowPanelFree);
 
 	Builder.ColumnBreak();
 
@@ -491,12 +495,9 @@ static int Do_AllSystemSettings()
 	Builder.AddCheckbox(Msg::ConfigCopyTotal, &Opt.CMOpt.CopyShowTotal);
 	Builder.AddCheckbox(Msg::ConfigCopyTimeRule, &Opt.CMOpt.CopyTimeRule);
 	Builder.AddCheckbox(Msg::ConfigDeleteTotal, &Opt.DelOpt.DelShowTotal);
-	Builder.AddCheckbox(Msg::ConfigPgUpChangeDisk, &Opt.PgUpChangeDisk);
-	Builder.AddEmptyLine();
-	Builder.AddCheckbox(Msg::ConfigShowColumns, &Opt.ShowColumnTitles);
-	Builder.AddCheckbox(Msg::ConfigShowStatus, &Opt.ShowPanelStatus);
-	Builder.AddCheckbox(Msg::ConfigShowTotal, &Opt.ShowPanelTotals);
-	Builder.AddCheckbox(Msg::ConfigShowFree, &Opt.ShowPanelFree);
+	Builder.AddCheckbox(Msg::ConfigCaseSensitiveCompareSelect, &Opt.PanelCaseSensitiveCompareSelect);
+	Builder.AddCheckbox(Msg::ConfigSortFolderExt, &Opt.SortFolderExt);
+	Builder.AddCheckbox(Msg::ConfigReverseSort, &Opt.ReverseSort);
 
 	Builder.EndColumns();
 	Builder.AddEmptyLine();

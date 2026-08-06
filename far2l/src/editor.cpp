@@ -474,15 +474,15 @@ int Editor::CalculateTextAreaWidth(int BaseWidth, bool ReserveScrollBar)
 void Editor::RecalculateAllWordWraps(bool SyncWordWrapState)
 {
 	int Width = 0;
-	if (ObjWidth > 0) {
-		Width = CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar);
+	if (ObjWidth() > 0) {
+		Width = CalculateTextAreaWidth(ObjWidth(), EdOpt.ShowScrollBar);
 	}
 	for (Edit *CurPtr = TopList; CurPtr; CurPtr = CurPtr->m_next)
 	{
 		if (SyncWordWrapState) {
 			CurPtr->SetWordWrap(m_bWordWrap);
 		}
-		CurPtr->ObjWidth = Width;
+		CurPtr->X2 = X1 + Width - 1;
 		CurPtr->RecalculateWordWrap(Width, EdOpt.TabSize);
 	}
 	m_VisualScrollbarDirty = true;
@@ -624,7 +624,7 @@ int Editor::GetRawData(wchar_t **DestBuf, int &SizeDestBuf, int TextFormat)
 	wchar_t *PDest = nullptr;
 	SizeDestBuf = 0;	// общий размер = 0
 
-	const wchar_t *SaveStr, *EndSeq;
+	const wchar_t *EndSeq;
 
 	int Length;
 
@@ -634,7 +634,7 @@ int Editor::GetRawData(wchar_t **DestBuf, int &SizeDestBuf, int TextFormat)
 	DWORD AllLength = 0;
 
 	while (CurPtr) {
-		SaveStr = CurPtr->GetStringAddr(Length, &EndSeq);
+		Length = CurPtr->GetStringLength(&EndSeq);
 		AllLength+= Length + StrLength(!TextFormat ? EndSeq : GlobalEOL) + 1;
 		CurPtr = CurPtr->m_next;
 	}
@@ -651,8 +651,8 @@ int Editor::GetRawData(wchar_t **DestBuf, int &SizeDestBuf, int TextFormat)
 		AllLength = 0;
 
 		while (CurPtr) {
-			SaveStr = CurPtr->GetStringAddr(Length, &EndSeq);
-			wmemcpy(PDest, SaveStr, Length);
+			Length = CurPtr->GetStringLength(&EndSeq);
+			CurPtr->GetString(PDest, Length + 1);
 			PDest+= Length;
 
 			size_t LenEndSeq;
@@ -3452,13 +3452,12 @@ case KEY_CTRLNUMPAD3: {
 					bool SpaceAligned = false;
 					while (PrevLine) {
 						if (PrevLine->GetLength()) {
-							int TmpLength;
-							const wchar_t *PrevStr = PrevLine->GetStringAddr(TmpLength);
-							if (PrevStr[0] == ' ') {
+							const wchar_t FirstChar = static_cast<const EcoString &>(PrevLine->Str)[0];
+							if (FirstChar == ' ') {
 								SpaceAligned = true;
 								break;
 							}
-							if (PrevStr[0] == '\t') {
+							if (FirstChar == '\t') {
 								break;
 							}
 						}
@@ -3520,8 +3519,8 @@ case KEY_CTRLNUMPAD3: {
 				CurLine->GetSelection(PreSelStart, PreSelEnd);
 				// </comment>
 				// AY: Это что бы при FastShow LeftPos не становился в конец строки.
-				int Width = ObjWidth > 0 ? CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar) : 0;
-				CurLine->ObjWidth = Width;
+				int Width = ObjWidth() > 0 ? CalculateTextAreaWidth(ObjWidth(), EdOpt.ShowScrollBar) : 0;
+				CurLine->X2 = CurLine->X1 + Width - 1;
 
 				const int OldVisualLineCount = m_bWordWrap ? CurLine->GetVisualLineCount() : 0;
 				if (CurLine->ProcessKey(Key)) {
@@ -4358,7 +4357,7 @@ int Editor::GetVisualLinesBelow(Edit* startLine, int startVisual, int limit)
 int Editor::GetWordWrapVisibleMaxLineLength() const
 {
 	if (!m_bWordWrap)
-		return ObjWidth;
+		return ObjWidth();
 
 	Edit* scan_ptr = TopScreen ? TopScreen : (CurLine ? CurLine : TopList);
 	if (!scan_ptr)
@@ -5224,8 +5223,8 @@ BOOL Editor::Search(int Next)
 				int LeftPos = CurPtr->GetLeftPos();
 				int CellCurPos = CurPtr->GetCellCurPos();
 
-				if (ObjWidth > 8 && CellCurPos - LeftPos + SearchLength > ObjWidth - 8)
-					CurPtr->SetLeftPos(CellCurPos + SearchLength - ObjWidth + 8);
+				if (ObjWidth() > 8 && CellCurPos - LeftPos + SearchLength > ObjWidth() - 8)
+					CurPtr->SetLeftPos(CellCurPos + SearchLength - ObjWidth() + 8);
 
 				if (ReplaceMode) {
 					int MsgCode = 0;
@@ -6947,8 +6946,8 @@ int Editor::EditorControl(int Command, void *Param)
 			if (Info) {
 
 				Info->EditorID = Editor::EditorID;
-				Info->WindowSizeX = ObjWidth;
-				Info->WindowSizeY = Y2 - Y1 + 1;
+				Info->WindowSizeX = ObjWidth();
+				Info->WindowSizeY = ObjHeight();
 				Info->TotalLines = NumLastLine;
 				Info->CurLine = NumLine;
 				Info->CurPos = CurLine->GetCurPos();
@@ -8138,9 +8137,9 @@ void Editor::SetWordWrap(int NewMode)
 	{
 		m_WordWrapPreferredCellPos = 0;
 
-		if (CurLine && ObjWidth > 0)
+		if (CurLine && ObjWidth() > 0)
 		{
-			int VisibleWidth = CalculateTextAreaWidth(ObjWidth,
+			int VisibleWidth = CalculateTextAreaWidth(ObjWidth(),
 					NumLastLine > (Y2 - Y1) + 1 && EdOpt.ShowScrollBar);
 
 			int CurPos = CurLine->GetCellCurPos();
@@ -8367,11 +8366,11 @@ Edit *Editor::CreateString(const wchar_t *lpwszStr, int nLength)
 		fprintf(stderr, "Editor::CreateString: failed to allocate Edit\n");
 		return nullptr;
 	}
+	int EditObjWidth = ObjWidth() > 0 ? CalculateTextAreaWidth(ObjWidth(), EdOpt.ShowScrollBar) : 0;
 	pEdit->SetEditorMode(TRUE);
 	pEdit->SetEditorParent(TRUE);
-	pEdit->SetPosition(X1, Y1, X2, Y2);
+	pEdit->SetPosition(X1, Y1, X1 + EditObjWidth - 1, Y2);
 	pEdit->SetWordWrap(m_bWordWrap);
-	pEdit->ObjWidth = ObjWidth > 0 ? CalculateTextAreaWidth(ObjWidth, EdOpt.ShowScrollBar) : 0;
 
 	pEdit->m_next = nullptr;
 	pEdit->m_prev = nullptr;
@@ -8501,7 +8500,7 @@ void Editor::SetCacheParams(EditorCacheParams *pp)
 		if (StartLine != -1 || EdOpt.SavePos) {
 			if (StartLine != -1) {
 				pp->Line = StartLine - 1;
-				pp->ScreenLine = ObjHeight / 2;		// ScrY
+				pp->ScreenLine = ObjHeight() / 2;		// ScrY
 
 				if (pp->ScreenLine > pp->Line)
 					pp->ScreenLine = pp->Line;
@@ -8513,8 +8512,8 @@ void Editor::SetCacheParams(EditorCacheParams *pp)
 				}
 			}
 
-			if (pp->ScreenLine > ObjHeight)		// ScrY //BUGBUG
-				pp->ScreenLine = ObjHeight;		// ScrY;
+			if (pp->ScreenLine > ObjHeight())		// ScrY //BUGBUG
+				pp->ScreenLine = ObjHeight();		// ScrY;
 
 			if (pp->Line >= pp->ScreenLine) {
 				Lock();
@@ -8660,12 +8659,11 @@ int Editor::GetCurCol()
 
 void Editor::SetCurPos(int NewCol, int NewRow)
 {
-	Lock();
+	LockObject l(*this);
 	GoToLine(NewRow);
 	CurLine->SetCellCurPos(NewCol);
 	RememberWordWrapPreferredCellPos();
 	// CurLine->SetLeftPos(LeftPos); ???
-	Unlock();
 }
 
 void Editor::SetCursorType(bool Visible, DWORD Size)

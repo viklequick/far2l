@@ -383,7 +383,7 @@ FileEditor::~FileEditor()
 	if (EditMenuBar) delete EditMenuBar;
 	EditMenuBar = nullptr;
 
-#ifndef __APPLE__
+#ifdef __linux__
 	malloc_trim(0); // trim heap to release memory used if huge file was edited
 #endif
 }
@@ -2583,7 +2583,7 @@ void FileEditor::ShowStatus()
 			<< fmt::LeftAlign() << fmt::Expand(4) << m_editor->CurLine->GetCellCurPos() + 1 << L' '
 			<< AttrStr << (AttrStr.IsEmpty() ? L"" : L" ")
 			<< fmt::Expand(CharCodeWidth) << strCharCode;
-	int StatusWidth = ObjWidth - (Opt.ViewerEditorClock && Flags.Check(FFILEEDIT_FULLSCREEN) ? 6 : 0);
+	int StatusWidth = ObjWidth() - (Opt.ViewerEditorClock && Flags.Check(FFILEEDIT_FULLSCREEN) ? 6 : 0);
 
 	if (StatusWidth < 0)
 		StatusWidth = 0;

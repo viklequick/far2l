@@ -2526,8 +2526,6 @@ void VMenu::ResizeConsole()
 		return;
 	}
 
-	ObjWidth = ObjHeight = 0;
-
 	if (!CheckFlags(VMENU_NOTCENTER)) {
 		Y2 = X2 = Y1 = X1 = -1;
 	} else {

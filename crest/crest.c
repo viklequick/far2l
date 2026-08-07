@@ -123,6 +123,10 @@ static BOOL isShow( const INPUT_RECORD * ir )
     return isTempShow(&ir->Event.KeyEvent) || isLockShow(&ir->Event.KeyEvent);
 }
 
+void Editor_AddTrueColorForCrest(struct EditorColor* ec_old, struct PluginStartupInfo* info);
+void Editor_AddCenterTrueColorForCrest(struct EditorColor* ec_old, struct PluginStartupInfo* info);
+uint64_t Editor_GetTrueColorForRuler(struct PluginStartupInfo* info, struct EditorInfo* einfo);
+
 static void DoCursor( int x, int y, int color )
 {
      struct EditorColor ec;
@@ -133,18 +137,20 @@ static void DoCursor( int x, int y, int color )
         ec.StartPos=x;
         ec.EndPos=x;
         ec.Color=color;
-        Info.EditorControl( ECTL_ADDCOLOR,&ec );
+
+        // Info.EditorControl( ECTL_ADDTRUECOLOR, &ec ); // vk: color
+        Editor_AddCenterTrueColorForCrest(&ec, &Info);
      }
 }
 
 __inline static void EditSetCursor(void)
 {
-    DoCursor(EInfo.CurPos,EInfo.CurLine,Options.CenterColor);
+    DoCursor(EInfo.CurPos, EInfo.CurLine, Options.CenterColor);
 }
 
 __inline static void DelCursor( int x,int y )
 {
-    DoCursor(x,y,0);
+    DoCursor(x, y, 0);
 }
 
 static void DoColorize(int x, int y, BOOL isSet, WORD wFlags )
@@ -159,7 +165,7 @@ static void DoColorize(int x, int y, BOOL isSet, WORD wFlags )
     if( isSet ){
         ec.StartPos=EInfo.LeftPos;
         ec.EndPos=EInfo.LeftPos+EInfo.WindowSizeX;
-        ec.Color=Options.Color;
+        ec.Color=Options.Color; // vk: color
     }else
         ec.StartPos=-1;
 
@@ -169,8 +175,10 @@ static void DoColorize(int x, int y, BOOL isSet, WORD wFlags )
     Info.EditorControl(ECTL_REALTOTAB,&ecp);
     tab_x=ecp.DestPos;
 //Horizontal
-    if ( IS_FLAG(wFlags,CRF_HORZ) )
-        Info.EditorControl( ECTL_ADDCOLOR,&ec );
+    if ( IS_FLAG(wFlags, CRF_HORZ) ) {
+        // Info.EditorControl( ECTL_ADDCOLOR,&ec ); // vk: color!
+        Editor_AddTrueColorForCrest(&ec, &Info);
+    }
 //Vertical
     if ( IS_FLAG(Options.Flags,CRF_VERT) ) {
         for ( n = 0; n < EInfo.WindowSizeY; n++ ) {
@@ -180,12 +188,13 @@ static void DoColorize(int x, int y, BOOL isSet, WORD wFlags )
              Info.EditorControl(ECTL_TABTOREAL,&ecp);
              ec.StartPos     =
              ec.EndPos       = ecp.DestPos;
-             Info.EditorControl( ECTL_ADDCOLOR,&ec );
+             // Info.EditorControl( ECTL_ADDCOLOR,&ec ); // vk: color
+             Editor_AddTrueColorForCrest(&ec, &Info);
        }
     }
 //Center
     if ( (wFlags&(CRF_HORZ|CRF_VERT))==0 )
-        DoCursor(x,y,isSet?Options.CenterColor:0);
+        DoCursor(x,y, isSet ? Options.CenterColor : 0);
 }
 
 static void Ruler()
@@ -194,23 +203,25 @@ static void Ruler()
     int i;
     static const TCHAR sz4dot[]=_T("....+....|");
 
-    for( i=0; i<EInfo.WindowSizeX; i+=10 ){
+    uint64_t rulecolor = Editor_GetTrueColorForRuler(&Info, &EInfo) /* | Options.RulerColor */;
+
+    for( i=EInfo.WindowX; i<EInfo.WindowSizeX; i+=10 ){
         _tstrcpy(buff,sz4dot);
         buff[apiSnprintf(buff, sizeof(buff)/sizeof(buff[0]), szDecimalFmt, (i?i:1)+EInfo.LeftPos)]=_T('.');
-        Info.Text(i, 0, Options.RulerColor, buff);
+        Info.Text(i, EInfo.WindowY, rulecolor, buff); // vk: color
     }
 }
 
 __inline static void SetColorize()
 {
-    DoColorize(EInfo.CurPos,EInfo.CurLine,TRUE,Options.Flags);
+    DoColorize(EInfo.CurPos, EInfo.CurLine, TRUE, Options.Flags);
 //Store flags for restore
     last.LastFlags = Options.Flags;
 }
 
 __inline static void DelColorize( int x,int y )
 {
-    DoColorize(x,y,FALSE,last.LastFlags);
+    DoColorize(x, y, FALSE, last.LastFlags);
 }
 //- CONFIG
 
@@ -234,37 +245,37 @@ static BOOL DoConfigure( void )
     TCHAR szRulerColor[4];
 
     static const struct FarDialogItemTpl itm_tpl[] = {
-        { 0,    DIF_CENTERTEXT,         DI_DOUBLEBOX,0, 0, 69, 255 },
-
-        { 0,    0,                      DI_CHECKBOX, 1, 1, 0, lngEnabled },
-
-        { szFixFmt, DIF_MASKEDIT,       DI_FIXEDIT,18, 2,21, 255 },
-        { 0,    0,                          DI_TEXT, 3, 2, 0, lngCRColor },
-        { szFixFmt, DIF_MASKEDIT,       DI_FIXEDIT,18, 3,21, 255 },
-        { 0,    0,                          DI_TEXT, 3, 3, 0, lngCURColor },
-        { szFixFmt, DIF_MASKEDIT,       DI_FIXEDIT,18, 4,21, 255 },
-        { 0,    0,                          DI_TEXT, 3, 4, 0, lngRulerColor },
-
-        { 0,    DIF_LEFTTEXT,               DI_TEXT, 1, 6, 0, lngActivs },
-        { 0,    DIF_GROUP,              DI_CHECKBOX, 2, 7, 0, lngCtrl },
-        { 0,    0,                      DI_CHECKBOX, 2, 8, 0, lngAlt },
-        { 0,    0,                      DI_CHECKBOX, 2, 9, 0, lngShift },
-
-        { 0,    DIF_LEFTTEXT,               DI_TEXT,15, 6, 0, lngLock },
-        { 0,    DIF_GROUP,              DI_CHECKBOX,16, 7, 0, lngCaps },
-        { 0,    0,                      DI_CHECKBOX,16, 8, 0, lngNum },
-        { 0,    0,                      DI_CHECKBOX,16, 9, 0, lngScroll },
-
-        { 0,    DIF_LEFTTEXT,          DI_SINGLEBOX,32, 1,68, lngOpt },
-        { 0,    DIF_GROUP,              DI_CHECKBOX,33, 2, 0, lngDrawV },
-        { 0,    0,                      DI_CHECKBOX,33, 3, 0, lngDrawH },
-        { 0,    0,                      DI_CHECKBOX,33, 4, 0, lngCLRCursor },
-        { 0,    0,                      DI_CHECKBOX,33, 5, 0, lngShowRuler },
-        { 0,    0,                      DI_CHECKBOX,33, 6, 0, lngShCfg },
-
-        { 0,    DIF_CENTERGROUP,          DI_BUTTON,0, 11, 0, lngOk },
-        { 0,    DIF_CENTERGROUP,          DI_BUTTON,0, 11, 0, lngCancel },
-    };
+        { 0,    DIF_CENTERTEXT,         DI_DOUBLEBOX,0, 0, 69, 255 },              // CD_OS       
+                                                                                   
+        { 0,    0,                      DI_CHECKBOX, 1, 1, 0, lngEnabled },        // CD_ENABLED  
+                                                                                                  
+        { szFixFmt, DIF_MASKEDIT,       DI_FIXEDIT,18, 2,21, 255 },                // CD_COLOR      
+        { 0,    0,                          DI_TEXT, 3, 2, 0, lngCRColor },        
+        { szFixFmt, DIF_MASKEDIT,       DI_FIXEDIT,18, 3,21, 255 },                // CD_CCOLOR      
+        { 0,    0,                          DI_TEXT, 3, 3, 0, lngCURColor },       
+        { szFixFmt, DIF_MASKEDIT,       DI_FIXEDIT,18, 4,21, 255 },                // CD_RCOLOR       
+        { 0,    0,                          DI_TEXT, 3, 4, 0, lngRulerColor },                        
+                                                                                    
+        { 0,    DIF_LEFTTEXT,               DI_TEXT, 1, 6, 0, lngActivs },          
+        { 0,    DIF_GROUP,              DI_CHECKBOX, 2, 7, 0, lngCtrl },           // CD_CONTROL      
+        { 0,    0,                      DI_CHECKBOX, 2, 8, 0, lngAlt },            // CD_ALT          
+        { 0,    0,                      DI_CHECKBOX, 2, 9, 0, lngShift },          // CD_SHIFT        
+                                                                                                      
+        { 0,    DIF_LEFTTEXT,               DI_TEXT,15, 6, 0, lngLock },          
+        { 0,    DIF_GROUP,              DI_CHECKBOX,16, 7, 0, lngCaps },           // CD_CAPS           
+        { 0,    0,                      DI_CHECKBOX,16, 8, 0, lngNum },            // CD_NUM            
+        { 0,    0,                      DI_CHECKBOX,16, 9, 0, lngScroll },         // CD_SCROLL         
+                                                                                                            
+        { 0,    DIF_LEFTTEXT,          DI_SINGLEBOX,32, 1,68, lngOpt },            // CD_OPT            
+        { 0,    DIF_GROUP,              DI_CHECKBOX,33, 2, 0, lngDrawV },          // CD_VERT           
+        { 0,    0,                      DI_CHECKBOX,33, 3, 0, lngDrawH },          // CD_HORZ           
+        { 0,    0,                      DI_CHECKBOX,33, 4, 0, lngCLRCursor },      // CD_CURSOR         
+        { 0,    0,                      DI_CHECKBOX,33, 5, 0, lngShowRuler },      // CD_SHOWRULER      
+        { 0,    0,                      DI_CHECKBOX,33, 6, 0, lngShCfg },          // CD_CONFIG         
+                                                                                                            
+        { 0,    DIF_CENTERGROUP,          DI_BUTTON,0, 11, 0, lngOk },             // CD_OK                         
+        { 0,    DIF_CENTERGROUP,          DI_BUTTON,0, 11, 0, lngCancel },         // CD_CANCEL                     
+    };                                                                                                                      
     struct  FarDialogItem itm[sizeof(itm_tpl)/sizeof(itm_tpl[0])];
     size_t i;
 #define CD_OS         0
@@ -312,25 +323,34 @@ static BOOL DoConfigure( void )
 //Colorize cursor
     itm[CD_CURSOR].Selected  = IS_FLAG(Options.Flags,CRF_CURSOR);
 //Colors
-    apiSnprintf( szColor, sizeof(szColor)/sizeof(szColor[0]),  szDecimalFmt,Options.Color );
-    apiSnprintf( szCursorColor, sizeof(szCursorColor)/sizeof(szCursorColor[0]), szDecimalFmt,Options.CenterColor );
-    apiSnprintf( szRulerColor, sizeof(szRulerColor)/sizeof(szRulerColor[0]), szDecimalFmt,Options.RulerColor );
+    apiSnprintf( szColor, sizeof(szColor)/sizeof(szColor[0]),  szDecimalFmt, Options.Color );
+    apiSnprintf( szCursorColor, sizeof(szCursorColor)/sizeof(szCursorColor[0]), szDecimalFmt, Options.CenterColor );
+    apiSnprintf( szRulerColor, sizeof(szRulerColor)/sizeof(szRulerColor[0]), szDecimalFmt, Options.RulerColor );
     itm[CD_COLOR].PtrData = szColor;
     itm[CD_CCOLOR].PtrData = szCursorColor;
     itm[CD_RCOLOR].PtrData = szRulerColor;
 //Activators
-    itm[CD_CONTROL].Selected   = IS_FLAG(Options.TempShow,CRTS_CONTROL);
-    itm[CD_ALT].Selected       = IS_FLAG(Options.TempShow,CRTS_ALT);
-    itm[CD_SHIFT].Selected     = IS_FLAG(Options.TempShow,CRTS_SHIFT);
+    itm[CD_CONTROL].Selected   = IS_FLAG(Options.TempShow, CRTS_CONTROL);
+    itm[CD_ALT].Selected       = IS_FLAG(Options.TempShow, CRTS_ALT);
+    itm[CD_SHIFT].Selected     = IS_FLAG(Options.TempShow, CRTS_SHIFT);
 //Lockers
-    itm[CD_CAPS].Selected      = IS_FLAG(Options.LockShow,CRLS_CAPS);
-    itm[CD_NUM].Selected       = IS_FLAG(Options.LockShow,CRLS_NUM);
-    itm[CD_SCROLL].Selected    = IS_FLAG(Options.LockShow,CRLS_SCROLL);
+    itm[CD_CAPS].Selected      = IS_FLAG(Options.LockShow, CRLS_CAPS);
+    itm[CD_NUM].Selected       = IS_FLAG(Options.LockShow, CRLS_NUM);
+    itm[CD_SCROLL].Selected    = IS_FLAG(Options.LockShow, CRLS_SCROLL);
 //Flags
-    itm[CD_VERT].Selected      = IS_FLAG(Options.Flags,CRF_VERT);
-    itm[CD_HORZ].Selected      = IS_FLAG(Options.Flags,CRF_HORZ);
-    itm[CD_CONFIG].Selected    = IS_FLAG(Options.Flags,CRF_PLUGINMENU);
-    itm[CD_SHOWRULER].Selected = IS_FLAG(Options.Flags,CRF_SHOWRULER);
+    itm[CD_VERT].Selected      = IS_FLAG(Options.Flags, CRF_VERT);
+    itm[CD_HORZ].Selected      = IS_FLAG(Options.Flags, CRF_HORZ);
+    itm[CD_CONFIG].Selected    = IS_FLAG(Options.Flags, CRF_PLUGINMENU);
+    itm[CD_SHOWRULER].Selected = IS_FLAG(Options.Flags, CRF_SHOWRULER);
+
+    // vk: disabled unused fields
+    itm[CD_COLOR + 1].Flags |= DIF_HIDDEN;
+    itm[CD_COLOR].Flags |= DIF_HIDDEN;
+    itm[CD_CCOLOR + 1].Flags |= DIF_HIDDEN;
+    itm[CD_CCOLOR].Flags |= DIF_HIDDEN;
+    itm[CD_RCOLOR + 1].Flags |= DIF_HIDDEN;
+    itm[CD_RCOLOR].Flags |= DIF_HIDDEN;
+    itm[CD_CONFIG].Flags |= DIF_HIDDEN;
 
 // !!Dialog
     HANDLE hDlg=Info.DialogInit(Info.ModuleNumber, -1, -1, 72, 14, _T("Settings"), itm, sizeof(itm)/sizeof(itm[0]), 0, 0, NULL, 0);
@@ -353,7 +373,7 @@ static BOOL DoConfigure( void )
 //Enabled
     Options.Enabled  = itm[CD_ENABLED].Selected;
 //Colorize cursor
-    if ( itm[CD_CURSOR].Selected )   SET_FLAG(Options.Flags,CRF_CURSOR);
+    if ( itm[CD_CURSOR].Selected )   SET_FLAG(Options.Flags, CRF_CURSOR);
 //Colors
     Info.SendDlgMessage(hDlg, DM_GETTEXTPTR, CD_COLOR, (LONG_PTR)szColor);
     Options.Color = apiAtoi( szColor );

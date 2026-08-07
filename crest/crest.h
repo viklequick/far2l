@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdint.h>
+
 typedef struct _CROptions{
   int   Enabled;
   int   Color;
@@ -8,6 +10,9 @@ typedef struct _CROptions{
   int   TempShow;
   int   LockShow;
   int   Flags;
+  uint64_t   RgbColor;
+  uint64_t   RgbCenterColor;
+  uint64_t   RgbRulerColor;
 } CROptions;
 
 #ifdef __cplusplus

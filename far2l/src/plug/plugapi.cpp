@@ -2028,7 +2028,10 @@ static bool FarTextSynched(int X, int Y, uint64_t Color, const wchar_t *Str)
 		ScrBuf.Flush();
 		ScrBuf.SetLockCount(PrevLockCount);
 	} else {
-		Text(X, Y, FarColorToReal(Color), Str);
+		if (Color & (FOREGROUND_TRUECOLOR | BACKGROUND_TRUECOLOR))
+			Text(X, Y, Color, Str);
+		else
+			Text(X, Y, FarColorToReal(Color), Str);
 	}
 	return true;
 }

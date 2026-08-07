@@ -1061,7 +1061,9 @@ int FileList::ProcessKey(FarKey Key)
 		case KEY_CTRLSHIFTENTER:
 		case KEY_CTRLJ:
 		case KEY_CTRLF:
-		case KEY_CTRLALTF:{	// 29.01.2001 VVM + По CTRL+ALT+F в командную строку сбрасывается UNC-имя текущего файла.
+		case KEY_CTRLALTF:
+		{	// 29.01.2001 VVM + По CTRL+ALT+F в командную строку сбрасывается UNC-имя текущего файла.
+			// vk: if list have selected files, thety are pasted one-by-one; otherwise the file-under-cursor is being used as before
 			bool hasSelected = false;
 			FARString strFileName;
 			if (Opt.CmdLine.AllowSelectionPlacement && Key != KEY_CTRLSHIFTENTER && Key != KEY_CTRLSHIFTNUMENTER) {

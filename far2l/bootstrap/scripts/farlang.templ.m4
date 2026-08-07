@@ -497,14 +497,14 @@ MultilinePaste
 
 AllowSelectionPlacement
 "Помещать список выделенных файлов в комстроку по ^Ввод"
-"Place the selected files from panel to command line on ^Enter"
-upd:"Place the selected files from panel to command line on ^Enter"
-upd:"Place the selected files from panel to command line on ^Enter"
-upd:"Place the selected files from panel to command line on ^Enter"
-upd:"Place the selected files from panel to command line on ^Enter"
-upd:"Place the selected files from panel to command line on ^Enter"
-upd:"Place the selected files from panel to command line on ^Enter"
-upd:"Place the selected files from panel to command line on ^Enter"
+"Place selected files from panel to command line on ^Enter"
+upd:"Place selected files from panel to command line on ^Enter"
+upd:"Place selected files from panel to command line on ^Enter"
+upd:"Place selected files from panel to command line on ^Enter"
+upd:"Place selected files from panel to command line on ^Enter"
+upd:"Place selected files from panel to command line on ^Enter"
+upd:"Place selected files from panel to command line on ^Enter"
+upd:"Place selected files from panel to command line on ^Enter"
 
 EditCommand
 "Редактирование команды"

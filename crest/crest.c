@@ -204,11 +204,12 @@ static void Ruler()
     static const TCHAR sz4dot[]=_T("....+....|");
 
     uint64_t rulecolor = Editor_GetTrueColorForRuler(&Info, &EInfo) /* | Options.RulerColor */;
+    int ydelta = EInfo.CurLine == 0 ? 1 : 0;
 
     for( i=EInfo.WindowX; i<EInfo.WindowSizeX; i+=10 ){
         _tstrcpy(buff,sz4dot);
         buff[apiSnprintf(buff, sizeof(buff)/sizeof(buff[0]), szDecimalFmt, (i?i:1)+EInfo.LeftPos)]=_T('.');
-        Info.Text(i, EInfo.WindowY, rulecolor, buff); // vk: color
+        Info.Text(i, EInfo.WindowY + ydelta, rulecolor, buff); // vk: color
     }
 }
 

@@ -312,8 +312,6 @@ BOOL FileEditor::SendToPrinter()
 
 		printer.EndPrint(fp);
 	}
-
-	printer.EndPrint(fp);
 	return TRUE;
 }
 

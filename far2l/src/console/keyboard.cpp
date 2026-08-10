@@ -520,7 +520,7 @@ static DWORD GetInputRecordInner(INPUT_RECORD *rec, bool ExcludeMacro, bool Proc
 	static clock_t sLastIdleDelivered = 0;
 
 	if (AllowSynchro)
-		PluginSynchroManager.Process();
+		PluginSynchroManager.Process(false);
 
 	FARString::ScanForLeaks();
 
@@ -726,6 +726,9 @@ static DWORD GetInputRecordInner(INPUT_RECORD *rec, bool ExcludeMacro, bool Proc
 			break;
 		}
 
+		if (AllowSynchro)
+			PluginSynchroManager.Process(true);
+
 		ScrBuf.Flush();
 
 		static DWORD sLastIdleWaitConsoleInput = 0;
@@ -816,7 +819,7 @@ static DWORD GetInputRecordInner(INPUT_RECORD *rec, bool ExcludeMacro, bool Proc
 			return (KEY_IDLE);
 		}
 
-		if (PluginSynchroManager.Process()) {
+		if (AllowSynchro && PluginSynchroManager.Process(false)) {
 			memset(rec, 0, sizeof(*rec));
 			return KEY_NONE;
 		}

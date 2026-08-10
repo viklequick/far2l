@@ -216,11 +216,11 @@ int TextParser::Impl::searchKW(const SchemeNodeKeywords* node, int /*no*/, int l
 
     int8_t compare_result;
     if (node->kwList->matchCase) {
-      compare_result = node->kwList->kwList[pos].keyword->compare(UnicodeString(*str, gx, kwlen));
+      compare_result = -str->compare(gx, kwlen, *node->kwList->kwList[pos].keyword);
     }
     else {
       compare_result =
-          UStr::caseCompare(*node->kwList->kwList[pos].keyword, UnicodeString(*str, gx, kwlen));
+          -UStr::caseCompare(*str, gx, kwlen, *node->kwList->kwList[pos].keyword);
     }
 
     if (compare_result == 0 && right - left == 1) {
@@ -228,9 +228,8 @@ int TextParser::Impl::searchKW(const SchemeNodeKeywords* node, int /*no*/, int l
       if (!node->kwList->kwList[pos].isSymbol) {
         if (!node->worddiv) {
           // default word bound
-          if ((gx > 0 && (Character::isLetterOrDigit((*str)[gx - 1]) || (*str)[gx - 1] == L'_')) ||
-              (gx + kwlen < lowlen &&
-               (Character::isLetterOrDigit((*str)[gx + kwlen]) || (*str)[gx + kwlen] == L'_')))
+          if ((gx > 0 && Character::isLetterOrDigitOrUnderscore((*str)[gx - 1])) ||
+              (gx + kwlen < lowlen && Character::isLetterOrDigitOrUnderscore((*str)[gx + kwlen])))
           {
             badbound = true;
           }
@@ -303,7 +302,7 @@ int TextParser::Impl::searchIN(SchemeNodeInherit* node, int no, int lowLen, int 
 
 int TextParser::Impl::searchRE(SchemeNodeRegexp* node, int /*no*/, int lowLen, int hiLen)
 {
-  SMatches match {};
+  SMatches match;
   if (!node->start->parse(str, gx, node->lowPriority ? lowLen : hiLen, &match, schemeStart)) {
     return MATCH_NOTHING;
   }
@@ -334,7 +333,7 @@ int TextParser::Impl::searchBL(SchemeNodeBlock* node, int no, int lowLen, int hi
   }
 
   // проверяем совпадение по регулярному выражению start
-  SMatches match {};
+  SMatches match;
   if (!node->start->parse(str, gx, node->lowPriority ? lowLen : hiLen, &match, schemeStart)) {
     return MATCH_NOTHING;
   }

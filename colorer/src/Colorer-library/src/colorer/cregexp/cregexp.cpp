@@ -444,11 +444,9 @@ EError CRegExp::setStructs(SRegInfo*& re, const UnicodeString& expr, int& retPos
         return EError::EBRACKETS;
       if (comma == -1)
         comma = en;
-      UnicodeString ds = UnicodeString(expr, st, comma - st);
-      next->s = UnicodeTools::getNumber(&ds);
-      UnicodeString de = UnicodeString(expr, comma + 1, en - comma - 1);
+      next->s = UnicodeTools::getNumber(&expr, st, comma - st);
       if (comma != en)
-        next->e = UnicodeTools::getNumber(&de);
+        next->e = UnicodeTools::getNumber(&expr, comma + 1, en - comma - 1);
       else
         next->e = next->s;
       if (next->e == -1)
@@ -671,10 +669,9 @@ bool CRegExp::isWordBoundary(int toParse)
 {
   int before = 0;
   int after = 0;
-  if (toParse < end && (Character::isLetterOrDigit((*global_pattern)[toParse]) || (*global_pattern)[toParse] == '_'))
+  if (toParse < end && Character::isLetterOrDigitOrUnderscore((*global_pattern)[toParse]))
     after = 1;
-  if (toParse > 0 &&
-      (Character::isLetterOrDigit((*global_pattern)[toParse - 1]) || (*global_pattern)[toParse - 1] == '_'))
+  if (toParse > 0 && Character::isLetterOrDigitOrUnderscore((*global_pattern)[toParse - 1]))
     before = 1;
   return before + after == 1;
 }
@@ -731,12 +728,12 @@ bool CRegExp::checkMetaSymbol(EMetaSymbols symb, int& toParse)
       toParse++;
       return true;
     case EMetaSymbols::ReWordSymb:
-      if (toParse >= end || !(Character::isLetterOrDigit(pattern[toParse]) || pattern[toParse] == '_'))
+      if (toParse >= end || !Character::isLetterOrDigitOrUnderscore(pattern[toParse]))
         return false;
       toParse++;
       return true;
     case EMetaSymbols::ReNWordSymb:
-      if (toParse >= end || Character::isLetterOrDigit(pattern[toParse]) || pattern[toParse] == '_')
+      if (toParse >= end || Character::isLetterOrDigitOrUnderscore(pattern[toParse]))
         return false;
       toParse++;
       return true;
@@ -920,7 +917,7 @@ bool CRegExp::lowParse(SRegInfo* re, SRegInfo* prev, int toParse)
               continue;
             }
             if (ignoreCase) {
-              if (UStr::caseCompare(UnicodeString(pattern, toParse, wlen), *re->un.word) != 0) {
+              if (UStr::caseCompare(pattern, toParse, wlen, *re->un.word) != 0) {
                 check_stack(false, &re, &prev, &toParse, &leftenter, &action);
                 continue;
               }

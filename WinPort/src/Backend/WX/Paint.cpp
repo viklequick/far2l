@@ -341,7 +341,8 @@ void ConsolePaintContext::ApplyFont(wxPaintDC &dc, uint8_t index)
 
 #include "easteregg.h"
 #include <wx/mstream.h>
-#include "CyberCat.h"
+// #include "CyberCat.h"
+#include "AdeptusMechanics.h"
 
 void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 {
@@ -548,7 +549,10 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 		    static wxBitmapBundle bundle;
 		    static wxBitmap bmpSvg;*/
 
-			wxMemoryInputStream stream(CyberCat_png, CyberCat_png_len);
+			//wxMemoryInputStream stream(CyberCat_png, CyberCat_png_len);
+    		//wxImage img(stream, wxBITMAP_TYPE_PNG);
+
+			wxMemoryInputStream stream(Adeptus_mecanics_png, Adeptus_mecanics_png_len);
     		wxImage img(stream, wxBITMAP_TYPE_PNG);
 
             /*
@@ -562,8 +566,16 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 
 			// unsigned char* data  = img.GetData();
 			unsigned char* alpha = img.GetAlpha();
+    		unsigned char* data = img.GetData();
 
-			for (int i = 0; i < w * h; ++i) if (alpha[i] > 40) alpha[i] = 40;
+			for (int i = 0; i < w * h; ++i){ 
+        		unsigned r = data[i * 3 + 0];
+        		unsigned g = data[i * 3 + 1];
+        		unsigned b = data[i * 3 + 2];
+                if (r < 20 && g < 20 && b < 20) alpha[i] = 0;
+                if (r > 230 && g > 230 && b > 230) alpha[i] = 0;
+				if (alpha[i] > 40) alpha[i] = 40;
+			}
 			bmpSvg = wxBitmap(img);
 	    }
 

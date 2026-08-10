@@ -8561,7 +8561,7 @@ FARString Editor::GetLine(int row, int col, int maxlen)
 	if (!line) return L"";
 
 	std::wstring s = line->GetString();
-	Len2 = line->GetStringLength();
+	Len2 = s.length(); // line->GetStringLength();
 	if (col >= Len2) return L"";
 	if (col + maxlen > Len2) maxlen = Len2 - col;
 	FARString x(s.c_str() + col);

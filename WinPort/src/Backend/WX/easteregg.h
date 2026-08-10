@@ -91,3 +91,4 @@ extern FireEffect fire;
 
 bool IsEasterEggActive();
 bool IsEasterEggAnimationActive();
+

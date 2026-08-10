@@ -275,6 +275,10 @@ wxImage PotatoPlasmaEffect::Render()
 
 #include <chrono>
 
+bool IsEasterEggActive(){ return false; }
+bool IsEasterEggAnimationActive() { return false; }
+
+/*
 bool IsEasterEggActive()
 {
     using namespace std::chrono;
@@ -304,6 +308,7 @@ bool IsEasterEggAnimationActive() {
 
     return hour >= 0 && hour < 6; // night time
 }
+*/
 
 FireEffect fire(400, 200);
 // MarsEffect terrain(320, 200);

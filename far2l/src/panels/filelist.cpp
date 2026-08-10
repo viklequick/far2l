@@ -2719,7 +2719,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
     /* paste from clipboard if clicked outside of the file list */
 	if ((MouseEvent->dwButtonState & FROM_LEFT_2ND_BUTTON_PRESSED) && MouseEvent->dwEventFlags != MOUSE_MOVED) {
 		if (Opt.PasteFromPrimarySelection && !MouseEvent->dwControlKeyState 
-				&& MouseEvent->dwMousePosition.Y < Y2 - 2 * Opt.ShowPanelStatus /* command line area */) {
+				&& MouseEvent->dwMousePosition.Y >= Y2 - 2 * Opt.ShowPanelStatus /* command line area */) {
 			// CopyToPrimarySelection -- let EditorControl to do the rest
 			return FALSE;
 		}

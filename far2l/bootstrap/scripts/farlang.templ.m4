@@ -5008,14 +5008,14 @@ upd:"Auto-copy mouse selection to PRIMARY"
 
 PasteFromPrimarySelection
 "Вставлять по средней кнопке мыши из PRIMARY"
-"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
-upd:"Paste from PRIMARY by 2nd mouse button"
+"Paste from PRIMARY by middle mouse button"
+upd:"Paste from PRIMARY by middle mouse button"
+upd:"Paste from PRIMARY by middle mouse button"
+upd:"Paste from PRIMARY by middle mouse button"
+upd:"Paste from PRIMARY by middle mouse button"
+upd:"Paste from PRIMARY by middle mouse button"
+upd:"Paste from PRIMARY by middle mouse button"
+upd:"Paste from PRIMARY by middle mouse button"
 
 EditShowKeyBar
 "Показывать &линейку клавиш"
@@ -29961,6 +29961,17 @@ upd:"Print...                            Alt+F5"
 upd:"Print...                            Alt+F5"
 upd:"Print...                            Alt+F5"
 upd:"Print...                            Alt+F5"
+
+PanelRepeatLastCommandArgument
+"Повторить аргументы прошлой команды Alt+."
+"Repeat arguments from last command  Alt+."
+upd:"Repeat arguments from last command  Alt+."
+upd:"Repeat arguments from last command  Alt+."
+upd:"Repeat arguments from last command  Alt+."
+upd:"Repeat arguments from last command  Alt+."
+upd:"Repeat arguments from last command  Alt+."
+upd:"Repeat arguments from last command  Alt+."
+upd:"Repeat arguments from last command  Alt+."
 
 PanelCopyToCmdLine
 upd:"Copy to command line                Ctrl+Enter"

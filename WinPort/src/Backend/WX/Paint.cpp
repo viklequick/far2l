@@ -560,7 +560,7 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 	    }
 
 	    dc.DrawBitmap(bmpSvg, 0 + winbox.GetRight() - bmpSvg.GetWidth(), winbox.GetBottom() - bmpSvg.GetHeight(), true);
-	    dc.DrawBitmap(bmpFire, 0, winbox.GetBottom() - scaledFire.GetHeight(), true);
+	    if (IsEasterEggAnimationActive()) dc.DrawBitmap(bmpFire, 0, winbox.GetBottom() - scaledFire.GetHeight(), true);
 	}
 }
 

@@ -291,6 +291,19 @@ bool IsEasterEggActive()
     return (month == 8 && day >= 9 && day <= 15);
 }
 
+bool IsEasterEggAnimationActive() {
+    using namespace std::chrono;
+
+    // get local time
+    auto now = system_clock::now();
+    time_t tt = system_clock::to_time_t(now);
+    tm local{};
+    localtime_r(&tt, &local);   // or localtime_s on Windows
+
+    int hour   = local.tm_hour;
+
+    return hour >= 0 && hour < 6; // night time
+}
 
 FireEffect fire(400, 200);
 // MarsEffect terrain(320, 200);

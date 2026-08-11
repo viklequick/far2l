@@ -2661,9 +2661,9 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	int MsX = MouseEvent->dwMousePosition.X;
 	int MsY = MouseEvent->dwMousePosition.Y;
 	if (IsVisible() && !MouseEvent->dwEventFlags && MsY >= Y1 && MsY <= Y1 + 2 && MsX > X1 && MsX < X2) {
-		if (MsY == Y1 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) && MsX < X2 - 5 && MsX > X1 + 3) // path title)
+		if (Opt.ShowMenuBar && MsY == Y1 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) && MsX < X2 - 5 && MsX > X1 + 3) // path title)
 			ChangeDisk();
-		else if (Opt.ShowColumnTitles && MsY == Y1 + 1 && MsX > X1 &&  MsX < X2 + 3) {
+		else if (Opt.ShowColumnTitles && MsY == Y1 + 1 && MsX > X1 && MsX < X2 + 3) {
 			if (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 				ChangeDisk();
 			else

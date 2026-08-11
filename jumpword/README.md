@@ -9,7 +9,7 @@ quick navigation in sources. The demo is below:
 Building
 ========
 
-To build, do a git clone from this repository to your far2l source root folder, add `add_subdirectory(jumpword)` to
+To build, do a git clone from this repository to your far2l source root folder, add `add_subdirectory(far2l-jumpword)` to
 CMakeLists.txt, build far2l in the usual way.
 
 Installing
@@ -36,4 +36,20 @@ Sequence=F11 j 2
 [KeyMacros/Editor/CtrlShiftUp]
 DisableOutput=0x0
 Sequence=F11 j 1
+```
+
+Unit tests
+==========
+
+The word-matching logic (`src/JumpWordCore.hpp`) is independent of the FAR SDK and is covered by standalone unit
+tests in `tests/test_jumpword.cpp`, which build and run without a far2l checkout:
+
+```
+c++ -std=c++17 -o test_jumpword tests/test_jumpword.cpp && ./test_jumpword
+```
+
+or via CMake:
+
+```
+cd tests && cmake -B build && cmake --build build && ctest --test-dir build
 ```

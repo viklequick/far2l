@@ -2658,31 +2658,21 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	int RetCode;
 
     /* change disk for columns titles */
-	if (IsVisible() && Opt.ShowColumnTitles && !MouseEvent->dwEventFlags
-			&& MouseEvent->dwMousePosition.Y == Y1 + 1 && MouseEvent->dwMousePosition.X > X1
-			&& MouseEvent->dwMousePosition.X < X1 + 3) {
-		if (MouseEvent->dwButtonState) {
+	int MsX = MouseEvent->dwMousePosition.X;
+	int MsY = MouseEvent->dwMousePosition.Y;
+	if (IsVisible() && !MouseEvent->dwEventFlags && MsY >= Y1 && MsY <= Y1 + 2 && MsX > X1 && MsX < X2) {
+		if (MsY == Y1 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) && MsX < X2 - 5 && MsX > X1 + 3) // path title)
+			ChangeDisk();
+		else if (Opt.ShowColumnTitles && MsY == Y1 + 1 && MsX > X1 &&  MsX < X2 + 3) {
 			if (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 				ChangeDisk();
 			else
 				SelectSortMode();
 		}
-
-		return TRUE;
-	}
-
-    /* change disk for panel border 
-       hre we have ? as sort mode then folder name
-    */
-	if (IsVisible() && !Opt.ShowColumnTitles && !MouseEvent->dwEventFlags
-			&& MouseEvent->dwMousePosition.Y == Y1
-			&& (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
-		int MsX = MouseEvent->dwMousePosition.X;
-		if (MsX >= X1 + 1 && MsX <= X1 + 2 && Opt.ShowSortMode) // sort letter
+		else if (Opt.ShowSortMode && !Opt.ShowColumnTitles 
+				&& MsY == Y1 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
+				&& MsX >= X1 + 1 && MsX <= X1 + 2)
 			SelectSortMode();
-		else if (MsX < X2 - 5 && MsX > X1 + 2) // path title
-			ChangeDisk();
-		// vk: handle tab line here when it will be added
 		return TRUE;
 	}
 

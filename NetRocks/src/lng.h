@@ -320,6 +320,7 @@ enum LanguageID
 	MSHELLOptionsTitle,
 	MSHELLWay,
 	MSHELLWaySettings,
+	MFISHPLUSOptionsTitle,
 
 	MProxySettingsTitle,
 	MProxySettingsDisabled,

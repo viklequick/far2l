@@ -275,7 +275,7 @@ wxImage PotatoPlasmaEffect::Render()
 
 #include <chrono>
 
-bool IsEasterEggActive(){ return true; }
+bool IsEasterEggActive(){ return false; }
 bool IsEasterEggAnimationActive() { return false; }
 
 /*

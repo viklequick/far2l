@@ -224,6 +224,7 @@ static int Do_AllSystemSettings()
     	Builder.AddCheckbox(Msg::UseModernLookUse3D, &Opt.Backend.Use3D);
        	Builder.AddCheckbox(Msg::UseModernLookSingleBorders, &Opt.Backend.UseSingleBordersOnly);
 	   	Builder.AddCheckbox(Msg::UseModernLookNoBorders, &Opt.Backend.UseNoBorders);
+	   	Builder.AddCheckbox(Msg::UseModernLookUseFlyGirl, &Opt.Backend.UseFlyGirl);
     }
 
     Builder.EndColumns();

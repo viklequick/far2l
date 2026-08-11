@@ -238,6 +238,10 @@ const ConfigOpt g_cfg_opts[] {
 		L"InterfaceSettings", L"Make borders soften"},
 	{OST_COMMON,  NSecInterface, "Use3D", &Opt.Backend.Use3D, 1,
 		L"InterfaceSettings", L"Use gradients to  make 3D effetcts"},
+	{OST_COMMON,  NSecInterface, "UseFlyGirl", &Opt.Backend.UseFlyGirl, 1,
+		L"InterfaceSettings", L"Allow watermarks on top of WX surface"},
+	{OST_COMMON, NSecInterface, "FlyGirlFiles", Opt.Backend.FlyGirls, sizeof(Opt.Backend.FlyGirls)/sizeof(wchar_t) - 1, L"",
+		L"InterfaceSettings", L"The full file name(s) of fly girl images" },
 
 	{OST_COMMON,  NSecDialog, "EnableAccidentalConfirmation", &Opt.Dialogs.EnableAccidentalConfirmation, 0,
 		L"InterfaceSettings", L"Enable right click outside pof the dialog as operation confirmation (dangerous)"},
@@ -896,6 +900,11 @@ struct OptConfigReader : ConfigReader
 			case ConfigOpt::T_STR:
 				*opt.value.str = GetString(opt.key, opt.def.str);
 				break;
+			case ConfigOpt::T_WSTRBUF: {
+				auto str = GetString(opt.key, opt.def.str);
+				wcsncpy(opt.value.wstr, str.CPtr(), opt.bin_size);
+				break;
+			}
 			case ConfigOpt::T_BIN:
 				{
 					const size_t Size = GetBytes(opt.value.bin, opt.bin_size, opt.key, opt.def.bin);
@@ -930,6 +939,9 @@ struct OptConfigWriter : ConfigWriter
 				break;
 			case ConfigOpt::T_STR:
 				SetString(opt.key, opt.value.str->CPtr());
+				break;
+			case ConfigOpt::T_WSTRBUF:
+				SetString(opt.key, opt.value.wstr);
 				break;
 			case ConfigOpt::T_BIN:
 				SetBytes(opt.key, opt.value.bin, opt.bin_size);
@@ -1033,6 +1045,9 @@ void ConfigOptFromCmdLine()
 					break;
 				case ConfigOpt::T_STR:
 					*g_cfg_opts[index].value.str = pVal;
+					break;
+				case ConfigOpt::T_WSTRBUF:
+					wcsncpy(g_cfg_opts[index].value.wstr, pVal, g_cfg_opts[index].bin_size);
 					break;
 				//case ConfigOpt::REG_BINARY:
 				default:

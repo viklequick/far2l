@@ -29752,6 +29752,17 @@ upd:"Use 3D effect"
 upd:"Use 3D effect"
 upd:"Use 3D effect"
 
+UseModernLookUseFlyGirl
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+"Allow watermarks on top of WX surface"
+
 EnforceThemeCorrection
 "Заменять цвета темы на автоматические когда возможно"
 "Replace theme colors to effects when possible"

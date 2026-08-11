@@ -5135,11 +5135,15 @@ $ #Macros: List of variables#
 
 <!Macro:Vars!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroConstList
 $ #Macros: List of constants#
     Below is a list of constants that can be used in macros.
 
 <!Macro:Consts!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @KeyMacroCommonList
 $ #Macros: Common#
@@ -5147,6 +5151,8 @@ $ #Macros: Common#
     The description for each macro key is taken from the configuration file (Description field).
 
 <!Macro:Common!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @KeyMacroQViewList
 $ #Macros: Quick view panel#
@@ -5156,6 +5162,8 @@ $ #Macros: Quick view panel#
 <!Macro:Common!>
 <!Macro:Qview!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroMainMenuList
 $ #Macros: Main menu#
     Below are the macro key combinations active for the main menu.
@@ -5163,6 +5171,8 @@ $ #Macros: Main menu#
 
 <!Macro:Common!>
 <!Macro:MainMenu!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @KeyMacroTreeList
 $ #Macros: Tree panel#
@@ -5172,6 +5182,8 @@ $ #Macros: Tree panel#
 <!Macro:Common!>
 <!Macro:Tree!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroDialogList
 $ #Macros: Dialogs#
     Below are the macro key combinations active in dialogs.
@@ -5179,6 +5191,8 @@ $ #Macros: Dialogs#
 
 <!Macro:Common!>
 <!Macro:Dialog!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @KeyMacroInfoList
 $ #Macros: Info panel#
@@ -5188,6 +5202,8 @@ $ #Macros: Info panel#
 <!Macro:Common!>
 <!Macro:Info!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroDisksList
 $ #Macros: Location menu#
     Below are the macro key combinations active for the location menu.
@@ -5195,6 +5211,8 @@ $ #Macros: Location menu#
 
 <!Macro:Common!>
 <!Macro:Disks!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @KeyMacroUserMenuList
 $ #Macros: User menu#
@@ -5204,6 +5222,8 @@ $ #Macros: User menu#
 <!Macro:Common!>
 <!Macro:UserMenu!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroShellList
 $ #Macros: Panels#
     Below are the macro key combinations active for the file panels.
@@ -5211,6 +5231,8 @@ $ #Macros: Panels#
 
 <!Macro:Common!>
 <!Macro:Shell!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @KeyMacroSearchList
 $ #Macros: Fast find in panels#
@@ -5220,6 +5242,8 @@ $ #Macros: Fast find in panels#
 <!Macro:Common!>
 <!Macro:Search!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroFindFolderList
 $ #Macros: Find folder#
     Below are the macro key combinations active for the find folder dialog.
@@ -5228,6 +5252,8 @@ $ #Macros: Find folder#
 <!Macro:Common!>
 <!Macro:FindFolder!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroEditList
 $ #Macros: Editor#
     Macro-commands available in the editor are listed below. Descriptions are read from the config file.
@@ -5235,12 +5261,16 @@ $ #Macros: Editor#
 <!Macro:Common!>
 <!Macro:Editor!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroViewerList
 $ #Macros: Viewer#
     Macro commands available in the viewer are listed below. The description for each is read from the config file.
 
 <!Macro:Common!>
 <!Macro:Viewer!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @KeyMacroMenuList
 $ #Macros: Other menus#
@@ -5250,6 +5280,8 @@ $ #Macros: Other menus#
 <!Macro:Common!>
 <!Macro:Menu!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroHelpList
 $ #Macros: Help file#
     Below are the macro key combinations active for the help file.
@@ -5258,6 +5290,8 @@ $ #Macros: Help file#
 <!Macro:Common!>
 <!Macro:Help!>
 
+    See also ~"The list of installed macros"~@KeyMacroList@
+
 @KeyMacroOtherList
 $ #Macros: Other areas#
     Below are the macro key combinations active in other areas: screen text copying, vertical menus.
@@ -5265,6 +5299,8 @@ $ #Macros: Other areas#
 
 <!Macro:Common!>
 <!Macro:Other!>
+
+    See also ~"The list of installed macros"~@KeyMacroList@
 
 @Index
 $ #Index help file#

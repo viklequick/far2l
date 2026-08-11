@@ -246,6 +246,7 @@ void FileList::ShowFileList(int Fast)
 				Msg::MenuSortBySize, Msg::MenuSortByDiz, Msg::MenuSortByOwner, Msg::MenuSortByPhysicalSize,
 				Msg::MenuSortByNumLinks, Msg::MenuSortByFullName, Msg::MenuSortByCustomData};
 
+		OutCharacter[0] = OutCharacter[1] = 0;
 		for (size_t I = 0; I < ARRAYSIZE(SortModes); I++) {
 			if (SortModes[I] == SortMode) {
 				const wchar_t *SortStr = SortStrings[I];
@@ -259,8 +260,10 @@ void FileList::ShowFileList(int Fast)
 
 					SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus);
 					OutCharacter[0] = SortOrder == 1 ? Lower(Ch[1]) : Upper(Ch[1]);
+					OutCharacter[1] = SortOrder == 1 ? L'↑' : L'↓';
 					Text(OutCharacter);
-					NextX1++;
+					NextX1 += 2;
+					OutCharacter[1] = 0;
 
 					if (Filter && Filter->IsEnabledOnPanel()) {
 						OutCharacter[0] = L'*';

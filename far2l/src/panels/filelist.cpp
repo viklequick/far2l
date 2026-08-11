@@ -2663,7 +2663,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	if (IsVisible() && !MouseEvent->dwEventFlags && MsY >= Y1 && MsY <= Y1 + 2 && MsX > X1 && MsX < X2) {
 		if (Opt.ShowMenuBar && MsY == Y1 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) && MsX < X2 - 5 && MsX > X1 + 3) // path title)
 			ChangeDisk();
-		else if (Opt.ShowColumnTitles && MsY == Y1 + 1 && MsX > X1 && MsX < X2 + 3) {
+		else if (Opt.ShowColumnTitles && MsY == Y1 + 1 && MsX > X1 && MsX < X1 + 3) {
 			if (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 				ChangeDisk();
 			else
@@ -2673,6 +2673,43 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				&& MsY == Y1 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)
 				&& MsX >= X1 + 1 && MsX <= X1 + 2)
 			SelectSortMode();
+		else if (Opt.ShowColumnTitles && MsY == Y1 + 1 && MsX > X1 + 3 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+			// click on column, enforce sort mode to it
+			static struct ColumnTypeMapT {
+				int colType;
+				PanelSortMode colSortMode;
+			} 
+			ColumnTypeMap[] = {
+				{ NAME_COLUMN, BY_NAME },
+				{ SIZE_COLUMN, BY_SIZE },
+				{ PHYSICAL_COLUMN, BY_PHYSICALSIZE },
+				{ DATE_COLUMN, BY_MTIME },
+				{ TIME_COLUMN, BY_MTIME },
+				{ WDATE_COLUMN, BY_MTIME },
+				{ CDATE_COLUMN, BY_CTIME },
+				{ ADATE_COLUMN, BY_ATIME },
+				{ CHDATE_COLUMN, BY_CHTIME },
+				{ DIZ_COLUMN, BY_DIZ },
+				{ OWNER_COLUMN, BY_OWNER },
+				{ NUMLINK_COLUMN, BY_NUMLINKS },
+			};
+
+			for (int I = 0, ColumnPos = X1 + 1; I < ViewSettings.ColumnCount; I++) {
+				if (ViewSettings.ColumnWidth[I] < 0) continue;
+
+				if (MsX > ColumnPos && MsX < ColumnPos + ViewSettings.ColumnWidth[I]) {
+					// I is our column
+					for(size_t j = 0; j < ARRAYSIZE(ColumnTypeMap); ++j) {
+						if (ColumnTypeMap[j].colType == (int)ViewSettings.ColumnType[I]) {
+							SetSortMode(ColumnTypeMap[j].colSortMode);
+							break;
+						}
+					}
+					break;
+				}
+				ColumnPos += ViewSettings.ColumnWidth[I] + 1;
+			}
+		}
 		return TRUE;
 	}
 

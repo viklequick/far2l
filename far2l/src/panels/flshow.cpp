@@ -345,17 +345,16 @@ void FileList::ShowFileList(int Fast)
 		TitleX2+= 4;
 	}
 
-	int TitleX = X1 + Opt.Backend.UseModernLook ? 3 : (TitleX2 - X1 + 1 - Cells) / 2;
+	int TitleX = X1 + (Opt.Backend.UseModernLook ? 1 + (Opt.ShowSortMode ? 2 : 0) : (TitleX2 - X1 + 1 - Cells) / 2);
 
-	if (ClockCorrection) {
+	if (ClockCorrection && !Opt.Backend.UseModernLook && !Opt.ShowMenuBar) {
 		int Overlap = TitleX + Cells - TitleX2 + 5;
 
 		if (Overlap > 0)
-			TitleX-= Overlap;
+			TitleX -= Overlap;
 	}
 
-	if (TitleX <= X1)
-		TitleX = X1 + 1;
+	if (TitleX <= X1) TitleX = X1 + 1;
 
 	SetFarColorBlacked(Focus ? COL_PANELSELECTEDTITLE : COL_PANELTITLE, Focus);
 	GotoXY(TitleX, Y1);

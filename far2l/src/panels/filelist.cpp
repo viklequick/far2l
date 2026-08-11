@@ -2657,7 +2657,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	FileListItem *CurPtr;
 	int RetCode;
 
-    /* change disk */
+    /* change disk for columns titles */
 	if (IsVisible() && Opt.ShowColumnTitles && !MouseEvent->dwEventFlags
 			&& MouseEvent->dwMousePosition.Y == Y1 + 1 && MouseEvent->dwMousePosition.X > X1
 			&& MouseEvent->dwMousePosition.X < X1 + 3) {
@@ -2668,6 +2668,21 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				SelectSortMode();
 		}
 
+		return TRUE;
+	}
+
+    /* change disk for panel border 
+       hre we have ? as sort mode then folder name
+    */
+	if (IsVisible() && !Opt.ShowColumnTitles && !MouseEvent->dwEventFlags
+			&& MouseEvent->dwMousePosition.Y == Y1
+			&& (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+		int MsX = MouseEvent->dwMousePosition.X;
+		if (MsX >= X1 + 1 && MsX <= X1 + 2 && Opt.ShowSortMode) // sort letter
+			SelectSortMode();
+		else if (MsX < X2 - 5 && MsX > X1 + 2) // path title
+			ChangeDisk();
+		// vk: handle tab line here when it will be added
 		return TRUE;
 	}
 
@@ -3276,16 +3291,17 @@ long FileList::SelectFiles(int Mode, const wchar_t *Mask)
 {
 	CFileMask FileMask;		// Класс для работы с масками
 	const wchar_t *HistoryName = L"Masks";
+	short deltaY = Opt.Backend.UseModernLook ? 1 : 0;
 	DialogDataEx SelectDlgData[] = {
 		{DI_DOUBLEBOX, 3, 1, 51, 8, {}, 0, L""},
 		{DI_EDIT,      5, 2, 49, 2, {(DWORD_PTR)HistoryName}, DIF_FOCUS | DIF_HISTORY, L""},
-		{DI_CHECKBOX,  5, 3, 49, 3, {(DWORD_PTR)Opt.SelectFolders}, 0, Msg::SelectFolders},
-		{DI_CHECKBOX,  5, 4, 49, 4, {(DWORD_PTR)Opt.PanelCaseSensitiveCompareSelect}, 0, Msg::SelectCase},
-		{DI_TEXT,      4, 5, 50,  5, {}, DIF_DISABLE | DIF_CENTERTEXT, Msg::SelectNote},
-		{DI_TEXT,      0, 6, 0,  6, {}, (Opt.Backend.UseModernLook ?  0 : DIF_SEPARATOR), L""},
-		{DI_BUTTON,    0, 7, 0,  7, {}, DIF_DEFAULT | DIF_CENTERGROUP, Msg::Ok},
-		{DI_BUTTON,    0, 7, 0,  7, {}, DIF_CENTERGROUP, Msg::SelectFilter},
-		{DI_BUTTON,    0, 7, 0,  7, {}, DIF_CENTERGROUP, Msg::Cancel}
+		{DI_CHECKBOX,  5, (short)(3 + deltaY), 49,  (short)(3 + deltaY), {(DWORD_PTR)Opt.SelectFolders}, 0, Msg::SelectFolders},
+		{DI_CHECKBOX,  5, (short)(4 + deltaY), 49,  (short)(4 + deltaY), {(DWORD_PTR)Opt.PanelCaseSensitiveCompareSelect}, 0, Msg::SelectCase},
+		{DI_TEXT,      4, (short)(5 + deltaY), 50,  (short)(5 + deltaY), {}, DIF_DISABLE | DIF_CENTERTEXT, Msg::SelectNote},
+		{DI_TEXT,      0, (short)(6 + deltaY), 0,   (short)(6 + deltaY), {}, (Opt.Backend.UseModernLook ?  0 : DIF_SEPARATOR), L""},
+		{DI_BUTTON,    0, (short)(7 + deltaY), 0,   (short)(7 + deltaY), {}, DIF_DEFAULT | DIF_CENTERGROUP, Msg::Ok},
+		{DI_BUTTON,    0, (short)(7 + deltaY), 0,   (short)(7 + deltaY), {}, DIF_CENTERGROUP, Msg::SelectFilter},
+		{DI_BUTTON,    0, (short)(7 + deltaY), 0,   (short)(7 + deltaY), {}, DIF_CENTERGROUP, Msg::Cancel}
 	};
 	MakeDialogItemsEx(SelectDlgData, SelectDlg);
 	FileFilter Filter(this, FFT_SELECT);
@@ -3372,7 +3388,7 @@ long FileList::SelectFiles(int Mode, const wchar_t *Mask)
 				{
 					Dialog Dlg(SelectDlg, ARRAYSIZE(SelectDlg));
 					Dlg.SetHelp(L"SelectFiles");
-					Dlg.SetPosition(-1, -1, 55, 10);
+					Dlg.SetPosition(-1, -1, 55, 10 + deltaY);
 
 					for (;;) {
 						Dlg.ClearDone();

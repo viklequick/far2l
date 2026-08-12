@@ -350,6 +350,17 @@ void sharpenImage(wxImage& img)
 	int w = img.GetWidth();
 	int h = img.GetHeight();
 
+	int maxAlpha = WXCustomDrawChar::options->FlyGirlMaxTransparency;
+	if (maxAlpha <= 0) maxAlpha = 40;
+	if (maxAlpha > 255) maxAlpha = 255;
+
+	unsigned maxBA = WXCustomDrawChar::options->FlyGirlMoreThanToTransparent & 0xFF;
+	unsigned maxGA = ( WXCustomDrawChar::options->FlyGirlMoreThanToTransparent >> 8 ) & 0xFF;
+	unsigned maxRA = ( WXCustomDrawChar::options->FlyGirlMoreThanToTransparent >> 16 ) & 0xFF;
+	unsigned minBA = WXCustomDrawChar::options->FlyGirlLessTnanToTransparent & 0xFF;
+	unsigned minGA = ( WXCustomDrawChar::options->FlyGirlLessTnanToTransparent >> 8 ) & 0xFF;
+	unsigned minRA = ( WXCustomDrawChar::options->FlyGirlLessTnanToTransparent >> 16 ) & 0xFF;
+
 	// unsigned char* data  = img.GetData();
 	unsigned char* alpha = img.GetAlpha();
 	unsigned char* data = img.GetData();
@@ -358,13 +369,13 @@ void sharpenImage(wxImage& img)
 		unsigned r = data[i * 3 + 0];
 		unsigned g = data[i * 3 + 1];
 		unsigned b = data[i * 3 + 2];
-        if (r < 20 && g < 20 && b < 20) alpha[i] = 0;
-        if (r > 230 && g > 230 && b > 230) alpha[i] = 0;
-		if (alpha[i] > 40) alpha[i] = 40;
+        if (r < minRA && g < minGA && b < minBA) alpha[i] = 0;
+        if (r > maxRA && g > maxGA && b > maxBA) alpha[i] = 0;
+		if (alpha[i] > maxAlpha) alpha[i] = maxAlpha;
 	}
 }
 
-bool loadImageAndScale(wxImage& img, wchar_t* fileName, int tw, int th) 
+bool loadImageAndScale(wxImage& img, wchar_t* fileName, int tw, int th, const wxRect& winbox) 
 {
 	img = wxImage(fileName, wxBITMAP_TYPE_PNG);
 	if (!img.IsOk()) return false;
@@ -375,6 +386,12 @@ bool loadImageAndScale(wxImage& img, wchar_t* fileName, int tw, int th)
 	int targetW = tw;
 	int targetH = th;
 
+	if (targetH < 0) targetH = winbox.GetHeight() - WXCustomDrawChar::options->FlyGirlPaddingY;
+	else if (targetH == 0) targetH = h;
+
+	if (targetW < 0) targetW = winbox.GetWidth() - WXCustomDrawChar::options->FlyGirlPaddingX;
+	else if (targetW == 0) targetW = w;
+
 	double scale = std::min(
 	    double(targetW) / w,
 	    double(targetH) / h
@@ -384,8 +401,59 @@ bool loadImageAndScale(wxImage& img, wchar_t* fileName, int tw, int th)
 	int newH = int(h * scale);
 
     img = img.Scale(newW, newH, wxIMAGE_QUALITY_HIGH);
+    sharpenImage(img);
 
 	return true;
+}
+
+int GetFlyGirlX(const wxRect& winbox, int w) 
+{
+	// 0 - left-top, top, right-top, right, right-bottom, bottom, left-bottom, left. center
+	switch (WXCustomDrawChar::options->FlyGirlAnchor) {
+	// left-top, left-bottom, left
+	case 0:
+	case 6:
+	case 7:
+		return WXCustomDrawChar::options->FlyGirlPaddingX;
+
+	// top, bottom, center
+	case 1: 
+	case 5:
+	case 8:
+		return (winbox.GetWidth() - w - WXCustomDrawChar::options->FlyGirlPaddingX) / 2;
+
+	// right-top, right, right-bottom
+	case 2: 
+	case 3:
+	case 4:
+	default:
+		return winbox.GetWidth() - w - WXCustomDrawChar::options->FlyGirlPaddingX;
+	}
+}
+
+int GetFlyGirlY(const wxRect& winbox, int h) 
+{
+	// 0 - left-top, top, right-top, right, right-bottom, bottom, left-bottom, left. center
+	switch (WXCustomDrawChar::options->FlyGirlAnchor) {
+	// left-top, left-bottom, left
+	case 0:
+	case 1:
+	case 2:
+		return WXCustomDrawChar::options->FlyGirlPaddingY;
+
+	// right, left, center
+	case 3: 
+	case 7:
+	case 8:
+		return (winbox.GetHeight() - h - WXCustomDrawChar::options->FlyGirlPaddingY) / 2;
+
+	// right-bottom, bottom, left-bottom
+	case 4: 
+	case 5:
+	case 6:
+	default:
+		return winbox.GetHeight() - h - WXCustomDrawChar::options->FlyGirlPaddingY;
+	}
 }
 
 int random_int(int min, int max) 
@@ -618,7 +686,10 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 			int k = 0;
 			wchar_t* token = wcstok(lastFlyGirls, L";", &context);
 			while (token != nullptr) {
-    			if(loadImageAndScale(imgUG[k], token, 200, 200)) {
+    			if(loadImageAndScale(imgUG[k], token, 
+    					WXCustomDrawChar::options->FlyGirlMaxWidth, 
+    					WXCustomDrawChar::options->FlyGirlMaxHeight,
+    					winbox)) {
     				bmpUG[k] = wxBitmap(imgUG[k]);
 	                ++k;
 				}
@@ -630,10 +701,13 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 
 		if (imgUGcount) {
 			int index = imgUGcount > 1 ? random_int(0, imgUGcount - 1) : 0;
-			dc.DrawBitmap(bmpUG[index], 0 + winbox.GetRight() - bmpUG[index].GetWidth(), 40 /* + winbox.GetBottom() - bmpSvg.GetHeight() */, true);
+			dc.DrawBitmap(bmpUG[index], 
+				GetFlyGirlX(winbox, bmpUG[index].GetWidth()), 
+				GetFlyGirlY(winbox, bmpUG[index].GetHeight()), 
+				true);
 		}
 	    else
-	    	dc.DrawBitmap(bmpGR, 0 + winbox.GetRight() - bmpGR.GetWidth(), 40 /* + winbox.GetBottom() - bmpSvg.GetHeight() */, true);
+	    	dc.DrawBitmap(bmpGR, 0 + winbox.GetRight() - bmpGR.GetWidth(), 40, true);
 
 	    dc.DrawBitmap(bmpAM, 0 + winbox.GetRight() - bmpAM.GetWidth(), 0 + winbox.GetBottom() - bmpAM.GetHeight(), true);
 	    if (IsEasterEggAnimationActive()) dc.DrawBitmap(bmpFire, 0, winbox.GetBottom() - scaledFire.GetHeight(), true);

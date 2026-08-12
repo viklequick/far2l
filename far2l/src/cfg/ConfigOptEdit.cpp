@@ -126,6 +126,9 @@ public:
 			case ConfigOpt::T_STR:
 				return (_opt.def.str == nullptr ? -1
 						: (*_opt.value.str != _opt.def.str));
+			case ConfigOpt::T_WSTRBUF:
+				return (_opt.def.str == nullptr ? -1
+						: ( wcscmp(_opt.value.wstr, _opt.def.str) == 0 ? 0 : 1 ));
 			case ConfigOpt::T_BIN:
 				return (_opt.def.bin == nullptr || _opt.value.bin == nullptr ? -1
 						: ( memcmp(_opt.value.bin, _opt.def.bin, _opt.bin_size) == 0 ? 0 : 1 ));
@@ -163,6 +166,13 @@ public:
 					return 0;
 				*_opt.value.str = _opt.def.str;
 				return 1;
+			case ConfigOpt::T_WSTRBUF:
+				if (_opt.def.str == nullptr)
+					return -1;
+				if (!wcscmp(_opt.value.wstr, _opt.def.str))
+					return 0;
+				wcscpy(_opt.value.wstr, _opt.def.str);
+				return 1;
 			case ConfigOpt::T_BIN:
 				return -1; // can not process binary
 			default:
@@ -199,6 +209,8 @@ public:
 				return L"dword";
 			case ConfigOpt::T_STR:
 				return L"string";
+			case ConfigOpt::T_WSTRBUF:
+				return L"wchr[]";
 			case ConfigOpt::T_BIN:
 				return L"binary";
 			default:
@@ -257,6 +269,13 @@ public:
 						: (*_opt.value.str == _opt.def.str ? L" " : ChangedMark))
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"string" << BoxSymbols[BS_V1];
 				out2 << _opt.value.str->CPtr();
+				break;
+			}
+			case ConfigOpt::T_WSTRBUF: {
+				out1 << (_opt.def.str == nullptr ? L"?"
+						: (!wcscmp(_opt.value.wstr, _opt.def.str) ? L" " : ChangedMark))
+					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"wchr[]" << BoxSymbols[BS_V1];
+				out2 << _opt.value.wstr;
 				break;
 			}
 			case ConfigOpt::T_BIN: {
@@ -320,6 +339,11 @@ public:
 				type_psz = "string";
 				def_str << (_opt.def.str ? _opt.def.str : L"(null)");
 				val_str << *_opt.value.str;
+				break;
+			case ConfigOpt::T_WSTRBUF:
+				type_psz = "wchr[]";
+				def_str << (_opt.def.str ? _opt.def.str : L"(null)");
+				val_str << _opt.value.wstr;
 				break;
 			case ConfigOpt::T_BIN:
 				type_psz = "binary";
@@ -460,6 +484,14 @@ public:
 				is_def = (bool) _opt.def.str;
 				def_str << ( _opt.def.str ? _opt.def.str : L"" );
 				cur_str << *_opt.value.str;
+				new_str << cur_str;
+				break;
+			case ConfigOpt::T_WSTRBUF:
+				type_pwsz = L"wchr[]";
+				is_editable = true;
+				is_def = (bool) _opt.def.str;
+				def_str << ( _opt.def.str ? _opt.def.str : L"" );
+				cur_str << _opt.value.wstr;
 				new_str << cur_str;
 				break;
 			case ConfigOpt::T_BIN:
@@ -605,7 +637,7 @@ public:
 				AdvancedConfigDlgData[EDIT_DLG_NEW_DEC_VALUE].Flags |= DIF_MASKEDIT;
 				AdvancedConfigDlgData[EDIT_DLG_NEW_DEC_VALUE].Mask = mask_int;
 			}
-			else { // T_STR & T_BIN
+			else { // T_STR & T_BIN & T_WSTRBUF
 				AdvancedConfigDlgData[EDIT_DLG_DEFAULT_DEC_VALUE].X1 = AdvancedConfigDlgData[EDIT_DLG_CURRENT_DEC_VALUE].X1 = AdvancedConfigDlgData[EDIT_DLG_NEW_DEC_VALUE].X1 = 14;
 				AdvancedConfigDlgData[EDIT_DLG_DEFAULT_DEC_VALUE].X2 = AdvancedConfigDlgData[EDIT_DLG_CURRENT_DEC_VALUE].X2 = AdvancedConfigDlgData[EDIT_DLG_NEW_DEC_VALUE].X2 = TEXT_X2;
 				AdvancedConfigDlgData[EDIT_DLG_DEFAULT_DEC_LABEL].Flags =
@@ -674,6 +706,12 @@ public:
 				case ConfigOpt::T_STR:
 					if (AdvancedConfigDlg[EDIT_DLG_NEW_DEC_VALUE].strData != cur_str) {
 						*_opt.value.str = AdvancedConfigDlg[EDIT_DLG_NEW_DEC_VALUE].strData.CPtr();
+						return true;
+					}
+					return false;
+				case ConfigOpt::T_WSTRBUF:
+					if (AdvancedConfigDlg[EDIT_DLG_NEW_DEC_VALUE].strData != cur_str) {
+						wcscpy(_opt.value.wstr, AdvancedConfigDlg[EDIT_DLG_NEW_DEC_VALUE].strData.CPtr());
 						return true;
 					}
 					return false;

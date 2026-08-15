@@ -2,11 +2,19 @@ LoadJS("../common.js");
 var dirs = SetupTestDirs("left-тест1", "right");
 
 ///////////////////
-// First start - skip Help window and OSC52 dialog, press F10 expecting exit confirmation dialog
-StartTestApp(dirs.profile, dirs.left, dirs.right, "left-тест1");
-DismissHelpAndOSC52();
+// First start - skip Help window, press F10 expecting exit confirmation dialog
+StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
+ExpectString("left-fgdfgfd", 0, 0, -1, -1, 10000);
+ExpectString("Help - FAR2L", 0, 0, -1, -1, 10000);
+TypeEscape(10)
+ExpectString("OSC52", 0, 0, -1, -1, 10000);
+TypeEscape(10)
 status = AppStatus();
-ExitFar2lWithConfirm();
+TypeFKey(10)
+ExpectString("Do you want to quit FAR?", 0, 0, -1, -1, 10000)
+TypeEnter()
+
+ExpectAppExit(0, 10000)
 
 ///////////////////
 // Second start - there should no Help appeared automatically

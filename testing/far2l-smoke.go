@@ -15,6 +15,7 @@ import (
 	"io/fs"
 	"math/rand"
 	"hash"
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"path/filepath"
@@ -88,6 +89,7 @@ var g_socket *net.UnixConn
 var g_addr *net.UnixAddr
 var g_buf [4096]byte
 var g_app *termtest.ConsoleProcess
+var g_channel chan int
 var g_vm *goja.Runtime
 var g_status far2l_Status
 var g_far2l_running int32 = 0 // accessed atomically; 1 = running, 0 = stopped
@@ -233,16 +235,13 @@ func far2l_Close() {
 	}
 }
 
-func far2l_StartWithSize(args []string, cols int, rows int) far2l_Status {
-	if atomic.LoadInt32(&g_far2l_running) != 0 {
-		aux_Panic("far2l already running")
-	}
+func termTask(args []string, cols int, rows int) {
     opts := termtest.Options {
-        CmdName: g_far2l_bin,
+        CmdName: g_far2l_bin, // g_far2l_bin, 
 		Args: append([]string{"--test=" + g_far2l_sock}, args...),
-		Environment : []string {
+		Environment : append(os.Environ(), []string {
 			"FAR2L_STD=" + filepath.Join(g_test_workdir, "far2l.log"),
-			"FAR2L_TESTCTL=" + g_far2l_sock},
+			"FAR2L_TESTCTL=" + g_far2l_sock}...),
 		ExtraOpts: []expect.ConsoleOpt{expect.WithTermRows(rows), expect.WithTermCols(cols)},
     }
 	var err error
@@ -250,36 +249,20 @@ func far2l_StartWithSize(args []string, cols int, rows int) far2l_Status {
 	if err != nil {
 		aux_Panic(err.Error())
 	}
-	atomic.StoreInt32(&g_far2l_running, 1)
-	// Drain PTY output so the kernel buffer doesn't fill up and block ScrBuf.Flush().
-	// The test harness communicates via the TEST socket, not the PTY, so nobody
-	// normally reads terminal output. Without this goroutine far2l deadlocks.
-	//
-	// Read directly from the PTY master fd via reflection to avoid the xpty
-	// PassthroughPipe's goroutine-per-read pattern that races with Expect-based calls.
-	ptyFd := -1
-	// Access the unexported 'console' field via unsafe to get the PTY master fd.
-	// This pins the termtest/go-expect struct layout; if a dependency upgrade
-	// renames the field or changes the accessor, fail loudly here instead of
-	// silently falling back to the racy ExpectRe drain path.
-	consoleField := reflect.ValueOf(g_app).Elem().FieldByName("console")
-	if !consoleField.IsValid() || consoleField.IsNil() {
-		aux_Panic("far2l_StartWithSize: termtest.ConsoleProcess.console field not found — dependency layout changed; PTY drain would silently degrade to the racy fallback. Update the reflect path.")
+	g_app.Wait()
+	code:= g_app.Cmd().ProcessState.ExitCode()
+	//g_app.Close()
+	g_channel <- code
+	g_far2l_running = false
+}
+
+func far2l_StartWithSize(args []string, cols int, rows int) far2l_Status {
+	if g_far2l_running {
+		aux_Panic("far2l already running")
 	}
-	consolePtr := (*expect.Console)(unsafe.Pointer(consoleField.Pointer()))
-	ptyFd = int(consolePtr.Pty.TerminalOutFd())
-	if ptyFd < 0 {
-		aux_Panic("far2l_StartWithSize: Pty.TerminalOutFd() returned invalid fd — dependency layout changed; update the PTY drain path.")
-	}
-	go func() {
-		buf := make([]byte, 4096)
-		for atomic.LoadInt32(&g_far2l_running) != 0 {
-			_, err := syscall.Read(ptyFd, buf)
-			if err != nil {
-				time.Sleep(10 * time.Millisecond)
-			}
-		}
-	}()
+	g_far2l_running = true
+	g_channel = make(chan int)
+	go termTask(args, cols, rows)
 	return far2l_RecvStatus()
 }
 
@@ -389,14 +372,14 @@ func far2l_ReqRecvExpectXStrings(str_vec []string, x uint32, y uint32, w uint32,
 	}
 	if (need_presence) {
 		if out.I < uint32(len(str_vec)) {
-			fmt.Println(status)
+			log.Println(status)
 		} else {
 			setErrorString(status)
 		}
 	} else if out.I < uint32(len(str_vec)) {
 		setErrorString(status)
 	} else {
-		fmt.Println(status)
+		log.Println(status)
 	}
 	return out
 }
@@ -582,19 +565,34 @@ func far2l_ReqBye() {
 
 func far2l_ExpectExit(code int, timeout_ms int) string {
 	far2l_ReqBye()
-	// Stop the PTY drain goroutine before ExpectExitCode. The atomic store
-	// publishes the stop; the goroutine's blocking syscall.Read will return
-	// when the PTY closes during far2l exit. The brief sleep lets an
-	// in-flight Read observe the EOF before ExpectExitCode tears down.
-	atomic.StoreInt32(&g_far2l_running, 0)
-	time.Sleep(100 * time.Millisecond)
-    _, err:= g_app.ExpectExitCode(code, time.Duration(timeout_ms) * 1000000)
-	if err != nil {
-		setErrorString(fmt.Sprintf("ExpectExit: %v", err))
-		return "ERROR:" + err.Error()
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(timeout_ms) * time.Millisecond)
+	defer cancel() 
+	select {
+		case result:= <-g_channel:
+			if result != 0 {
+				setErrorString(fmt.Sprintf("ExpectExit: ERROR %d", result))
+				far2l_Close()
+				return fmt.Sprintf("ERROR: %d", result)
+			}
+		case <-ctx.Done():
+			setErrorString(fmt.Sprintf("ExpectExit: TIMEOUT"))
+			far2l_Close()
+			return "ERROR: TIMEOUT"
 	}
 	far2l_Close()
 	return ""
+}
+
+func aux_Log(message string) {
+	log.Print(message)
+}
+
+func aux_Panic(message string) {
+	log.Println("------------------- SNAPSHOT -------------------")
+	fmt.Println(strings.TrimLeft(g_app.Snapshot(), " \r\n"))
+	log.Println("------------------------------------------------")
+	panic("\x1b[1;31m" + message + "\x1b[39;22m")
 }
 
 func tty_Write(s string) {
@@ -930,6 +928,15 @@ func aux_MkdirsAll(pathes []string, perm os.FileMode) bool {
 	return out
 }
 
+func aux_Snapshot(name string) {
+	if g_app != nil {
+		f, err := os.Create(g_test_workdir + "/snapshot-" + name + ".txt")
+		if err == nil {
+			f.WriteString(g_app.Snapshot())
+		}
+	}
+}
+
 type LimitedRandomReader struct {
     remain uint64
 }
@@ -1093,7 +1100,7 @@ func aux_CountExisting(pathes []string) int {
 
 func initVM() {
 	/* initialize */
-	fmt.Println("Initializing JS VM...")
+	log.Println("Initializing JS VM...")
 	g_vm = goja.New()
 
 	/* goja does not expose a standard "global" by default */
@@ -1103,6 +1110,7 @@ func initVM() {
 	setVMFunction("BePanic", aux_BePanic)
 	setVMFunction("BeCalm", aux_BeCalm)
 	setVMFunction("Inspect", aux_Inspect)
+	setVMFunction("Snapshot", aux_Snapshot)
 
 	setVMFunction("StartApp", far2l_Start)
 	setVMFunction("StartAppWithSize", far2l_StartWithSize)
@@ -1225,7 +1233,7 @@ func main() {
 	if len(os.Args) < arg_ofs + 2 {
 		log.Fatal("Usage: far2l-smoke [-t TIMEOUT_SEC] /path/to/far2l /path/to/test1 [/path/to/test2 [/path/to/test3 ...]]\n")
 	}
-
+	log.SetFlags(log.LUTC | log.Ltime | log.Lmicroseconds)
 	g_far2l_sock = fmt.Sprintf("/tmp/far2l%d.sock", os.Getpid())
 //filepath.Join(workdir, "far2l.sock")
 	os.Remove(g_far2l_sock)
@@ -1245,7 +1253,7 @@ func main() {
 
 	for i := arg_ofs + 1; i < len(os.Args); i++ {
 		name := filepath.Base(os.Args[i])
-		fmt.Println("\x1b[1;32m---> Running test: " + name + "\x1b[39;22m")
+		log.Println("\x1b[1;32m---> Running test: " + name + "\x1b[39;22m")
 		testdir, err := filepath.Abs(os.Args[i])
 		if err != nil { log.Fatal(err) }
 		g_test_workdir = filepath.Join(testdir, "workdir")
@@ -1289,87 +1297,9 @@ func main() {
 	}
 }
 
-// saveSnapshotOnExit writes a meaningful snapshot to workdir/snapshot.txt
-// for post-mortem debugging. Captures: test name, timestamp, last error,
-// far2l status, modifier key states, far2l log tail, and a full ASCII-art
-// screen dump. Must run while far2l is still connected (before far2l_Close).
-func saveSnapshotOnExit() {
-	var sb strings.Builder
-	defer func() {
-		if r := recover(); r != nil {
-			// If the snapshot capture itself fails (e.g., socket closed),
-			// write what we have so far and continue
-			if err := ioutil.WriteFile(filepath.Join(g_test_workdir, "snapshot.txt"), []byte(sb.String()), 0644); err != nil {
-				log.Print("Failed to write snapshot after recover: " + err.Error())
-			}
-		}
-	}()
-
-	// Header
-	testName := filepath.Base(g_test_dir)
-	fmt.Fprintf(&sb, "=== far2l test snapshot ===\n")
-	fmt.Fprintf(&sb, "Test: %s\n", testName)
-	fmt.Fprintf(&sb, "Time: %s\n", time.Now().Format("2006-01-02 15:04:05"))
-	fmt.Fprintf(&sb, "Binary: %s\n", g_far2l_bin)
-	fmt.Fprintf(&sb, "\n")
-
-	// Last error
-	if g_last_error != "" {
-		fmt.Fprintf(&sb, "--- Last error ---\n%s\n\n", g_last_error)
-	} else {
-		sb.WriteString("--- Last error ---\n(none)\n\n")
-	}
-
-	// Modifier key states (stuck modifiers can cause mysterious test failures)
-	fmt.Fprintf(&sb, "--- Modifier keys ---\n")
-	fmt.Fprintf(&sb, "LAlt=%v RAlt=%v LCtrl=%v RCtrl=%v Shift=%v Calm=%v\n",
-		g_lalt, g_ralt, g_lctrl, g_rctrl, g_shift, g_calm)
-	fmt.Fprintf(&sb, "\n")
-
-	// far2l status
-	if atomic.LoadInt32(&g_far2l_running) != 0 {
-		far2l_ReqRecvStatus()
-	}
-	fmt.Fprintf(&sb, "--- Terminal status ---\n")
-	fmt.Fprintf(&sb, "Size: %dx%d  Cursor: (%d,%d)  Visible=%v\n",
-		g_status.Width, g_status.Height, g_status.CurX, g_status.CurY, g_status.CurV)
-	if g_status.Title != "" {
-		fmt.Fprintf(&sb, "Title: %s\n", g_status.Title)
-	}
-	fmt.Fprintf(&sb, "Running: %v\n\n", atomic.LoadInt32(&g_far2l_running) != 0)
-
-	// Screen dump (only if far2l is still connected)
-	if atomic.LoadInt32(&g_far2l_running) != 0 && g_status.Width > 0 && g_status.Height > 0 {
-		sb.WriteString("--- Screen dump ---\n")
-		sb.WriteString(far2l_DumpScreenQuiet(0, 0, g_status.Width, g_status.Height))
-		sb.WriteString("\n")
-	} else {
-		sb.WriteString("--- Screen dump ---\n(far2l not running, screen unavailable)\n\n")
-	}
-
-	// far2l log tail (last 30 lines)
-	logPath := filepath.Join(g_test_workdir, "far2l.log")
-	if logData, err := ioutil.ReadFile(logPath); err == nil {
-		logLines := strings.Split(string(logData), "\n")
-		tailStart := len(logLines) - 30
-		if tailStart < 0 { tailStart = 0 }
-		sb.WriteString("--- far2l.log (last 30 lines) ---\n")
-		for i := tailStart; i < len(logLines); i++ {
-			sb.WriteString(logLines[i])
-			sb.WriteString("\n")
-		}
-	}
-
-	// Write to file
-	snapshotPath := filepath.Join(g_test_workdir, "snapshot.txt")
-	if err := ioutil.WriteFile(snapshotPath, []byte(sb.String()), 0644); err != nil {
-		log.Print("Failed to write snapshot: " + err.Error())
-	}
-}
-
 func runTest(file string) {
 	defer far2l_Close()
-	defer saveSnapshotOnExit()
+	defer aux_Snapshot("exit")
 
 	g_lctrl = false
 	g_rctrl = false
@@ -1384,7 +1314,7 @@ func runTest(file string) {
 	src := string(data)
 	rv, err := g_vm.RunString(src)
 	if err != nil { aux_Panic(err.Error()) }
-	if code, ok := rv.Export().(int64); ok && code != 0 {
-		fmt.Println("[FAILED] Error", code, "from test", file)
+	if code := rv.Export().(int64); code != 0 {
+		log.Println("[FAILED] Error", code, "from test", file)
 	}
 }

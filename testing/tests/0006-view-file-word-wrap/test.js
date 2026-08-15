@@ -1,9 +1,11 @@
 LoadJS("../common.js");
 var dirs = SetupTestDirs();
 
-StartTestApp(dirs.profile, dirs.left, dirs.right, null, true, [95, 24]);
-var status = AppStatus();
-DismissHelpAndOSC52();
+StartAppWithSize(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right], 95, 24);
+ExpectString("Help - FAR2L", 0, 0, -1, -1, 10000);
+TypeEscape(10)
+ExpectString("OSC52", 0, 0, -1, -1, 10000);
+status = AppStatus();
 
 // Navigate to viewme.txt and open it with F3, then toggle word wrap (Shift+F2)
 TypeDown()

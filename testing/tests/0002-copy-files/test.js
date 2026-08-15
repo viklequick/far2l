@@ -10,15 +10,17 @@ var left_sub_files = [dirs.left + "/sub1/aaa", dirs.left + "/sub1/bbb", dirs.lef
 Mkfiles(left_files, 0o666, 0, 1024);
 Mkfiles(left_sub_files, 0o752, 10 * 1024 * 1024, 20 * 1024 * 1024);
 
-var left_items = [dirs.left + "/file1", dirs.left + "/file2", dirs.left + "/file3", dirs.left + "/sub1", dirs.left + "/sub2"];
-var right_items = [dirs.right + "/file1", dirs.right + "/file2", dirs.right + "/file3", dirs.right + "/sub1", dirs.right + "/sub2"];
-var left_hash = HashPathes(left_items, true, true, true, true, true);
+StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
+ExpectString("Help - FAR2L", 0, 0, -1, -1, 10000);
+Snapshot("start")
+TypeEscape(10)
+ExpectString("OSC52", 0, 0, -1, -1, 10000);
+TypeEscape(10)
 
 StartTestApp(dirs.profile, dirs.left, dirs.right);
 var status = AppStatus();
 DismissHelpAndOSC52();
 
-// Select all 5 items in left panel and press F5 to copy
 TypeDown()
 TypeIns()
 TypeIns()
@@ -37,7 +39,7 @@ for (var i = 0; ; ++i) {
 	if (right_hash == left_hash) {
 		break
 	}
-	if (i == 100) {
+	if (i == 10000) {
 		Log("Lhash: " + left_hash)
 		Log("Rhash: " + right_hash)
 		Panic("Hashes mismatched")

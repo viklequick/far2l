@@ -10,9 +10,10 @@ var left_sub_files = [dirs.left + "/sub1/aaa", dirs.left + "/sub1/bbb", dirs.lef
 Mkfiles(left_files, 0o666, 0, 1024);
 Mkfiles(left_sub_files, 0o752, 10 * 1024 * 1024, 20 * 1024 * 1024);
 
-var left_items = [dirs.left + "/file1", dirs.left + "/file2", dirs.left + "/file3", dirs.left + "/sub1", dirs.left + "/sub2"];
-var right_items = [dirs.right + "/file1", dirs.right + "/file2", dirs.right + "/file3", dirs.right + "/sub1", dirs.right + "/sub2"];
-var left_hash = HashPathes(left_items, true, true, true, true, true);
+StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
+ExpectString("Help - FAR2L", 0, 0, -1, -1, 10000);
+TypeEscape(10)
+ExpectString("OSC52", 0, 0, -1, -1, 10000);
 
 StartTestApp(dirs.profile, dirs.left, dirs.right);
 var status = AppStatus();

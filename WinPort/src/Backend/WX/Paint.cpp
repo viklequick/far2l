@@ -986,6 +986,7 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 	inline void SetAccentBackgroundImpl() {
 		_painter.ComputeAccents();
 		_painter.SetFillColor(_painter._clr_accent_back);
+		//_painter.SetFillColor(_painter._clr_back);
 	}
 	
 	inline void SetBackgroundImpl() {
@@ -1375,7 +1376,7 @@ WinPortRGB ComputeEmbossColor_LAB(const WinPortRGB& xbg, const WinPortRGB& xline
 }
 
 void ConsolePainter::ComputeAccents(bool cache) {
-	if (cache && _clr_accent_computed) return;
+	// if (cache && _clr_accent_computed) return;
 
 	HoverResult r = ComputeControlAccent(FarToRGB(_clr_text), FarToRGB(_clr_back));
 	_clr_accent_computed = true;

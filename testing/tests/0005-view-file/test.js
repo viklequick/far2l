@@ -1,9 +1,11 @@
 LoadJS("../common.js");
 var dirs = SetupTestDirs();
 
-StartTestApp(dirs.profile, dirs.left, dirs.right);
-var status = AppStatus();
-DismissHelpAndOSC52();
+StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
+ExpectString("Help - FAR2L", 0, 0, -1, -1, 10000);
+TypeEscape(10)
+ExpectString("OSC52", 0, 0, -1, -1, 10000);
+status = AppStatus();
 
 // Cycle panel focus to ensure the file panel is active.
 // Always runs — needed when OSC52 focus left focus in the wrong panel,

@@ -99,6 +99,7 @@ var g_rctrl bool
 var g_lalt bool
 var g_ralt bool
 var g_shift bool
+var g_far2l_running bool = false
 var g_recv_timeout uint32 = 30
 var g_test_workdir string
 var g_test_dir string
@@ -193,6 +194,9 @@ func far2l_DumpScreenQuiet(x uint32, y uint32, w uint32, h uint32) string {
 	sb.WriteString("┘\n")
 
 	return sb.String()
+
+func warning(warn string) {
+	log.Print("\x1b[1;33mWARN: " + warn + "\x1b[39;22m")
 }
 
 func setErrorString(err string) {
@@ -336,35 +340,48 @@ func far2l_ReqRecvSync(tmout uint32) bool {
 }
 
 
-func far2l_ReqRecvExpectString(str string, x uint32, y uint32, w uint32, h uint32, tmout uint32) far2l_FoundString {
+func far2l_ReqRecvExpectString(str string, x int32, y int32, w int32, h int32, tmout uint32) far2l_FoundString {
 	return far2l_ReqRecvExpectXStrings([]string{str}, x, y, w, h, tmout, true)
 }
 
-func far2l_ReqRecvExpectStrings(str_vec []string, x uint32, y uint32, w uint32, h uint32, tmout uint32) far2l_FoundString {
+func far2l_ReqRecvExpectStrings(str_vec []string, x int32, y int32, w int32, h int32, tmout uint32) far2l_FoundString {
 	return far2l_ReqRecvExpectXStrings(str_vec, x, y, w, h, tmout, true)
 }
 
-func far2l_ReqRecvExpectNoString(str string, x uint32, y uint32, w uint32, h uint32, tmout uint32) far2l_FoundString {
+func far2l_ReqRecvExpectNoString(str string, x int32, y int32, w int32, h int32, tmout uint32) far2l_FoundString {
 	return far2l_ReqRecvExpectXStrings([]string{str}, x, y, w, h, tmout, false)
 }
 
-func far2l_ReqRecvExpectNoStrings(str_vec []string, x uint32, y uint32, w uint32, h uint32, tmout uint32) far2l_FoundString {
+func far2l_ReqRecvExpectNoStrings(str_vec []string, x int32, y int32, w int32, h int32, tmout uint32) far2l_FoundString {
 	return far2l_ReqRecvExpectXStrings(str_vec, x, y, w, h, tmout, false)
 }
 
-func far2l_ReqRecvExpectXStrings(str_vec []string, x uint32, y uint32, w uint32, h uint32, tmout uint32, need_presence bool) far2l_FoundString {
-	if w == 0xffffffff { w = g_status.Width; }
-	if h == 0xffffffff { h = g_status.Height; }
+func far2l_ReqRecvExpectXStrings(str_vec []string, x int32, y int32, w int32, h int32, tmout uint32, need_presence bool) far2l_FoundString {
+	if x < 0 || y < 0 || w <= 0 || h <= 0 {
+		far2l_ReqRecvStatus()
+	}
+	saved_x:= x
+	saved_y:= y
+	saved_w:= w
+	saved_h:= h
+	if x < 0 { x = int32(g_status.Width) + x; }
+	if y < 0 { y = int32(g_status.Height) + y; }
+	if w <= 0 { w = int32(g_status.Width) + w; }
+	if h <= 0 { h = int32(g_status.Height) + w; }
+	if x < 0 { x = 0; warning(fmt.Sprintf("Underflow: x=%d width=%d", saved_x, g_status.Width)); }
+	if y < 0 { y = 0; warning(fmt.Sprintf("Underflow: y=%d height=%d", saved_y, g_status.Height)); }
+	if w < 0 { w = 0; warning(fmt.Sprintf("Underflow: w=%d width=%d", saved_w, g_status.Width)); }
+	if h < 0 { h = 0; warning(fmt.Sprintf("Underflow: h=%d height=%d", saved_h, g_status.Height)); }
 	if (need_presence) {
 		binary.LittleEndian.PutUint32(g_buf[0:], 3) //TEST_CMD_WAIT_STRING
 	} else {
 		binary.LittleEndian.PutUint32(g_buf[0:], 4) //TEST_CMD_WAIT_NO_STRING
 	}
 	binary.LittleEndian.PutUint32(g_buf[4:], tmout)
-	binary.LittleEndian.PutUint32(g_buf[8:], x) //left
-	binary.LittleEndian.PutUint32(g_buf[12:], y) //top
-	binary.LittleEndian.PutUint32(g_buf[16:], w) //width
-	binary.LittleEndian.PutUint32(g_buf[20:], h) //height
+	binary.LittleEndian.PutUint32(g_buf[8:], uint32(x)) //left
+	binary.LittleEndian.PutUint32(g_buf[12:], uint32(y)) //top
+	binary.LittleEndian.PutUint32(g_buf[16:], uint32(w)) //width
+	binary.LittleEndian.PutUint32(g_buf[20:], uint32(h)) //height
 	p := 0
 	for i := 0; i < len(str_vec); i++ {
 		str_bytes:= []byte(str_vec[i])
@@ -1317,12 +1334,7 @@ func main() {
 func runTest(file string) {
 	defer far2l_Close()
 	defer aux_Snapshot("exit")
-
-	g_lctrl = false
-	g_rctrl = false
-	g_lalt = false
-	g_ralt = false
-	g_shift = false
+	typingReset()
 	g_calm = false
 	g_last_error = ""
 	g_test_dir = filepath.Dir(file)

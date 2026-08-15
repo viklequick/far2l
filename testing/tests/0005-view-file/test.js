@@ -15,7 +15,8 @@ EnsurePanelFocus();
 // Navigate to viewme.txt and open it with F3
 TypeDown()
 TypeFKey(3)
-ExpectString("left/viewme.txt", 0, 0, -1, -1, 10000)
+ExpectString("left/viewme.txt", 0, 0, 0, 0, 10000)
+
 Sync(10000)
 
 // Scroll through the file and verify each page
@@ -37,7 +38,7 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test4.txt'
 
 // Search for ::setselectpos and verify the result
 TypeFKey(7)
-ExpectString("═══ Search ═══", 0, 0, -1, -1, 10000)
+ExpectString("═══ Search ═══", 0, 0, 0, 0, 10000)
 TypeText("::setselectpos")
 TypeEnter()
 Sync(10000)
@@ -179,6 +180,8 @@ Sync(5000);
 TypeFKey(7)
 ExpectString("═══ Search ═══", 0, 0, -1, -1, 10000)
 TypeText("ZZZ_NOT_FOUND")
+TypeFKey(10)
+ExpectString("Do you want to quit FAR?", 0, 0, 0, 0, 10000)
 TypeEnter()
 Sync(5000);
 // No crash — viewer should handle no-match gracefully

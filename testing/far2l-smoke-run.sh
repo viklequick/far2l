@@ -22,17 +22,9 @@ if [ "$APP" = "" ]; then
 	echo 'Note that far2l must be built with -DTESTING=Yes'
 	exit 1
 fi
-BINARY="$SCRIPT_DIR/far2l-smoke"
-if [ ! -f "$BINARY" ] || [ "$BINARY" -ot "$SCRIPT_DIR/far2l-smoke.go" ]; then
-	echo '--->' Prepare
-	cd "$SCRIPT_DIR"
-	go get far2l-smoke
-	echo PREPARE: downloading modules
-	go mod download
-	echo PREPARE: building
-	go build
-	echo PREPARE: done
-fi
+cd src
+make
+cd ..
 
 echo 'Cleaning up...'
 for test in "$SCRIPT_DIR"/tests/*; do

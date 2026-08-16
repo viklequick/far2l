@@ -1036,7 +1036,7 @@ int FileList::ProcessKey(FarKey Key)
 		case KEY_ALTNUMENTER: { /* copy path without escaping */
 			bool hasSelected = false;
 			FARString strFileName;
-			if (Opt.CmdLine.AllowSelectionPlacement) {
+			if (Opt.CmdLine.CtrlEnterMultipleItems) {
 				for (auto &item : ListData) {
 					if(item->Selected) {
 						hasSelected = true;

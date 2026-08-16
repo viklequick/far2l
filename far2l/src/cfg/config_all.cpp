@@ -474,7 +474,7 @@ static int Do_AllSystemSettings()
 
 	Builder.AddCheckbox(Msg::ConfigHidden, &Opt.ShowHidden);
 	Builder.AddCheckbox(Msg::ConfigSelectFolders, &Opt.SelectFolders);
-	Builder.AddCheckbox(Msg::AllowSelectionPlacement, &Opt.CmdLine.AllowSelectionPlacement);
+	Builder.AddCheckbox(Msg::CtrlEnterMultipleItems, &Opt.CmdLine.CtrlEnterMultipleItems);
 	Builder.AddCheckbox(Msg::ConfigClassicHotkeyLinkResolving, &Opt.ClassicHotkeyLinkResolving);
 	Builder.AddCheckbox(Msg::ConfigPgUpChangeDisk, &Opt.PgUpChangeDisk);
 

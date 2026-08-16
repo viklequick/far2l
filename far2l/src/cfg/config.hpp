@@ -305,7 +305,7 @@ struct CommandLineOptions
 	FARString strPromptFormat;
 	FARString strShell;
 	bool AskOnMultilinePaste;
-	bool AllowSelectionPlacement;
+	BOOL CtrlEnterMultipleItems;
 };
 
 struct NowellOptions

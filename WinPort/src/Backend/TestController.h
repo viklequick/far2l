@@ -23,6 +23,7 @@ class TestController : protected Threaded
 		TestReplyWaitString rep_wait_str;
 
 		TestRequestSendKey req_send_key;
+		TestRequestSendMouse req_send_mouse;
 
 		TestRequestSendMouse req_send_mouse;
 

@@ -2651,15 +2651,54 @@ BOOL FileList::ChangeDir(const wchar_t *NewDir, BOOL IsUpdated)
 	return SetDirectorySuccess;
 }
 
+int FileList::GetColumnTitleByMouse(int MsX) {
+	for (int I = 0, ColumnPos = X1 + 1; I < ViewSettings.ColumnCount; I++) {
+		if (ViewSettings.ColumnWidth[I] < 0) continue;
+
+		if (MsX > ColumnPos && MsX < ColumnPos + ViewSettings.ColumnWidth[I]) {
+			return I;
+		}
+		ColumnPos += ViewSettings.ColumnWidth[I] + 1;
+	}
+	return 0;
+}
+
 int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
-
 	FileListItem *CurPtr;
 	int RetCode;
 
     /* change disk for columns titles */
 	int MsX = MouseEvent->dwMousePosition.X;
 	int MsY = MouseEvent->dwMousePosition.Y;
+
+    // hover efrects on titles, columns etc
+	if (IsVisible() && Opt.Backend.UseModernLook
+			&& (MouseEvent->dwEventFlags & MOUSE_MOVED)
+			&& MsY >= Y1 && MsY < Y1 + 3 && MsX >= X1 && MsX <= X2
+			&& !IsDragging()) 
+	{
+		int oldLH = LocationHovered;
+		int oldCH = ColumnHovered;
+		int oldSMH = SortMarkHovered;
+		int oldLIH = LastHoveredIndex;
+
+		ColumnHovered = Opt.ShowColumnTitles && MsY == Y1 + 1 && MsX > X1 && MsX < X2 ? GetColumnTitleByMouse(MsX) : -1;
+		SortMarkHovered = Opt.ShowSortMode && !Opt.ShowColumnTitles && MsY == Y1 && MsX >= X1 + 1 && MsX <= X1 + 2 ? 1 : -1;
+		LocationHovered = Opt.ShowMenuBar && MsY == Y1 && MsX < X2 - 5 && MsX > X1 + 3 ? 1 : -1;
+
+		if(ColumnHovered > 0 || SortMarkHovered > 0 || ColumnHovered > 0 || MsY == Y1) LastHoveredIndex = -1;
+		
+		if (oldLIH != LastHoveredIndex || oldLH != LocationHovered || oldCH != ColumnHovered || oldSMH != SortMarkHovered) {
+			
+			fprintf(stderr, "hover: col=%d sortmark=%d location=%d last_i=%d\n", ColumnHovered, SortMarkHovered, LocationHovered, LastHoveredIndex);
+
+			Redraw();
+			return TRUE;
+		}
+	}
+
+	// click on location bar, columns, and sort marks
 	if (IsVisible() && !MouseEvent->dwEventFlags && MsY >= Y1 && MsY <= Y1 + 2 && MsX > X1 && MsX < X2) {
 		if (Opt.ShowMenuBar && MsY == Y1 && (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED) && MsX < X2 - 5 && MsX > X1 + 3) // path title)
 			ChangeDisk();
@@ -2694,20 +2733,12 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				{ NUMLINK_COLUMN, BY_NUMLINKS },
 			};
 
-			for (int I = 0, ColumnPos = X1 + 1; I < ViewSettings.ColumnCount; I++) {
-				if (ViewSettings.ColumnWidth[I] < 0) continue;
-
-				if (MsX > ColumnPos && MsX < ColumnPos + ViewSettings.ColumnWidth[I]) {
-					// I is our column
-					for(size_t j = 0; j < ARRAYSIZE(ColumnTypeMap); ++j) {
-						if (ColumnTypeMap[j].colType == (int)ViewSettings.ColumnType[I]) {
-							SetSortMode(ColumnTypeMap[j].colSortMode);
-							break;
-						}
-					}
+			int I = GetColumnTitleByMouse(MsX);
+			for(size_t j = 0; j < ARRAYSIZE(ColumnTypeMap); ++j) {
+				if (ColumnTypeMap[j].colType == (int)ViewSettings.ColumnType[I]) {
+					SetSortMode(ColumnTypeMap[j].colSortMode);
 					break;
 				}
-				ColumnPos += ViewSettings.ColumnWidth[I] + 1;
 			}
 		}
 		return TRUE;

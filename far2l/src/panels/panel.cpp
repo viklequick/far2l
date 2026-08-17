@@ -1488,8 +1488,8 @@ void Panel::Show()
 	ShowScreensCount();
 }
 
-void SetColorBlacked(DWORD64 attrs, bool focus = true);
-void SetFarColorBlacked(int what, bool focus = true);
+void SetColorBlacked(DWORD64 attrs, bool focus = true, bool hover = false);
+void SetFarColorBlacked(int what, bool focus = true, bool hover = false);
 
 void Panel::DrawSeparator(int Y)
 {

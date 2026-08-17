@@ -85,15 +85,23 @@ void FileList::DisplayObject()
 	ShowFileList(FALSE);
 }
 
-void SetColorBlacked(DWORD64 attrs, bool focus = true) {
+/*
+	LastHoveredIndex {-1};
+	int ColumnHovered {-1};
+	int LocationHovered {-1};
+	int SortMarkHovered {-1};
+*/
+
+void SetColorBlacked(DWORD64 attrs, bool focus = true, bool hover = false) {
 	auto color = attrs;
 	if (Opt.Backend.UseModernLook && !focus) color = SoftenColorToDisabled(color);
+	if (Opt.Backend.UseModernLook && hover) color = SoftenItemColor(color, false, hover, false, false);
 	SetColor(color);
 }
 
-void SetFarColorBlacked(int what, bool focus = true) {
+void SetFarColorBlacked(int what, bool focus = true, bool hover = false) {
 	auto color = FarColorToReal(what);
-	SetColorBlacked(color, focus);
+	SetColorBlacked(color, focus, hover);
 }
 
 void FileList::ShowFileList(int Fast)
@@ -207,7 +215,7 @@ void FileList::ShowFileList(int Fast)
 
 			FARString strTitleMsg;
 			CenterStr(strTitle, strTitleMsg, ViewSettings.ColumnWidth[I]);
-			SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus);
+			SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus, I == ColumnHovered);
 			GotoXY(ColumnPos, Y1 + 1);
 			FS << fmt::Cells() << fmt::Truncate(ViewSettings.ColumnWidth[I]) << strTitleMsg;
 		}
@@ -258,7 +266,7 @@ void FileList::ShowFileList(int Fast)
 					else
 						GotoXY(NextX1, Y1);
 
-					SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus);
+					SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus, SortMarkHovered > 0);
 					OutCharacter[0] = SortOrder == 1 ? Lower(Ch[1]) : Upper(Ch[1]);
 					OutCharacter[1] = SortOrder == 1 ? L'↑' : L'↓';
 					Text(OutCharacter);
@@ -283,7 +291,7 @@ void FileList::ShowFileList(int Fast)
 		else
 			GotoXY(NextX1, Y1);
 
-		SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus);
+		SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus, SortMarkHovered > 0);
 		OutCharacter[0] = L'h';
 		Text(OutCharacter);
 		NextX1++;
@@ -296,7 +304,7 @@ void FileList::ShowFileList(int Fast)
 		else
 			GotoXY(NextX1, Y1);
 
-		SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus);
+		SetFarColorBlacked(COL_PANELCOLUMNTITLE, Focus, SortMarkHovered > 0);
 		wchar_t *PtrOutCharacter = OutCharacter;
 		*PtrOutCharacter = 0;
 
@@ -359,7 +367,7 @@ void FileList::ShowFileList(int Fast)
 
 	if (TitleX <= X1) TitleX = X1 + 1;
 
-	SetFarColorBlacked(Focus ? COL_PANELSELECTEDTITLE : COL_PANELTITLE, Focus);
+	SetFarColorBlacked(Focus ? COL_PANELSELECTEDTITLE : COL_PANELTITLE, Focus, LocationHovered > 0);
 	GotoXY(TitleX, Y1);
 	Text(strTitle);
 

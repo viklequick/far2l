@@ -223,8 +223,13 @@ private:
 	long CacheSelClearIndex, CacheSelClearPos;
 
 	int LastHoveredIndex {-1};
+	int ColumnHovered {-1};
+	int LocationHovered {-1};
+	int SortMarkHovered {-1};
 
 private:
+	int GetColumnTitleByMouse(int MsX);
+
 	virtual void SetSelectedFirstMode(int Mode);
 	virtual int GetSelectedFirstMode() { return SelectedFirst; }
 	virtual void DisplayObject();

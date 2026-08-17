@@ -57,6 +57,16 @@ public:
 	int LastLeftType, LastRightType;
 	int LeftStateBeforeHide, RightStateBeforeHide;
 
+	int TabHovered {0};
+
+	struct TabNameAndPos {
+		FARString name;
+		int x;
+		int w;
+	};
+
+	std::vector<TabNameAndPos> tabPos;
+
 public:
 	FilePanels();
 	virtual ~FilePanels();

@@ -12,13 +12,13 @@ TypeDown()
 TypeFKey(3)
 ExpectString("left/viewme.txt", 0, 0, 0, 0, 10000)
 
-Sync(10000)
 ToggleShift(true)
 TypeFKey(2)
 ToggleShift(false)
 
 // Scroll through the file and verify each page
 TypePageDown()
+
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test1.txt')
 
@@ -39,6 +39,7 @@ TypeFKey(7)
 ExpectString("═══ Search ═══", 0, 0, 0, 0, 10000)
 TypeText("::setselectpos")
 TypeEnter()
+
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test5.txt')
 
@@ -50,15 +51,28 @@ TypeUp()
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test7.txt')
 
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test5.txt')
+
+TypeUp()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test6.txt')
+
+TypeUp()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test7.txt')
+
 // Go back to top, search for VMenu::SetUserData and verify
 TypeHome()
+
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test4.txt')
+
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test4.txt')
+
 
 TypeFKey(7)
 ExpectString("═══ Search ═══", 0, 0, 0, 0, 10000)
 TypeText("VMenu::SetUserData")
 TypeEnter()
+
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test8.txt')
 
@@ -90,6 +104,30 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test14.txt
 TypePageUp()
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test15.txt')
+
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test8.txt')
+
+TypeUp()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test9.txt')
+
+TypeUp()
+TypeUp()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test10.txt')
+
+TypeDown()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test11.txt')
+
+TypeDown()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test12.txt')
+
+TypeDown()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test13.txt')
+
+TypePageDown()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test14.txt')
+
+TypePageUp()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test15.txt')
 
 TypeEscape()
 

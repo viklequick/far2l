@@ -36,11 +36,24 @@ TypeHome()
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test4.txt')
 
+TypePageDown()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test1.txt')
+
+TypePageDown()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test2.txt')
+
+TypeDown()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test3.txt')
+
+TypeHome()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test4.txt')
+
 // Search for ::setselectpos and verify the result
 TypeFKey(7)
 ExpectString("═══ Search ═══", 0, 0, 0, 0, 10000)
 TypeText("::setselectpos")
 TypeEnter()
+
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test5.txt')
 
@@ -51,6 +64,14 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test6.txt'
 TypeUp()
 Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test7.txt')
+
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test5.txt')
+
+TypeUp()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test6.txt')
+
+TypeUp()
+BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test7.txt')
 
 TypeEscape()
 

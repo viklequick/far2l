@@ -142,4 +142,7 @@ public:
 	void SwitchHoveredTabTo(int tabNo) { TabHovered = tabNo; }
 	int AppendNewTab();
 	void DeleteTab(int tabNo);
+
+	void EnlistAllPaths(std::vector<std::wstring>& holder, bool left, bool exceptActive = true);
+	void SwapTo(int srcTab, int dstTab, bool isLeft);
 };

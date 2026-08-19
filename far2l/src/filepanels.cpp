@@ -1357,8 +1357,8 @@ int FilePanels::SetTabNames()
 
     TopTabBar.Clear();
 	for(size_t i = 0; i < tabs.size(); ++i){ 
-		tabs[i].ActivePanel->GetTitle(tabs[i].a_name, 128, 2);
-		GetAnotherPanel(tabs[i], tabs[i].ActivePanel)->GetTitle(tabs[i].p_name, 128, 2);
+		tabs[i].LeftPanel->GetTitle(tabs[i].a_name, 128, 2);
+		tabs[i].RightPanel->GetTitle(tabs[i].p_name, 128, 2);
 		tabs[i].a_name = StrTrim(tabs[i].a_name);
 		tabs[i].p_name = StrTrim(tabs[i].p_name);
 		TopTabBar.AddTab(tabs[i].a_name, tabs[i].p_name);
@@ -1406,4 +1406,63 @@ void FilePanels::DeleteTab(int tabNo) {
 	destroyPanelsGracefully(tabs[tabNo]);
 	tabs.erase(tabs.begin() + tabNo);
 	Redraw();
+}
+
+void FilePanels::EnlistAllPaths(std::vector<std::wstring>& holder, bool left, bool exceptActive) 
+{
+	for(size_t i = 0; i < tabs.size(); ++i){ 
+		if (exceptActive && (int)i == TabActive){ 
+			holder.push_back(L"-");
+			continue;
+		}
+
+		FARString x;
+		if (left) tabs[i].LeftPanel->GetTitle(x, 128, 2);
+		else tabs[i].RightPanel->GetTitle(x, 128, 2);
+		x = StrTrim(x);
+		holder.push_back(x.GetWide());
+	}
+}
+
+void FilePanels::SwapTo(int srcTab, int dstTab, bool isLeft) {
+	DoublePanel& src = tabs[srcTab];
+	DoublePanel& dst = tabs[dstTab];
+
+	Panel *Swap;
+	int SwapType;
+	deactivatePanelsInTab(src);
+	deactivatePanelsInTab(dst);
+
+	if (isLeft) {
+
+		Swap = dst.LeftPanel;
+		dst.LeftPanel = src.LeftPanel;
+		src.LeftPanel = Swap;
+
+		Swap = dst.LastLeftFilePanel;
+		dst.LastLeftFilePanel = src.LastLeftFilePanel;
+		src.LastLeftFilePanel = Swap;
+
+		SwapType = dst.LastLeftType;
+		dst.LastLeftType = src.LastLeftType;
+		src.LastLeftType = SwapType;
+	}
+	else {
+		Swap = dst.RightPanel;
+		dst.RightPanel = src.RightPanel;
+		src.RightPanel = Swap;
+
+		Swap = dst.LastRightFilePanel;
+		dst.LastRightFilePanel = src.LastRightFilePanel;
+		src.LastRightFilePanel = Swap;
+
+		SwapType = dst.LastRightType;
+		dst.LastRightType = src.LastRightType;
+		src.LastRightType = SwapType;
+	}
+
+	activatePanelsInTab(src);
+	activatePanelsInTab(dst);
+
+	FrameManager->RefreshFrame();
 }

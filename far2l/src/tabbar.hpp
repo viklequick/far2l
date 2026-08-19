@@ -82,6 +82,7 @@ public:
 
 	int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
 	int moreContextMenu();
+	int pathContextMenu(bool left, int x, int fromTab);
 
 protected:
 	virtual void DisplayObject();

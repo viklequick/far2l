@@ -373,7 +373,11 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
-				// vk: todo: choose Panel from other tab and swap it with left one
+				int k = pathContextMenu(true, tabPos[i].leftPinX, i);
+				if (k >= 0 && k != ActiveTab()) {
+					CtrlObject->Cp()->SwapTo(ActiveTab(), k, true);
+					Redraw();
+				}
 				return TRUE;
 			}
 		}
@@ -383,7 +387,11 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
-				// vk: todo: choose Panel from other tab and swap it with right one
+				int k = pathContextMenu(false, tabPos[i].rightPinX, i);
+				if (k >= 0 && k != ActiveTab()) {
+					CtrlObject->Cp()->SwapTo(ActiveTab(), k, false);
+					Redraw();
+				}
 				return TRUE;
 			}
 		}
@@ -429,6 +437,50 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	return FALSE;
 }
 
+int TabBar::pathContextMenu(bool left, int x, int tabNo) 
+{
+	std::vector<std::wstring> v, s;
+	CtrlObject->Cp()->EnlistAllPaths(s, left, false);
+	int width = 10;
+
+	for (size_t j = 0; j < s.size(); ++j) {
+		width = std::max(width, (int)s[j].size() + 5);
+	}
+
+	for (size_t j = 0; j < s.size(); ++j) {
+		FARString x;
+		auto left = shortenLeaf(s[j], width - 5);
+		x.Format(L"%-*.*ls", width - 5, width - 5, left.c_str());
+		v.push_back(x.CPtr());
+	}
+
+	// now we ready to fill menus
+	MenuDataEx Groups[v.size()];
+	for (size_t j = 0; j < s.size(); ++j) 
+		Groups[j] = { v[j].c_str(), (DWORD)((int)j == tabNo ? MIF_DISABLE : 0), 0 };
+	int GroupsLen = (int)v.size();
+
+	{
+		int GroupsCode;
+		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
+
+		for (;;) {
+			GroupsMenu.SetPosition(x + 1, 2 + Opt.ShowMenuBar, 0, 0);
+			GroupsMenu.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
+			GroupsMenu.SetBoxType(SHORT_DOUBLE_BOX);
+			GroupsMenu.ClearDone();
+			GroupsMenu.Process();
+
+			GroupsCode = GroupsMenu.Modal::GetExitCode();
+
+			if (GroupsCode < 0 || GroupsCode >= GroupsLen) break;
+
+			return GroupsCode;
+		}
+	}
+	return -1;
+}
+
 int TabBar::moreContextMenu() 
 {
 	int width = 10;
@@ -442,12 +494,17 @@ int TabBar::moreContextMenu()
 
 	for (size_t j = 0; j < tabPos.size(); ++j) {
 		FARString x;
-		if (tabPos[j].right.IsEmpty())
-			x.Format(L"%-*.*ls", width - 5, width - 5, tabPos[j].left.CPtr());
-		else
+		if (tabPos[j].right.IsEmpty()) {
+			auto left = shortenLeaf(tabPos[j].left.CPtr(), width - 5);
+			x.Format(L"%-*.*ls", width - 5, width - 5, left.c_str());
+		}
+		else {
+			auto left = shortenLeaf(tabPos[j].left.CPtr(), (width - 3)/2);
+			auto right= shortenLeaf(tabPos[j].right.CPtr(), (width - 3)/2);
 			x.Format(L"%-*.*ls - %-*.*ls", 
-				(width - 3)/2, (width - 3)/2, tabPos[j].left.CPtr(), 
-				(width - 3)/2, (width - 3)/2, tabPos[j].right.CPtr());
+				(width - 3)/2, (width - 3)/2, left.c_str(), 
+				(width - 3)/2, (width - 3)/2, right.c_str());
+		}
 		v.push_back(x.CPtr());
 	}
 
@@ -464,11 +521,11 @@ int TabBar::moreContextMenu()
 		for (;;) {
 			GroupsMenu.SetPosition(moreX + 1, 2 + Opt.ShowMenuBar, 0, 0);
 			GroupsMenu.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
+			GroupsMenu.SetBoxType(SHORT_DOUBLE_BOX);
 			GroupsMenu.ClearDone();
 			GroupsMenu.Process();
 
-			if ((GroupsCode = GroupsMenu.Modal::GetExitCode()) < 0)
-				break;
+			GroupsCode = GroupsMenu.Modal::GetExitCode();
 
 			if (GroupsCode < 0 || GroupsCode >= GroupsLen) break;
 

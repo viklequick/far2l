@@ -40,10 +40,54 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class TabBar : public ScreenObject
 {
+public:
+	TabBar() {}
+	virtual ~TabBar() {}
+
+	struct TabNameAndPos {
+		FARString name;
+
+		int x { -1 };
+		int w { 0 };
+
+		FARString p_name;
+		FARString display;
+		FARString left;
+		FARString right;
+
+		int delX { -1 };
+		int leftPinX { - 1 };
+		int rightPinX { - 1 };
+
+		size_t cells() {
+			size_t k = left.CellsCount();
+			if(!right.IsEmpty()) k += 1 + right.CellsCount();
+			return k;
+		}
+	};
+
+	void SetTabs(const std::vector<TabNameAndPos>& v, int activeTab = -1);
+	void SetTexts(const std::vector<std::wstring>& v, int activeTab = -1);
+	const std::vector<std::wstring>& GetTabNames(){ return tabs; }
+	int ActiveTab(){ return activeTab; }
+	int GetActive(){ return activeTab; }
+	const std::vector<TabNameAndPos>& GetTabPositions(){ return tabPos; }
+	int HoveredTab(){ return hoveredTab; }
+
+	void SetActive(int x){ activeTab = x; }
+	void SetHovered(int x){ hoveredTab = x; }
+	void Clear(){ tabs.clear(); tabPos.clear(); }
+	void AddTab(const FARString& name){ tabPos.push_back({ name, 0, (int)name.CellsCount() }); }
+	void AddTab(const FARString& left, const FARString& right){ tabPos.push_back({ left, 0, (int)(left.CellsCount() + right.CellsCount() + 1), right }); }
+
+	int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
+	int moreContextMenu();
+
 protected:
 	virtual void DisplayObject();
 
-	int joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxWidth, int active);
+	int render();
+	void setHoverMask(int tabNo, bool tab, bool del, bool leftPin, bool rightPin, bool more);
 
 	std::vector<std::wstring> tabs;
 	int activeTab { 0 };
@@ -51,38 +95,12 @@ protected:
 
 	int plusX { 0 };
 	bool plusHovered { false };
+	int moreX { -1 };
+	bool moreHovered { false };
 	int delHovered {-1 };
 	int leftPinHovered { - 1 };
 	int rightPinHovered { -1 };
 
-	void setHoverMask(int tabNo, bool tab, bool del, bool leftPin, bool rightPin);
-
-public:
-	TabBar() {}
-	virtual ~TabBar() {}
-
-	struct TabNameAndPos {
-		FARString name;
-		int x { -1 };
-		int w { 0 };
-
-		int delX { -1 };
-		int leftPinX { - 1 };
-		int rightPinX { - 1 };
-	};
-
-	void SetTexts(const std::vector<std::wstring>& v, int activeTab);
-	const std::vector<std::wstring>& GetTabNames(){ return tabs; }
-	int ActiveTab(){ return activeTab; }
-	const std::vector<TabNameAndPos>& GetTabPositions(){ return tabPos; }
-	int HoveredTab(){ return hoveredTab; }
-
-	void SetActive(int x){ activeTab = x; }
-	void SetHovered(int x){ hoveredTab = x; }
-
-	int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
-
-protected:
 	std::vector<TabNameAndPos> tabPos;
 };
 

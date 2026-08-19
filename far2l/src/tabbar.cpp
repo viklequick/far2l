@@ -38,6 +38,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "farcolors.hpp"
 #include "ctrlobj.hpp"
 #include "filepanels.hpp"
+#include "vmenu.hpp"
+#include "config.hpp"
 
 void TabBar::DisplayObject()
 {
@@ -45,7 +47,15 @@ void TabBar::DisplayObject()
 	GotoXY(X1, Y1);
 	SetFarColor(COL_HMENUTEXT);
 
-	joinLeafsWithOffsets(tabs, X2 - X1 - 4, activeTab);
+	if (tabs.size() > 0) {
+		tabPos.clear();
+		tabPos.reserve(tabs.size());
+		for(size_t i = 0; i < tabs.size(); ++i) {
+			tabPos.push_back( { tabs[i] } );
+		}
+		tabs.clear();
+	}
+	render();
 }
 
 std::wstring widestCommonPrefix(const std::vector<std::wstring>& paths) {
@@ -95,6 +105,11 @@ std::wstring makeLeaf(const std::wstring& fullPath, const std::wstring& prefix) 
     return leaf;
 }
 
+void makeLeaf(TabBar::TabNameAndPos& x, const std::wstring& prefix) {
+	x.left = makeLeaf(x.left.GetWide(), prefix);
+	if (!x.right.IsEmpty()) x.right = makeLeaf(x.right.GetWide(), prefix);
+}
+
 std::vector<std::wstring> compactifyFileNamesUpTo(std::vector<std::wstring> v) {
 	if (v.size() < 2) return v;
 
@@ -107,6 +122,44 @@ std::vector<std::wstring> compactifyFileNamesUpTo(std::vector<std::wstring> v) {
 	}
 
 	return r;
+}
+
+void compactifyFileNamesUpTo(std::vector<TabBar::TabNameAndPos>& v) {
+	if (v.size() < 1) return;
+
+	size_t i;
+
+	std::vector<std::wstring> paths;
+	paths.reserve(v.size());
+	for(i = 0; i < v.size(); ++i) {
+		paths.push_back(v[i].name.CPtr());
+		if (!v[i].p_name.IsEmpty())
+			paths.push_back(v[i].p_name.CPtr());
+	}
+
+	std::wstring commonPrefix = widestCommonDirectory(paths);
+	fprintf(stderr, "... common dir=`%ls`\n", commonPrefix.c_str());
+	for(i = 0; i < v.size(); ++i) {
+		v[i].left = v[i].name;
+		v[i].right = v[i].p_name;
+		makeLeaf(v[i], commonPrefix);
+		fprintf(stderr, "... left=`%ls` right=`%ls`\n", v[i].left.CPtr(), v[i].right.CPtr());
+	}
+}
+
+FARString shortenLeaf(TabBar::TabNameAndPos& leaf, size_t maxLeafWidth) {
+    const wchar_t ell = L'…'; // L'\u2026' -- Unicode ellipsis
+
+    if (leaf.cells() <= maxLeafWidth) 
+        return leaf.right.IsEmpty() ? leaf.left : leaf.left + L" " + leaf.right;
+    if (maxLeafWidth <= 1)  return std::wstring(1, ell);
+    if (leaf.right.IsEmpty()) return shortenLeaf(leaf.left.GetWide(), maxLeafWidth);
+
+    // now we have two parts and need to count them proportionally
+    size_t left = leaf.left.CellsCount();
+    size_t right = leaf.right.CellsCount();
+    size_t leftMax = left * maxLeafWidth / (left + right + 1);
+    return shortenLeaf(leaf.left.GetWide(), leftMax) + L" " + shortenLeaf(leaf.right.GetWide(), maxLeafWidth - leftMax);
 }
 
 std::wstring shortenLeaf(const std::wstring& leaf, size_t maxLeafWidth) {
@@ -129,27 +182,35 @@ std::wstring shortenLeaf(const std::wstring& leaf, size_t maxLeafWidth) {
     return prefix + ell + suffix;
 }
 
-int TabBar::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxWidth, int activeIndex) 
+void TabBar::SetTabs(const std::vector<TabNameAndPos>& v, int activeTab) {
+	tabs.clear();
+	tabPos = v;
+	if (activeTab != GetActive()) SetActive(activeTab);
+}
+
+int TabBar::render() 
 {
-    if (v.empty()) return 0;
+	size_t maxWidth = X2 - X1 - 4;
+	int activeIndex = activeTab;
+    if (tabPos.empty()) return 0;
 
-	std::vector<std::wstring> leafs = v; // compactifyFileNamesUpTo(v);
-	FARString strLocalTitle = v[activeIndex];
+    compactifyFileNamesUpTo(tabPos);
 
-	int x1 = WhereX();
-
-    tabPos.clear();
+	uint64_t color2 = 0;
 
     --maxWidth; // first file has icon too
     std::wstring separator = L"║📜";
-    size_t N = leafs.size();
+    size_t N = tabPos.size();
     size_t sepWidth = separator.size();
 
     // Total width consumed by separators
     size_t totalSepWidth = sepWidth * (N - 1);
 
     if (maxWidth <= totalSepWidth) {
-        // Not enough space even for separators → return empty
+        // Not enough space even for separators → one button here
+		SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, moreHovered ? 1 : 0, 0, 0));
+    	moreX = WhereX() + 1;
+	    FS << L" ⏷ ";
         return 0;
     }
 
@@ -160,7 +221,7 @@ int TabBar::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxW
     std::vector<size_t> leafWidths(N);
 
     for (size_t i = 0; i < N; ++i) {
-        size_t full = leafs[i].size();
+        size_t full = tabPos[i].cells();
         leafWidths[i] = std::max(minLeafWidth, std::min(full, minLeafWidth));
     }
 
@@ -173,7 +234,7 @@ int TabBar::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxW
 
     // Distribute remaining space greedily
     for (size_t i = 0; i < N && remaining > 0; ++i) {
-        size_t full = leafs[i].size();
+        size_t full = tabPos[i].cells();
         size_t current = leafWidths[i];
 
         if (current < full) {
@@ -184,26 +245,37 @@ int TabBar::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxW
     }
 
     // Third pass: render
+    bool more = false;
     for (size_t i = 0; i < N; ++i) {
+    	if (WhereX() > X2 - 5) {
+        	more = true;
+            break;
+    	}
 
 		bool active = i == (size_t)activeIndex;
 		bool hover  = i == (size_t)hoveredTab;
 
-		// fprintf(stderr, "... [%d]: %ls active=%c hover=%c\n", (int)i, leafs[i].c_str(), active ? 'Y' : 'n', hover ? 'Y' : 'n');
+		fprintf(stderr, "... [%d]: `%ls` active=%c hover=%c left=`%ls` right=`%ls`\n", 
+			(int)i, 
+			tabPos[i].display.CPtr(), 
+			active ? 'Y' : 'n', hover ? 'Y' : 'n',
+			tabPos[i].left.CPtr(),
+			tabPos[i].right.CPtr());
 
+		tabPos[i].display = shortenLeaf(tabPos[i], leafWidths[i]);;
+		tabPos[i].x = WhereX() - X1;
+		tabPos[i].w = (int)tabPos[i].display.CellsCount();
 
-        std::wstring leaf = shortenLeaf(leafs[i], leafWidths[i]);
+		if (X1 + tabPos[i].x + tabPos[i].w > X2 - 5) {
+			more = true;
+			break;
+		}
 
-		FARString strTab = leafs[i];
-		tabPos.push_back({ strTab, WhereX() - X1, (int)strTab.CellsCount() });
-
-		uint64_t color2 = SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, 0, 0, 0);
-		SetColor(color2);
+		SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, 0, 0, 0));
 		if(i > 0) FS << L"║";
 
-		if (v.size() > 1){
-			color2 = SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, leftPinHovered == (int)i ? 1 : 0, 0, 0);
-			SetColor(color2);
+		if (tabPos.size() > 1){
+			SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, leftPinHovered == (int)i ? 1 : 0, 0, 0));
 			FS << L"🧷";
 			tabPos[i].leftPinX = WhereX() - X1 - 1;
 			tabPos[i].x = WhereX() - X1;
@@ -214,33 +286,34 @@ int TabBar::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxW
 			hover ? 1 : 0, 0, 0);
 		SetColor(color2);
 		FS << (active ? L"📲" /* L"📜" */ : L"📱" /* L"📝" */);
-		FS << strTab;
-		if (v.size() > 1){ 
-			color2 = SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, rightPinHovered == (int)i ? 1 : 0, 0, 0);
-			SetColor(color2);
+		FS << tabPos[i].display;
+		if (tabPos.size() > 1){ 
+			SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, rightPinHovered == (int)i ? 1 : 0, 0, 0));
 			FS << L"📎";
 			tabPos[i].rightPinX = WhereX() - X1 - 1;
 
-			color2 = SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, delHovered == (int)i ? 1 : 0, 0, 0);
-			SetColor(color2);
-
+			SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, delHovered == (int)i ? 1 : 0, 0, 0));
 			FS << L" ✘";
 			tabPos[i].delX = WhereX() - X1 - 2;
 		}
     }
 
-	uint64_t color3 = SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, plusHovered ? 1 : 0, 0, 0);
-	SetColor(color3);
-
+	SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, plusHovered ? 1 : 0, 0, 0));
     plusX = WhereX() + 1;
     FS << L"║ 🞧 ";
 
-	SetColor(FarColorToReal(COL_HMENUTEXT));
+    moreX = -1;
+    more = true;
+    if (more) {
+		SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, moreHovered ? 1 : 0, 0, 0));
+    	moreX = WhereX() + 1;
+	    FS << L" ⏷ ";
+    }
 
+	SetColor(FarColorToReal(COL_HMENUTEXT));
     if (WhereX() < X2) 
     	FS << fmt::LeftAlign() << fmt::Cells() << fmt::Expand(X2 - WhereX()) << L" ";
-
-    return WhereX() - x1;
+    return 0;
 }
 
 void TabBar::SetTexts(const std::vector<std::wstring>& v, int _activeTab) {
@@ -250,14 +323,15 @@ void TabBar::SetTexts(const std::vector<std::wstring>& v, int _activeTab) {
 	hoveredTab = -1;
 }
 
-void TabBar::setHoverMask(int tabNo, bool plus, bool del, bool leftPin, bool rightPin) 
+void TabBar::setHoverMask(int tabNo, bool plus, bool del, bool leftPin, bool rightPin, bool more) 
 {
 	plusHovered = plus;
+	moreHovered = more;
 	delHovered = del ? tabNo : -1;
 	leftPinHovered = leftPin ? tabNo : -1;
 	rightPinHovered = rightPin ? tabNo : -1;
 
-	SetHovered(plus || del || leftPin || rightPin ? -1 : tabNo);
+	SetHovered(plus || del || leftPin || rightPin || more ? -1 : tabNo);
 	CtrlObject->Cp()->SwitchHoveredTabTo(hoveredTab);
 	Redraw();
 }
@@ -271,7 +345,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		return FALSE;
 
 	int pos = MsX - X1;
-	plusHovered = false;
+	plusHovered = moreHovered = false;
 	delHovered = leftPinHovered = rightPinHovered = -1;
 
 	for(size_t i = 0; i < tabPos.size(); ++i) {
@@ -280,7 +354,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		if (pos >= tabPos[i].x && pos < tabPos[i].x + tabPos[i].w) { // tab
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
 				if((int)i != hoveredTab){ 
-					setHoverMask(i, false, false, false, false);
+					setHoverMask(i, false, false, false, false, false);
 				}
 				return TRUE;
 			}
@@ -295,7 +369,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 		else if (tabPos[i].leftPinX >= 0 && pos >= tabPos[i].leftPinX && pos <= tabPos[i].leftPinX + 1) { // left pin
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-				setHoverMask(i, false, false, true, false);
+				setHoverMask(i, false, false, true, false, false);
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -305,7 +379,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 		else if (tabPos[i].rightPinX > 0 && pos >= tabPos[i].rightPinX && pos <= tabPos[i].rightPinX + 1) { // left pin
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-				setHoverMask(i, false, false, false, true);
+				setHoverMask(i, false, false, false, true, false);
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -315,7 +389,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 		else if (tabPos[i].delX > 0 && pos >= tabPos[i].delX && pos <= tabPos[i].delX + 3) { // delete sign
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-				setHoverMask(i, false, true, false, false);
+				setHoverMask(i, false, true, false, false, false);
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -327,7 +401,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 	if (MsX >= plusX && MsX < plusX + 4) { // plus sign
 		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-			setHoverMask(-1, true, false, false, false);
+			setHoverMask(-1, true, false, false, false, false);
 			return TRUE;
 		}
 		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -335,6 +409,71 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			return TRUE;
 		}
 	}
+	else if (moreX > 0 && MsX >= moreX && MsX < moreX + 2) { // more sign
+		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
+			setHoverMask(-1, false, false, false, false, true);
+			return TRUE;
+		}
+		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+			// show menu with all pairs and then choose 
+			int tab = moreContextMenu();
+			if (tab >= 0) {
+				SetActive(tab);
+				CtrlObject->Cp()->SwitchActiveTabTo(tab);
+				Redraw();
+			}
+			return TRUE;
+		}
+	}
 
 	return FALSE;
+}
+
+int TabBar::moreContextMenu() 
+{
+	int width = 10;
+
+	// count list size and widths
+	std::vector<std::wstring> v;
+	v.reserve(tabPos.size());
+	for (size_t j = 0; j < tabPos.size(); ++j) {
+		width = std::max(width, (int)(tabPos[j].left.CellsCount() + tabPos[j].right.CellsCount() + 3 + 5));
+	}
+
+	for (size_t j = 0; j < tabPos.size(); ++j) {
+		FARString x;
+		if (tabPos[j].right.IsEmpty())
+			x.Format(L"%-*.*ls", width - 5, width - 5, tabPos[j].left.CPtr());
+		else
+			x.Format(L"%-*.*ls - %-*.*ls", 
+				(width - 3)/2, (width - 3)/2, tabPos[j].left.CPtr(), 
+				(width - 3)/2, (width - 3)/2, tabPos[j].right.CPtr());
+		v.push_back(x.CPtr());
+	}
+
+	// now we ready to fill menus
+	MenuDataEx Groups[tabPos.size()];
+	for (size_t j = 0; j < tabPos.size(); ++j) 
+		Groups[j] = { v[j].c_str(), 0, 0 };
+	int GroupsLen = (int)tabPos.size();
+
+	{
+		int GroupsCode;
+		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
+
+		for (;;) {
+			GroupsMenu.SetPosition(moreX + 1, 2 + Opt.ShowMenuBar, 0, 0);
+			GroupsMenu.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
+			GroupsMenu.ClearDone();
+			GroupsMenu.Process();
+
+			if ((GroupsCode = GroupsMenu.Modal::GetExitCode()) < 0)
+				break;
+
+			if (GroupsCode < 0 || GroupsCode >= GroupsLen) break;
+
+			return GroupsCode;
+		}
+	}
+	return -1;
 }

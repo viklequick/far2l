@@ -1326,8 +1326,15 @@ int FilePanels::GetMacroMode()
 	}
 }
 
+FARString StrTrim(const FARString& x) {
+	std::wstring y = x.GetWide();
+	StrTrim(y);
+	return y;
+}
+
 int FilePanels::SetTabNames() 
 {
+	/*
 	std::vector<std::wstring> v;
 	int maxW = (X2 - X1 - 4);
 	int maxLen = std::min(25, (int)(maxW / tabs.size() / 2));
@@ -1346,11 +1353,19 @@ int FilePanels::SetTabNames()
 		v.push_back(name.GetWide());
 	}
 	TopTabBar.SetTexts(v, TabActive);
+    */
+
+    TopTabBar.Clear();
+	for(size_t i = 0; i < tabs.size(); ++i){ 
+		tabs[i].ActivePanel->GetTitle(tabs[i].a_name, 128, 2);
+		GetAnotherPanel(tabs[i], tabs[i].ActivePanel)->GetTitle(tabs[i].p_name, 128, 2);
+		tabs[i].a_name = StrTrim(tabs[i].a_name);
+		tabs[i].p_name = StrTrim(tabs[i].p_name);
+		TopTabBar.AddTab(tabs[i].a_name, tabs[i].p_name);
+	}
+
+	TopTabBar.SetActive(TabActive);
 	TopTabBar.SetHovered(TabHovered);
-    /*
-	for(size_t i = 0; i < v.size(); ++i)
-		fprintf(stderr, "\ttab: %ls", v[i].c_str());
-	fprintf(stderr, "\n");*/
 	TopTabBar.Redraw();
 	return 0;
 }

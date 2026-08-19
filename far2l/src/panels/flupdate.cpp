@@ -151,7 +151,7 @@ void FileList::ReadFileNames(int KeepSelection, int IgnoreVisible, int DrawMessa
 	FARString strCurName, strNextCurName;
 	CloseChangeNotification();
 
-	if (this != CtrlObject->Cp()->LeftPanel && this != CtrlObject->Cp()->RightPanel)
+	if (this != CtrlObject->Cp()->ActiveTab().LeftPanel && this != CtrlObject->Cp()->ActiveTab().RightPanel)
 		return;
 
 	SudoClientRegion sdc_rgn;

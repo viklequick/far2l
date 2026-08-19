@@ -507,8 +507,8 @@ EditCommand
 "Рэдагаванне каманды"
 
 CtrlEnterMultipleItems
-"Ctrl+Ввод вставляет все выделенные объекты"
-"Ctrl+Enter inserts all selected items if available"
+"Ctrl+&Ввод вставляет все выделенные объекты"
+"Ctrl+&Enter inserts all selected items"
 upd:"Ctrl+Enter inserts all selected items"
 upd:"Ctrl+Enter inserts all selected items"
 upd:"Ctrl+Enter inserts all selected items"
@@ -1869,7 +1869,7 @@ ConfigRO
 "&Зняць атрыбут R/O з CD файлаў"
 
 ConfigSudoEnabled
-"Разрешить повышение привилегий"
+"Разрешить п&овышение привилегий"
 "Enable s&udo privileges elevation"
 upd:"Enable sudo privileges elevation"
 upd:"Enable sudo privileges elevation"
@@ -1979,8 +1979,8 @@ upd:"Copy extended a&ttributes"
 "Капіяваць пашыраныя а&трыбуты"
 
 ConfigOnlyFilesSize
-"Учитывать только размер файлов"
-"Use only files size in estimation"
+"&Учитывать только размер файлов"
+"Use only files size in &estimation"
 upd:"Use only files size in estimation"
 upd:"Use only files size in estimation"
 upd:"Use only files size in estimation"
@@ -3557,8 +3557,8 @@ upd:"Use shell"
 "Ужываць &shell"
 
 ConfigShowStartupBanner
-"Показывать стартовый баннер во встроенном терминале"
-"Show startup banner in built-in terminal"
+"Показывать стартовый баннер во встроенном &терминале"
+"Show startup banner in built-in &terminal"
 upd:"Show startup banner in built-in terminal"
 upd:"Show startup banner in built-in terminal"
 upd:"Show startup banner in built-in terminal"
@@ -17268,8 +17268,8 @@ MenuFarConfig
 "Р&эдактар канфігурацыі"
 
 MenuMacroBrowser
-"Макрокоманды"
-"Macro Browser"
+"Макрокоманд&ы"
+"Macro &Browser"
 upd:"Macro Browser"
 upd:"Macro Browser"
 upd:"Macro Browser"
@@ -17280,7 +17280,7 @@ upd:"Macro Browser"
 
 MenuAboutFar
 "Св&едения о FAR"
-"A&bout FAR"
+"Abou&t FAR"
 "Informace o &FAR"
 "Ü&ber FAR"
 "Információk a &FAR"
@@ -29808,8 +29808,8 @@ upd:"Replace theme colors to effects when possible"
 upd:"Replace theme colors to effects when possible"
 
 EnforceColorCorrection
-"Выравнивать контрастность цветов автоматически"
-"Auto-adjust colors contrast"
+"&Выравнивать контрастность цветов автоматически"
+"&Auto-adjust colors contrast"
 upd:"Auto-adjust colors contrast"
 upd:"Auto-adjust colors contrast"
 upd:"Auto-adjust colors contrast"

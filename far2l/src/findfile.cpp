@@ -604,9 +604,9 @@ static void SetPluginDirectory(const wchar_t *DirName, HANDLE hPlugin, bool Upda
 
 		// Отрисуем панель при необходимости.
 		if (UpdatePanel) {
-			CtrlObject->Cp()->ActivePanel->Update(UPDATE_KEEP_SELECTION);
-			CtrlObject->Cp()->ActivePanel->GoToFile(NamePtr);
-			CtrlObject->Cp()->ActivePanel->Show();
+			CtrlObject->Cp()->ActiveTab().ActivePanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().ActivePanel->GoToFile(NamePtr);
+			CtrlObject->Cp()->ActiveTab().ActivePanel->Show();
 		}
 
 		// strName.ReleaseBuffer(); Не надо. Строка все равно удаляется, лишний вызов StrLength.
@@ -749,7 +749,7 @@ static LONG_PTR WINAPI MainDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Pa
 				}
 				case FAD_BUTTON_DRIVE: {
 					IsRedrawFramesInProcess++;
-					CtrlObject->Cp()->ActivePanel->ChangeDisk();
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ChangeDisk();
 					// Ну что ж, раз пошла такая пьянка рефрешить фреймы
 					// будем таким способом.
 					// FrameManager->ProcessKey(KEY_CONSOLE_BUFFER_RESIZE);
@@ -760,7 +760,7 @@ static LONG_PTR WINAPI MainDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR Pa
 					SendDlgMessage(hDlg, DM_LISTGETITEM, FAD_COMBOBOX_WHERE, (LONG_PTR)&item);
 					item.Item.Text = strSearchFromRoot;
 					SendDlgMessage(hDlg, DM_LISTUPDATE, FAD_COMBOBOX_WHERE, (LONG_PTR)&item);
-					v->PluginMode = CtrlObject->Cp()->ActivePanel->GetMode() == PLUGIN_PANEL;
+					v->PluginMode = CtrlObject->Cp()->ActiveTab().ActivePanel->GetMode() == PLUGIN_PANEL;
 					SendDlgMessage(hDlg, DM_ENABLE, FAD_CHECKBOX_DIRS, v->PluginMode ? FALSE : TRUE);
 					item.ItemIndex = FADC_ALLDISKS;
 					SendDlgMessage(hDlg, DM_LISTGETITEM, FAD_COMBOBOX_WHERE, (LONG_PTR)&item);
@@ -2143,13 +2143,13 @@ static void DoScanTree(HANDLE hDlg, FARString &strRoot)
 	DWORD FileAttr;
 
 	if (SearchMode == FINDAREA_SELECTED)
-		CtrlObject->Cp()->ActivePanel->GetSelNameCompat(nullptr, FileAttr);
+		CtrlObject->Cp()->ActiveTab().ActivePanel->GetSelNameCompat(nullptr, FileAttr);
 
 	while (!StopFlag) {
 		FARString strCurRoot;
 
 		if (SearchMode == FINDAREA_SELECTED) {
-			if (!CtrlObject->Cp()->ActivePanel->GetSelNameCompat(&strSelName, FileAttr))
+			if (!CtrlObject->Cp()->ActiveTab().ActivePanel->GetSelNameCompat(&strSelName, FileAttr))
 				break;
 
 			if (!(FileAttr & FILE_ATTRIBUTE_DIRECTORY) || TestParentFolderName(strSelName)
@@ -2274,7 +2274,7 @@ static void ScanPluginTree(HANDLE hDlg, HANDLE hPlugin, DWORD Flags, int &Recurs
 					&& StrCmp(strCurName, L".") && !TestParentFolderName(strCurName)
 					&& (!UseFilter || Filter->FileInFilter(CurPanelItem->FindData))
 					&& (SearchMode != FINDAREA_SELECTED || RecurseLevel != 1
-							|| CtrlObject->Cp()->ActivePanel->IsSelected(strCurName))) {
+							|| CtrlObject->Cp()->ActiveTab().ActivePanel->IsSelected(strCurName))) {
 				bool SetDirectoryResult = false;
 				{
 					PluginLocker Lock;
@@ -2501,7 +2501,7 @@ static bool FindFilesProcess(Vars &v)
 	ChangePriority ChPriority(ChangePriority::NORMAL);
 
 	if (v.PluginMode) {
-		Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+		Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 		HANDLE hPlugin = ActivePanel->GetPluginHandle();
 		OpenPluginInfo Info;
 		{
@@ -2613,7 +2613,7 @@ static bool FindFilesProcess(Vars &v)
 					HANDLE hNewPlugin = CtrlObject->Plugins.OpenFindListPlugin(PanelItems, ItemsNumber);
 
 					if (hNewPlugin != INVALID_HANDLE_VALUE) {
-						Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+						Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 						Panel *NewPanel = CtrlObject->Cp()->ChangePanel(ActivePanel, FILE_PANEL, TRUE, TRUE);
 						NewPanel->SetPluginMode(hNewPlugin, L"", true);
 						NewPanel->SetVisible(TRUE);
@@ -2634,7 +2634,7 @@ static bool FindFilesProcess(Vars &v)
 				FINDLIST FindItem;
 				itd.GetFindListItem(v.FindExitIndex, FindItem);
 				FARString strFileName = FindItem.FindData.strFileName;
-				Panel *FindPanel = CtrlObject->Cp()->ActivePanel;
+				Panel *FindPanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 
 				if (FindItem.ArcIndex != LIST_INDEX_NONE) {
 					ARCLIST ArcItem;
@@ -2739,7 +2739,7 @@ FindFiles::FindFiles()
 	static FARString strSearchFromRoot;
 	static int LastCmpCase = 0, LastWholeWords = 0, LastSearchInArchives = 0, LastSearchHex = 0;
 	// Создадим объект фильтра
-	Filter = new FileFilter(CtrlObject->Cp()->ActivePanel, FFT_FINDFILE);
+	Filter = new FileFilter(CtrlObject->Cp()->ActiveTab().ActivePanel, FFT_FINDFILE);
 	CmpCase = LastCmpCase;
 	WholeWords = LastWholeWords;
 	SearchInArchives = LastSearchInArchives;
@@ -2754,7 +2754,7 @@ FindFiles::FindFiles()
 	do {
 		v.Clear();
 		itd.ClearAllLists();
-		Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+		Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 		v.PluginMode = ActivePanel->GetMode() == PLUGIN_PANEL && ActivePanel->IsVisible();
 		strSearchFromRoot = Msg::SearchFromRootFolder;
 		const wchar_t *MasksHistoryName = L"Masks", *TextHistoryName = L"SearchText";
@@ -2931,7 +2931,7 @@ FindFiles::FindFiles()
 		if (!strFindStr.IsEmpty())
 			Editor::SetReplaceMode(FALSE);
 	} while (FindFilesProcess(v));
-	CtrlObject->Cp()->ActivePanel->SetTitle();
+	CtrlObject->Cp()->ActiveTab().ActivePanel->SetTitle();
 }
 
 FindFiles::~FindFiles()

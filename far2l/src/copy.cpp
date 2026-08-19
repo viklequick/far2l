@@ -1101,8 +1101,8 @@ ShellCopy::ShellCopy(Panel *SrcPanel,		// исходная панель (акт�
 
 	if ((Opt.Diz.UpdateMode == DIZ_UPDATE_IF_DISPLAYED && SrcPanel->IsDizDisplayed())
 			|| Opt.Diz.UpdateMode == DIZ_UPDATE_ALWAYS) {
-		CtrlObject->Cp()->LeftPanel->ReadDiz();
-		CtrlObject->Cp()->RightPanel->ReadDiz();
+		CtrlObject->Cp()->ActiveTab().LeftPanel->ReadDiz();
+		CtrlObject->Cp()->ActiveTab().RightPanel->ReadDiz();
 	}
 
 	if (!DestPlugin) {

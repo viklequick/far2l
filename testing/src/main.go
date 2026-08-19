@@ -282,7 +282,12 @@ func far2l_WriteToPeer(data []byte) {
 func far2l_Close() {
 	atomic.StoreInt32(&g_far2l_running, 0)
 	if g_app != nil {
-		g_app.Close()
+		app:= g_app
+		log.Println("Stopping application due to ExpectExit wasnt called")
+		app.Stop()
+		_ = <-g_channel
+		app.Close()
+		g_app = nil
 	}
 }
 
@@ -298,20 +303,18 @@ func termTask(args []string, cols int, rows int) {
 	var err error
     g_app, err = termtest.New(opts)
 	if err != nil {
-		aux_Panic(err.Error())
+		aux_Warn(err.Error())
+	} else {
+		g_app.Wait()
+		code:= g_app.Cmd().ProcessState.ExitCode()
+		g_channel <- code
 	}
-	g_app.Wait()
-	code:= g_app.Cmd().ProcessState.ExitCode()
-	//g_app.Close()
-	g_channel <- code
-	g_far2l_running = false
 }
 
 func far2l_StartWithSize(args []string, cols int, rows int) far2l_Status {
-	if g_far2l_running {
+	if g_app != nil {
 		aux_Panic("far2l already running")
 	}
-	g_far2l_running = true
 	g_channel = make(chan int)
 	go termTask(args, cols, rows)
 	return far2l_RecvStatus()
@@ -352,14 +355,19 @@ func far2l_ReqRecvSync(tmout uint32) bool {
 }
 
 func far2l_Sync(tmout uint32) bool {
+	if tmout == 0 {
+		tmout = g_autosync
+	}
 	log.Println("Sync:", tmout)
 	g_autosync_needed = false
 	return far2l_ReqRecvSync(tmout)
 }
 
-func far2l_AutoSync(tmout uint32) {
-	log.Println("AutoSync:", tmout)
+func far2l_AutoSync(tmout uint32) uint32 {
+	prev:= g_autosync
 	g_autosync = tmout
+	log.Println("AutoSync:", prev, "->", tmout)
+	return prev
 }
 
 func performAutoSync() {
@@ -367,7 +375,7 @@ func performAutoSync() {
 		return
 	}
 	g_autosync_needed = false
-	if g_autosync == 0 {
+	if g_autosync == 0 || g_app == nil {
 		return
 	}
 	if ! far2l_ReqRecvSync(g_autosync) {
@@ -393,10 +401,18 @@ func aux_Warn(warn string) {
 }
 
 func aux_Panic(message string) {
-	log.Println("------------------- SNAPSHOT -------------------")
-	fmt.Println(strings.TrimLeft(g_app.Snapshot(), " \r\n"))
-	log.Println("------------------------------------------------")
-	panic("\x1b[1;31m" + message + "\x1b[39;22m")
+	if (g_app != nil) {
+		aux_Sleep(100)
+		if (g_app != nil) {
+			log.Println("------------------- SNAPSHOT -------------------")
+			fmt.Println(strings.TrimLeft(g_app.Snapshot(), " \r\n"))
+			log.Println("------------------------------------------------")
+		}
+	}
+	log.Println("\x1b[1;31m" + message + "\x1b[39;22m")
+//	log.Println("Backtrace:", g_vm.CaptureCallStack(-1, []goja.StackFrame{}))
+	g_vm.Interrupt(message)
+//	panic("\x1b[1;31m" + message + "\x1b[39;22m")
 }
 
 func tty_Write(s string) {
@@ -645,9 +661,13 @@ func aux_WorkDir() string {
 
 func aux_Snapshot(name string) {
 	if g_app != nil {
-		f, err := os.Create(g_test_workdir + "/snapshot-" + name + ".txt")
-		if err == nil {
-			f.WriteString(g_app.Snapshot())
+		aux_Sleep(100)
+		if g_app != nil {
+			f, err := os.Create(g_test_workdir + "/snapshot-" + name + ".txt")
+			defer f.Close()
+			if err == nil {
+				f.WriteString(g_app.Snapshot())
+			}
 		}
 	}
 }
@@ -692,6 +712,7 @@ func initVM() {
 	setVMFunction("ExpectString", far2l_ReqRecvExpectString)
 	setVMFunction("ExpectNoStrings", far2l_ReqRecvExpectNoStrings)
 	setVMFunction("ExpectNoString", far2l_ReqRecvExpectNoString)
+	setVMFunction("SetDefaultExpectTimeout", far2l_SetDefaultExpectTimeout)
 
 	setVMFunction("ExpectAppExit", far2l_ExpectExit)
 
@@ -725,6 +746,7 @@ func initVM() {
 	setVMFunction("TypeIns", far2l_TypeIns)
 	setVMFunction("TypeDel", far2l_TypeDel)
 	setVMFunction("TypeBack", far2l_TypeBack)
+	setVMFunction("TypeTab", far2l_TypeTab)
 
 	setVMFunction("LClickWhereFound", far2l_LClickWhereFound)
 	setVMFunction("RClickWhereFound", far2l_RClickWhereFound)
@@ -764,6 +786,7 @@ func initVM() {
 	setVMFunction("Mkfiles", aux_Mkfiles)
 	setVMFunction("HashPath", aux_HashPath)
 	setVMFunction("HashPathes", aux_HashPathes)
+	setVMFunction("CheckFilesDataSame", aux_CheckFilesDataSame)
 	setVMFunction("Exists", aux_Exists)
 	setVMFunction("CountExisting", aux_CountExisting)
 	setVMFunction("LoadTextFile", aux_LoadTextFile)
@@ -820,6 +843,7 @@ func main() {
 
 	for i := arg_ofs + 1; i < len(os.Args); i++ {
 		name := filepath.Base(os.Args[i])
+		fmt.Println() // empty line witout timestamp
 		log.Println("\x1b[1;32m---> Running test: " + name + "\x1b[39;22m")
 		testdir, err := filepath.Abs(os.Args[i])
 		if err != nil { log.Fatal(err) }
@@ -868,15 +892,22 @@ func runTest(file string) {
 	defer far2l_Close()
 	defer aux_Snapshot("exit")
 	typingReset()
+	g_autosync = 10000
 	g_calm = false
 	g_last_error = ""
 	g_test_dir = filepath.Dir(file)
 	data, err := ioutil.ReadFile(file)
-	if err != nil { aux_Panic(err.Error()) }
+	if err != nil {
+		panic("[FAILED] Error '" + err.Error() + "' reading test" + file)
+	}
 	src := string(data)
 	rv, err := g_vm.RunString(src)
-	if err != nil { aux_Panic(err.Error()) }
+	if err != nil {
+		panic("[FAILED] Error '" + err.Error() + "' running test" + file)
+	}
 	if code := rv.Export().(int64); code != 0 {
 		log.Println("[FAILED] Error", code, "from test", file)
+	} else {
+		log.Println("[DONE]", file)
 	}
 }

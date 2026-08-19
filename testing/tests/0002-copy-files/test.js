@@ -11,10 +11,10 @@ Mkfiles(left_files, 0o666, 0, 1024);
 Mkfiles(left_sub_files, 0o752, 10 * 1024 * 1024, 20 * 1024 * 1024);
 
 StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
-ExpectString("Help - FAR2L", 0, 0, 0, 0, 10000);
+ExpectString("Help - FAR2L");
 Snapshot("start")
 TypeEscape(10)
-ExpectString("OSC52", 0, 0, 0, 0, 10000);
+ExpectString("OSC52");
 TypeEscape(10)
 
 StartTestApp(dirs.profile, dirs.left, dirs.right);
@@ -28,13 +28,13 @@ TypeIns()
 TypeIns()
 TypeIns()
 TypeFKey(5)
-ExpectString("════ Copy ═════", 0, 0, 0, 0, 10000)
+ExpectString("════ Copy ═════")
 TypeEnter()
 
 // Wait for copy to complete
 for (var i = 0; ; ++i) {
 	Sleep(100)
-	ExpectNoString("════ Copy ═════", 0, 0, 0, 0, 10000)
+	ExpectNoString("════ Copy ═════")
 	right_hash = HashPathes(right_items, true, true, true, true, true)
 	if (right_hash == left_hash) {
 		break
@@ -54,7 +54,7 @@ if (left_hash != recent_left_hash) {
 }
 
 TypeFKey(10)
-ExpectString("Do you want to quit FAR?", 0, 0, 0, 0, 10000)
+ExpectString("Do you want to quit FAR?")
 TypeEnter()
 Sleep(500);
 

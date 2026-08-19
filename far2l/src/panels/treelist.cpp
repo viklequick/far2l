@@ -672,14 +672,14 @@ Panel *TreeList::GetRootPanel()
 
 	if (ModalMode) {
 		if (ModalMode == MODALTREE_ACTIVE)
-			RootPanel = CtrlObject->Cp()->ActivePanel;
+			RootPanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 		else if (ModalMode == MODALTREE_FREE)
 			RootPanel = this;
 		else {
-			RootPanel = CtrlObject->Cp()->GetAnotherPanel(CtrlObject->Cp()->ActivePanel);
+			RootPanel = CtrlObject->Cp()->GetAnotherPanel(CtrlObject->Cp()->ActiveTab().ActivePanel);
 
 			if (!RootPanel->IsVisible())
-				RootPanel = CtrlObject->Cp()->ActivePanel;
+				RootPanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 		}
 	} else
 		RootPanel = CtrlObject->Cp()->GetAnotherPanel(this);

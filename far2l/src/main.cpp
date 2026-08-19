@@ -218,7 +218,7 @@ static int MainProcess(FARString strEditViewArg, FARString strDestName1, FARStri
 			Panel *DummyPanel = new Panel;
 			_tran(SysLog(L"create dummy panels"));
 			CtrlObj.CreateFilePanels();
-			CtrlObj.Cp()->LeftPanel = CtrlObj.Cp()->RightPanel = CtrlObj.Cp()->ActivePanel = DummyPanel;
+			CtrlObj.Cp()->ActiveTab().LeftPanel = CtrlObj.Cp()->ActiveTab().RightPanel = CtrlObj.Cp()->ActiveTab().ActivePanel = DummyPanel;
 			CtrlObj.Plugins.LoadPlugins();
 			CtrlObj.Macro.LoadMacros(TRUE, FALSE);
 
@@ -255,7 +255,7 @@ static int MainProcess(FARString strEditViewArg, FARString strDestName1, FARStri
 				unlink(strEditViewArg.GetMB().c_str());
 			}
 
-			CtrlObj.Cp()->LeftPanel = CtrlObj.Cp()->RightPanel = CtrlObj.Cp()->ActivePanel = nullptr;
+			CtrlObj.Cp()->ActiveTab().LeftPanel = CtrlObj.Cp()->ActiveTab().RightPanel = CtrlObj.Cp()->ActiveTab().ActivePanel = nullptr;
 			delete DummyPanel;
 			_tran(SysLog(L"editor/viewer closed, delete dummy panels"));
 		} else {
@@ -280,7 +280,7 @@ static int MainProcess(FARString strEditViewArg, FARString strDestName1, FARStri
 			if (strDestName1.GetLength())		// актиная панель
 			{
 				FARString strCurDir;
-				Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+				Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 				Panel *AnotherPanel = CtrlObject->Cp()->GetAnotherPanel(ActivePanel);
 
 				if (strDestName2)		// пассивная панель
@@ -317,7 +317,7 @@ static int MainProcess(FARString strEditViewArg, FARString strDestName1, FARStri
 				} */
 
 				// Update pointers as the above prefixed plugin calls could recreate one or both panels
-				ActivePanel=CtrlObject->Cp()->ActivePanel;
+				ActivePanel=CtrlObject->Cp()->ActiveTab().ActivePanel;
 				AnotherPanel=CtrlObject->Cp()->GetAnotherPanel(ActivePanel);
 
 				// !!! ВНИМАНИЕ !!!

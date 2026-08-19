@@ -36,9 +36,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "frame.hpp"
 #include "keybar.hpp"
 #include "menubar.hpp"
+#include "tabbar.hpp"
 
 class Panel;
 class CommandLine;
+
 
 class FilePanels : public Frame
 {
@@ -48,39 +50,63 @@ private:
 	typedef class Frame inherited;
 
 public:
-	Panel *LastLeftFilePanel, *LastRightFilePanel;
-	Panel *LeftPanel, *RightPanel, *ActivePanel;
+
+	struct DoublePanel {
+		Panel *LastLeftFilePanel {nullptr};
+		Panel *LastRightFilePanel {nullptr};
+        Panel *LeftPanel {nullptr};
+        Panel *RightPanel {nullptr};
+        Panel *ActivePanel {nullptr};
+
+		int LastLeftType {0}, LastRightType {0};
+		int LeftStateBeforeHide {0}, RightStateBeforeHide {0};
+
+		FARString a_name, p_name;
+		int x;
+		int w;
+
+		bool LeftVisible { true };
+		bool RightVisible { true };
+	};
 
 	KeyBar MainKeyBar;
 	MenuBar TopMenuBar;
+	TabBar TopTabBar;
 
-	int LastLeftType, LastRightType;
-	int LeftStateBeforeHide, RightStateBeforeHide;
+	int TabHovered {1};
+	int TabActive  {0};
+	std::vector<DoublePanel> tabs;
 
-	int TabHovered {0};
-
-	struct TabNameAndPos {
-		FARString name;
-		int x;
-		int w;
-	};
-
-	std::vector<TabNameAndPos> tabPos;
+	DoublePanel& ActiveTab() { return tabs[TabActive]; }
 
 public:
 	FilePanels();
 	virtual ~FilePanels();
 	void UpdateCmdLineVisibility(bool repos = false);
+	void UpdateTabBar();
+
+private:
+	void Init(DoublePanel& tab);
+	void SetPanelPositions(DoublePanel& tab, int LeftFullScreen, int RightFullScreen, int Disposition);
+	void UpdateCmdLineVisibility(DoublePanel& tab, bool repos = false);
+	void DeletePanel(DoublePanel& tab, Panel *Deleted);
+	Panel *GetAnotherPanel(DoublePanel& tab, Panel *Current);
+	void SetScreenPosition(DoublePanel& tab);
+
+	int SetTabNames();
+	void destroyPanelsGracefully(DoublePanel& tab);
+	void activatePanelsInTab(DoublePanel& tab);
+	void deactivatePanelsInTab(DoublePanel& tab);
 
 public:
 	void Init();
+	void SetPanelPositions(int LeftFullScreen, int RightFullScreen, int Disposition);
 
 	Panel *CreatePanel(int Type);
 	void DeletePanel(Panel *Deleted);
 	Panel *GetAnotherPanel(Panel *Current);
 	Panel *ChangePanelToFilled(Panel *Current, int NewType);
 	Panel *ChangePanel(Panel *Current, int NewType, int CreateNew, int Force);
-	void SetPanelPositions(int LeftFullScreen, int RightFullScreen, int Disposition);
 	// void   SetPanelPositions();
 
 	void SetupKeyBar();
@@ -111,4 +137,9 @@ public:
 	void GoToFile(const wchar_t *FileName);
 
 	virtual int GetMacroMode();
+
+	void SwitchActiveTabTo(int tabNo);
+	void SwitchHoveredTabTo(int tabNo) { TabHovered = tabNo; }
+	int AppendNewTab();
+	void DeleteTab(int tabNo);
 };

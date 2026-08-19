@@ -187,6 +187,7 @@ src/mix/GitTools.cpp
 src/shoco/shoco.c
 
 src/powerline.cpp
+src/tabbar.cpp
 )
 
 # Option to disable building macro subsystem completely

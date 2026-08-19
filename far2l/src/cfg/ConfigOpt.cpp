@@ -1175,8 +1175,8 @@ void ConfigOptAssertLoaded()
 
 static void SavePanelsToOpt()
 {
-	Panel *LeftPanel = CtrlObject->Cp()->LeftPanel;
-	Panel *RightPanel = CtrlObject->Cp()->RightPanel;
+	Panel *LeftPanel = CtrlObject->Cp()->ActiveTab().LeftPanel;
+	Panel *RightPanel = CtrlObject->Cp()->ActiveTab().RightPanel;
 	Opt.LeftPanel.Focus = LeftPanel->GetFocus();
 	Opt.LeftPanel.Visible = LeftPanel->IsVisible();
 	Opt.RightPanel.Focus = RightPanel->GetFocus();

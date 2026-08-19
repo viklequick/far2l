@@ -1539,7 +1539,7 @@ int Viewer::ProcessKey(FarKey Key)
 			Opt.ViOpt.ShowScrollbar = ViOpt.ShowScrollbar;
 
 			if (m_bQuickView)
-				CtrlObject->Cp()->ActivePanel->Redraw();
+				CtrlObject->Cp()->ActiveTab().ActivePanel->Redraw();
 
 			Show();
 			return (TRUE);

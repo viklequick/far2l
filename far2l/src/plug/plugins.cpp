@@ -288,8 +288,8 @@ int PluginManager::UnloadPlugin(Plugin *pPlugin, DWORD dwException, bool bRemove
 			nResult = pPlugin->Unload(false);
 
 		if (bPanelPlugin /*&& bUpdatePanels*/) {
-			CtrlObject->Cp()->ActivePanel->SetCurDir(L".", TRUE);
-			Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+			CtrlObject->Cp()->ActiveTab().ActivePanel->SetCurDir(L".", TRUE);
+			Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 			ActivePanel->Update(UPDATE_KEEP_SELECTION);
 			ActivePanel->Redraw();
 			Panel *AnotherPanel = CtrlObject->Cp()->GetAnotherPanel(ActivePanel);
@@ -979,7 +979,7 @@ void PluginManager::GetOpenPluginInfo(HANDLE hPlugin, OpenPluginInfo *Info)
 	if (!Info->CurDir)	// хмм...
 		Info->CurDir = L"";
 
-	if ((Info->Flags & OPIF_REALNAMES) && (CtrlObject->Cp()->ActivePanel->GetPluginHandle() == hPlugin)
+	if ((Info->Flags & OPIF_REALNAMES) && (CtrlObject->Cp()->ActiveTab().ActivePanel->GetPluginHandle() == hPlugin)
 			&& *Info->CurDir && !IsNetworkServerPath(Info->CurDir))
 		apiSetCurrentDirectory(Info->CurDir, false);
 
@@ -1009,12 +1009,12 @@ void PluginManager::ConfigureCurrent(Plugin *pPlugin, int INum)
 {
 	if (pPlugin->Configure(INum)) {
 		int PMode[2];
-		PMode[0] = CtrlObject->Cp()->LeftPanel->GetMode();
-		PMode[1] = CtrlObject->Cp()->RightPanel->GetMode();
+		PMode[0] = CtrlObject->Cp()->ActiveTab().LeftPanel->GetMode();
+		PMode[1] = CtrlObject->Cp()->ActiveTab().RightPanel->GetMode();
 
 		for (size_t I = 0; I < ARRAYSIZE(PMode); ++I) {
 			if (PMode[I] == PLUGIN_PANEL) {
-				Panel *pPanel = (I ? CtrlObject->Cp()->RightPanel : CtrlObject->Cp()->LeftPanel);
+				Panel *pPanel = (I ? CtrlObject->Cp()->ActiveTab().RightPanel : CtrlObject->Cp()->ActiveTab().LeftPanel);
 				pPanel->Update(UPDATE_KEEP_SELECTION);
 				pPanel->SetViewMode(pPanel->GetViewMode());
 				pPanel->Redraw();
@@ -1370,7 +1370,7 @@ int PluginManager::CommandsMenu(int ModalType, int StartPos, const wchar_t *Hist
 		item = *(PluginMenuItemData *)PluginList.GetUserData(nullptr, 0, ExitCode);
 	}
 
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	int OpenCode = OPEN_PLUGINSMENU;
 	INT_PTR Item = item.nItem;
 	OpenDlgPluginData pd;
@@ -1642,7 +1642,7 @@ int PluginManager::ProcessCommandLine(const wchar_t *CommandParam, Panel *Target
 	if (!items.getCount())
 		return FALSE;
 
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	Panel *CurPanel = (Target) ? Target : ActivePanel;
 
 	if (CurPanel->ProcessPluginEvent(FE_CLOSE, nullptr))
@@ -1700,8 +1700,8 @@ int PluginManager::ProcessCommandLine(const wchar_t *CommandParam, Panel *Target
 void PluginManager::ReadUserBackground(SaveScreen *SaveScr)
 {
 	FilePanels *FPanel = CtrlObject->Cp();
-	FPanel->LeftPanel->ProcessingPluginCommand++;
-	FPanel->RightPanel->ProcessingPluginCommand++;
+	FPanel->ActiveTab().LeftPanel->ProcessingPluginCommand++;
+	FPanel->ActiveTab().RightPanel->ProcessingPluginCommand++;
 
 	if (KeepUserScreen) {
 		if (SaveScr)
@@ -1710,8 +1710,8 @@ void PluginManager::ReadUserBackground(SaveScreen *SaveScr)
 		RedrawDesktop Redraw;
 	}
 
-	FPanel->LeftPanel->ProcessingPluginCommand--;
-	FPanel->RightPanel->ProcessingPluginCommand--;
+	FPanel->ActiveTab().LeftPanel->ProcessingPluginCommand--;
+	FPanel->ActiveTab().RightPanel->ProcessingPluginCommand--;
 }
 
 /*
@@ -1738,9 +1738,9 @@ int PluginManager::CallPlugin(DWORD SysID, int OpenFrom, void *Data, int *Ret)
 			process = OpenFrom & OPEN_PLUGINSMENU || OpenFrom & OPEN_FILEPANEL;
 
 			if (hNewPlugin != INVALID_HANDLE_VALUE && process) {
-				int CurFocus = CtrlObject->Cp()->ActivePanel->GetFocus();
+				int CurFocus = CtrlObject->Cp()->ActiveTab().ActivePanel->GetFocus();
 				Panel *NewPanel =
-						CtrlObject->Cp()->ChangePanel(CtrlObject->Cp()->ActivePanel, FILE_PANEL, TRUE, TRUE);
+						CtrlObject->Cp()->ChangePanel(CtrlObject->Cp()->ActiveTab().ActivePanel, FILE_PANEL, TRUE, TRUE);
 				NewPanel->SetPluginMode(hNewPlugin, L"",
 						CurFocus || !CtrlObject->Cp()->GetAnotherPanel(NewPanel)->IsVisible());
 

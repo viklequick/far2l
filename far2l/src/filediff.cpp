@@ -2947,7 +2947,7 @@ void PresentFileDiff()
 	if (!CtrlObject || !CtrlObject->Cp())
 		return;
 
-	Panel *Active = CtrlObject->Cp()->ActivePanel;
+	Panel *Active = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	Panel *Passive = CtrlObject->Cp()->GetAnotherPanel(Active);
 
 	DiffFileSource LeftSource;

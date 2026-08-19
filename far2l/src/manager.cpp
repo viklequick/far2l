@@ -747,7 +747,7 @@ void Manager::ProcessMainLoop()
 	} else {
 		// Mantis#0000073: Не работает автоскролинг в QView
 		WaitInMainLoop =
-				IsPanelsActive() && ((FilePanels *)CurrentFrame)->ActivePanel->GetType() != QVIEW_PANEL;
+				IsPanelsActive() && ((FilePanels *)CurrentFrame)->ActiveTab().ActivePanel->GetType() != QVIEW_PANEL;
 		// WaitInFastFind++;
 		FarKey Key = GetInputRecord(&LastInputRecord);
 		// WaitInFastFind--;
@@ -809,8 +809,8 @@ void Manager::ExitMainLoop(int Ask)
 			FilePanels *cp;
 
 			if (!(cp = CtrlObject->Cp())
-					|| (!cp->LeftPanel->ProcessPluginEvent(FE_CLOSE, nullptr)
-							&& !cp->RightPanel->ProcessPluginEvent(FE_CLOSE, nullptr))) {
+					|| (!cp->ActiveTab().LeftPanel->ProcessPluginEvent(FE_CLOSE, nullptr)
+							&& !cp->ActiveTab().RightPanel->ProcessPluginEvent(FE_CLOSE, nullptr))) {
 				EndLoop = TRUE;
 			}
 		} else {
@@ -860,7 +860,7 @@ int Manager::ProcessKey(DWORD Key)
 					_ALGO(CleverSysLog clv(L"Manager::ProcessKey()"));
 					_ALGO(SysLog(L"Key=%ls", _FARKEY_ToName(Key)));
 
-					if (CtrlObject->Cp()->ActivePanel->SendKeyToPlugin(Key, TRUE))
+					if (CtrlObject->Cp()->ActiveTab().ActivePanel->SendKeyToPlugin(Key, TRUE))
 						return TRUE;
 
 					break;
@@ -973,13 +973,13 @@ int Manager::ProcessKey(DWORD Key)
 							int isPanelFocus = CurrentFrame->GetType() == MODALTYPE_PANELS;
 
 							if (isPanelFocus) {
-								int LeftVisible = CtrlObject->Cp()->LeftPanel->IsVisible();
-								int RightVisible = CtrlObject->Cp()->RightPanel->IsVisible();
+								int LeftVisible = CtrlObject->Cp()->ActiveTab().LeftPanel->IsVisible();
+								int RightVisible = CtrlObject->Cp()->ActiveTab().RightPanel->IsVisible();
 								int CmdLineVisible = CtrlObject->CmdLine->IsVisible();
 								int KeyBarVisible = CtrlObject->Cp()->MainKeyBar.IsVisible();
 								CtrlObject->CmdLine->ShowBackground();
-								CtrlObject->Cp()->LeftPanel->Hide0();
-								CtrlObject->Cp()->RightPanel->Hide0();
+								CtrlObject->Cp()->ActiveTab().LeftPanel->Hide0();
+								CtrlObject->Cp()->ActiveTab().RightPanel->Hide0();
 
 								switch (Opt.PanelCtrlAltShiftRule) {
 									case 0:
@@ -995,10 +995,10 @@ int Manager::ProcessKey(DWORD Key)
 												: KEY_RCTRLALTSHIFTRELEASE);
 
 								if (LeftVisible)
-									CtrlObject->Cp()->LeftPanel->Show();
+									CtrlObject->Cp()->ActiveTab().LeftPanel->Show();
 
 								if (RightVisible)
-									CtrlObject->Cp()->RightPanel->Show();
+									CtrlObject->Cp()->ActiveTab().RightPanel->Show();
 
 								if (CmdLineVisible)
 									CtrlObject->CmdLine->Show();
@@ -1073,7 +1073,7 @@ void Manager::PluginsMenu()
 			полноценный вьюер и запускаем с соответствующим параметром плагины
 		*/
 		if (curType == MODALTYPE_PANELS) {
-			int pType = CtrlObject->Cp()->ActivePanel->GetType();
+			int pType = CtrlObject->Cp()->ActiveTab().ActivePanel->GetType();
 
 			if (pType == QVIEW_PANEL || pType == INFO_PANEL) {
 				FARString strType, strCurFileName;

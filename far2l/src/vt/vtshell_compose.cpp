@@ -149,6 +149,7 @@ void VT_ComposeCommandExec::Create(const IVTShellBackend &backend, const char *c
 		pwd_suffix = StrPrintf("if [ $FARVTRESULT -eq 0 ]; then pwd >'%s'; fi\n", _pwd_file.c_str());
 	}
 
+	content+= "FARVTRESULT=1\n";
 	if (need_sudo) {
 		content+= Opt.SudoEnabled ? "sudo -A " : "sudo ";
 		content+= StrPrintf("sh -c \"cd \\\"%s\\\" && %s", EscapeEscapes(EscapeCmdStr(cd)).c_str(), EscapeCmdStr(cmd).c_str());

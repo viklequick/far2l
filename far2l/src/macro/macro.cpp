@@ -1206,7 +1206,7 @@ TVar KeyMacro::FARPseudoVariable(DWORD Flags, DWORD CheckCode, DWORD &Err)
 		return Cond;	// здесь TRUE обязательно, чтобы прекратить выполнение макроса, ибо код не распознан.
 	}
 
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 
 	// теперь сделаем необходимые проверки
 	switch (MKeywords[I].Type) {
@@ -1449,7 +1449,7 @@ TVar KeyMacro::FARPseudoVariable(DWORD Flags, DWORD CheckCode, DWORD &Err)
 					Panel *SelPanel = CheckCode == MCODE_C_APANEL_LEFT ? ActivePanel : PassivePanel;
 
 					if (SelPanel)
-						Cond = SelPanel == CtrlObject->Cp()->LeftPanel ? 1 : 0;
+						Cond = SelPanel == CtrlObject->Cp()->ActiveTab().LeftPanel ? 1 : 0;
 
 					break;
 				}
@@ -2517,7 +2517,7 @@ static bool panelselectFunc(const TMacroFunction *)
 	int typePanel = VMStack.Pop().getInt32();
 	int64_t Result = -1;
 
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	Panel *PassivePanel = nullptr;
 
 	if (ActivePanel)
@@ -2576,7 +2576,7 @@ static bool _fattrFunc(int Type)
 		VMStack.Pop(S);
 		int typePanel = VMStack.Pop().getInt32();
 		const wchar_t *Str = S.toString();
-		Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+		Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 		Panel *PassivePanel = nullptr;
 
 		if (ActivePanel)
@@ -3286,7 +3286,7 @@ static bool panelsetposidxFunc(const TMacroFunction *)
 	int InSelection = VMStack.Pop().getInt32();
 	long idxItem = (long)VMStack.Pop().getInteger();
 	int typePanel = VMStack.Pop().getInt32();
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	Panel *PassivePanel = nullptr;
 
 	if (ActivePanel)
@@ -3400,7 +3400,7 @@ static bool panelsetpathFunc(const TMacroFunction *)
 		if (!ValFileName.isInteger())
 			fileName = ValFileName.s();
 
-		Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+		Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 		Panel *PassivePanel = nullptr;
 
 		if (ActivePanel)
@@ -3441,7 +3441,7 @@ static bool panelsetposFunc(const TMacroFunction *)
 	if (!fileName || !*fileName)
 		fileName = L"";
 
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	Panel *PassivePanel = nullptr;
 
 	if (ActivePanel)
@@ -3540,7 +3540,7 @@ static bool panelitemFunc(const TMacroFunction *)
 	VMStack.Pop(P1);
 	int typePanel = VMStack.Pop().getInt32();
 	TVar Ret{tviZero};
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	Panel *PassivePanel = nullptr;
 
 	if (ActivePanel)
@@ -5735,7 +5735,7 @@ void KeyMacro::RunStartMacro()
 		// временно отсавим старый вариант
 #if 1
 
-	if (!(CtrlObject->Cp() && CtrlObject->Cp()->ActivePanel && !Opt.OnlyEditorViewerUsed
+	if (!(CtrlObject->Cp() && CtrlObject->Cp()->ActiveTab().ActivePanel && !Opt.OnlyEditorViewerUsed
 				&& CtrlObject->Plugins.IsPluginsLoaded()))
 		return;
 
@@ -5768,7 +5768,7 @@ void KeyMacro::RunStartMacro()
 	if (AutoRunMacroStarted || !MacroLIB || !IndexMode[Mode][1])
 		return;
 
-	// if (!(CtrlObject->Cp() && CtrlObject->Cp()->ActivePanel && !Opt.OnlyEditorViewerUsed && CtrlObject->Plugins.IsPluginsLoaded()))
+	// if (!(CtrlObject->Cp() && CtrlObject->Cp()->ActiveTab().ActivePanel && !Opt.OnlyEditorViewerUsed && CtrlObject->Plugins.IsPluginsLoaded()))
 	if (!(CtrlObject && CtrlObject->Plugins.IsPluginsLoaded()))
 		return;
 
@@ -6766,8 +6766,8 @@ BOOL KeyMacro::CheckAll(int /*CheckMode*/, DWORD CurFlags)
 		return FALSE;
 
 	// проверки панели и типа файла
-	Panel *ActivePanel = Cp->ActivePanel;
-	Panel *PassivePanel = Cp->GetAnotherPanel(Cp->ActivePanel);
+	Panel *ActivePanel = Cp->ActiveTab().ActivePanel;
+	Panel *PassivePanel = Cp->GetAnotherPanel(ActivePanel);
 
 	if (ActivePanel && PassivePanel)	// && (CurFlags&MFLAGS_MODEMASK)==MACRO_SHELL)
 	{

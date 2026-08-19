@@ -1079,7 +1079,7 @@ int FileEditor::ReProcessKey(FarKey Key, int CalledFromControl)
 			// $ 30.05.2003 SVS - Shift-F4 в редакторе/вьювере позволяет открывать другой редактор/вьювер (пока только редактор)
 			case KEY_SHIFTF4: {
 				if (!Opt.OnlyEditorViewerUsed && GetCanLoseFocus())
-					CtrlObject->Cp()->ActivePanel->ProcessKey(Key);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(Key);
 
 				return TRUE;
 			}
@@ -1099,7 +1099,7 @@ int FileEditor::ReProcessKey(FarKey Key, int CalledFromControl)
 					strFullFileNameTemp+= L"/.";	// для вваливания внутрь :-)
 				}
 
-				Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+				Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 
 				if (Flags.Check(FFILEEDIT_NEW)
 						|| (ActivePanel && ActivePanel->FindFile(strFileName) == -1))		// Mantis#279
@@ -2358,86 +2358,7 @@ static const struct CharCodeFmtInfo
 	{ L"%04Xh", 6, L" (%X)", 5}
 };
 
-static std::wstring widestCommonPrefix(const std::vector<std::wstring>& paths) {
-    if (paths.empty())
-        return L"";
-
-    // Start with the first path as the candidate prefix
-    std::wstring prefix = paths[0];
-
-    for (size_t i = 1; i < paths.size(); ++i) {
-        const std::wstring& p = paths[i];
-        size_t j = 0;
-
-        // Walk until mismatch or end of one of the strings
-        while (j < prefix.size() && j < p.size() && prefix[j] == p[j])
-            ++j;
-        prefix.resize(j); // shrink to the matched part
-        if (prefix.empty())
-            break;
-    }
-    return prefix;
-}
-
-static std::wstring widestCommonDirectory(const std::vector<std::wstring>& paths) {
-    std::wstring prefix = widestCommonPrefix(paths);
-    if (prefix.empty())
-        return L"";
-
-    // Find last slash or backslash
-    size_t pos = prefix.find_last_of(L"/");
-    if (pos == std::wstring::npos)
-        return L"";
-
-    return prefix.substr(0, pos + 1); // include the slash
-}
-
-static std::wstring makeLeaf(const std::wstring& fullPath, const std::wstring& prefix) {
-    if (fullPath.size() <= prefix.size())
-        return fullPath;
-
-    std::wstring leaf = fullPath.substr(prefix.size());
-
-    // Remove leading slash/backslash if present
-    if (!leaf.empty() && (leaf[0] == L'/' || leaf[0] == L'\\'))
-        leaf.erase(0, 1);
-
-    return leaf;
-}
-
-static std::vector<std::wstring> compactifyFileNamesUpTo(std::vector<std::wstring> v) {
-	if (v.size() < 2) return v;
-
-	std::vector<std::wstring> r;
-	r.reserve(v.size());
-
-	std::wstring commonPrefix = widestCommonDirectory(v);
-	for(size_t i = 0; i < v.size(); ++i) {
-    	r.push_back(makeLeaf(v[i], commonPrefix));
-	}
-
-	return r;
-}
-
-static std::wstring shortenLeaf(const std::wstring& leaf, size_t maxLeafWidth) {
-    const wchar_t ell = L'…'; // L'\u2026' -- Unicode ellipsis
-
-    if (leaf.size() <= maxLeafWidth)
-        return leaf;
-
-    if (maxLeafWidth <= 1)
-        return std::wstring(1, ell);
-
-    // Split prefix/suffix
-    size_t prefixLen = maxLeafWidth / 4;
-    if (prefixLen < 1) prefixLen = 1;
-    size_t suffixLen = maxLeafWidth - prefixLen - 1; // -1 for ellipsis
-
-    std::wstring prefix = leaf.substr(0, prefixLen);
-    std::wstring suffix = leaf.substr(leaf.size() - suffixLen);
-
-    return prefix + ell + suffix;
-}
+#include "tabbar.hpp"
 
 int FileEditor::joinLeafsWithOffsets(const std::vector<std::wstring>& v, size_t maxWidth) 
 {
@@ -2662,7 +2583,7 @@ DWORD FileEditor::EditorGetFileAttributes(const wchar_t *Name)
 */
 BOOL FileEditor::UpdateFileList()
 {
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	const wchar_t *FileName = PointToName(strFullFileName);
 	FARString strFilePath, strPanelPath;
 	strFilePath = strFullFileName;

@@ -257,7 +257,7 @@ int FileViewer::ProcessKey(FarKey Key)
 		case KEY_SHIFTF4:
 		{
 			if (!Opt.OnlyEditorViewerUsed)
-				CtrlObject->Cp()->ActivePanel->ProcessKey(Key);
+				CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(Key);
 
 			return TRUE;
 		}
@@ -513,7 +513,7 @@ void FileViewer::OnDestroy()
 {
 	_OT(SysLog(L"[%p] FileViewer::OnDestroy()", this));
 
-	if (!DisableHistory && (CtrlObject->Cp()->ActivePanel || StrCmp(strName, L"-"))) {
+	if (!DisableHistory && (CtrlObject->Cp()->ActiveTab().ActivePanel || StrCmp(strName, L"-"))) {
 		FARString strFullFileName;
 		View.GetFileName(strFullFileName);
 		CtrlObject->ViewHistory->AddToHistory(strFullFileName, 0);

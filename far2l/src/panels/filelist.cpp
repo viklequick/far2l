@@ -1024,7 +1024,7 @@ int FileList::ProcessKey(FarKey Key)
 			if (Key & KEY_ALT)
 				NewKey|= KEY_ALT;
 
-			Panel *SrcPanel = CtrlObject->Cp()->GetAnotherPanel(CtrlObject->Cp()->ActivePanel);
+			Panel *SrcPanel = CtrlObject->Cp()->GetAnotherPanel(CtrlObject->Cp()->ActiveTab().ActivePanel);
 			int OldState = SrcPanel->IsVisible();
 			SrcPanel->SetVisible(1);
 			SrcPanel->ProcessKey(NewKey);
@@ -1274,7 +1274,7 @@ int FileList::ProcessKey(FarKey Key)
 					ChangeDir(L"..");
 					NeedChangeDir = FALSE;
 					//"this" мог быть удалён в ChangeDir
-					Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+					Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 
 					if (CheckFullScreen != ActivePanel->IsFullScreen())
 						CtrlObject->Cp()->GetAnotherPanel(ActivePanel)->Show();
@@ -1290,7 +1290,7 @@ int FileList::ProcessKey(FarKey Key)
 					ChangeDir(WGOOD_SLASH);
 			}
 
-			CtrlObject->Cp()->ActivePanel->Show();
+			CtrlObject->Cp()->ActiveTab().ActivePanel->Show();
 			return TRUE;
 		}
 		case KEY_SHIFTF1: {
@@ -2039,7 +2039,7 @@ int FileList::ProcessKey(FarKey Key)
 			//"this" может быть удалён в ChangeDir
 			int CheckFullScreen = IsFullScreen();
 			ChangeDir(L"..");
-			Panel *NewActivePanel = CtrlObject->Cp()->ActivePanel;
+			Panel *NewActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 			NewActivePanel->SetViewMode(NewActivePanel->GetViewMode());
 
 			if (CheckFullScreen != NewActivePanel->IsFullScreen())
@@ -2196,7 +2196,7 @@ bool FileList::ProcessEnter_ChangeDir(const wchar_t *dir, const wchar_t *select_
 		return false;
 	}
 
-	Panel *active_panel = CtrlObject->Cp()->ActivePanel;
+	Panel *active_panel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 
 	bool not_found = false;
 	if (select_file && *select_file) {
@@ -2220,7 +2220,7 @@ bool FileList::ProcessEnter_ChangeDir(const wchar_t *dir, const wchar_t *select_
 			} else if (!ProcessEnter_ChangeDir(orig_dir, PointToName(orig_sel_name))) {
 				fprintf(stderr, "%s: failed to cd to '%ls'\n", __FUNCTION__, orig_sel_name.CPtr());
 			}
-			active_panel = CtrlObject->Cp()->ActivePanel;
+			active_panel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 			dir_changed = false;
 		}
 	}
@@ -2376,6 +2376,7 @@ BOOL FileList::SetCurDir(const wchar_t *NewDir, int ClosePlugin)
 		}
 
 		CtrlObject->Cp()->RedrawKeyBar();
+		CtrlObject->Cp()->UpdateTabBar();
 
 		if (CheckFullScreen != IsFullScreen()) {
 			CtrlObject->Cp()->GetAnotherPanel(this)->Redraw();
@@ -2383,7 +2384,9 @@ BOOL FileList::SetCurDir(const wchar_t *NewDir, int ClosePlugin)
 	}
 
 	if ((NewDir) && (*NewDir)) {
-		return ChangeDir(NewDir);
+		auto retF = ChangeDir(NewDir);
+		//CtrlObject->Cp()->UpdateTabBar();
+		return retF;
 	}
 
 	return FALSE;
@@ -2546,7 +2549,7 @@ BOOL FileList::ChangeDir(const wchar_t *NewDir, BOOL IsUpdated)
 				if (Opt.PgUpChangeDisk
 						&& (FAR_GetDriveType(strDirName) != DRIVE_REMOTE
 								|| !CtrlObject->Plugins.FindPlugin(SYSID_NETWORK))) {
-					CtrlObject->Cp()->ActivePanel->ChangeDisk();
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ChangeDisk();
 					return TRUE;
 				}
 
@@ -2691,7 +2694,7 @@ int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		
 		if (oldLIH != LastHoveredIndex || oldLH != LocationHovered || oldCH != ColumnHovered || oldSMH != SortMarkHovered) {
 			
-			fprintf(stderr, "hover: col=%d sortmark=%d location=%d last_i=%d\n", ColumnHovered, SortMarkHovered, LocationHovered, LastHoveredIndex);
+			// fprintf(stderr, "hover: col=%d sortmark=%d location=%d last_i=%d\n", ColumnHovered, SortMarkHovered, LocationHovered, LastHoveredIndex);
 
 			Redraw();
 			return TRUE;
@@ -3017,7 +3020,7 @@ void FileList::SetViewMode(int ViewMode)
 	} else {
 		if (!ViewSettings.FullScreen && CurFullScreen) {
 			if (Y2 > 0) {
-				if (this == CtrlObject->Cp()->LeftPanel)
+				if (this == CtrlObject->Cp()->ActiveTab().LeftPanel)
 					SetPosition(0, Y1, ScrX / 2 - Opt.WidthDecrement, Y2);
 				else
 					SetPosition(ScrX / 2 + 1 - Opt.WidthDecrement, Y1, ScrX, Y2);
@@ -4307,8 +4310,8 @@ bool FileList::ApplyCommand()
 				else if (!isSilent) {
 					CtrlObject->CmdLine->ExecString(strConvertedCommand, FALSE, 0, 0, ListFileUsed);
 				} else {
-					CtrlObject->Cp()->LeftPanel->CloseFile();
-					CtrlObject->Cp()->RightPanel->CloseFile();
+					CtrlObject->Cp()->ActiveTab().LeftPanel->CloseFile();
+					CtrlObject->Cp()->ActiveTab().RightPanel->CloseFile();
 					Execute(strConvertedCommand, FALSE, 0, ListFileUsed, true);
 				}
 			}
@@ -4344,8 +4347,8 @@ bool FileList::ApplyCommand()
 																											// if (!(Opt.ExcludeCmdHistory&EXCLUDECMDHISTORY_NOTAPPLYCMD))
 						//	CtrlObject->CmdHistory->AddToHistory(strConvertedCommand);
 					} else {
-						CtrlObject->Cp()->LeftPanel->CloseFile();
-						CtrlObject->Cp()->RightPanel->CloseFile();
+						CtrlObject->Cp()->ActiveTab().LeftPanel->CloseFile();
+						CtrlObject->Cp()->ActiveTab().RightPanel->CloseFile();
 						Execute(strConvertedCommand, FALSE, 0, ListFileUsed, true);
 					}
 				}

@@ -880,8 +880,8 @@ void AllSystemSettings()
 				Opt.EdOpt.TabSize = 8;
 
 			// FrameManager->RefreshFrame();
-			CtrlObject->Cp()->LeftPanel->Update(UPDATE_KEEP_SELECTION);
-			CtrlObject->Cp()->RightPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().LeftPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().RightPanel->Update(UPDATE_KEEP_SELECTION);
 			CtrlObject->Cp()->SetScreenPosition();
 			CtrlObject->Cp()->Redraw();
 

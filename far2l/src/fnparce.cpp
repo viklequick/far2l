@@ -557,7 +557,7 @@ int SubstFileName(FARString &strStr,	// результирующая строк�
 	if (PSubstData->strNameOnly.RPos(pos, L'.'))
 		PSubstData->strNameOnly.Truncate(pos);
 
-	PSubstData->ActivePanel = CtrlObject->Cp()->ActivePanel;
+	PSubstData->ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	PSubstData->AnotherPanel = CtrlObject->Cp()->GetAnotherPanel(PSubstData->ActivePanel);
 	PSubstData->AnotherPanel->GetCurName(PSubstData->strAnotherName);
 	PSubstData->strAnotherNameOnly = PSubstData->strAnotherName;

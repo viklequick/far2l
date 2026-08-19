@@ -263,12 +263,12 @@ void CheckForPendingCtrlHandleEvent()
 			WriteInput(KEY_BREAK);
 
 		if (CtrlObject && CtrlObject->Cp()) {
-			if (CtrlObject->Cp()->LeftPanel && CtrlObject->Cp()->LeftPanel->GetMode() == PLUGIN_PANEL)
-				CtrlObject->Plugins.ProcessEvent(CtrlObject->Cp()->LeftPanel->GetPluginHandle(), FE_BREAK,
+			if (CtrlObject->Cp()->ActiveTab().LeftPanel && CtrlObject->Cp()->ActiveTab().LeftPanel->GetMode() == PLUGIN_PANEL)
+				CtrlObject->Plugins.ProcessEvent(CtrlObject->Cp()->ActiveTab().LeftPanel->GetPluginHandle(), FE_BREAK,
 						(void *)(DWORD_PTR)CtrlType);
 
-			if (CtrlObject->Cp()->RightPanel && CtrlObject->Cp()->RightPanel->GetMode() == PLUGIN_PANEL)
-				CtrlObject->Plugins.ProcessEvent(CtrlObject->Cp()->RightPanel->GetPluginHandle(), FE_BREAK,
+			if (CtrlObject->Cp()->ActiveTab().RightPanel && CtrlObject->Cp()->ActiveTab().RightPanel->GetMode() == PLUGIN_PANEL)
+				CtrlObject->Plugins.ProcessEvent(CtrlObject->Cp()->ActiveTab().RightPanel->GetPluginHandle(), FE_BREAK,
 						(void *)(DWORD_PTR)CtrlType);
 		}
 

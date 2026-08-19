@@ -798,8 +798,8 @@ static DWORD GetInputRecordInner(INPUT_RECORD *rec, bool ExcludeMacro, bool Proc
 
 				if (!UpdateReenter && CurTime - KeyPressedLastTime > 700) {
 					UpdateReenter = TRUE;
-					CtrlObject->Cp()->LeftPanel->UpdateIfChanged(UIC_UPDATE_NORMAL);
-					CtrlObject->Cp()->RightPanel->UpdateIfChanged(UIC_UPDATE_NORMAL);
+					CtrlObject->Cp()->ActiveTab().LeftPanel->UpdateIfChanged(UIC_UPDATE_NORMAL);
+					CtrlObject->Cp()->ActiveTab().RightPanel->UpdateIfChanged(UIC_UPDATE_NORMAL);
 					UpdateReenter = FALSE;
 				}
 			}

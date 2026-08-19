@@ -152,8 +152,8 @@ void FileList::SetFilePanelModes()
 {
 	int MenuPos = 0;
 
-	if (CtrlObject->Cp()->ActivePanel->GetType() == FILE_PANEL) {
-		MenuPos = IndexToMenuPos( CtrlObject->Cp()->ActivePanel->GetViewMode() );
+	if (CtrlObject->Cp()->ActiveTab().ActivePanel->GetType() == FILE_PANEL) {
+		MenuPos = IndexToMenuPos( CtrlObject->Cp()->ActiveTab().ActivePanel->GetViewMode() );
 	}
 
 	for (;;) {
@@ -183,7 +183,7 @@ void FileList::SetFilePanelModes()
 					case KEY_CTRLNUMENTER:
 					case KEY_CTRLSHIFTENTER:
 					case KEY_CTRLSHIFTNUMENTER: {
-						auto PanelPtr = CtrlObject->Cp()->ActivePanel;
+						auto PanelPtr = CtrlObject->Cp()->ActiveTab().ActivePanel;
 						if (Key & KEY_SHIFT) {
 							PanelPtr = CtrlObject->Cp()->GetAnotherPanel(PanelPtr);
 						}
@@ -299,17 +299,17 @@ void FileList::SetFilePanelModes()
 		else
 			continue;
 
-		CtrlObject->Cp()->LeftPanel->SortFileList(TRUE);
-		CtrlObject->Cp()->RightPanel->SortFileList(TRUE);
+		CtrlObject->Cp()->ActiveTab().LeftPanel->SortFileList(TRUE);
+		CtrlObject->Cp()->ActiveTab().RightPanel->SortFileList(TRUE);
 		CtrlObject->Cp()->SetScreenPosition();
-		int LeftMode = CtrlObject->Cp()->LeftPanel->GetViewMode();
-		int RightMode = CtrlObject->Cp()->RightPanel->GetViewMode();
-		//	CtrlObject->Cp()->LeftPanel->SetViewMode(ModeIndex);
-		//	CtrlObject->Cp()->RightPanel->SetViewMode(ModeIndex);
-		CtrlObject->Cp()->LeftPanel->SetViewMode(LeftMode);
-		CtrlObject->Cp()->RightPanel->SetViewMode(RightMode);
-		CtrlObject->Cp()->LeftPanel->Redraw();
-		CtrlObject->Cp()->RightPanel->Redraw();
+		int LeftMode = CtrlObject->Cp()->ActiveTab().LeftPanel->GetViewMode();
+		int RightMode = CtrlObject->Cp()->ActiveTab().RightPanel->GetViewMode();
+		//	CtrlObject->Cp()->ActiveTab().LeftPanel->SetViewMode(ModeIndex);
+		//	CtrlObject->Cp()->ActiveTab().RightPanel->SetViewMode(ModeIndex);
+		CtrlObject->Cp()->ActiveTab().LeftPanel->SetViewMode(LeftMode);
+		CtrlObject->Cp()->ActiveTab().RightPanel->SetViewMode(RightMode);
+		CtrlObject->Cp()->ActiveTab().LeftPanel->Redraw();
+		CtrlObject->Cp()->ActiveTab().RightPanel->Redraw();
 	}
 }
 

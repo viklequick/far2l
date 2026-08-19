@@ -324,8 +324,8 @@ void PanelSettings()
 			SanitizeIndentationCounts();
 
 			// FrameManager->RefreshFrame();
-			CtrlObject->Cp()->LeftPanel->Update(UPDATE_KEEP_SELECTION);
-			CtrlObject->Cp()->RightPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().LeftPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().RightPanel->Update(UPDATE_KEEP_SELECTION);
 			CtrlObject->Cp()->Redraw();
 			break;
 		}
@@ -462,8 +462,8 @@ static LONG_PTR WINAPI DirCfgDlgProc(HANDLE hDlg, int Msg, int Param1, LONG_PTR 
 
 			SendDlgMessage(hDlg, DM_SHOWDIALOG, 0, 0);
 			UpdateDefaultColumnTypeWidths( );
-			CtrlObject->Cp()->LeftPanel->Update(UPDATE_KEEP_SELECTION);
-			CtrlObject->Cp()->RightPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().LeftPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().RightPanel->Update(UPDATE_KEEP_SELECTION);
 			CtrlObject->Cp()->Redraw();
 
 			SendDlgMessage(hDlg, DM_SHOWDIALOG, 1, 0);
@@ -554,8 +554,8 @@ void DirectoryNameSettings()
 			Opt.ShowSymlinkSize = 1;
 
 		UpdateDefaultColumnTypeWidths( );
-		CtrlObject->Cp()->LeftPanel->Update(UPDATE_KEEP_SELECTION);
-		CtrlObject->Cp()->RightPanel->Update(UPDATE_KEEP_SELECTION);
+		CtrlObject->Cp()->ActiveTab().LeftPanel->Update(UPDATE_KEEP_SELECTION);
+		CtrlObject->Cp()->ActiveTab().RightPanel->Update(UPDATE_KEEP_SELECTION);
 		CtrlObject->Cp()->Redraw();
 	}
 }
@@ -762,8 +762,8 @@ void InterfaceSettings()
 			ConvertDate_ResetInit();
 
 			SetFarConsoleMode();
-			CtrlObject->Cp()->LeftPanel->Update(UPDATE_KEEP_SELECTION);
-			CtrlObject->Cp()->RightPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().LeftPanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().RightPanel->Update(UPDATE_KEEP_SELECTION);
 			CtrlObject->Cp()->SetScreenPosition();
 			// $ 10.07.2001 SKV ! надо это делать, иначе если кейбар спрятали, будет полный рамс.
 			CtrlObject->Cp()->Redraw();
@@ -1231,11 +1231,11 @@ void SetFolderInfoFiles()
 				FIB_ENABLEEMPTY | FIB_BUTTONS)) {
 		Opt.InfoPanel.strFolderInfoFiles = strFolderInfoFiles;
 
-		if (CtrlObject->Cp()->LeftPanel->GetType() == INFO_PANEL)
-			CtrlObject->Cp()->LeftPanel->Update(0);
+		if (CtrlObject->Cp()->ActiveTab().LeftPanel->GetType() == INFO_PANEL)
+			CtrlObject->Cp()->ActiveTab().LeftPanel->Update(0);
 
-		if (CtrlObject->Cp()->RightPanel->GetType() == INFO_PANEL)
-			CtrlObject->Cp()->RightPanel->Update(0);
+		if (CtrlObject->Cp()->ActiveTab().RightPanel->GetType() == INFO_PANEL)
+			CtrlObject->Cp()->ActiveTab().RightPanel->Update(0);
 	}
 }
 

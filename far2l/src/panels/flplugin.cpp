@@ -441,8 +441,8 @@ void FileList::PutDizToPlugin(FileList *DestPanel, PluginPanelItem *ItemList, in
 			&& !DestPanel->strPluginDizName.IsEmpty()
 			&& (!Info.HostFile || !*Info.HostFile || DestPanel->GetModalMode()
 					|| apiGetFileAttributes(Info.HostFile) != INVALID_FILE_ATTRIBUTES)) {
-		CtrlObject->Cp()->LeftPanel->ReadDiz();
-		CtrlObject->Cp()->RightPanel->ReadDiz();
+		CtrlObject->Cp()->ActiveTab().LeftPanel->ReadDiz();
+		CtrlObject->Cp()->ActiveTab().RightPanel->ReadDiz();
 
 		if (DestPanel->GetModalMode())
 			DestPanel->ReadDiz();
@@ -517,8 +517,8 @@ void FileList::PluginGetFiles(const wchar_t **DestPath, int Move)
 		for (auto &Item : ItemList) {
 			if (Item.Flags & PPIF_PROCESSDESCR) {
 				if (!DizFound) {
-					CtrlObject->Cp()->LeftPanel->ReadDiz();
-					CtrlObject->Cp()->RightPanel->ReadDiz();
+					CtrlObject->Cp()->ActiveTab().LeftPanel->ReadDiz();
+					CtrlObject->Cp()->ActiveTab().RightPanel->ReadDiz();
 					DestDiz.Read(*DestPath);
 					DizFound = true;
 				}

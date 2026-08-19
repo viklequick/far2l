@@ -2,9 +2,9 @@ LoadJS("../common.js");
 var dirs = SetupTestDirs();
 
 StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
-ExpectString("Help - FAR2L", 0, 0, -1, -1, 10000);
+ExpectString("Help - FAR2L");
 TypeEscape(10)
-ExpectString("OSC52", 0, 0, -1, -1, 10000);
+ExpectString("OSC52");
 status = AppStatus();
 
 // Cycle panel focus to ensure the file panel is active.
@@ -15,7 +15,7 @@ EnsurePanelFocus();
 // Navigate to viewme.txt and open it with F3
 TypeDown()
 TypeFKey(3)
-ExpectString("left/viewme.txt", 0, 0, 0, 0, 10000)
+ExpectString("left/viewme.txt")
 
 Sync(10000)
 
@@ -37,20 +37,20 @@ Sync(10000)
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test4.txt')
 
 TypePageDown()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test1.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test1.txt')
 
 TypePageDown()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test2.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test2.txt')
 
 TypeDown()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test3.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test3.txt')
 
 TypeHome()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test4.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test4.txt')
 
 // Search for ::setselectpos and verify the result
 TypeFKey(7)
-ExpectString("═══ Search ═══", 0, 0, 0, 0, 10000)
+ExpectString("═══ Search ═══")
 TypeText("::setselectpos")
 TypeEnter()
 
@@ -68,10 +68,10 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test7.txt'
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test5.txt')
 
 TypeUp()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test6.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test6.txt')
 
 TypeUp()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test7.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test7.txt')
 
 TypeEscape()
 
@@ -202,7 +202,7 @@ TypeFKey(7)
 ExpectString("═══ Search ═══", 0, 0, -1, -1, 10000)
 TypeText("ZZZ_NOT_FOUND")
 TypeFKey(10)
-ExpectString("Do you want to quit FAR?", 0, 0, 0, 0, 10000)
+ExpectString("Do you want to quit FAR?")
 TypeEnter()
 Sync(5000);
 // No crash — viewer should handle no-match gracefully

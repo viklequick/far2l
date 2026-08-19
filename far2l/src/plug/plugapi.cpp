@@ -1295,8 +1295,8 @@ static int FarControlSynched(HANDLE hPlugin, int Command, int Param1, LONG_PTR P
 
 			if ((hPlugin == PANEL_ACTIVE) || (hPlugin == PANEL_PASSIVE)) {
 				Panel *pPanel = (hPlugin == PANEL_ACTIVE)
-						? FPanels->ActivePanel
-						: FPanels->GetAnotherPanel(FPanels->ActivePanel);
+						? FPanels->ActiveTab().ActivePanel
+						: FPanels->GetAnotherPanel(FPanels->ActiveTab().ActivePanel);
 
 				if (pPanel) {
 					return pPanel->SetPluginCommand(Command, Param1, Param2);
@@ -1306,8 +1306,8 @@ static int FarControlSynched(HANDLE hPlugin, int Command, int Param1, LONG_PTR P
 			}
 
 			HANDLE hInternal;
-			Panel *LeftPanel = FPanels->LeftPanel;
-			Panel *RightPanel = FPanels->RightPanel;
+			Panel *LeftPanel = FPanels->ActiveTab().LeftPanel;
+			Panel *RightPanel = FPanels->ActiveTab().RightPanel;
 			int Processed = FALSE;
 			PluginHandle *PlHandle;
 
@@ -1338,12 +1338,12 @@ static int FarControlSynched(HANDLE hPlugin, int Command, int Param1, LONG_PTR P
 			return (Processed);
 		}
 		case FCTL_SETUSERSCREEN: {
-			if (!FPanels || !FPanels->LeftPanel || !FPanels->RightPanel)
+			if (!FPanels || !FPanels->ActiveTab().LeftPanel || !FPanels->ActiveTab().RightPanel)
 				return FALSE;
 
 			KeepUserScreen++;
-			FPanels->LeftPanel->ProcessingPluginCommand++;
-			FPanels->RightPanel->ProcessingPluginCommand++;
+			FPanels->ActiveTab().LeftPanel->ProcessingPluginCommand++;
+			FPanels->ActiveTab().RightPanel->ProcessingPluginCommand++;
 			ScrBuf.FillBuf();
 			ScrollScreen(1);
 			SaveScreen SaveScr;
@@ -1353,8 +1353,8 @@ static int FarControlSynched(HANDLE hPlugin, int Command, int Param1, LONG_PTR P
 				SaveScr.RestoreArea(FALSE);
 			}
 			KeepUserScreen--;
-			FPanels->LeftPanel->ProcessingPluginCommand--;
-			FPanels->RightPanel->ProcessingPluginCommand--;
+			FPanels->ActiveTab().LeftPanel->ProcessingPluginCommand--;
+			FPanels->ActiveTab().RightPanel->ProcessingPluginCommand--;
 			return TRUE;
 		}
 		case FCTL_GETUSERSCREEN: {
@@ -1428,7 +1428,7 @@ static int FarControlSynched(HANDLE hPlugin, int Command, int Param1, LONG_PTR P
 			if (hPlugin == PANEL_ACTIVE)
 				return TRUE;
 
-			Panel *pPanel = FPanels->ActivePanel;
+			Panel *pPanel = FPanels->ActiveTab().ActivePanel;
 			PluginHandle *PlHandle;
 
 			if (pPanel && (pPanel->GetMode() == PLUGIN_PANEL)) {
@@ -1594,8 +1594,8 @@ int FarGetPluginDirListSynched(INT_PTR PluginNumber, HANDLE hPlugin, const wchar
 				А плагиновая ли это панель?
 			*/
 			HANDLE Handle = ((hPlugin == PANEL_ACTIVE)
-							? CtrlObject->Cp()->ActivePanel
-							: CtrlObject->Cp()->GetAnotherPanel(CtrlObject->Cp()->ActivePanel))
+							? CtrlObject->Cp()->ActiveTab().ActivePanel
+							: CtrlObject->Cp()->GetAnotherPanel(CtrlObject->Cp()->ActiveTab().ActivePanel))
 									->GetPluginHandle();
 
 			if (!Handle || Handle == INVALID_HANDLE_VALUE)

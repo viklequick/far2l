@@ -263,8 +263,8 @@ bool ProcessLocalFileTypes(const wchar_t *Name, int Mode, bool CanAddHistory, FA
 			} else {
 #if 1
 				SaveScreen SaveScr;
-				CtrlObject->Cp()->LeftPanel->CloseFile();
-				CtrlObject->Cp()->RightPanel->CloseFile();
+				CtrlObject->Cp()->ActiveTab().LeftPanel->CloseFile();
+				CtrlObject->Cp()->ActiveTab().RightPanel->CloseFile();
 				Execute(strCommand, 0, 0, ListFileUsed, true);
 #else
 				// здесь была бага с прорисовкой (и... вывод данных
@@ -276,8 +276,8 @@ bool ProcessLocalFileTypes(const wchar_t *Name, int Mode, bool CanAddHistory, FA
 					ScrollScreen(1);	// обязательно, иначе деструктор RedrawDesktop
 										// проредравив экран забьет последнюю строку вывода.
 				}
-				CtrlObject->Cp()->LeftPanel->UpdateIfChanged(UIC_UPDATE_FORCE);
-				CtrlObject->Cp()->RightPanel->UpdateIfChanged(UIC_UPDATE_FORCE);
+				CtrlObject->Cp()->ActiveTab().LeftPanel->UpdateIfChanged(UIC_UPDATE_FORCE);
+				CtrlObject->Cp()->ActiveTab().RightPanel->UpdateIfChanged(UIC_UPDATE_FORCE);
 				CtrlObject->Cp()->Redraw();
 #endif
 			}
@@ -334,8 +334,8 @@ void ProcessExternal(const wchar_t *Command, const wchar_t *Name, bool CanAddHis
 			CtrlObject->CmdLine->ExecString(strExecStr, 0, 0, ListFileUsed, true);
 		} else {
 			SaveScreen SaveScr;
-			CtrlObject->Cp()->LeftPanel->CloseFile();
-			CtrlObject->Cp()->RightPanel->CloseFile();
+			CtrlObject->Cp()->ActiveTab().LeftPanel->CloseFile();
+			CtrlObject->Cp()->ActiveTab().RightPanel->CloseFile();
 			Execute(strExecStr.CPtr() + 1, 0, 0, ListFileUsed);
 		}
 	}

@@ -682,7 +682,7 @@ void CommandLine::SetMultilineExtraLines(int extra_lines)
 	m_multilineExtraLines = new_extra_lines;
 	if (CtrlObject && CtrlObject->Cp()) {
 		auto *cp = CtrlObject->Cp();
-		cp->SetPanelPositions(cp->LeftPanel->IsFullScreen(), cp->RightPanel->IsFullScreen(), Opt.PanelsDisposition);
+		cp->SetPanelPositions(cp->ActiveTab().LeftPanel->IsFullScreen(), cp->ActiveTab().RightPanel->IsFullScreen(), Opt.PanelsDisposition);
 	}
 }
 
@@ -853,7 +853,7 @@ int64_t CommandLine::VMProcess(MacroOpcode OpCode, void *vParam, int64_t iParam)
 
 void CommandLine::ProcessTabCompletion()
 {
-	if (CtrlObject->Cp()->ActivePanel->GetMode() == PLUGIN_PANEL)
+	if (CtrlObject->Cp()->ActiveTab().ActivePanel->GetMode() == PLUGIN_PANEL)
 		  return;	// silent workaround for https://github.com/elfmz/far2l/issues/3485
 
 	FARString strStr;
@@ -905,7 +905,7 @@ void CommandLine::ChangeDirFromHistory(bool PluginPath, int SelectType, FARStrin
 		CtrlObject->FolderHistory->SetAddMode(false, HISTORY_REMOVE_DUPS_CASE_INSENSITIVE, true);
 
 	// пусть плагин сам прыгает... ;-)
-	Panel *Panel = CtrlObject->Cp()->ActivePanel;
+	Panel *Panel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 
 	if (SelectType == 6)
 		Panel = CtrlObject->Cp()->GetAnotherPanel(Panel);
@@ -918,7 +918,7 @@ void CommandLine::ChangeDirFromHistory(bool PluginPath, int SelectType, FARStrin
 				Panel->GoToFile(strFile);
 			// restore current directory to active panel path
 			if (SelectType == 6) {
-				CtrlObject->Cp()->ActivePanel->SetCurPath();
+				CtrlObject->Cp()->ActiveTab().ActivePanel->SetCurPath();
 			}
 			Panel->Redraw();
 			CtrlObject->FolderHistory->SetAddMode(true, HISTORY_REMOVE_DUPS_CASE_INSENSITIVE, true);
@@ -1014,7 +1014,7 @@ void CommandLine::ProcessKey_ClearTerminalHistory()
 		VTLog::Reset(NULL);
 		ShowBackground();
 		Redraw();
-		//		ShellUpdatePanels(CtrlObject->Cp()->ActivePanel, FALSE);
+		//		ShellUpdatePanels(CtrlObject->Cp()->ActiveTab().ActivePanel, FALSE);
 		CtrlObject->MainKeyBar->Refresh(Opt.ShowKeyBar);
 		//		CmdExecute(L"reset", true, false, true, false, false, false);
 	}
@@ -1022,7 +1022,7 @@ void CommandLine::ProcessKey_ClearTerminalHistory()
 
 void CommandLine::ProcessKey_ShowFolderTree()
 {
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	// TODO: здесь можно добавить проверку, что мы в корне диска и отсутствие файла Tree.Far...
 	FARString strStr;
 	FolderTree::Present(strStr, MODALTREE_ACTIVE, TRUE, FALSE);
@@ -1108,14 +1108,14 @@ void CommandLine::AddHistory(const wchar_t* Str)
 {
 	if (!(Opt.ExcludeCmdHistory & EXCLUDECMDHISTORY_NOTCMDLINE)) {
 		FARString strCurDirFromPanel;
-		CtrlObject->Cp()->ActivePanel->GetCurDirPluginAware(strCurDirFromPanel);
+		CtrlObject->Cp()->ActiveTab().ActivePanel->GetCurDirPluginAware(strCurDirFromPanel);
 		CtrlObject->CmdHistory->AddToHistoryExtra(Str, strCurDirFromPanel);
 	}
 }
 
 int CommandLine::ProcessKey_Enter(FarKey Key)
 {
-	Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+	Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	FARString strStr;
 	CmdStr.Select(-1, 0);
 	CmdStr.Show();
@@ -1483,19 +1483,19 @@ int CommandLine::ProcessKeyIfVisible(FarKey Key)
 	}
 
 	if (Key == KEY_UP || Key == KEY_NUMPAD8) {
-		if (CtrlObject->Cp()->LeftPanel->IsVisible() || CtrlObject->Cp()->RightPanel->IsVisible())
+		if (CtrlObject->Cp()->ActiveTab().LeftPanel->IsVisible() || CtrlObject->Cp()->ActiveTab().RightPanel->IsVisible())
 			return FALSE;
 
 		Key = KEY_CTRLE;
 	} else if (Key == KEY_DOWN || Key == KEY_NUMPAD2) {
-		if (CtrlObject->Cp()->LeftPanel->IsVisible() || CtrlObject->Cp()->RightPanel->IsVisible())
+		if (CtrlObject->Cp()->ActiveTab().LeftPanel->IsVisible() || CtrlObject->Cp()->ActiveTab().RightPanel->IsVisible())
 			return FALSE;
 
 		Key = KEY_CTRLX;
 	}
 
 	// $ 25.03.2002 VVM + При погашенных панелях колесом крутим историю
-	if (!CtrlObject->Cp()->LeftPanel->IsVisible() && !CtrlObject->Cp()->RightPanel->IsVisible()) {
+	if (!CtrlObject->Cp()->ActiveTab().LeftPanel->IsVisible() && !CtrlObject->Cp()->ActiveTab().RightPanel->IsVisible()) {
 		switch (Key) {
 			case KEY_MSWHEEL_UP:
 				Key = KEY_CTRLE;
@@ -1675,8 +1675,10 @@ BOOL CommandLine::SetCurDir(const wchar_t *CurDir)
 	if (StrCmp(strCurDir, CurDir) || !TestCurrentDirectory(CurDir)) {
 		strCurDir = CurDir;
 
-		if (CtrlObject->Cp()->ActivePanel->GetMode() != PLUGIN_PANEL)
+		if (CtrlObject->Cp()->ActiveTab().ActivePanel->GetMode() != PLUGIN_PANEL) {
 			PrepareDiskPath(strCurDir);
+			CtrlObject->Cp()->UpdateTabBar();
+		}
 	}
 
 	return TRUE;
@@ -2036,8 +2038,8 @@ void CommandLine::ShowViewEditHistory()
 					}
 				} else {
 					SaveScreen SaveScr;
-					CtrlObject->Cp()->LeftPanel->CloseFile();
-					CtrlObject->Cp()->RightPanel->CloseFile();
+					CtrlObject->Cp()->ActiveTab().LeftPanel->CloseFile();
+					CtrlObject->Cp()->ActiveTab().RightPanel->CloseFile();
 					Execute(strStr.CPtr() + 1);
 					if (Type > 2) {
 						WaitForClose(strStr.CPtr() + 1);

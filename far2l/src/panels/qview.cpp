@@ -384,7 +384,7 @@ void QuickView::ShowFile(const wchar_t *FileName, int TempFile, HANDLE hDirPlugi
 
 	Redraw();
 
-	if (CtrlObject->Cp()->ActivePanel == this) {
+	if (CtrlObject->Cp()->ActiveTab().ActivePanel == this) {
 		DynamicUpdateKeyBar();
 		CtrlObject->MainKeyBar->Redraw();
 	}

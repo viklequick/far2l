@@ -39,6 +39,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "fileholder.hpp"
 #include "EditorConfigOrg.hpp"
 #include "menubar.hpp"
+#include "tabbar.hpp"
 
 class NamesList;
 

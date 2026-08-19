@@ -334,7 +334,7 @@ static std::vector<MenuPoint> GetMountPoints() {
 	FARString strDiskType, strRootDir, strDiskLetter;
 	FARString curdir, another_curdir, strName;
 
-	auto a_panel = CtrlObject->Cp()->ActivePanel;
+	auto a_panel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 	a_panel->GetCurDirPluginAware(curdir);
 
 	auto another_panel = CtrlObject->Cp()->GetAnotherPanel(a_panel);
@@ -373,7 +373,7 @@ static std::vector<MenuPoint> GetMountPoints() {
 
 void SetLeftRightMenuChecks(MenuDataEx *pMenu, bool bLeft)
 {
-	Panel *pPanel = bLeft ? CtrlObject->Cp()->LeftPanel : CtrlObject->Cp()->RightPanel;
+	Panel *pPanel = bLeft ? CtrlObject->Cp()->ActiveTab().LeftPanel : CtrlObject->Cp()->ActiveTab().RightPanel;
 
 	switch (pPanel->GetType()) {
 		case FILE_PANEL: {
@@ -666,8 +666,8 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 			int HItemToShow = LastHItem;
 
 			if (HItemToShow == -1) {
-				if (CtrlObject->Cp()->ActivePanel == CtrlObject->Cp()->RightPanel
-						&& CtrlObject->Cp()->ActivePanel->IsVisible())
+				if (CtrlObject->Cp()->ActiveTab().ActivePanel == CtrlObject->Cp()->ActiveTab().RightPanel
+						&& CtrlObject->Cp()->ActiveTab().ActivePanel->IsVisible())
 					HItemToShow = lastHMenuPos;
 				else
 					HItemToShow = 0;
@@ -683,8 +683,8 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 				HOptMenu.ProcessKey(KEY_DOWN);
 			}
 		} else {
-			if (CtrlObject->Cp()->ActivePanel == CtrlObject->Cp()->RightPanel
-					&& CtrlObject->Cp()->ActivePanel->IsVisible()) {
+			if (CtrlObject->Cp()->ActiveTab().ActivePanel == CtrlObject->Cp()->ActiveTab().RightPanel
+					&& CtrlObject->Cp()->ActiveTab().ActivePanel->IsVisible()) {
 				MainMenu[0].Selected = 0;
 				MainMenu[lastHMenuPos].Selected = 1;
 			}
@@ -718,11 +718,11 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 	switch (HItem) {
 		case MENU_LEFT:
 		case MENU_RIGHT: {
-			Panel *pPanel = (HItem == MENU_LEFT) ? CtrlObject->Cp()->LeftPanel : CtrlObject->Cp()->RightPanel;
+			Panel *pPanel = (HItem == MENU_LEFT) ? CtrlObject->Cp()->ActiveTab().LeftPanel : CtrlObject->Cp()->ActiveTab().RightPanel;
 
 			if (VItem >= MENU_LEFT_BRIEFVIEW && VItem <= MENU_LEFT_ALTERNATIVEVIEW) {
 				CtrlObject->Cp()->ChangePanelToFilled(pPanel, FILE_PANEL);
-				pPanel = (HItem == MENU_LEFT) ? CtrlObject->Cp()->LeftPanel : CtrlObject->Cp()->RightPanel;
+				pPanel = (HItem == MENU_LEFT) ? CtrlObject->Cp()->ActiveTab().LeftPanel : CtrlObject->Cp()->ActiveTab().RightPanel;
 				pPanel->SetViewMode((VItem == MENU_LEFT_ALTERNATIVEVIEW) ? VIEW_0 : VIEW_1 + VItem);
 			} else {
 				switch (VItem) {
@@ -779,37 +779,37 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 					FrameManager->ProcessKey(KEY_ALTDEL);
 					break;
 				case MENU_FILES_ADD:	// Add to archive
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_SHIFTF1);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_SHIFTF1);
 					break;
 				case MENU_FILES_EXTRACT:	// Extract files
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_SHIFTF2);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_SHIFTF2);
 					break;
 				case MENU_FILES_ARCHIVECOMMANDS:	// Archive commands
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_SHIFTF3);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_SHIFTF3);
 					break;
 				case MENU_FILES_ATTRIBUTES:		// File attributes
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_CTRLA);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_CTRLA);
 					break;
 				case MENU_FILES_CHATTR:		// chattr
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_CTRLALTA);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_CTRLALTA);
 					break;
 				case MENU_FILES_APPLYCOMMAND:	// Apply command
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_CTRLG);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_CTRLG);
 					break;
 				case MENU_FILES_DESCRIBE:	// Describe files
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_CTRLZ);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_CTRLZ);
 					break;
 				case MENU_FILES_SELECTGROUP:	// Select group
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_ADD);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_ADD);
 					break;
 				case MENU_FILES_UNSELECTGROUP:	// Unselect group
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_SUBTRACT);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_SUBTRACT);
 					break;
 				case MENU_FILES_INVERTSELECTION:	// Invert selection
-					CtrlObject->Cp()->ActivePanel->ProcessKey(KEY_MULTIPLY);
+					CtrlObject->Cp()->ActiveTab().ActivePanel->ProcessKey(KEY_MULTIPLY);
 					break;
 				case MENU_FILES_RESTORESELECTION:	// Restore selection
-					CtrlObject->Cp()->ActivePanel->RestoreSelection();
+					CtrlObject->Cp()->ActiveTab().ActivePanel->RestoreSelection();
 					break;
 			}
 
@@ -845,7 +845,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 					FrameManager->ProcessKey(KEY_CTRLO);
 					break;
 				case MENU_COMMANDS_COMPAREFOLDERS:	// Compare folders
-					CtrlObject->Cp()->ActivePanel->CompareDir();
+					CtrlObject->Cp()->ActiveTab().ActivePanel->CompareDir();
 					break;
 				case MENU_COMMANDS_COMPAREFILES:	// Compare files
 					PresentFileDiff();
@@ -861,7 +861,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 					ShowBookmarksMenu();
 					break;
 				case MENU_COMMANDS_FILTER:	// File panel filter
-					CtrlObject->Cp()->ActivePanel->EditFilter();
+					CtrlObject->Cp()->ActiveTab().ActivePanel->EditFilter();
 					break;
 				case MENU_COMMANDS_PLUGINCOMMANDS:	// Plugin commands
 					FrameManager->ProcessKey(KEY_F11);
@@ -980,7 +980,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 				MenuPoint& mp = mounts[j];
 
 				if (mp.kind == MenuPoint::MOUNTPOINT || mp.kind == MenuPoint::DIRECTORY) {
-					auto a_panel = CtrlObject->Cp()->ActivePanel;
+					auto a_panel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 					a_panel -> SetLocation_Directory(mp.path.c_str());
 				}
 				break;

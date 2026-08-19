@@ -2,15 +2,15 @@ LoadJS("../common.js");
 var dirs = SetupTestDirs();
 
 StartAppWithSize(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right], 95, 24);
-ExpectString("Help - FAR2L", 0, 0, 0, 0, 10000);
+ExpectString("Help - FAR2L");
 TypeEscape(10)
-ExpectString("OSC52", 0, 0, 0, 0, 10000);
+ExpectString("OSC52");
 status = AppStatus();
 
 // Navigate to viewme.txt and open it with F3, then toggle word wrap (Shift+F2)
 TypeDown()
 TypeFKey(3)
-ExpectString("left/viewme.txt", 0, 0, 0, 0, 10000)
+ExpectString("left/viewme.txt")
 
 ToggleShift(true)
 TypeFKey(2)
@@ -36,7 +36,7 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test4.txt'
 
 // Search for ::setselectpos and verify the result
 TypeFKey(7)
-ExpectString("═══ Search ═══", 0, 0, 0, 0, 10000)
+ExpectString("═══ Search ═══")
 TypeText("::setselectpos")
 TypeEnter()
 
@@ -54,10 +54,10 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test7.txt'
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test5.txt')
 
 TypeUp()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test6.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test6.txt')
 
 TypeUp()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test7.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test7.txt')
 
 // Go back to top, search for VMenu::SetUserData and verify
 TypeHome()
@@ -69,7 +69,7 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test4.txt')
 
 
 TypeFKey(7)
-ExpectString("═══ Search ═══", 0, 0, 0, 0, 10000)
+ExpectString("═══ Search ═══")
 TypeText("VMenu::SetUserData")
 TypeEnter()
 
@@ -108,26 +108,26 @@ BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, dirs.mydir + '/test15.txt
 BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test8.txt')
 
 TypeUp()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test9.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test9.txt')
 
 TypeUp()
 TypeUp()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test10.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test10.txt')
 
 TypeDown()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test11.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test11.txt')
 
 TypeDown()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test12.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test12.txt')
 
 TypeDown()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test13.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test13.txt')
 
 TypePageDown()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test14.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test14.txt')
 
 TypePageUp()
-BoundedLinesMatchTextFile(0, 1, -1, status.Height - 2, mydir + '/test15.txt')
+BoundedLinesMatchTextFile(0, 1, 0, -2, mydir + '/test15.txt')
 
 TypeEscape()
 
@@ -290,7 +290,7 @@ TypeEscape()
 ExitFar2lWithConfirm()
 
 TypeFKey(10)
-ExpectString("Do you want to quit FAR?", 0, 0, 0, 0, 10000)
+ExpectString("Do you want to quit FAR?")
 TypeEnter()
-ExpectAppExit(0, 10000)
+ExpectAppExit(0)
 0;

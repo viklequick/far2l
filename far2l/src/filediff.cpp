@@ -363,7 +363,7 @@ bool ResolvePluginPanelFile(Panel *Source, DiffFileSource &File)
 	return true;
 }
 
-bool ResolvePanelFile(Panel *Source, DiffFileSource &File)
+bool ResolvePanelFile(Panel *Source, DiffFileSource &File, const wchar_t *forceName = nullptr)
 {
 	if (!Source || !Source->IsVisible() || Source->GetType() != FILE_PANEL)
 		return false;
@@ -380,13 +380,19 @@ bool ResolvePanelFile(Panel *Source, DiffFileSource &File)
 		return false;
 
 	FARString Name;
-	if (!Source->GetCurName(Name) || Name.IsEmpty())
-		return false;
+	if (!forceName || !*forceName) {
+		if (!Source->GetCurName(Name) || Name.IsEmpty())
+			return false;
+	}
 
 	FARString Path;
-	Source->GetCurDir(Path);
+	if(!Source->GetCurDir(Path) || Path.IsEmpty())
+		return false;
 	AddEndSlash(Path);
-	Path+= Name;
+	if (!forceName || !*forceName)
+		Path+= Name;	// use from panel current name
+	else
+		Path+= forceName;	// use forceName in panel direcrory
 
 	const DWORD Attr = apiGetFileAttributes(Path.CPtr());
 	if (Attr == INVALID_FILE_ATTRIBUTES || (Attr & FILE_ATTRIBUTE_DIRECTORY))
@@ -2942,7 +2948,7 @@ private:
 };
 }
 
-void PresentFileDiff()
+void PresentFileDiff(bool bSameName)
 {
 	if (!CtrlObject || !CtrlObject->Cp())
 		return;
@@ -2952,8 +2958,25 @@ void PresentFileDiff()
 
 	DiffFileSource LeftSource;
 	DiffFileSource RightSource;
-	if (!ResolvePanelFile(Active, LeftSource) || !ResolvePanelFile(Passive, RightSource)) {
+	if (!ResolvePanelFile(Active, LeftSource)) {
 		Message(MSG_WARNING, 1, Msg::FileDiffTitle, Msg::FileDiffSelectBoth, Msg::Ok);
+		return;
+	}
+	if (!bSameName) {
+		if (!ResolvePanelFile(Passive, RightSource)) {
+			Message(MSG_WARNING, 1, Msg::FileDiffTitle, Msg::FileDiffSelectBoth, Msg::Ok);
+			return;
+		}
+	}
+	else {
+		if (!ResolvePanelFile(Passive, RightSource, PointToName(LeftSource.LocalPath))) {
+			Message(MSG_WARNING, 1, Msg::FileDiffTitle, Msg::FileDiffSelectPassiveNotSameName, Msg::Ok);
+			return;
+		}
+	}
+
+	if (LeftSource.LocalPath == RightSource.LocalPath) {
+		Message(MSG_WARNING, 1, Msg::FileDiffTitle, Msg::FileDiffSameBoth, LeftSource.LocalPath, Msg::Ok);
 		return;
 	}
 

@@ -1179,6 +1179,8 @@ int Edit::ProcessKey(FarKey Key)
 
 			my->PrevCurPos = my->CurPos;
 			my->CurPos = CalcPosBwd();
+			if (Mask && *Mask)
+				my->CurPos = GetNextCursorPos(my->CurPos, -1);
 
 			while (my->LeftPos > 0 && RealPosToCell(my->CurPos) <= my->LeftPos) {
 				my->LeftPos-= 15;

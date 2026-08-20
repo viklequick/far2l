@@ -6,9 +6,9 @@ var dirs = SetupTestDirs("left-тест1", "right");
 StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
 ExpectString("left-fgdfgfd");
 ExpectString("Help - FAR2L");
-TypeEscape(10)
+TypeEscape()
 ExpectString("OSC52");
-TypeEscape(10)
+TypeEscape()
 status = AppStatus();
 TypeFKey(10)
 ExpectString("Do you want to quit FAR?")

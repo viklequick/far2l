@@ -3,7 +3,7 @@ var dirs = SetupTestDirs();
 
 StartAppWithSize(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right], 95, 24);
 ExpectString("Help - FAR2L");
-TypeEscape(10)
+TypeEscape()
 ExpectString("OSC52");
 status = AppStatus();
 

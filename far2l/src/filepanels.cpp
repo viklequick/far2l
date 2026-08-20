@@ -789,6 +789,9 @@ int FilePanels::ProcessKey(FarKey Key)
 				CtrlObject->CmdLine->ProcessKey(Key);
 
 			break;
+		case KEY_CTRLSHIFTD: {
+			PresentFileDiff(true);
+			break;
 		}
 		case KEY_CTRLUP:
 		case KEY_CTRLNUMPAD8: {

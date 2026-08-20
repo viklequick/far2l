@@ -13,9 +13,9 @@ Mkfiles(left_sub_files, 0o752, 10 * 1024 * 1024, 20 * 1024 * 1024);
 StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
 ExpectString("Help - FAR2L");
 Snapshot("start")
-TypeEscape(10)
+TypeEscape()
 ExpectString("OSC52");
-TypeEscape(10)
+TypeEscape()
 
 StartTestApp(dirs.profile, dirs.left, dirs.right);
 var status = AppStatus();

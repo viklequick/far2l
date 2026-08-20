@@ -12,7 +12,7 @@ Mkfiles(left_sub_files, 0o752, 10 * 1024 * 1024, 20 * 1024 * 1024);
 
 StartApp(["--tty", "--nodetect", "--mortal", "-u", profile, "-cd", left, "-cd", right]);
 ExpectString("Help - FAR2L");
-TypeEscape(10)
+TypeEscape()
 ExpectString("OSC52");
 
 StartTestApp(dirs.profile, dirs.left, dirs.right);
@@ -20,6 +20,7 @@ var status = AppStatus();
 DismissHelpAndOSC52();
 
 // Select all 5 items in left panel and press F6 to move
+TypeEscape()
 TypeDown()
 TypeIns()
 TypeIns()

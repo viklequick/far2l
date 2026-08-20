@@ -1430,8 +1430,8 @@ void FilePanels::SwapTo(int srcTab, int dstTab, bool isLeft) {
 
 	Panel *Swap;
 	int SwapType;
-	deactivatePanelsInTab(src);
-	deactivatePanelsInTab(dst);
+	if (srcTab == TabActive) deactivatePanelsInTab(src);
+	if (dstTab == TabActive) deactivatePanelsInTab(dst);
 
 	if (isLeft) {
 
@@ -1461,8 +1461,8 @@ void FilePanels::SwapTo(int srcTab, int dstTab, bool isLeft) {
 		src.LastRightType = SwapType;
 	}
 
-	activatePanelsInTab(src);
-	activatePanelsInTab(dst);
+	if (srcTab == TabActive) activatePanelsInTab(src);
+	if (dstTab == TabActive) activatePanelsInTab(dst);
 
 	FrameManager->RefreshFrame();
 }

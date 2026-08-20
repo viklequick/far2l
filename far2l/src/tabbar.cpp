@@ -375,7 +375,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
 				int k = pathContextMenu(true, tabPos[i].leftPinX, i);
 				if (k >= 0 && k != ActiveTab()) {
-					CtrlObject->Cp()->SwapTo(ActiveTab(), k, true);
+					CtrlObject->Cp()->SwapTo(i, k, true);
 					Redraw();
 				}
 				return TRUE;
@@ -389,7 +389,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
 				int k = pathContextMenu(false, tabPos[i].rightPinX, i);
 				if (k >= 0 && k != ActiveTab()) {
-					CtrlObject->Cp()->SwapTo(ActiveTab(), k, false);
+					CtrlObject->Cp()->SwapTo(i, k, false);
 					Redraw();
 				}
 				return TRUE;
@@ -519,7 +519,7 @@ int TabBar::moreContextMenu()
 		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
 
 		for (;;) {
-			GroupsMenu.SetPosition(moreX + 1, 2 + Opt.ShowMenuBar, 0, 0);
+			GroupsMenu.SetPosition(moreX + 1 - width / 2, 1 + Opt.ShowMenuBar, 0, 0);
 			GroupsMenu.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
 			GroupsMenu.SetBoxType(SHORT_DOUBLE_BOX);
 			GroupsMenu.ClearDone();

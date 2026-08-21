@@ -38,6 +38,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "keybar.hpp"
 #include "fileholder.hpp"
 #include "EditorConfigOrg.hpp"
+#include "WideCharToMultiByteBuffer.hpp"
 #include "menubar.hpp"
 #include "tabbar.hpp"
 
@@ -89,7 +90,7 @@ public:
 
 	private:
 		std::string _tmpstr;
-		std::vector<char> _tmpcvec;
+		WideCharToMultiByteBuffer _tmpcvec;
 	};
 
 	FileEditor(FileHolderPtr NewFileHolder, UINT codepage, DWORD InitFlags, int StartLine = -1, int StartChar = -1,

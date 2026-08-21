@@ -69,6 +69,7 @@ struct ScreenRow
 
 struct DiffFileSource
 {
+	FARString Name;
 	FARString LocalPath;
 	FARString DisplayPath;
 	FileHolderPtr Holder;
@@ -312,7 +313,7 @@ bool IsEditorSearchKey(FarKey Key)
 	}
 }
 
-bool ResolvePluginPanelFile(Panel *Source, DiffFileSource &File)
+bool ResolvePluginPanelFile(Panel *Source, DiffFileSource &File, const wchar_t *forceName = nullptr)
 {
 	if (!Source || Source->GetType() != FILE_PANEL || Source->GetMode() != PLUGIN_PANEL)
 		return false;
@@ -322,8 +323,12 @@ bool ResolvePluginPanelFile(Panel *Source, DiffFileSource &File)
 		return false;
 
 	FileList *FilePanel = static_cast<FileList *>(Source);
-	const int CurrentPos = FilePanel->GetCurrentPos();
-	const size_t ItemSize = FilePanel->PluginGetPanelItem(CurrentPos, nullptr);
+	const int FilePos = (!forceName || !*forceName)
+		? FilePanel->GetCurrentPos() // use from panel current name
+		: FilePanel->FindFile(forceName); // use forceName in panel direcrory
+	if (FilePos < 0)
+		return false;
+	const size_t ItemSize = FilePanel->PluginGetPanelItem(FilePos, nullptr);
 	if (!ItemSize)
 		return false;
 
@@ -331,7 +336,7 @@ bool ResolvePluginPanelFile(Panel *Source, DiffFileSource &File)
 	if (!ItemStorage)
 		return false;
 	PluginPanelItem *Item = static_cast<PluginPanelItem *>(ItemStorage.get());
-	if (FilePanel->PluginGetPanelItem(CurrentPos, Item) != ItemSize || !Item->FindData.lpwszFileName)
+	if (FilePanel->PluginGetPanelItem(FilePos, Item) != ItemSize || !Item->FindData.lpwszFileName)
 		return false;
 
 	if (Item->FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
@@ -356,6 +361,7 @@ bool ResolvePluginPanelFile(Panel *Source, DiffFileSource &File)
 	DisplayPath+= Item->FindData.lpwszFileName;
 
 	auto Holder = std::make_shared<PluginTempFileHolder>(LocalPath, hPlugin);
+	File.Name = Item->FindData.lpwszFileName;
 	File.LocalPath = LocalPath;
 	File.DisplayPath = DisplayPath;
 	File.Holder = Holder;
@@ -373,7 +379,7 @@ bool ResolvePanelFile(Panel *Source, DiffFileSource &File, const wchar_t *forceN
 		if (hPlugin == INVALID_HANDLE_VALUE)
 			return false;
 		if (!CtrlObject->Plugins.UseFarCommand(hPlugin, PLUGIN_FARGETFILE))
-			return ResolvePluginPanelFile(Source, File);
+			return ResolvePluginPanelFile(Source, File, forceName);
 	}
 
 	if (Source->GetMode() != NORMAL_PANEL && Source->GetMode() != PLUGIN_PANEL)
@@ -381,9 +387,11 @@ bool ResolvePanelFile(Panel *Source, DiffFileSource &File, const wchar_t *forceN
 
 	FARString Name;
 	if (!forceName || !*forceName) {
-		if (!Source->GetCurName(Name) || Name.IsEmpty())
+		if (!Source->GetCurName(Name) || Name.IsEmpty()) // use from panel current name
 			return false;
 	}
+	else
+		Name = forceName; // use forceName in panel direcrory
 
 	FARString Path;
 	if(!Source->GetCurDir(Path) || Path.IsEmpty())
@@ -398,6 +406,7 @@ bool ResolvePanelFile(Panel *Source, DiffFileSource &File, const wchar_t *forceN
 	if (Attr == INVALID_FILE_ATTRIBUTES || (Attr & FILE_ATTRIBUTE_DIRECTORY))
 		return false;
 
+	File.Name = Name;
 	File.LocalPath = Path;
 	File.DisplayPath = Path;
 	File.Holder = std::make_shared<FileHolder>(Path);
@@ -2969,8 +2978,8 @@ void PresentFileDiff(bool bSameName)
 		}
 	}
 	else {
-		if (!ResolvePanelFile(Passive, RightSource, PointToName(LeftSource.LocalPath))) {
-			Message(MSG_WARNING, 1, Msg::FileDiffTitle, Msg::FileDiffSelectPassiveNotSameName, Msg::Ok);
+		if (!ResolvePanelFile(Passive, RightSource, LeftSource.Name)) {
+			Message(MSG_WARNING, 1, Msg::FileDiffTitle, Msg::FileDiffSelectPassiveNotSameName, LeftSource.Name, Msg::Ok);
 			return;
 		}
 	}

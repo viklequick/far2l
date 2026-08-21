@@ -67,7 +67,7 @@ FilePanels::FilePanels()
 
 	ActiveTab().LeftPanel  = CreatePanel(Opt.LeftPanel.Type);
 	ActiveTab().RightPanel = CreatePanel(Opt.RightPanel.Type);
-	
+
 	// SetKeyBar(&MainKeyBar);
 	//_D(SysLog(L"MainKeyBar=0x%p",&MainKeyBar));
 }
@@ -92,11 +92,11 @@ void FilePanels::deactivatePanelsInTab(DoublePanel& activeTab)
 
 void FilePanels::activatePanelsInTab(DoublePanel& activeTab)
 {
-	if(activeTab.LeftVisible) { 
+	if(activeTab.LeftVisible) {
 		activeTab.LeftPanel->Show();
 	}
 
-	if(activeTab.RightVisible) { 
+	if(activeTab.RightVisible) {
 		activeTab.RightPanel->Show();
 	}
 
@@ -105,12 +105,12 @@ void FilePanels::activatePanelsInTab(DoublePanel& activeTab)
 	activeTab.ActivePanel->GetCurDir(dir);
 	CtrlObject->CmdLine->SetCurDir(dir);
 
-	if(activeTab.LeftVisible) { 
+	if(activeTab.LeftVisible) {
 		activeTab.LeftPanel->Update(UPDATE_KEEP_SELECTION | UPDATE_CAN_BE_ANNOYING);
 		activeTab.LeftPanel->Redraw();
 	}
 
-	if(activeTab.RightVisible) { 
+	if(activeTab.RightVisible) {
 		activeTab.RightPanel->Update(UPDATE_KEEP_SELECTION | UPDATE_CAN_BE_ANNOYING);
 		activeTab.RightPanel->Redraw();
 	}
@@ -119,9 +119,9 @@ void FilePanels::activatePanelsInTab(DoublePanel& activeTab)
 
 void FilePanels::Init(DoublePanel& activeTab)
 {
-	SetPanelPositions(activeTab, 
+	SetPanelPositions(activeTab,
 		FileList::IsModeFullScreen(Opt.LeftPanel.ViewMode),
-		FileList::IsModeFullScreen(Opt.RightPanel.ViewMode), 
+		FileList::IsModeFullScreen(Opt.RightPanel.ViewMode),
 		Opt.PanelsDisposition);
 	activeTab.LeftPanel->SetViewMode(Opt.LeftPanel.ViewMode);
 	activeTab.RightPanel->SetViewMode(Opt.RightPanel.ViewMode);
@@ -769,7 +769,7 @@ int FilePanels::ProcessKey(FarKey Key)
 			break;
 		}
 		case KEY_CTRLD: {
-			if (!CtrlObject->CmdLine->IsNotEmpty()) 
+			if (!CtrlObject->CmdLine->IsNotEmpty())
 				PresentFileDiff();
 			else
 				CtrlObject->CmdLine->ProcessKey(Key);
@@ -789,6 +789,7 @@ int FilePanels::ProcessKey(FarKey Key)
 				CtrlObject->CmdLine->ProcessKey(Key);
 
 			break;
+		}
 		case KEY_CTRLSHIFTD: {
 			PresentFileDiff(true);
 			break;
@@ -1106,23 +1107,31 @@ Panel *FilePanels::ChangePanel(Panel *Current, int NewType, int CreateNew, int F
 	return (NewPanel);
 }
 
-int FilePanels::GetTypeAndName(FARString &strType, FARString &strName)
+int FilePanels::GetSubpanelCount(){ return (int)tabs.size(); }
+
+int FilePanels::GetSubpanelTypeAndName(int index, FARString &strType, FARString &strName, int maxLen)
 {
 	strType = Msg::ScreensPanels;
 	FARString strFullName;
 
-	switch (ActiveTab().ActivePanel->GetType()) {
-		case TREE_PANEL:
-		case QVIEW_PANEL:
-		case FILE_PANEL:
-		case INFO_PANEL:
-			ActiveTab().ActivePanel->GetCurName(strFullName);
-			ConvertNameToFull(strFullName, strFullName);
-			break;
+	switch (tabs[index].LeftPanel->GetType()) {
+	case TREE_PANEL:
+	case QVIEW_PANEL:
+	case INFO_PANEL:
+		tabs[index].ActivePanel->GetCurName(strFullName);
+		ConvertNameToFull(strFullName, strFullName);
+		break;
+	case FILE_PANEL:
+		strFullName = TopTabBar.getFormattedTitle(index, maxLen < 0 ? 60 : maxLen);
+		break;
 	}
 
 	strName = strFullName;
 	return (MODALTYPE_PANELS);
+}
+
+int FilePanels::GetTypeAndName(FARString &strType, FARString &strName){
+	return GetSubpanelTypeAndName(TabActive, strType, strName);
 }
 
 void FilePanels::OnChangeFocus(int f)
@@ -1217,7 +1226,7 @@ int FilePanels::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	int MsX = MouseEvent->dwMousePosition.X;
 	int MsY = MouseEvent->dwMousePosition.Y;
-	if (MsX >= X1 && MsX <= X2 && MsY == Y1 + (Opt.ShowMenuBar ? 1 : 0 )) 
+	if (MsX >= X1 && MsX <= X2 && MsY == Y1 + (Opt.ShowMenuBar ? 1 : 0 ))
 		if (TopTabBar.ProcessMouse(MouseEvent))
 			return TRUE;
 
@@ -1335,7 +1344,7 @@ FARString StrTrim(const FARString& x) {
 	return y;
 }
 
-int FilePanels::SetTabNames() 
+int FilePanels::SetTabNames()
 {
 	/*
 	std::vector<std::wstring> v;
@@ -1343,15 +1352,15 @@ int FilePanels::SetTabNames()
 	int maxLen = std::min(25, (int)(maxW / tabs.size() / 2));
 	if (maxW < 5 || maxLen < 5) return -1;
 
-	for(size_t i = 0; i < tabs.size(); ++i){ 
+	for(size_t i = 0; i < tabs.size(); ++i){
 		tabs[i].ActivePanel->GetTitle(tabs[i].a_name, 128, 2);
 		GetAnotherPanel(tabs[i], tabs[i].ActivePanel)->GetTitle(tabs[i].p_name, 128, 2);
-		
+
 		std::vector<std::wstring> pair;
 		pair.push_back(tabs[i].a_name.CPtr());
 		pair.push_back(tabs[i].p_name.CPtr());
 		std::wstring prefix = widestCommonDirectory(pair);
-		
+
 		FARString name = makeLeaf(pair[0], prefix) + L" " + makeLeaf(pair[1], prefix);
 		v.push_back(name.GetWide());
 	}
@@ -1359,7 +1368,7 @@ int FilePanels::SetTabNames()
     */
 
     TopTabBar.Clear();
-	for(size_t i = 0; i < tabs.size(); ++i){ 
+	for(size_t i = 0; i < tabs.size(); ++i){
 		tabs[i].LeftPanel->GetTitle(tabs[i].a_name, 128, 2);
 		tabs[i].RightPanel->GetTitle(tabs[i].p_name, 128, 2);
 		tabs[i].a_name = StrTrim(tabs[i].a_name);
@@ -1377,7 +1386,7 @@ void FilePanels::UpdateTabBar() {
 	SetTabNames();
 }
 
-void FilePanels::SwitchActiveTabTo(int tabNo) 
+void FilePanels::SwitchActiveTabTo(int tabNo)
 {
 	if(TabActive == tabNo) return;
 
@@ -1411,10 +1420,10 @@ void FilePanels::DeleteTab(int tabNo) {
 	Redraw();
 }
 
-void FilePanels::EnlistAllPaths(std::vector<std::wstring>& holder, bool left, bool exceptActive) 
+void FilePanels::EnlistAllPaths(std::vector<std::wstring>& holder, bool left, bool exceptActive)
 {
-	for(size_t i = 0; i < tabs.size(); ++i){ 
-		if (exceptActive && (int)i == TabActive){ 
+	for(size_t i = 0; i < tabs.size(); ++i){
+		if (exceptActive && (int)i == TabActive){
 			holder.push_back(L"-");
 			continue;
 		}

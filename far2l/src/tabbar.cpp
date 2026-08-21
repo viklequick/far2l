@@ -481,6 +481,23 @@ int TabBar::pathContextMenu(bool left, int x, int tabNo)
 	return -1;
 }
 
+FARString TabBar::getFormattedTitle(size_t j, int width) 
+{
+	FARString x;
+	if (tabPos[j].right.IsEmpty()) {
+		auto left = shortenLeaf(tabPos[j].left.CPtr(), width - 5);
+		x.Format(L"%-*.*ls", width - 5, width - 5, left.c_str());
+	}
+	else {
+		auto left = shortenLeaf(tabPos[j].left.CPtr(), (width - 3)/2);
+		auto right= shortenLeaf(tabPos[j].right.CPtr(), (width - 3)/2);
+		x.Format(L"%-*.*ls - %-*.*ls", 
+			(width - 3)/2, (width - 3)/2, left.c_str(), 
+			(width - 3)/2, (width - 3)/2, right.c_str());
+	}
+	return x;
+}
+
 int TabBar::moreContextMenu() 
 {
 	int width = 10;
@@ -493,18 +510,7 @@ int TabBar::moreContextMenu()
 	}
 
 	for (size_t j = 0; j < tabPos.size(); ++j) {
-		FARString x;
-		if (tabPos[j].right.IsEmpty()) {
-			auto left = shortenLeaf(tabPos[j].left.CPtr(), width - 5);
-			x.Format(L"%-*.*ls", width - 5, width - 5, left.c_str());
-		}
-		else {
-			auto left = shortenLeaf(tabPos[j].left.CPtr(), (width - 3)/2);
-			auto right= shortenLeaf(tabPos[j].right.CPtr(), (width - 3)/2);
-			x.Format(L"%-*.*ls - %-*.*ls", 
-				(width - 3)/2, (width - 3)/2, left.c_str(), 
-				(width - 3)/2, (width - 3)/2, right.c_str());
-		}
+		FARString x = getFormattedTitle(j, width);
 		v.push_back(x.CPtr());
 	}
 

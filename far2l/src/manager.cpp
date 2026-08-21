@@ -460,6 +460,9 @@ Frame *Manager::FrameMenu()
 	if (AlreadyShown)
 		return nullptr;
 
+	std::vector<int> frameIndexes;
+	std::vector<int> subframeIndexes;
+
 	int ExitCode, CheckCanLoseFocus = CurrentFrame->GetCanLoseFocus();
 	{
 		MenuItemEx ModalMenuItem;
@@ -477,17 +480,38 @@ Frame *Manager::FrameMenu()
 			/* "*" если файл изменен */
 			FARString strNumText = FrameMenuNumTextPrefix(I);
 			FARString strType, strName;
-			FrameList[I]->GetTypeAndName(strType, strName);
-			ModalMenuItem.Clear();
 
-			// TruncPathStr(strName,ScrX-24);
-			ReplaceStrings(strName, L"&", L"&&", -1);
-			ModalMenuItem.strName.Format(L"%ls%-10.10ls %ls", strNumText.CPtr(), strType.CPtr(), strName.CPtr());
-			ModalMenuItem.SetSelect(I == FramePos);
-			if (FrameList[I]->IsFileModified())
-				ModalMenuItem.SetCheck(L'*');
+			int k = FrameList[I]->GetSubpanelCount();
+			if (k > 0) {
+				for(int j = 0; j < k; ++j) {
+					FrameList[I]->GetSubpanelTypeAndName(j, strType, strName);
+					ModalMenuItem.Clear();
 
-			ModalMenu.AddItem(&ModalMenuItem);
+					// TruncPathStr(strName,ScrX-24);
+					ReplaceStrings(strName, L"&", L"&&", -1);
+					ModalMenuItem.strName.Format(L"%ls%-10.10ls %ls", strNumText.CPtr(), strType.CPtr(), strName.CPtr());
+					ModalMenuItem.SetSelect(j == FrameList[I]->GetSelectedSubpanel() && I == FramePos);
+					if (FrameList[I]->IsFileModified())
+						ModalMenuItem.SetCheck(L'*');
+					ModalMenu.AddItem(&ModalMenuItem);
+					frameIndexes.push_back(I);
+					subframeIndexes.push_back(j);
+				}
+			}
+			else {
+				FrameList[I]->GetTypeAndName(strType, strName);
+				ModalMenuItem.Clear();
+
+				// TruncPathStr(strName,ScrX-24);
+				ReplaceStrings(strName, L"&", L"&&", -1);
+				ModalMenuItem.strName.Format(L"%ls%-10.10ls %ls", strNumText.CPtr(), strType.CPtr(), strName.CPtr());
+				ModalMenuItem.SetSelect(I == FramePos);
+				if (FrameList[I]->IsFileModified())
+					ModalMenuItem.SetCheck(L'*');
+				ModalMenu.AddItem(&ModalMenuItem);
+				frameIndexes.push_back(I);
+				subframeIndexes.push_back(-1);
+			}
 		}
 
 		ModalMenu.AddVTSItems(FramePos);
@@ -499,8 +523,15 @@ Frame *Manager::FrameMenu()
 	}
 
 	if (CheckCanLoseFocus) {
-		if (ExitCode >= 0 && ExitCode < FrameCount) {
-			ActivateFrame(ExitCode);
+		if (ExitCode >= 0 && ExitCode < (int)frameIndexes.size()) {
+			int frameI = frameIndexes[ExitCode];
+
+			ActivateFrame(frameI);
+
+			if (FrameList[frameI]->GetSubpanelCount() > 0) {
+				FrameList[frameI]->ActivateSubpanel(subframeIndexes[ExitCode]);
+			}
+
 			return (ActivatedFrame == CurrentFrame || !CurrentFrame->GetCanLoseFocus()
 							? nullptr
 							: CurrentFrame);

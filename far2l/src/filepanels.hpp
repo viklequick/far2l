@@ -145,4 +145,9 @@ public:
 
 	void EnlistAllPaths(std::vector<std::wstring>& holder, bool left, bool exceptActive = true);
 	void SwapTo(int srcTab, int dstTab, bool isLeft);
+
+	virtual int GetSubpanelCount();
+	virtual int GetSubpanelTypeAndName(int index, FARString &strType, FARString &strName, int maxLen = 60);
+	virtual int GetSelectedSubpanel(){ return -1; }
+	virtual void ActivateSubpanel(int i){ SwitchActiveTabTo(i); }
 };

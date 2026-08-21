@@ -83,6 +83,7 @@ public:
 	int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
 	int moreContextMenu();
 	int pathContextMenu(bool left, int x, int fromTab);
+	FARString getFormattedTitle(size_t j, int width);
 
 protected:
 	virtual void DisplayObject();

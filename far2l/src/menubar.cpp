@@ -46,6 +46,7 @@ void MenuBar::DisplayObject()
             + Msg::MenuObjectTitle + strSpace
 			+ Msg::MenuOptionsTitle + strSpace
 			+ Msg::MenuNavigateTitle + strSpace+ Msg::MenuViewTitle + strSpace
+			+ Msg::MenuWindowTitle + strSpace
 			+ Msg::MenuRightTitle;
 	RemoveHighlights(strMsg);
 	int Length = X2 - X1 + 1;

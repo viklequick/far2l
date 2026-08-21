@@ -17676,6 +17676,17 @@ MenuViewTitle
 "upd:&View"
 "upd:&View"
 
+MenuWindowTitle
+"&Окна"
+"&Window"
+"upd:&Window"
+"upd:&Window"
+"upd:&Window"
+"upd:&Window"
+"upd:&Window"
+"upd:&Window"
+"upd:&Window"
+
 MenuNavigateTitle
 "&Навигация"
 "&Navigate"
@@ -30698,6 +30709,72 @@ upd:"All settings..."
 upd:"All settings..."
 upd:"All settings..."
 upd:"All settings..."
+
+PanelWindowNewPanel
+upd:"Add new panel tab..."
+"Add new panel tab..."
+upd:"Add new panel tab..."
+upd:"Add new panel tab..."
+upd:"Add new panel tab..."
+upd:"Add new panel tab..."
+upd:"Add new panel tab..."
+upd:"Add new panel tab..."
+upd:"Add new panel tab..."
+
+PanelWindowNewEditor
+upd:"Edit new file...                    Shift+F4"
+"Edit new file...                    Shift+F4"
+upd:"Edit new file...                    Shift+F4"
+upd:"Edit new file...                    Shift+F4"
+upd:"Edit new file...                    Shift+F4"
+upd:"Edit new file...                    Shift+F4"
+upd:"Edit new file...                    Shift+F4"
+upd:"Edit new file...                    Shift+F4"
+upd:"Edit new file...                    Shift+F4"
+
+PanelWindowDropPanel
+upd:"Delete panel tab"
+"Delete panel tab"
+upd:"Delete panel tab"
+upd:"Delete panel tab"
+upd:"Delete panel tab"
+upd:"Delete panel tab"
+upd:"Delete panel tab"
+upd:"Delete panel tab"
+upd:"Delete panel tab"
+
+PanelWindowArrangeFull
+upd:"Expand frames"
+"Expand frames"
+upd:"Expand frames"
+upd:"Expand frames"
+upd:"Expand frames"
+upd:"Expand frames"
+upd:"Expand frames"
+upd:"Expand frames"
+upd:"Expand frames"
+
+PanelWindowArrangeTile
+upd:"Tile frames"
+"Tile frames"
+upd:"Tile frames"
+upd:"Tile frames"
+upd:"Tile frames"
+upd:"Tile frames"
+upd:"Tile frames"
+upd:"Tile frames"
+upd:"Tile frames"
+
+PanelWindowArrangeCascade
+upd:"Cascade frames"
+"Cascade frames"
+upd:"Cascade frames"
+upd:"Cascade frames"
+upd:"Cascade frames"
+upd:"Cascade frames"
+upd:"Cascade frames"
+upd:"Cascade frames"
+upd:"Cascade frames"
 
 #Must be the last
 NewFileName

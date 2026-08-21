@@ -650,8 +650,6 @@ void Manager::DeactivateFrame(Frame *Deactivated, int Direction)
 			FramePos += Direction;
 		}
 
-		
-
 		if (Direction > 0) {
 			if (FramePos >= FrameCount) {
 				FramePos = 0;

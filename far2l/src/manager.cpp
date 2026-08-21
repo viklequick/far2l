@@ -632,7 +632,25 @@ void Manager::DeactivateFrame(Frame *Deactivated, int Direction)
 	_MANAGER(SysLog(L"Deactivated=%p, Direction=%d", Deactivated, Direction));
 
 	if (Direction) {
-		FramePos+= Direction;
+		// earlier it was:
+		// FramePos+= Direction;
+		// Now it is more complicated for case some frams has sub-panels
+		int frameId = FramePos;
+		int subpanels = FrameList[frameId]->GetSubpanelCount();
+		if (subpanels > 0) {
+			int subactive = FrameList[frameId]->GetSelectedSubpanel();
+			subactive += Direction;
+			if(subactive < 0 || subactive >= subpanels) 
+				FramePos += Direction;
+			else {
+				FrameList[frameId]->ActivateSubpanel(subactive);
+			}
+		}
+		else {
+			FramePos += Direction;
+		}
+
+		
 
 		if (Direction > 0) {
 			if (FramePos >= FrameCount) {
@@ -1054,6 +1072,7 @@ int Manager::ProcessKey(DWORD Key)
 				case KEY_CTRLSHIFTTAB:
 
 					if (CurrentFrame->GetCanLoseFocus()) {
+						// vk: todo: support subpanels when available
 						DeactivateFrame(CurrentFrame, Key == KEY_CTRLTAB ? 1 : -1);
 					}
 

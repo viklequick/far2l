@@ -194,6 +194,8 @@ int TabBar::render()
 	int activeIndex = activeTab;
     if (tabPos.empty()) return 0;
 
+    if (!Opt.ShowMenuBar) maxWidth -= 2;
+
     compactifyFileNamesUpTo(tabPos);
 
 	uint64_t color2 = 0;
@@ -310,9 +312,18 @@ int TabBar::render()
 	    FS << L" ⏷ ";
     }
 
+    if (!Opt.ShowMenuBar) {
+		SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, menuHovered ? 1 : 0, 0, 0));
+   		menuX = WhereX() + 1;
+	    FS << L" ☰";
+    }
+    else {
+    	menuX = -1;
+    }
+
 	SetColor(FarColorToReal(COL_HMENUTEXT));
     if (WhereX() < X2) 
-    	FS << fmt::LeftAlign() << fmt::Cells() << fmt::Expand(X2 - WhereX()) << L" ";
+    	FS << fmt::LeftAlign() << fmt::Cells() << fmt::Expand(X2 - WhereX() + 1) << L" ";
     return 0;
 }
 
@@ -323,15 +334,16 @@ void TabBar::SetTexts(const std::vector<std::wstring>& v, int _activeTab) {
 	hoveredTab = -1;
 }
 
-void TabBar::setHoverMask(int tabNo, bool plus, bool del, bool leftPin, bool rightPin, bool more) 
+void TabBar::setHoverMask(int tabNo, bool plus, bool del, bool leftPin, bool rightPin, bool more, bool menu) 
 {
 	plusHovered = plus;
 	moreHovered = more;
+	menuHovered = menu;
 	delHovered = del ? tabNo : -1;
 	leftPinHovered = leftPin ? tabNo : -1;
 	rightPinHovered = rightPin ? tabNo : -1;
 
-	SetHovered(plus || del || leftPin || rightPin || more ? -1 : tabNo);
+	SetHovered(plus || del || leftPin || rightPin || more || menu ? -1 : tabNo);
 	CtrlObject->Cp()->SwitchHoveredTabTo(hoveredTab);
 	Redraw();
 }
@@ -345,7 +357,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		return FALSE;
 
 	int pos = MsX - X1;
-	plusHovered = moreHovered = false;
+	plusHovered = moreHovered = menuHovered = false;
 	delHovered = leftPinHovered = rightPinHovered = -1;
 
 	for(size_t i = 0; i < tabPos.size(); ++i) {
@@ -354,7 +366,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		if (pos >= tabPos[i].x && pos < tabPos[i].x + tabPos[i].w) { // tab
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
 				if((int)i != hoveredTab){ 
-					setHoverMask(i, false, false, false, false, false);
+					setHoverMask(i, false, false, false, false, false, false);
 				}
 				return TRUE;
 			}
@@ -369,7 +381,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 		else if (tabPos[i].leftPinX >= 0 && pos >= tabPos[i].leftPinX && pos <= tabPos[i].leftPinX + 1) { // left pin
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-				setHoverMask(i, false, false, true, false, false);
+				setHoverMask(i, false, false, true, false, false, false);
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -383,7 +395,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 		else if (tabPos[i].rightPinX > 0 && pos >= tabPos[i].rightPinX && pos <= tabPos[i].rightPinX + 1) { // left pin
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-				setHoverMask(i, false, false, false, true, false);
+				setHoverMask(i, false, false, false, true, false, false);
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -397,7 +409,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 		else if (tabPos[i].delX > 0 && pos >= tabPos[i].delX && pos <= tabPos[i].delX + 3) { // delete sign
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-				setHoverMask(i, false, true, false, false, false);
+				setHoverMask(i, false, true, false, false, false, false);
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -409,7 +421,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 	if (MsX >= plusX && MsX < plusX + 4) { // plus sign
 		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-			setHoverMask(-1, true, false, false, false, false);
+			setHoverMask(-1, true, false, false, false, false, false);
 			return TRUE;
 		}
 		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -419,7 +431,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	}
 	else if (moreX > 0 && MsX >= moreX && MsX < moreX + 2) { // more sign
 		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-			setHoverMask(-1, false, false, false, false, true);
+			setHoverMask(-1, false, false, false, false, true, false);
 			return TRUE;
 		}
 		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
@@ -430,6 +442,17 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				CtrlObject->Cp()->SwitchActiveTabTo(tab);
 				Redraw();
 			}
+			return TRUE;
+		}
+	}
+	else if (menuX > 0 && MsX >= menuX && MsX < menuX + 2) { // menu sign
+		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
+			setHoverMask(-1, false, false, false, false, false, true);
+			return TRUE;
+		}
+		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+			// enforce F9 key
+			FrameManager->ProcessKey(KEY_F9);
 			return TRUE;
 		}
 	}

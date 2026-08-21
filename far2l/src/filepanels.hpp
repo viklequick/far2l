@@ -148,6 +148,6 @@ public:
 
 	virtual int GetSubpanelCount();
 	virtual int GetSubpanelTypeAndName(int index, FARString &strType, FARString &strName, int maxLen = 60);
-	virtual int GetSelectedSubpanel(){ return -1; }
+	virtual int GetSelectedSubpanel(){ return TabActive; }
 	virtual void ActivateSubpanel(int i){ SwitchActiveTabTo(i); }
 };

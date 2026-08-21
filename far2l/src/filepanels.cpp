@@ -420,7 +420,7 @@ void FilePanels::SetScreenPosition(DoublePanel& activeTab)
 {
 	_OT(SysLog(L"[%p] FilePanels::SetScreenPosition() {%d, %d - %d, %d}", this, X1, Y1, X2, Y2));
 	TopMenuBar.SetPosition(0, 0, ScrX, 0);
-	TopTabBar.SetPosition(0, 1, ScrX, 1);
+	TopTabBar.SetPosition(0, Opt.ShowMenuBar ? 1 : 0, ScrX, Opt.ShowMenuBar ? 1 : 0);
 	MainKeyBar.SetPosition(0, ScrY, ScrX, ScrY);
 	SetPanelPositions(activeTab, activeTab.LeftPanel->IsFullScreen(), activeTab.RightPanel->IsFullScreen(), Opt.PanelsDisposition);
 	SetPosition(0, 0, ScrX, ScrY);

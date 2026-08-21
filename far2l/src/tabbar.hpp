@@ -89,7 +89,7 @@ protected:
 	virtual void DisplayObject();
 
 	int render();
-	void setHoverMask(int tabNo, bool tab, bool del, bool leftPin, bool rightPin, bool more);
+	void setHoverMask(int tabNo, bool tab, bool del, bool leftPin, bool rightPin, bool more, bool menu);
 
 	std::vector<std::wstring> tabs;
 	int activeTab { 0 };
@@ -99,6 +99,8 @@ protected:
 	bool plusHovered { false };
 	int moreX { -1 };
 	bool moreHovered { false };
+	int menuX { - 1 };
+	bool menuHovered { false };
 	int delHovered {-1 };
 	int leftPinHovered { - 1 };
 	int rightPinHovered { -1 };

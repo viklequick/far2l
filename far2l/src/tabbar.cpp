@@ -465,7 +465,7 @@ int TabBar::pathContextMenu(bool left, int x, int tabNo)
 		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
 
 		for (;;) {
-			GroupsMenu.SetPosition(x + 1, 2 + Opt.ShowMenuBar, 0, 0);
+			GroupsMenu.SetPosition(x + 1, 1 + Opt.ShowMenuBar, 0, 0);
 			GroupsMenu.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
 			GroupsMenu.SetBoxType(SHORT_DOUBLE_BOX);
 			GroupsMenu.ClearDone();

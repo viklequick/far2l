@@ -1248,7 +1248,7 @@ int FilePanels::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 void FilePanels::ShowConsoleTitle()
 {
-	if (ActiveTab().ActivePanel)
+	if (ActiveTab().ActivePanel && ActiveTab().ActivePanel->IsVisible())
 		ActiveTab().ActivePanel->SetTitle();
 }
 
@@ -1409,14 +1409,17 @@ int FilePanels::AppendNewTab() {
 }
 
 void FilePanels::DeleteTab(int tabNo) {
-	if (tabs.size() == 1) return; // last panels cannot be removed
+	if (tabs.size() == 1 || tabNo < 0 || tabNo >= (int)tabs.size()) return; // last panels cannot be removed
 	if (TabActive == tabNo) { // deleting active tab -> need to switch active to other first
 		int switchTo = TabActive == 0 ? 1 : TabActive - 1;
 		SwitchActiveTabTo(switchTo);
 	}
+	// if we're deleting tab on the left active pointer needs to be shifted
+	if (TabActive > tabNo) --TabActive; 
 	deactivatePanelsInTab(tabs[tabNo]);
 	destroyPanelsGracefully(tabs[tabNo]);
 	tabs.erase(tabs.begin() + tabNo);
+
 	Redraw();
 }
 

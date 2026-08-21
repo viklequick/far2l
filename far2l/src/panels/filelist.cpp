@@ -182,8 +182,12 @@ FileList::~FileList()
 	_OT(SysLog(L"[%p] FileList::~FileList()", this));
 	CloseChangeNotification();
 
-	for (PrevDataItem **i = PrevDataList.First(); i; i = PrevDataList.Next(i))
-		delete *i;
+	PrevDataItem **q = 0;
+	for (PrevDataItem **i = PrevDataList.First(); i; ) {
+		q = i;
+		i = PrevDataList.Next(i);
+		delete *q;
+	}
 
 	PrevDataList.Clear();
 

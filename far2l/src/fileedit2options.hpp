@@ -42,7 +42,8 @@ enum enumEditorMenus
 	MENU_NAVIGATE,
 	MENU_VIEW,
 	MENU_MACRO,
-	MENU_PLUGINS
+	MENU_PLUGINS,
+	MENU_WINDOW
 };
 
 enum enumFileMenu

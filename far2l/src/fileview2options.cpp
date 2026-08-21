@@ -51,6 +51,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "fileview.hpp"
 
 #include "fileview2options.hpp"
+#include "options.hpp"
 
 void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileViewer* fileView)
 {
@@ -152,12 +153,16 @@ void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileVie
 		PluginsMenu[i].AccelKey = 0;
 	}
 
+	WindowMenuContext wc;
+	initializeWindowMenuContext(wc);
+
 	HMenuData MainMenu[] = {
 		{Msg::ViewerMenuFileTitle,     1, FileMenu,      ARRAYSIZE(FileMenu),       L"Viewer"},
 		{Msg::ViewerMenuToolsTitle,    0, ToolsMenu,     ARRAYSIZE(ToolsMenu),      L"Viewer" },
 		{Msg::ViewerMenuNavigateTitle, 0, NavigateMenu,  ARRAYSIZE(NavigateMenu),   L"Viewer" },
 		{Msg::ViewerMenuViewTitle,     0, ViewMenu,      ARRAYSIZE(ViewMenu),       L"Viewer" },
-		{Msg::EditorMenuPluginsTitle, 0, PluginsMenu, PluginsMenuSize, L"Viewer" }
+		{Msg::EditorMenuPluginsTitle, 0, PluginsMenu, PluginsMenuSize, L"Viewer" },
+		{Msg::MenuWindowTitle, 0, wc.WindowMenu,     wc.WindowMenuCount,     L"Viewer"      }
 	};
 
 	static int LastHItem = -1, LastVItem = 0;
@@ -177,7 +182,7 @@ void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileVie
 		HOptMenu.SetPosition(0, gap, ScrX, gap);
 
 		if (LastCommand) {
-			MenuDataEx *VMenuTable[] = {FileMenu, ToolsMenu, NavigateMenu, ViewMenu, PluginsMenu};
+			MenuDataEx *VMenuTable[] = {FileMenu, ToolsMenu, NavigateMenu, ViewMenu, PluginsMenu, wc.WindowMenu };
 			int HItemToShow = LastHItem;
 
 			MainMenu[0].Selected = 0;
@@ -211,9 +216,12 @@ void ViewerShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileVie
 			break;
 		}
 	}
-
-	if (HItem == MENU_VIEW_PLUGINS) {
+	else if (HItem == MENU_VIEW_PLUGINS) {
 		CtrlObject->Plugins.OpenPlugin(plugins[VItem].pluginItem.pPlugin, OPEN_VIEWER, plugins[VItem].pluginItem.nItem);
+		return;
+	}
+	else if (HItem == MENU_VIEW_WINDOW) {
+		applyMenu(wc, VItem);
 		return;
 	}
 

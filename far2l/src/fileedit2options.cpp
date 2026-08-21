@@ -51,6 +51,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "fileedit.hpp"
 
 #include "fileedit2options.hpp"
+#include "options.hpp"
 
 void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEditor* fileEditor)
 {
@@ -187,13 +188,17 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		PluginsMenu[i].AccelKey = 0;
 	}
 
+	WindowMenuContext wc;
+	initializeWindowMenuContext(wc);
+
 	HMenuData MainMenu[] = {
 		{Msg::EditorMenuFileTitle,     1, FileMenu,    ARRAYSIZE(FileMenu),    L"Editor"},
 		{Msg::EditorMenuEditTitle,    0, EditMenu,   ARRAYSIZE(EditMenu),   L"Editor" },
 		{Msg::EditorMenuNavigateTitle, 0, NavigateMenu,     ARRAYSIZE(NavigateMenu),     L"Editor" },
 		{Msg::EditorMenuViewTitle,  0, ViewMenu, ARRAYSIZE(ViewMenu), L"Editor" },
 		{Msg::EditorMenuMacroTitle, 0, MacroMenu, MacroMenuSize, L"Editor" },
-		{Msg::EditorMenuPluginsTitle, 0, PluginsMenu, PluginsMenuSize, L"Editor" }
+		{Msg::EditorMenuPluginsTitle, 0, PluginsMenu, PluginsMenuSize, L"Editor" },
+		{Msg::MenuWindowTitle, 0, wc.WindowMenu,     wc.WindowMenuCount,     L"Editor"      }
 	};
 
 	static int LastHItem = -1, LastVItem = 0;
@@ -237,7 +242,7 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 		HOptMenu.SetPosition(0, gap, ScrX, gap);
 
 		if (LastCommand) {
-			MenuDataEx *VMenuTable[] = {FileMenu, EditMenu, NavigateMenu, ViewMenu, MacroMenu, PluginsMenu };
+			MenuDataEx *VMenuTable[] = {FileMenu, EditMenu, NavigateMenu, ViewMenu, MacroMenu, PluginsMenu, wc.WindowMenu };
 			int HItemToShow = LastHItem;
 
 			MainMenu[0].Selected = 0;
@@ -271,9 +276,12 @@ void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEdi
 			break;
 		}
 	}
-	
-	if (HItem == MENU_PLUGINS) {
+	else if (HItem == MENU_PLUGINS) {
 		CtrlObject->Plugins.OpenPlugin(plugins[VItem].pluginItem.pPlugin, OPEN_EDITOR, plugins[VItem].pluginItem.nItem);
+		return;
+	}
+	else if (HItem == MENU_WINDOW) {
+		applyMenu(wc, VItem);
 		return;
 	}
 

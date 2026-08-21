@@ -283,17 +283,6 @@ enum enumViewMenu {
 	MENU_PANELDIRECTORYNAMESETTINGS
 };
 
-enum enumWindowMenu {
-	MENU_PANELWINDOWNEWPANEL,
-	MENU_PANELWINDOWNEWEDITOR,
-	MENU_PANELWINDOWDROPPANEL,
-	MENU_PANELWINDOW_SEPARATOR1,
-	MENU_PANELWINDOWARRANGEFULL,
-	MENU_PANELWINDOWARRANGETILE,
-	MENU_PANELWINDOWARRANGECASCADE,
-	MENU_PANELWINDOW_SEPARATOR2
-};
-
 #include "Bookmarks.hpp"
 
 static std::vector<std::wstring> GetBookmarksList()
@@ -408,6 +397,100 @@ void SetLeftRightMenuChecks(MenuDataEx *pMenu, bool bLeft)
 		case QVIEW_PANEL:
 			pMenu[MENU_LEFT_QUICKVIEW].SetCheck(1);
 			break;
+	}
+}
+
+void initializeWindowMenuContext(WindowMenuContext& ctx) 
+{
+	for (int i = 0; ; ++i) {
+		Frame* frame = FrameManager->getWindowByTypeAndIndex(-1, i);
+		if (!frame) break;
+
+		FARString strNumText;
+		if (i < 10)	strNumText.Format(L"&%d ", i);
+		else if (i - 10 < 'Z' - 'A') strNumText.Format(L"&%c ", char(i - 10 + 'A'));
+		else strNumText.Format(L"&  ");
+
+		FARString strType, strName;
+
+		int k = frame->GetSubpanelCount();
+		if (k > 0) {
+			for(int j = 0; j < k; ++j) {
+				frame->GetSubpanelTypeAndName(j, strType, strName);
+
+				ReplaceStrings(strName, L"&", L"&&", -1);
+				strName.Format(L"%ls%-10.10ls %ls", strNumText.CPtr(), strType.CPtr(), strName.CPtr());
+				ctx.windowNames.push_back(strName.CPtr());
+
+				ctx.WindowMenu[ctx.WindowMenuCount].Name = ctx.windowNames[ctx.windowNames.size() - 1].c_str();
+				ctx.WindowMenu[ctx.WindowMenuCount].AccelKey = 0;
+				ctx.WindowMenu[ctx.WindowMenuCount].Flags = 0;
+
+				if (frame->IsFileModified()) ctx.WindowMenu[ctx.WindowMenuCount].SetCheck(L'*');
+				ctx.frameIndexes.push_back(i);
+				ctx.subframeIndexes.push_back(j);
+		        ++ctx.WindowMenuCount;
+			}
+		}
+		else {
+			frame->GetTypeAndName(strType, strName);
+			ReplaceStrings(strName, L"&", L"&&", -1);
+			strName.Format(L"%ls%-10.10ls %ls", strNumText.CPtr(), strType.CPtr(), strName.CPtr());
+			ctx.windowNames.push_back(strName.CPtr());
+
+			ctx.WindowMenu[ctx.WindowMenuCount].Name = ctx.windowNames[ctx.windowNames.size() - 1].c_str();
+			ctx.WindowMenu[ctx.WindowMenuCount].AccelKey = 0;
+			ctx.WindowMenu[ctx.WindowMenuCount].Flags = 0;
+
+			if (frame->IsFileModified()) ctx.WindowMenu[ctx.WindowMenuCount].SetCheck(L'*');
+
+			ctx.frameIndexes.push_back(i);
+			ctx.subframeIndexes.push_back(-1);
+	        ++ctx.WindowMenuCount;
+		}
+	}
+}
+
+void applyMenu(WindowMenuContext& ctx, int VItem) 
+{
+	switch(VItem) {
+	case MENU_PANELWINDOWNEWPANEL:
+		FrameManager->SwitchToPanels();
+		CtrlObject->Cp()->AppendNewTab();
+		break;
+	case MENU_PANELWINDOWNEWEDITOR:
+		FrameManager->SwitchToPanels();
+		FrameManager->ProcessKey(KEY_SHIFTF4);
+		break;
+	case MENU_PANELWINDOWDROPPANEL:
+		FrameManager->SwitchToPanels();
+		CtrlObject->Cp()->DeleteTab(CtrlObject->Cp()->GetSelectedSubpanel());
+		break;
+	case MENU_PANELWINDOWARRANGEFULL:
+		break;
+	case MENU_PANELWINDOWARRANGETILE:
+		break;
+	case MENU_PANELWINDOWARRANGECASCADE:
+		break;
+	default:
+		if (VItem > MENU_PANELWINDOW_SEPARATOR2) {
+			int frame = VItem - MENU_PANELWINDOW_SEPARATOR2 - 1;
+
+			if (frame >= 0 && frame < (int)ctx.frameIndexes.size()) {
+				int frameI = ctx.frameIndexes[frame];
+
+				FrameManager->ActivateFrame(frameI);
+				Frame* activeFrame = (*FrameManager)[frameI];
+
+				if (activeFrame->GetSubpanelCount() > 0) {
+					int k = activeFrame->GetSubpanelCount();
+					int sub = ctx.subframeIndexes[frame];
+					if (sub >= 0 && sub < k)
+						activeFrame->ActivateSubpanel(sub);
+				}
+			}
+		}
+		break;
 	}
 }
 
@@ -622,69 +705,8 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::PanelDirectoryNameSettings,	0,	KEY_CTRLALTD  }
 	};
 
-	MenuDataEx WindowMenu[128] = {
-		{Msg::PanelWindowNewPanel,	0,	0  },
-		{Msg::PanelWindowNewEditor,	0,	KEY_SHIFTF4  },
-		{Msg::PanelWindowDropPanel,	0,	0  },
-		{L"",	LIF_SEPARATOR,	0  },
-		{Msg::PanelWindowArrangeFull,	0,	0  },
-		{Msg::PanelWindowArrangeTile,	0,	0  },
-		{Msg::PanelWindowArrangeCascade,	0,	0  },
-		{L"",	LIF_SEPARATOR,	0  },
-	};
-
-	int WindowMenuCount = MENU_PANELWINDOW_SEPARATOR2 + 1;
-	std::vector<int> frameIndexes;
-	std::vector<int> subframeIndexes;
-	std::vector<std::wstring> windowNames;
-
-	for (int i = 0; ; ++i) {
-		Frame* frame = FrameManager->getWindowByTypeAndIndex(-1, i);
-		if (!frame) break;
-
-		FARString strNumText;
-		if (i < 10)	strNumText.Format(L"&%d ", i);
-		else if (i - 10 < 'Z' - 'A') strNumText.Format(L"&%c ", char(i - 10 + 'A'));
-		else strNumText.Format(L"&  ");
-
-		FARString strType, strName;
-
-		int k = frame->GetSubpanelCount();
-		if (k > 0) {
-			for(int j = 0; j < k; ++j) {
-				frame->GetSubpanelTypeAndName(j, strType, strName);
-
-				ReplaceStrings(strName, L"&", L"&&", -1);
-				strName.Format(L"%ls%-10.10ls %ls", strNumText.CPtr(), strType.CPtr(), strName.CPtr());
-				windowNames.push_back(strName.CPtr());
-
-				WindowMenu[WindowMenuCount].Name = windowNames[windowNames.size() - 1].c_str();
-				WindowMenu[WindowMenuCount].AccelKey = 0;
-				WindowMenu[WindowMenuCount].Flags = 0;
-
-				if (frame->IsFileModified()) WindowMenu[WindowMenuCount].SetCheck(L'*');
-				frameIndexes.push_back(i);
-				subframeIndexes.push_back(j);
-			}
-		}
-		else {
-			frame->GetTypeAndName(strType, strName);
-			ReplaceStrings(strName, L"&", L"&&", -1);
-			strName.Format(L"%ls%-10.10ls %ls", strNumText.CPtr(), strType.CPtr(), strName.CPtr());
-			windowNames.push_back(strName.CPtr());
-
-			WindowMenu[WindowMenuCount].Name = windowNames[windowNames.size() - 1].c_str();
-			WindowMenu[WindowMenuCount].AccelKey = 0;
-			WindowMenu[WindowMenuCount].Flags = 0;
-
-			if (frame->IsFileModified()) WindowMenu[WindowMenuCount].SetCheck(L'*');
-
-			frameIndexes.push_back(i);
-			subframeIndexes.push_back(-1);
-		}
-
-        ++WindowMenuCount;
-	}
+	WindowMenuContext wc;
+	initializeWindowMenuContext(wc);
 
 	MenuDataEx RightMenu[] = {
 		{Msg::MenuBriefView,        LIF_SELECTED,  KEY_CTRL1  },
@@ -716,7 +738,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::MenuOptionsTitle,  0, OptionsMenu, ARRAYSIZE(OptionsMenu), L"OptMenu"      },
 		{Msg::MenuNavigateTitle, 0, NavigateMenu,  NavMenuCount,     L"NavigateMenu"      },
 		{Msg::MenuViewTitle, 0, ViewMenu,     ARRAYSIZE(ViewMenu),     L"ViewMenu"      },
-		{Msg::MenuWindowTitle, 0, WindowMenu,     WindowMenuCount,     L"WindowMenu"      },
+		{Msg::MenuWindowTitle, 0, wc.WindowMenu,     wc.WindowMenuCount,     L"WindowMenu"      },
 		{Msg::MenuRightTitle,    0, RightMenu,   ARRAYSIZE(RightMenu),   L"LeftRightMenu"}
 	};
 
@@ -742,7 +764,13 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		HOptMenu.SetPosition(0, 0, ScrX, 0);
 
 		if (LastCommand) {
-			MenuDataEx *VMenuTable[] = {LeftMenu, FilesMenu, CmdMenu, ObjectsMenu, OptionsMenu, NavigateMenu, ViewMenu, WindowMenu, RightMenu};
+			MenuDataEx *VMenuTable[] = {
+				LeftMenu, 
+				FilesMenu, CmdMenu, ObjectsMenu, OptionsMenu, 
+				NavigateMenu, 
+				ViewMenu, 
+				wc.WindowMenu, 
+				RightMenu};
 			int HItemToShow = LastHItem;
 
 			if (HItemToShow == -1) {
@@ -1069,40 +1097,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 				break;
 			}
 		case MENU_WINDOW:
-			switch(VItem) {
-			case MENU_PANELWINDOWNEWPANEL:
-				CtrlObject->Cp()->AppendNewTab();
-				break;
-			case MENU_PANELWINDOWNEWEDITOR:
-				FrameManager->ProcessKey(KEY_SHIFTF4);
-				break;
-			case MENU_PANELWINDOWDROPPANEL:
-				CtrlObject->Cp()->DeleteTab(CtrlObject->Cp()->GetSelectedSubpanel());
-				break;
-			case MENU_PANELWINDOWARRANGEFULL:
-				break;
-			case MENU_PANELWINDOWARRANGETILE:
-				break;
-			case MENU_PANELWINDOWARRANGECASCADE:
-				break;
-			default:
-				if (VItem > MENU_PANELWINDOW_SEPARATOR2) {
-					int frame = VItem - MENU_PANELWINDOW_SEPARATOR2 - 1;
-
-					if (frame >= 0 && frame < (int)frameIndexes.size()) {
-						int frameI = frameIndexes[frame];
-
-						FrameManager->ActivateFrame(frameI);
-						Frame* activeFrame = FrameManager->GetCurrentFrame();
-
-						if (activeFrame->GetSubpanelCount() > 0) {
-							activeFrame->ActivateSubpanel(subframeIndexes[frame]);
-						}
-					}
-				}
-				break;
-			}
-			// 
+			applyMenu(wc, VItem);
 			break;
 		default:
 			if (key) FrameManager->ProcessKey(key);

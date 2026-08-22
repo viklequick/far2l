@@ -200,9 +200,9 @@ static void Write_FAR2L_CWD()
 	}
 }
 
-
 static int MainProcess(FARString strEditViewArg, FARString strDestName1, FARString strDestName2,
-		int StartLine, int StartChar, bool cfgNeedSave)
+		int StartLine, int StartChar, bool cfgNeedSave,
+		FARString DestNames[], int CntDestName)
 {
 	InterThreadCallsDispatcherThread itc_dispatcher_thread;
 
@@ -416,7 +416,7 @@ int FarAppMain(int argc, char **argv)
 
 	_OT(SysLog(L"[[[[[[[[New Session of FAR]]]]]]]]]"));
 	FARString strEditViewArg;
-	FARString DestNames[2];
+	FARString DestNames[128];
 	int StartLine = -1, StartChar = -1;
 	int CntDestName = 0;	// количество параметров-имен каталогов
 	/*
@@ -606,7 +606,7 @@ int FarAppMain(int argc, char **argv)
 		}
 		if (!switchHandled)		// простые параметры. Их может быть max две штукА.
 		{
-			if (CntDestName < 2) {
+			if (CntDestName < ARRAYSIZE(DestNames)) {
 				if (IsPluginPrefixPath((const wchar_t *)arg_w.c_str())) {
 					DestNames[CntDestName++] = (const wchar_t *)arg_w.c_str();
 				} else {
@@ -710,7 +710,8 @@ int FarAppMain(int argc, char **argv)
 	if ( Opt.OnlyEditorViewerUsed == Options::ONLY_EDITOR && strEditViewArg.IsEmpty() )
 		strEditViewArg = Msg::NewFileName;
 
-	int Result = MainProcess(strEditViewArg, DestNames[0], DestNames[1], StartLine, StartChar, cfgNeedSave);
+	int Result = MainProcess(strEditViewArg, DestNames[0], DestNames[1], StartLine, StartChar, cfgNeedSave,
+		DestNames, CntDestName);
 
 	EmptyInternalClipboard();
 	doneMacroVarTable(1);

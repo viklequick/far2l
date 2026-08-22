@@ -322,8 +322,9 @@ int TabBar::render()
     }
 
 	SetColor(FarColorToReal(COL_HMENUTEXT));
-    if (WhereX() < X2) 
-    	FS << fmt::LeftAlign() << fmt::Cells() << fmt::Expand(X2 - WhereX() + 1) << L" ";
+	int clockWidth = !Opt.ShowMenuBar &&Opt.Clock ? 5 : 0;
+    if (WhereX() < X2 - clockWidth) 
+    	FS << fmt::LeftAlign() << fmt::Cells() << fmt::Expand(X2 - WhereX() + 1 - clockWidth) << L" ";
     return 0;
 }
 

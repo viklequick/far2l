@@ -65,8 +65,12 @@ public:
 		int x;
 		int w;
 
-		bool LeftVisible { true };
-		bool RightVisible { true };
+		bool ActiveVisible { true };
+		bool PassiveVisible { true };
+
+		Panel* PassivePanel() {
+			return (LeftPanel == ActivePanel) ? RightPanel : LeftPanel ;
+		}
 	};
 
 	KeyBar MainKeyBar;

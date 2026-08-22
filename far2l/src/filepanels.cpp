@@ -83,38 +83,41 @@ static void PrepareOptFolder(FARString &strSrc)
 
 void FilePanels::deactivatePanelsInTab(DoublePanel& activeTab)
 {
-	activeTab.LeftVisible = activeTab.LeftPanel->IsVisible();
-	activeTab.RightVisible = activeTab.RightPanel->IsVisible();
+	activeTab.ActiveVisible = activeTab.ActivePanel->IsVisible();
+	activeTab.PassiveVisible = activeTab.PassivePanel()->IsVisible();
 
-	activeTab.LeftPanel->Hide();
-	activeTab.RightPanel->Hide();
+	activeTab.PassivePanel()->Hide();
+	activeTab.ActivePanel->Hide();
 }
 
 void FilePanels::activatePanelsInTab(DoublePanel& activeTab)
 {
-	if(activeTab.LeftVisible) {
-		activeTab.LeftPanel->Show();
+	// show means right order -> active first
+	if(activeTab.ActiveVisible)  activeTab.ActivePanel->Show();
+	if(activeTab.PassiveVisible) activeTab.PassivePanel()->Show();
+
+	if(activeTab.ActiveVisible) {
+		activeTab.ActivePanel->Update(UPDATE_KEEP_SELECTION | UPDATE_CAN_BE_ANNOYING);
 	}
 
-	if(activeTab.RightVisible) {
-		activeTab.RightPanel->Show();
+	if(activeTab.PassiveVisible) {
+		activeTab.PassivePanel()->Update(UPDATE_KEEP_SELECTION | UPDATE_CAN_BE_ANNOYING);
 	}
 
-	activeTab.ActivePanel->SetFocus();
 	FARString dir;
 	activeTab.ActivePanel->GetCurDir(dir);
 	CtrlObject->CmdLine->SetCurDir(dir);
 
-	if(activeTab.LeftVisible) {
-		activeTab.LeftPanel->Update(UPDATE_KEEP_SELECTION | UPDATE_CAN_BE_ANNOYING);
-		activeTab.LeftPanel->Redraw();
-	}
+    /*
+	if (!activeTab.ActivePanel->IsVisible() || !activeTab.ActivePanel->GetFocus()) {
+		if (activeTab.ActivePanel == activeTab.RightPanel)
+			activeTab.LeftPanel->SetFocus();
+		else
+			activeTab.RightPanel->SetFocus();
+	}*/
+	UpdateCmdLineVisibility(ActiveTab());
 
-	if(activeTab.RightVisible) {
-		activeTab.RightPanel->Update(UPDATE_KEEP_SELECTION | UPDATE_CAN_BE_ANNOYING);
-		activeTab.RightPanel->Redraw();
-	}
-	FrameManager->RefreshFrame();
+	// FrameManager->RefreshFrame();
 }
 
 void FilePanels::Init(DoublePanel& activeTab)
@@ -123,6 +126,8 @@ void FilePanels::Init(DoublePanel& activeTab)
 		FileList::IsModeFullScreen(Opt.LeftPanel.ViewMode),
 		FileList::IsModeFullScreen(Opt.RightPanel.ViewMode),
 		Opt.PanelsDisposition);
+
+
 	activeTab.LeftPanel->SetViewMode(Opt.LeftPanel.ViewMode);
 	activeTab.RightPanel->SetViewMode(Opt.RightPanel.ViewMode);
 	activeTab.LeftPanel->SetSortMode(std::min(std::max(Opt.LeftPanel.SortMode, 0), (int)MAX_PANEL_SORT_MODE));
@@ -142,7 +147,7 @@ void FilePanels::Init(DoublePanel& activeTab)
 	activeTab.LeftPanel->SetExecutablesFirst(Opt.LeftPanel.ExecutablesFirst);
 	activeTab.RightPanel->SetExecutablesFirst(Opt.RightPanel.ExecutablesFirst);
 
-	if(&activeTab == &ActiveTab()) SetCanLoseFocus(TRUE);
+	// if(&activeTab == &ActiveTab()) SetCanLoseFocus(TRUE);
 	Panel *PassivePanel = nullptr;
 	int PassiveIsLeftFlag = TRUE;
 
@@ -156,7 +161,8 @@ void FilePanels::Init(DoublePanel& activeTab)
 		PassiveIsLeftFlag = TRUE;
 	}
 
-	activeTab.ActivePanel->SetFocus();
+	// activeTab.ActivePanel->SetFocus();
+
 	PrepareOptFolder(Opt.strLeftFolder);
 	PrepareOptFolder(Opt.strRightFolder);
 
@@ -222,8 +228,13 @@ void FilePanels::Init(DoublePanel& activeTab)
 void FilePanels::Init()
 {
 	Init(ActiveTab());
+	// todo: if many tabvs were saved earler, it is a good place to restore
+
+	ActiveTab().ActivePanel->SetFocus();
+
 	SetKeyBar(&MainKeyBar);
 	MainKeyBar.SetOwner(this);
+	SetCanLoseFocus(TRUE);
 }
 
 void FilePanels::destroyPanelsGracefully(DoublePanel& activeTab) {
@@ -1188,6 +1199,7 @@ void FilePanels::DisplayObject()
 		ActiveTab().RightPanel->Show();
 
 #else
+	/*
 	Panel *PassivePanel = nullptr;
 	int PassiveIsLeftFlag = TRUE;
 
@@ -1218,7 +1230,7 @@ void FilePanels::DisplayObject()
 		if (Opt.LeftPanel.Visible) {
 			ActiveTab().LeftPanel->Show();
 		}
-	}
+	}*/
 #endif
 }
 
@@ -1346,27 +1358,6 @@ FARString StrTrim(const FARString& x) {
 
 int FilePanels::SetTabNames()
 {
-	/*
-	std::vector<std::wstring> v;
-	int maxW = (X2 - X1 - 4);
-	int maxLen = std::min(25, (int)(maxW / tabs.size() / 2));
-	if (maxW < 5 || maxLen < 5) return -1;
-
-	for(size_t i = 0; i < tabs.size(); ++i){
-		tabs[i].ActivePanel->GetTitle(tabs[i].a_name, 128, 2);
-		GetAnotherPanel(tabs[i], tabs[i].ActivePanel)->GetTitle(tabs[i].p_name, 128, 2);
-
-		std::vector<std::wstring> pair;
-		pair.push_back(tabs[i].a_name.CPtr());
-		pair.push_back(tabs[i].p_name.CPtr());
-		std::wstring prefix = widestCommonDirectory(pair);
-
-		FARString name = makeLeaf(pair[0], prefix) + L" " + makeLeaf(pair[1], prefix);
-		v.push_back(name.GetWide());
-	}
-	TopTabBar.SetTexts(v, TabActive);
-    */
-
     TopTabBar.Clear();
 	for(size_t i = 0; i < tabs.size(); ++i){
 		tabs[i].LeftPanel->GetTitle(tabs[i].a_name, 128, 2);
@@ -1388,37 +1379,68 @@ void FilePanels::UpdateTabBar() {
 
 void FilePanels::SwitchActiveTabTo(int tabNo)
 {
-	if(TabActive == tabNo) return;
+	int tabA = TabActive;
 
-	deactivatePanelsInTab(ActiveTab());
+	if(tabA == tabNo) return;
+
+	deactivatePanelsInTab(tabs[tabA]);
 	TabActive = tabNo;
-	activatePanelsInTab(ActiveTab());
-	Refresh();
+	activatePanelsInTab(tabs[tabNo]);
+
+	ActiveTab().ActivePanel->SetFocus();
 }
 
 int FilePanels::AppendNewTab() {
 	int tabNo = (int)tabs.size();
 	tabs.push_back(DoublePanel());
 
+	for(size_t i = 0; i < tabs.size(); ++i) {
+		fprintf(stderr, "\tappendNewTab prior to add: [%d] active=%p left=%p right=%p\n", 
+			(int)i, tabs[i].ActivePanel, tabs[i].LeftPanel, tabs[i].RightPanel);
+	}
+
 	tabs[tabNo].LeftPanel  = CreatePanel(Opt.LeftPanel.Type);
 	tabs[tabNo].RightPanel = CreatePanel(Opt.RightPanel.Type);
 
 	Init(tabs[tabNo]);
+
 	SwitchActiveTabTo(tabNo);
+
+	for(size_t i = 0; i < tabs.size(); ++i) {
+		fprintf(stderr, "\tappendNewTab after switch: [%d] active=%p left=%p right=%p\n", 
+			(int)i, tabs[i].ActivePanel, tabs[i].LeftPanel, tabs[i].RightPanel);
+	}
 	return tabNo;
 }
 
 void FilePanels::DeleteTab(int tabNo) {
 	if (tabs.size() == 1 || tabNo < 0 || tabNo >= (int)tabs.size()) return; // last panels cannot be removed
+
+	int oldActive = TabActive;
+
+	for(size_t i = 0; i < tabs.size(); ++i) {
+		fprintf(stderr, "\tdeleteTab: [%d] active=%p left=%p right=%p\n", 
+			(int)i, tabs[i].ActivePanel, tabs[i].LeftPanel, tabs[i].RightPanel);
+	}
+
 	if (TabActive == tabNo) { // deleting active tab -> need to switch active to other first
 		int switchTo = TabActive == 0 ? 1 : TabActive - 1;
-		SwitchActiveTabTo(switchTo);
+		// SwitchActiveTabTo(switchTo);
+		TabActive = switchTo;
 	}
-	// if we're deleting tab on the left active pointer needs to be shifted
-	if (TabActive > tabNo) --TabActive; 
+	// if we're deleting tab on the left, the active pointer needs to be shifted
+	else if (TabActive > tabNo) {
+		--TabActive; 
+		// no changes 
+	}
+
 	deactivatePanelsInTab(tabs[tabNo]);
-	destroyPanelsGracefully(tabs[tabNo]);
+
+	DoublePanel panel = tabs[tabNo];
 	tabs.erase(tabs.begin() + tabNo);
+	if (TabActive != oldActive)
+		activatePanelsInTab(tabs[TabActive]);
+	destroyPanelsGracefully(panel);
 
 	Redraw();
 }

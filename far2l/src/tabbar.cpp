@@ -138,12 +138,12 @@ void compactifyFileNamesUpTo(std::vector<TabBar::TabNameAndPos>& v) {
 	}
 
 	std::wstring commonPrefix = widestCommonDirectory(paths);
-	fprintf(stderr, "... common dir=`%ls`\n", commonPrefix.c_str());
+	//fprintf(stderr, "... common dir=`%ls`\n", commonPrefix.c_str());
 	for(i = 0; i < v.size(); ++i) {
 		v[i].left = v[i].name;
 		v[i].right = v[i].p_name;
 		makeLeaf(v[i], commonPrefix);
-		fprintf(stderr, "... left=`%ls` right=`%ls`\n", v[i].left.CPtr(), v[i].right.CPtr());
+		//fprintf(stderr, "... left=`%ls` right=`%ls`\n", v[i].left.CPtr(), v[i].right.CPtr());
 	}
 }
 
@@ -257,13 +257,14 @@ int TabBar::render()
 		bool active = i == (size_t)activeIndex;
 		bool hover  = i == (size_t)hoveredTab;
 
+        /*
 		fprintf(stderr, "... [%d]: `%ls` active=%c hover=%c left=`%ls` right=`%ls`\n", 
 			(int)i, 
 			tabPos[i].display.CPtr(), 
 			active ? 'Y' : 'n', hover ? 'Y' : 'n',
 			tabPos[i].left.CPtr(),
 			tabPos[i].right.CPtr());
-
+        */
 		tabPos[i].display = shortenLeaf(tabPos[i], leafWidths[i]);;
 		tabPos[i].x = WhereX() - X1;
 		tabPos[i].w = (int)tabPos[i].display.CellsCount();

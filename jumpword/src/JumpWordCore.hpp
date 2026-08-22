@@ -200,6 +200,7 @@ bool FindWordAbove(
             }
         }
         currentLine--;
+        if (currentLine < 0) break;
 
         if (!getLine(currentLine, &lineBegin, &lineEnd)) return false;
         searchEnd = lineEnd;

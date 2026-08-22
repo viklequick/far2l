@@ -140,6 +140,27 @@ int main() {
                 " pos=" + std::to_string(pos));
     }
 
+    // Up-search must stop cleanly at the top of the buffer instead of calling GetLine(-1, ...)
+    {
+        g_lines = {L"a b"};
+        const wchar_t *lineBegin, *lineEnd;
+        GetLine(0, &lineBegin, &lineEnd);
+        const wchar_t *wordBegin = lineBegin + 2, *wordEnd = lineBegin + 3; // "b"
+        int pos = -1, line = -1;
+        bool found = FindWordAbove(
+            0,
+            1,
+            lineBegin,
+            lineEnd,
+            wordBegin,
+            wordEnd,
+            &pos,
+            &line,
+            GetLine,
+            NoOpUIUpdate);
+        Check(!found, "Up-search stops at top of buffer without out-of-bounds GetLine", "found=" + std::to_string(found));
+    }
+
     printf("\n%d test(s) failed.\n", g_failures);
     return g_failures == 0 ? 0 : 1;
 }

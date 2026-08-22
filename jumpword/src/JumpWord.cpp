@@ -1,3 +1,5 @@
+#include <algorithm>
+
 #include <KeyFileHelper.h>
 #include <farplug-wide.h>
 #include <utils.h>
@@ -105,7 +107,7 @@ bool UIUpdate(int currentLine, int totalLines) {
 
     // Reserve the progress width to make the two lines in the message aligned by
     // width
-    int progressWidth  = wcslen(searchingMessage) - wcslen(percentString);
+    int progressWidth  = std::max<int>(0, (int) wcslen(searchingMessage) - (int) wcslen(percentString));
     int progressFilled = percent * progressWidth / 100;
 
     std::wstring progressLine =

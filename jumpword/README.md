@@ -6,6 +6,7 @@ quick navigation in sources. The demo is below:
 
 ![Demo](jumpword-demo.gif)
 
+<<<<<<< HEAD
 Building
 ========
 
@@ -18,6 +19,13 @@ Installing
 Perform the build and do the usual far2l installation from build directory.
 
 In addition you can install <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>↓</kbd> and <kbd>Ctrl</kbd> + <kbd>Alt</kbd> +
+=======
+Key macros
+==========
+
+In addition you can install <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>↓</kbd>, <kbd>Ctrl</kbd> + <kbd>Alt</kbd> +
+<kbd>↑</kbd>, <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>↓</kbd> and <kbd>Ctrl</kbd> + <kbd>Shift</kbd> +
+>>>>>>> aac116ddd0ec88a4b394bb98ac329f239e105eda
 <kbd>↑</kbd> keyboard shortcuts. To do that, add the following sections to `~/.config/far2l/settings/key_macros.ini`:
 
 ```ini

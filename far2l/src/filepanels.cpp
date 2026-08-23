@@ -228,7 +228,42 @@ void FilePanels::Init(DoublePanel& activeTab)
 void FilePanels::Init()
 {
 	Init(ActiveTab());
-	// todo: if many tabvs were saved earler, it is a good place to restore
+	// todo: if many tabs were saved earler, it is a good place to restore
+
+	if (!Opt.strLeftFolderList.IsEmpty() && !Opt.strRightFolderList.IsEmpty()) {
+		wchar_t* ldup = wcsdup(Opt.strLeftFolderList.CPtr());  // separator is `|`
+		wchar_t* rdup = wcsdup(Opt.strRightFolderList.CPtr());
+		int switchTo = Opt.activeTabNo;
+
+		int foundTabs = 0;
+		wchar_t* left = ldup;
+		wchar_t* right = rdup;
+		for(;;) {
+			wchar_t* ql = wcschr(left, '|');
+			wchar_t* qr = wcschr(right, '|');
+
+			if(ql) *ql = 0;
+			if(qr) *qr = 0;
+
+			if(foundTabs > 0) {
+				AppendNewTab();
+			}
+
+			tabs[TabActive].LeftPanel->InitCurDir(left);
+			tabs[TabActive].RightPanel->InitCurDir(right);
+
+			if (!ql || !qr) break;
+
+			left = ql + 1;
+			right = qr + 1;
+            ++foundTabs;
+		}
+
+		SwitchActiveTabTo(switchTo);
+
+		free(ldup);
+		free(rdup);
+	}
 
 	ActiveTab().ActivePanel->SetFocus();
 
@@ -1502,4 +1537,17 @@ void FilePanels::SwapTo(int srcTab, int dstTab, bool isLeft) {
 	if (dstTab == TabActive) activatePanelsInTab(dst);
 
 	FrameManager->RefreshFrame();
+}
+
+void FilePanels::GetActiveTabPaths(FARString& leftFolderList, FARString& rightFolderList, int& activeTab) 
+{
+	leftFolderList = L"";
+	rightFolderList = L"";
+	activeTab = TabActive;
+	for(size_t i = 0; i < tabs.size(); ++i) {
+		if(i > 0) leftFolderList += L"|";
+		if(i > 0) rightFolderList += L"|";
+		leftFolderList += tabs[i].a_name;
+		rightFolderList += tabs[i].p_name;
+	}
 }

@@ -764,6 +764,13 @@ const ConfigOpt g_cfg_opts[] {
 	{OST_PANELS, NSecPanelLeft, "ExecutablesFirst", &Opt.LeftPanel.ExecutablesFirst, 0,
 		L"PanelCmdSort", L"Whether executable files are shown before other files in the left panel" },
 
+	{OST_PANELS, NSecPanelLeft, "FolderList", &Opt.strLeftFolderList, L"",
+		L"FilePanel", L"The saved folders for the left panels" },
+	{OST_PANELS, NSecPanelRight, "FolderList", &Opt.strRightFolderList, L"",
+		L"FilePanel", L"The saved folders for the right panels" },
+	{OST_PANELS, NSecInterface, "ActiveTabNo", &Opt.activeTabNo, 0,
+		L"Interface", L"The saved folders for the right panels" },
+
 	{OST_PANELS, NSecPanelRight, "Type", &Opt.RightPanel.Type, 0,
 		L"Panels", L"The saved panel type for the right panel: 0=file panel, 1=tree panel, 2=quick view panel, 3=information panel" },
 	{OST_PANELS, NSecPanelRight, "Visible", &Opt.RightPanel.Visible, 1,
@@ -1198,6 +1205,8 @@ static void SavePanelsToOpt()
 
 	LeftPanel->GetCurDir(Opt.strLeftFolder);
 	LeftPanel->GetCurBaseName(Opt.strLeftCurFile);
+
+	CtrlObject->Cp()->GetActiveTabPaths(Opt.strLeftFolderList, Opt.strRightFolderList, Opt.activeTabNo);
 
 	if (RightPanel->GetMode() == NORMAL_PANEL)
 	{

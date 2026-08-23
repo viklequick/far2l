@@ -437,6 +437,9 @@ struct Options
 
 	FARString strLeftFolder;
 	FARString strRightFolder;
+	FARString strLeftFolderList;          // for tabs, separator is `|`
+	FARString strRightFolderList;
+	int activeTabNo;
 
 	FARString strLeftCurFile;
 	FARString strRightCurFile;

@@ -306,9 +306,12 @@ bool IsEasterEggAnimationActive() {
     int hour   = local.tm_hour;
     int minute = local.tm_min;
 
-    return hour == 0 && minute >= 15 && minute < 30; // night time, 15 minutes
+    int month = local.tm_mon + 1;   // tm_mon: 0 = Jan
+    int day   = local.tm_mday;
+
+    return (month == 8 && day >= 9 && day <= 15) && hour == 0 && minute >= 15 && minute < 30; // night time, 15 minutes
 }
 
-FireEffect fire(400, 200);
+FireEffect fire(400, 100);
 // MarsEffect terrain(320, 200);
 // PotatoPlasmaEffect potato(320, 200);

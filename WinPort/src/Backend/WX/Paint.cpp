@@ -692,29 +692,31 @@ void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 	    else
 	    	dc.DrawBitmap(bmpGR, 0 + winbox.GetRight() - bmpGR.GetWidth(), 40, true);
 
-	    if (IsEasterEggActive()) 
+	    if (IsEasterEggActive())  {
 	    	dc.DrawBitmap(bmpAM, 
 	    		0 + winbox.GetRight() - bmpAM.GetWidth() - 20, 
 	    		WXCustomDrawChar::options->FlyGirlAnchor == 4 && imgUGcount ? 40 : 0 + winbox.GetBottom() - bmpAM.GetHeight() - 40, 
 	    		true);
-	    if (IsEasterEggAnimationActive()){ 
-	    	fire.Update();
-		    //terrain.Update();
-		    //potato.Update();
+		    
+		    if (IsEasterEggAnimationActive()){ 
+		    	fire.Update();
+			    //terrain.Update();
+			    //potato.Update();
 
-		    wxImage fireImg = fire.Render();
-		    wxImage scaledFire = fireImg.Scale(winbox.GetWidth(), winbox.GetHeight() / 4, wxIMAGE_QUALITY_HIGH);
-		    wxBitmap bmpFire(scaledFire);
+			    wxImage fireImg = fire.Render();
+			    wxImage scaledFire = fireImg.Scale(winbox.GetWidth(), fireImg.GetHeight(), wxIMAGE_QUALITY_HIGH);
+			    wxBitmap bmpFire(scaledFire);
 
-		    /*
-		    //wxImage marsImg = terrain.Render();
-		    wxImage marsImg = potato.Render();
-		    wxImage scaledMars = marsImg.Scale(winbox.GetWidth(), 40, wxIMAGE_QUALITY_HIGH);
-		    wxBitmap bmpMars(scaledMars);
+			    /*
+			    //wxImage marsImg = terrain.Render();
+			    wxImage marsImg = potato.Render();
+			    wxImage scaledMars = marsImg.Scale(winbox.GetWidth(), 40, wxIMAGE_QUALITY_HIGH);
+			    wxBitmap bmpMars(scaledMars);
 
-		    dc.DrawBitmap(bmpMars, 0, 0, true);
-		    */
-	    	dc.DrawBitmap(bmpFire, 0, winbox.GetBottom() - scaledFire.GetHeight(), true);
+			    dc.DrawBitmap(bmpMars, 0, 0, true);
+			    */
+		    	dc.DrawBitmap(bmpFire, 0, winbox.GetBottom() - scaledFire.GetHeight(), true);
+			}
 		}
 	}
 }

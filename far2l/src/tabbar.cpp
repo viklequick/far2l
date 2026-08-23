@@ -285,7 +285,7 @@ int TabBar::render()
 		} 
 
 		color2 = SoftenItemColor(FarColorToReal(active ? COL_HMENUSELECTEDTEXT : COL_HMENUTEXT), // COL_EDITORSTATUS
-			active ? 1 : 0, 
+			/*active ? 1 :*/ 0, 
 			hover ? 1 : 0, 0, 0);
 		SetColor(color2);
 		FS << (active ? L"📲" /* L"📜" */ : L"📱" /* L"📝" */);

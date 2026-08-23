@@ -442,7 +442,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			if (tab >= 0) {
 				SetActive(tab);
 				CtrlObject->Cp()->SwitchActiveTabTo(tab);
-				CtrlObject->Cp()->Redraw();
+				CtrlObject->Cp()->Update();
 				Redraw();
 			}
 			return TRUE;

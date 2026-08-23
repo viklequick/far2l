@@ -1412,6 +1412,14 @@ void FilePanels::UpdateTabBar() {
 	SetTabNames();
 }
 
+void FilePanels::Update() 
+{
+	//if(ActiveTab().ActivePanel->IsVisible()) 	 ActiveTab().ActivePanel->Update(UPDATE_KEEP_SELECTION);
+	//if(ActiveTab().PassivePanel()->IsVisible())  ActiveTab().PassivePanel()->Update(UPDATE_KEEP_SELECTION);
+	FrameManager->RefreshFrame();
+	//Redraw();
+}
+
 void FilePanels::SwitchActiveTabTo(int tabNo)
 {
 	int tabA = TabActive;
@@ -1453,11 +1461,6 @@ void FilePanels::DeleteTab(int tabNo) {
 
 	int oldActive = TabActive;
 
-	for(size_t i = 0; i < tabs.size(); ++i) {
-		fprintf(stderr, "\tdeleteTab: [%d] active=%p left=%p right=%p\n", 
-			(int)i, tabs[i].ActivePanel, tabs[i].LeftPanel, tabs[i].RightPanel);
-	}
-
 	if (TabActive == tabNo) { // deleting active tab -> need to switch active to other first
 		int switchTo = TabActive == 0 ? 1 : TabActive - 1;
 		// SwitchActiveTabTo(switchTo);
@@ -1478,6 +1481,11 @@ void FilePanels::DeleteTab(int tabNo) {
 	destroyPanelsGracefully(panel);
 
 	Redraw();
+
+	for(size_t i = 0; i < tabs.size(); ++i) {
+		fprintf(stderr, "\tdeleteTab: [%d] active=%p left=%p right=%p\n", 
+			(int)i, tabs[i].ActivePanel, tabs[i].LeftPanel, tabs[i].RightPanel);
+	}
 }
 
 void FilePanels::EnlistAllPaths(std::vector<std::wstring>& holder, bool left, bool exceptActive)

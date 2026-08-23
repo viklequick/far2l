@@ -275,7 +275,7 @@ int TabBar::render()
 		}
 
 		SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, 0, 0, 0));
-		if(i > 0) FS << L"║";
+		if(i > 0) FS << L"│";
 
 		if (tabPos.size() > 1){
 			SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, leftPinHovered == (int)i ? 1 : 0, 0, 0));
@@ -303,7 +303,7 @@ int TabBar::render()
 
 	SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, plusHovered ? 1 : 0, 0, 0));
     plusX = WhereX() + 1;
-    FS << L"║ 🞧 ";
+    FS << L"│ 🞧 ";
 
     moreX = -1;
     more = true;

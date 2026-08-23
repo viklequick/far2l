@@ -56,9 +56,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "strmix.hpp"
 #include "mix.hpp"
 
-void SetColorBlacked(DWORD64 attrs, bool focus = true, bool hover = false);
-void SetFarColorBlacked(int what, bool focus = true, bool hover = false);
-
 // Флаги для ReadDiz()
 enum ReadDizFlags
 {

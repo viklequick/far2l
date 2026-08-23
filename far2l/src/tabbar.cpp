@@ -284,7 +284,7 @@ int TabBar::render()
 			tabPos[i].x = WhereX() - X1;
 		} 
 
-		color2 = SoftenItemColor(FarColorToReal(COL_HMENUTEXT /* COL_EDITORSTATUS */), 
+		color2 = SoftenItemColor(FarColorToReal(active ? COL_HMENUSELECTEDTEXT : COL_HMENUTEXT), // COL_EDITORSTATUS
 			active ? 1 : 0, 
 			hover ? 1 : 0, 0, 0);
 		SetColor(color2);
@@ -442,6 +442,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			if (tab >= 0) {
 				SetActive(tab);
 				CtrlObject->Cp()->SwitchActiveTabTo(tab);
+				CtrlObject->Cp()->Redraw();
 				Redraw();
 			}
 			return TRUE;

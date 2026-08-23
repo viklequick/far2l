@@ -1512,3 +1512,16 @@ bool CheckForInactivityExit()
 
 	return false;
 }
+
+void SetColorBlacked(DWORD64 attrs, bool focus, bool hover) {
+	auto color = attrs;
+	if (Opt.Backend.UseModernLook && !focus) color = SoftenColorToDisabled(color);
+	if (Opt.Backend.UseModernLook && hover) color = SoftenItemColor(color, false, hover, false, false);
+	SetColor(color);
+}
+
+void SetFarColorBlacked(int what, bool focus, bool hover) {
+	auto color = FarColorToReal(what);
+	SetColorBlacked(color, focus, hover);
+}
+

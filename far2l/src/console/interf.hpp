@@ -156,3 +156,6 @@ FARString &HiText2Str(FARString &strDest, const wchar_t *Str);
 
 bool CheckForInactivityExit();
 void CheckForPendingCtrlHandleEvent();
+
+void SetColorBlacked(DWORD64 attrs, bool focus = true, bool hover = false);
+void SetFarColorBlacked(int what, bool focus = true, bool hover = false);

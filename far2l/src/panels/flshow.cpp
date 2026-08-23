@@ -92,18 +92,6 @@ void FileList::DisplayObject()
 	int SortMarkHovered {-1};
 */
 
-void SetColorBlacked(DWORD64 attrs, bool focus = true, bool hover = false) {
-	auto color = attrs;
-	if (Opt.Backend.UseModernLook && !focus) color = SoftenColorToDisabled(color);
-	if (Opt.Backend.UseModernLook && hover) color = SoftenItemColor(color, false, hover, false, false);
-	SetColor(color);
-}
-
-void SetFarColorBlacked(int what, bool focus = true, bool hover = false) {
-	auto color = FarColorToReal(what);
-	SetColorBlacked(color, focus, hover);
-}
-
 void FileList::ShowFileList(int Fast)
 {
 	if (Locked()) {

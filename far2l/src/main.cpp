@@ -263,9 +263,23 @@ static int MainProcess(FARString strEditViewArg, FARString strDestName1, FARStri
 			Opt.SetupArgv = 0;
 			FARString strPath;
 
+			if (CntDestName > 0 ) {
+				FARString leftFolderList = Opt.strLeftFolderList, rightFolderList = Opt.strRightFolderList;
+				for(int i = 0; i < ( CntDestName / 2) * 2; i += 2) {
+					if (!leftFolderList.IsEmpty()) leftFolderList += L"|";
+					if (!rightFolderList.IsEmpty()) rightFolderList += L"|";
+					leftFolderList  += DestNames[i];
+					rightFolderList += DestNames[i + 1];
+				}
+				Opt.strLeftFolderList = leftFolderList;
+				Opt.strRightFolderList= rightFolderList;
+			}
+
 			// воспользуемся тем, что ControlObject::Init() создает панели
 			// юзая Opt.*
-			if (strDestName1.GetLength())  // активная панель
+			// crazy logic to validate wrong paths, ignore it for case tabs are active
+			// todo: use it for every folder in list
+			if (CntDestName < 3 && strDestName1.GetLength())  // активная панель
 			{
 				UpdatePathOptions(strDestName1, true);
 
@@ -277,7 +291,9 @@ static int MainProcess(FARString strEditViewArg, FARString strDestName1, FARStri
 			CtrlObj.Init();
 
 			// а теперь "провалимся" в каталог или хост-файл (если получится ;-)
-			if (strDestName1.GetLength())		// актиная панель
+			// crazy logic to validate wrong paths, ignore it for case tabs are active
+			// todo: use it for every folder in list
+			if (CntDestName < 3 && strDestName1.GetLength())		// актиная панель
 			{
 				FARString strCurDir;
 				Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
@@ -606,7 +622,7 @@ int FarAppMain(int argc, char **argv)
 		}
 		if (!switchHandled)		// простые параметры. Их может быть max две штукА.
 		{
-			if (CntDestName < ARRAYSIZE(DestNames)) {
+			if (CntDestName < (int)ARRAYSIZE(DestNames)) {
 				if (IsPluginPrefixPath((const wchar_t *)arg_w.c_str())) {
 					DestNames[CntDestName++] = (const wchar_t *)arg_w.c_str();
 				} else {

@@ -70,10 +70,69 @@ static void DbgPrintEscaped(const char *info, const char *s, size_t l)
 
 int VTShell_Leader(char *const shell_argv[], const char *pty);
 
-const char *GetSystemShell()
+std::string VTSanitizeHistcontrol()
 {
+	std::string hc_override;
+	const char *hc = getenv("HISTCONTROL");
+	if (!hc || (!strstr(hc, "ignorespace") && !strstr(hc, "ignoreboth"))) {
+		hc_override = "ignorespace";
+		if (hc && *hc) {
+			hc_override+= ':';
+			hc_override+= hc;
+		}
+		fprintf(stderr, "Override HISTCONTROL='%s'\n", hc_override.c_str());
+	}
+	return hc_override;
+}
+
+static bool VTShell_LookFor(std::string &out, const char *path, const char *what)
+{
+	for (const char *end = path; ; ++end) {
+		if (*end == 0 || *end == ':') {
+			out.assign(path, end - path);
+			if (!out.empty() && out.back() != '/' ) {
+				out+= '/';
+			}
+			out+= what;
+			if (access(out.c_str(), X_OK) == 0) {
+				return true;
+			}
+			if (*end == 0) {
+				return false;
+			}
+			path = end +1;
+		}
+	}
+}
+
+std::string VTShell_GetSystemShell()
+{
+	std::string out;
+	// prefer to use known-good shell
+	// fallback: "$SHELL"
+	// last resort: "sh"
+	const char *known_good[] = {"bash", "dash"};
+	const char *path = getenv("PATH");
+	for (const auto *what : known_good) {
+		if (path && VTShell_LookFor(out, path, what)) {
+			return out;
+		}
+		if (VTShell_LookFor(out, "/bin:/usr/bin:/usr/local/bin", what)) {
+			return out;
+		}
+	}
 	const char *env_shell = getenv("SHELL");
-	return (env_shell && *env_shell) ? env_shell : "/bin/sh";
+	if (env_shell && *env_shell) {
+		const char *slash = strrchr(env_shell, '/');
+		out = slash ? slash + 1 : env_shell;
+		// avoid using known-incompatible shells for a while, it requires changes in Opt.strQuotedSymbols and some others
+		if (out == "fish" || out == "csh" || out == "tcsh" || out == "nu") {
+			out = "sh";
+		}
+	} else {
+		out = "sh";
+	}
+	return out;
 }
 
 class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
@@ -139,16 +198,26 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 			}
 		}
 
+		if (shell_exploded.empty() || shell_exploded.front().empty()) {
+			shell_exploded.Parse(VTShell_GetSystemShell());
+			shell_exploded.emplace_back("-i");
+		}
+
 		_backend = CreateVTShellBackend(shell_to_use);
 
 		std::vector<std::string> args = _backend->GetStartArgs(shell_interactive, shell_noprofile);
 		std::string exec_path = _backend->GetExecPath();
 
+		fprintf(stderr, "%s:", __FUNCTION__);
 		std::vector<char *> shell_argv;
+
 		shell_argv.emplace_back(const_cast<char *>(exec_path.c_str()));
-		for (const auto &arg : args) {
-			shell_argv.emplace_back(const_cast<char *>(arg.c_str()));
+
+		for (const auto &arg : shell_exploded) {
+			shell_argv.emplace_back((char *)arg.c_str());
+			fprintf(stderr, " '%s'", arg.c_str());
 		}
+		fprintf(stderr, "\n");
 		shell_argv.emplace_back(nullptr);
 
 		std::map<std::string, std::string> env_vars;
@@ -169,9 +238,10 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 		if (strstr(shell_argv.front(), "zsh")) {
 			_init_user_profile = ".zprofile";
 		} else if (strstr(shell_argv.front(), "bash")) {
-			_init_user_profile = ".bash_profile";;
+			_init_user_profile = ".bash_profile";
 		}
 #endif
+
 		std::cin.sync();
 		std::cout.flush();
 		std::cerr.flush();
@@ -390,19 +460,34 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 		cmd+= VT_ComposeMarkerCommand(_startup_marker);
 		cmd+= '\n';
 		StartIOReaders();
-		do {
+		for (;;) {
 			const auto now = GetProcessUptimeMSec();
 			if (when_printed_cmd == 0 || now - when_printed_cmd >= 300) {
 				when_printed_cmd = now;
 				InjectInput(cmd.c_str());
+				if (cmd.front() == '\n') {
+					cmd.erase(0, 1);
+				}
 			}
 			DispatchInterThreadCalls();
 			InterThreadLock lock;
-			if (_startup_marker.empty() || _output_reader.IsDeactivated()) {
+			if (_startup_marker.empty()) {
+				break;
+			}
+			if (_output_reader.IsDeactivated()) {
+				fprintf(stderr, "%s: _output_reader deactivated\n", __FUNCTION__);
 				break;
 			}
 			lock.WaitForWake(300);
-		} while (CheckLeaderAlive() && (GetProcessUptimeMSec() - when_started) < SHELL_TIMEOUT);
+			if (!CheckLeaderAlive()) {
+				fprintf(stderr, "%s: leader terminated unexpectedly\n", __FUNCTION__);
+				break;
+			}
+			if (GetProcessUptimeMSec() - when_started > SHELL_TIMEOUT) {
+				fprintf(stderr, "%s: timed out\n", __FUNCTION__);
+				break;
+			}
+		}
 		StopIOReaders();
 
 		_console_switch_requested = false;
@@ -411,7 +496,8 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 			fprintf(stderr, "%s: startup took %lu msec\n",
 				__FUNCTION__, (unsigned long)(GetProcessUptimeMSec() - when_started));
 		} else {
-			fprintf(stderr, "VT: shell is not talking with us\n");
+			fprintf(stderr, "%s: failed in %lu msec\n",
+				__FUNCTION__, (unsigned long)(GetProcessUptimeMSec() - when_started));
 			r = _leader_pid;
 			if (r != -1) {
 				kill(r, SIGKILL);

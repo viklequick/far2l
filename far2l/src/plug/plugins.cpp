@@ -1992,9 +1992,9 @@ void SetPluginDirectory(const wchar_t *DirName, HANDLE hPlugin, bool UpdatePanel
 
 		// Отрисуем панель при необходимости.
 		if (UpdatePanel) {
-			CtrlObject->Cp()->ActivePanel->Update(UPDATE_KEEP_SELECTION);
-			CtrlObject->Cp()->ActivePanel->GoToFile(NamePtr);
-			CtrlObject->Cp()->ActivePanel->Show();
+			CtrlObject->Cp()->ActiveTab().ActivePanel->Update(UPDATE_KEEP_SELECTION);
+			CtrlObject->Cp()->ActiveTab().ActivePanel->GoToFile(NamePtr);
+			CtrlObject->Cp()->ActiveTab().ActivePanel->Show();
 		}
 
 		// strName.ReleaseBuffer(); Не надо. Строка все равно удаляется, лишний вызов StrLength.

@@ -182,42 +182,42 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 		bool shell_interactive = true;
 		bool shell_noprofile = false;
 
-		if (Opt.CmdLine.UseShell) {
-			// Parsing Opt.CmdLine.strShell to detect overrides like --noprofile or specific shell path
-			Environment::ExplodeCommandLine shell_exploded;
-			shell_exploded.Parse(Opt.CmdLine.strShell.GetMB());
-
-			if (!shell_exploded.empty()) {
-				shell_to_use = shell_exploded.front();
-				// This is a simplified logic. In a real scenario we might want to check args more carefully
-				for (size_t i = 1; i < shell_exploded.size(); ++i) {
-					if (shell_exploded[i] == "--noprofile" || shell_exploded[i] == "--no-config")
-						shell_noprofile = true;
-					// -i detection is implicit
-				}
-			}
-		}
+		// Parsing Opt.CmdLine.strShell to detect overrides like --noprofile or specific shell path
+		Environment::ExplodeCommandLine shell_exploded;
+		shell_exploded.Parse(Opt.CmdLine.strShell.GetMB());
 
 		if (shell_exploded.empty() || shell_exploded.front().empty()) {
 			shell_exploded.Parse(VTShell_GetSystemShell());
 			shell_exploded.emplace_back("-i");
 		}
 
+		if (!shell_exploded.empty()) {
+			shell_to_use = shell_exploded.front();
+			// This is a simplified logic. In a real scenario we might want to check args more carefully
+			for (size_t i = 1; i < shell_exploded.size(); ++i) {
+				if (shell_exploded[i] == "--noprofile" || shell_exploded[i] == "--no-config")
+					shell_noprofile = true;
+				// -i detection is implicit
+			}
+		}
+
+		//fprintf(stderr, "ExecLeaderProcess: shell to use = `%s`\n", shell_to_use.c_str());
+
 		_backend = CreateVTShellBackend(shell_to_use);
 
 		std::vector<std::string> args = _backend->GetStartArgs(shell_interactive, shell_noprofile);
 		std::string exec_path = _backend->GetExecPath();
 
-		fprintf(stderr, "%s:", __FUNCTION__);
+		//fprintf(stderr, "ExecLeaderProcess: exec path=`%s`, called=%s, execute=[", exec_path.c_str(), __FUNCTION__);
 		std::vector<char *> shell_argv;
 
 		shell_argv.emplace_back(const_cast<char *>(exec_path.c_str()));
 
 		for (const auto &arg : shell_exploded) {
 			shell_argv.emplace_back((char *)arg.c_str());
-			fprintf(stderr, " '%s'", arg.c_str());
+			//fprintf(stderr, " '%s'", arg.c_str());
 		}
-		fprintf(stderr, "\n");
+		//fprintf(stderr, "]\n");
 		shell_argv.emplace_back(nullptr);
 
 		std::map<std::string, std::string> env_vars;
@@ -251,6 +251,8 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 			return r;
 		}
 
+		//fprintf(stderr, "ExecLeaderProcess: forked\n");
+
 		switch (color_bpp) {
 			case 24:
 				setenv("TERM", "xterm-256color", 1);
@@ -279,12 +281,17 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 			setenv(kv.first.c_str(), kv.second.c_str(), 1);
 		}
 
+		//fprintf(stderr, "ExecLeaderProcess: environment set\n");
+
 		// avoid locking current directory
 		if (chdir(home.c_str()) != 0) {
 			if (chdir("/") != 0) {
+				//fprintf(stderr, "ExecLeaderProcess: chdir failed!\n");
 				perror("chdir /");
 			}
 		}
+
+		//fprintf(stderr, "ExecLeaderProcess: slave name=`%s`\n", _slavename.c_str());
 
 		if (_slavename.empty()) {
 			dup2(_pipes_fallback_in, STDIN_FILENO);
@@ -293,8 +300,10 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 			CheckedCloseFD(_pipes_fallback_in);
 			CheckedCloseFD(_pipes_fallback_out);
 		}
+
+		//fprintf(stderr, "ExecLeaderProcess: reached VTShell_Leader\n");
 		r = VTShell_Leader(shell_argv.data(), _slavename.c_str());
-		fprintf(stderr, "%s: VTShell_Leader('%s', '%s') returned %d errno %u\n",
+		fprintf(stderr, "ExecLeaderProcess: : %s: VTShell_Leader('%s', '%s') returned %d errno %u\n",
 			__FUNCTION__, shell_argv[0], _slavename.c_str(), r, errno);
 
 		int err = errno;
@@ -445,11 +454,17 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 		if (!InitTerminal())
 			return;
 
+		//fprintf(stderr, "VTShell::Startup: terminal initialized\n");
+
 		int r = ExecLeaderProcess();
 		if (r == -1) {
 			perror("VT: exec leader");
 			return;
 		}
+
+		if(r == 0) return;
+
+		//fprintf(stderr, "VTShell::Startup: leader started\n");
 
 		_leader_pid = r;
 		const auto when_started = GetProcessUptimeMSec();
@@ -459,7 +474,13 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 		std::string cmd = "\n ";
 		cmd+= VT_ComposeMarkerCommand(_startup_marker);
 		cmd+= '\n';
+		
+		//fprintf(stderr, "VTShell::Startup: prior to read reached\n");
+		
 		StartIOReaders();
+
+		//fprintf(stderr, "VTShell::Startup: IOReaders started\n");
+
 		for (;;) {
 			const auto now = GetProcessUptimeMSec();
 			if (when_printed_cmd == 0 || now - when_printed_cmd >= 300) {
@@ -470,34 +491,43 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 				}
 			}
 			DispatchInterThreadCalls();
+
 			InterThreadLock lock;
 			if (_startup_marker.empty()) {
 				break;
 			}
-			if (_output_reader.IsDeactivated()) {
-				fprintf(stderr, "%s: _output_reader deactivated\n", __FUNCTION__);
-				break;
-			}
+
+			//fprintf(stderr, "VTShell::Startup: worker is here, marker=`%s`\n", _startup_marker.c_str());
+
 			lock.WaitForWake(300);
 			if (!CheckLeaderAlive()) {
-				fprintf(stderr, "%s: leader terminated unexpectedly\n", __FUNCTION__);
+				fprintf(stderr, "VTShell::Startup: %s: leader terminated unexpectedly\n", __FUNCTION__);
 				break;
 			}
 			if (GetProcessUptimeMSec() - when_started > SHELL_TIMEOUT) {
-				fprintf(stderr, "%s: timed out\n", __FUNCTION__);
+				fprintf(stderr, "VTShell::Startup: %s: timed out\n", __FUNCTION__);
+				break;
+			}
+			if (_output_reader.IsDeactivated()) {
+				fprintf(stderr, "VTShell::Startup: %s: _output_reader deactivated\n", __FUNCTION__);
 				break;
 			}
 		}
+
+		//fprintf(stderr, "VTShell::Startup: read cycle is completed\n");
+
 		StopIOReaders();
+
+		//fprintf(stderr, "VTShell::Startup: readers are stopped\n");
 
 		_console_switch_requested = false;
 
 		if (_startup_marker.empty()) {
-			fprintf(stderr, "%s: startup took %lu msec\n",
+			fprintf(stderr, "VTShell::Startup: %s: startup took %lu msec\n",
 				__FUNCTION__, (unsigned long)(GetProcessUptimeMSec() - when_started));
 		} else {
-			fprintf(stderr, "%s: failed in %lu msec\n",
-				__FUNCTION__, (unsigned long)(GetProcessUptimeMSec() - when_started));
+			fprintf(stderr, "VTShell::Startup: %s: failed in %lu msec, marker=`%s` pid=%d\n",
+				__FUNCTION__, (unsigned long)(GetProcessUptimeMSec() - when_started), _startup_marker.c_str(), _leader_pid);
 			r = _leader_pid;
 			if (r != -1) {
 				kill(r, SIGKILL);
@@ -512,7 +542,6 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 			}
 		}
 	}
-
 
 	virtual bool OnProcessOutput(const char *buf, int len) //called from worker thread
 	{

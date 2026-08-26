@@ -66,7 +66,7 @@ private:
 	IProcessor *_processor;
 	int _fd_out, _pipe[2];
 	std::mutex _mutex;
-	bool _deactivated;
+	bool _deactivated { false };
 
 	virtual void *ThreadProc();
 };

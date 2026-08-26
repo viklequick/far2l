@@ -12,8 +12,8 @@ target_link_libraries(crest utils far2l)
 target_compile_definitions(crest PRIVATE -DWINPORT_DIRECT -DUNICODE -DFAR_DONT_USE_INTERNALS)
 set_property(TARGET crest PROPERTY C_STANDARD 11)
 
-target_include_directories(crest PRIVATE ../far2l/far2sdk)
-target_include_directories(crest PRIVATE ../WinPort)
+target_include_directories(crest PRIVATE ../../far2l/far2sdk)
+target_include_directories(crest PRIVATE ../../WinPort)
 target_include_directories(crest PRIVATE .)
 
 set_target_properties(crest

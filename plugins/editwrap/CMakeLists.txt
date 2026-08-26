@@ -16,9 +16,9 @@ target_link_libraries(far2l-EditWrap utils far2l)
 target_compile_definitions(far2l-EditWrap PRIVATE -DWINPORT_DIRECT -DUNICODE -DFAR_DONT_USE_INTERNALS)
 
 target_include_directories(far2l-EditWrap PRIVATE .)
-target_include_directories(far2l-EditWrap PRIVATE ../far2l)
-target_include_directories(far2l-EditWrap PRIVATE ../far2l/Include)
-target_include_directories(far2l-EditWrap PRIVATE ../WinPort)
+target_include_directories(far2l-EditWrap PRIVATE ../../far2l)
+target_include_directories(far2l-EditWrap PRIVATE ../../far2l/Include)
+target_include_directories(far2l-EditWrap PRIVATE ../../WinPort)
 
 set_target_properties(far2l-EditWrap
   PROPERTIES

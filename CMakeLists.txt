@@ -298,7 +298,7 @@ endif()
 
 if (NOT DEFINED ALIGN OR ALIGN)
     message(STATUS "ALIGN plugin enabled")
-    add_subdirectory (align)
+    add_subdirectory (plugins/align)
 else()
     message(STATUS "${ColorRed}ALIGN plugin disabled due to ALIGN=${ALIGN}${ColorNormal}")
     install(CODE "
@@ -308,7 +308,7 @@ endif()
 
 if (NOT DEFINED AUTOWRAP OR AUTOWRAP)
     message(STATUS "AUTOWRAP plugin enabled")
-    add_subdirectory (autowrap)
+    add_subdirectory (plugins/autowrap)
 else()
     message(STATUS "${ColorRed}AUTOWRAP plugin disabled due to AUTOWRAP=${AUTOWRAP}${ColorNormal}")
     install(CODE "
@@ -318,7 +318,7 @@ endif()
 
 if (NOT DEFINED TRUNCATE OR TRUNCATE)
     message(STATUS "TRUNCATE plugin enabled")
-    add_subdirectory (truncate)
+    add_subdirectory (plugins/truncate)
 else()
     message(STATUS "${ColorRed}TRUNCATE plugin disabled due to TRUNCATE=${TRUNCATE}${ColorNormal}")
     install(CODE "
@@ -328,7 +328,7 @@ endif()
 
 if (NOT DEFINED CALC OR CALC)
     message(STATUS "CALC plugin enabled")
-    add_subdirectory (calc)
+    add_subdirectory (plugins/calc)
 else()
     message(STATUS "${ColorRed}CALC plugin disabled due to CALC=${CALC}${ColorNormal}")
     install(CODE "
@@ -338,7 +338,7 @@ endif()
 
 if (NOT DEFINED COLORER OR COLORER)
     message(STATUS "COLORER plugin enabled")
-    add_subdirectory (colorer)
+    add_subdirectory (plugins/colorer)
 else()
     message(STATUS "${ColorRed}COLORER plugin disabled due to COLORER=${COLORER}${ColorNormal}")
     install(CODE "
@@ -353,7 +353,7 @@ endif()
 
 if (NOT DEFINED COMPARE OR COMPARE)
     message(STATUS "COMPARE plugin enabled")
-    add_subdirectory (compare)
+    add_subdirectory (plugins/compare)
 else()
     message(STATUS "${ColorRed}COMPARE plugin disabled due to COMPARE=${COMPARE}${ColorNormal}")
     install(CODE "
@@ -363,7 +363,7 @@ endif()
 
 if (NOT DEFINED CREST OR CREST)
     message(STATUS "CREST plugin enabled")
-    add_subdirectory (crest)
+    add_subdirectory (plugins/crest)
 else()
     message(STATUS "${ColorRed}CREST plugin disabled due to CREST=${CALC}${ColorNormal}")
     install(CODE "
@@ -373,7 +373,7 @@ endif()
 
 if (NOT DEFINED DRAWLINE OR DRAWLINE)
     message(STATUS "DRAWLINE plugin enabled")
-    add_subdirectory (drawline)
+    add_subdirectory (plugins/drawline)
 else()
     message(STATUS "${ColorRed}DRAWLINE plugin disabled due to DRAWLINE=${DRAWLINE}${ColorNormal}")
     install(CODE "
@@ -383,7 +383,7 @@ endif()
 
 if (NOT DEFINED EDITCASE OR EDITCASE)
     message(STATUS "EDITCASE plugin enabled")
-    add_subdirectory (editcase)
+    add_subdirectory (plugins/editcase)
 else()
     message(STATUS "${ColorRed}EDITCASE plugin disabled due to EDITCASE=${EDITCASE}${ColorNormal}")
     install(CODE "
@@ -393,7 +393,7 @@ endif()
 
 if (NOT DEFINED GITGUTTER OR GITGUTTER)
     message(STATUS "GITGUTTER plugin enabled")
-    add_subdirectory (gitgutter)
+    add_subdirectory (plugins/gitgutter)
 else()
     message(STATUS "${ColorRed}GITGUTTER plugin disabled due to GITGUTTER=${GITGUTTER}${ColorNormal}")
     install(CODE "
@@ -403,7 +403,7 @@ endif()
 
 if (NOT DEFINED EDITORCOMP OR EDITORCOMP)
     message(STATUS "EDITORCOMP plugin enabled")
-    add_subdirectory (editorcomp)
+    add_subdirectory (plugins/editorcomp)
 else()
     message(STATUS "${ColorRed}EDITORCOMP plugin disabled due to EDITORCOMP=${EDITORCOMP}${ColorNormal}")
     install(CODE "
@@ -414,7 +414,7 @@ endif()
 if (DEFINED FARFTP AND FARFTP)
     message(STATUS "FARFTP plugin enabled (obsolete)")
     add_subdirectory (FARStdlib)
-    add_subdirectory (farftp)
+    add_subdirectory (plugins/farftp)
 else()
     install(CODE "
         execute_process(COMMAND ${CMAKE_COMMAND} -E rm -f ${CMAKE_INSTALL_PREFIX}/lib/far2l/Plugins/farftp/plug/farftp.far-plug-mb)
@@ -423,7 +423,7 @@ endif()
 
 if (NOT DEFINED FILECASE OR FILECASE)
     message(STATUS "FILECASE plugin enabled")
-    add_subdirectory (filecase)
+    add_subdirectory (plugins/filecase)
 else()
     message(STATUS "${ColorRed}FILECASE plugin disabled due to FILECASE=${FILECASE}${ColorNormal}")
     install(CODE "
@@ -433,7 +433,7 @@ endif()
 
 if (NOT DEFINED INCSRCH OR INCSRCH)
     message(STATUS "INCSRCH plugin enabled")
-    add_subdirectory (incsrch)
+    add_subdirectory (plugins/incsrch)
 else()
     message(STATUS "${ColorRed}Building without <INCSRCH> plugin due to INCSRCH=${INCSRCH}${ColorNormal}")
     install(CODE "
@@ -443,7 +443,7 @@ endif()
 
 if (NOT DEFINED INSIDE OR INSIDE)
     message(STATUS "INSIDE plugin enabled")
-    add_subdirectory (inside)
+    add_subdirectory (plugins/inside)
 else()
     message(STATUS "${ColorRed}INSIDE plugin disabled due to INSIDE=${INSIDE}${ColorNormal}")
     install(CODE "
@@ -453,7 +453,7 @@ endif()
 
 if (NOT DEFINED ARCLITE OR ARCLITE)
     message(STATUS "ARCLITE plugin enabled")
-    add_subdirectory (arclite)
+    add_subdirectory (plugins/arclite)
 else()
     message(STATUS "${ColorRed}ARCLITE plugin disabled due to ARCLITE=${ARCLITE}${ColorNormal}")
     install(CODE "
@@ -491,7 +491,7 @@ if (NOT DEFINED MULTIARC OR MULTIARC)
         endif()
     endif()
 
-    add_subdirectory (multiarc)
+    add_subdirectory (plugins/multiarc)
 else()
     message(STATUS "${ColorRed}MULTIARC plugin disabled due to MULTIARC=${MULTIARC}${ColorNormal}")
     install(CODE "
@@ -536,7 +536,7 @@ if (NOT DEFINED NETROCKS OR NETROCKS)
         message(WARNING "${ColorRed}libneon not found, NetRocks will not have WebDav protocol support. Install libneon*-dev if you want WebDav protocol available in NetRocks.${ColorNormal}")
     endif(LIBNEON_FOUND)
 
-    add_subdirectory (NetRocks)
+    add_subdirectory (plugins/NetRocks)
 else()
     message(STATUS "${ColorRed}NETROCKS plugin disabled due to NETROCKS=${NETROCKS}${ColorNormal}")
     install(CODE "
@@ -546,7 +546,7 @@ endif()
 
 if (DEFINED PYTHON AND PYTHON)
     message(STATUS "PYTHON plugin with interpreter from virtualenv enabled")
-    add_subdirectory (python)
+    add_subdirectory (plugins/python)
     # Copy this explicitly cuz generic copier command excludes 'far2l'
     install(DIRECTORY "${INSTALL_DIR}/Plugins/python/plug/far2l"
         DESTINATION "lib/far2l/Plugins/python/plug/" USE_SOURCE_PERMISSIONS
@@ -561,37 +561,37 @@ endif()
 
 if (DEFINED NETCFG AND NETCFG)
     message(STATUS "NETCFG plugin enabled")
-    add_subdirectory(netcfg)
+    add_subdirectory(plugins/netcfg)
 endif()
 
 if (DEFINED SQLITEPLUGIN AND SQLITEPLUGIN)
     message(STATUS "SQLite plugin enabled")
-    add_subdirectory(sqlite)
+    add_subdirectory(plugins/sqlite)
 endif()
 
 if (DEFINED PROCPLUGIN AND PROCPLUGIN)
     message(STATUS "Processes plugin enabled")
-    add_subdirectory(processes)
+    add_subdirectory(plugins/processes)
 endif()
 
 if (DEFINED EDITOR_JUMPWORD AND EDITOR_JUMPWORD)
     message(STATUS "EDITOR JUMPWORD plugin enabled")
-    add_subdirectory(jumpword)
+    add_subdirectory(plugins/jumpword)
 endif()
 
 if (DEFINED EDITOR_EDITWRAP AND EDITOR_EDITWRAP)
     message(STATUS "EDITOR EDITWRAP plugin enabled")
-    add_subdirectory(editwrap)
+    add_subdirectory(plugins/editwrap)
 endif()
 
 if (DEFINED LUAFAR AND LUAFAR)
     message(STATUS "Lua plugin enabled")
-    add_subdirectory(luafar)
+    add_subdirectory(plugins/luafar)
 endif()
 
 if (NOT DEFINED SIMPLEINDENT OR SIMPLEINDENT)
     message(STATUS "SIMPLEINDENT plugin enabled")
-    add_subdirectory (SimpleIndent)
+    add_subdirectory (plugins/SimpleIndent)
 else()
     message(STATUS "${ColorRed}SIMPLEINDENT plugin disabled due to SIMPLEINDENT=${SIMPLEINDENT}${ColorNormal}")
     install(CODE "
@@ -601,7 +601,7 @@ endif()
 
 if (NOT DEFINED TMPPANEL OR TMPPANEL)
     message(STATUS "TMPPANEL plugin enabled")
-    add_subdirectory (tmppanel)
+    add_subdirectory (plugins/tmppanel)
 else()
     message(STATUS "${ColorRed}TMPPANEL plugin disabled due to TMPPANEL=${TMPPANEL}${ColorNormal}")
     install(CODE "
@@ -611,7 +611,7 @@ endif()
 
 if (NOT DEFINED HEXITOR OR HEXITOR)
     message(STATUS "HEXITOR plugin enabled")
-    add_subdirectory (hexitor)
+    add_subdirectory (plugins/hexitor)
 else()
     message(STATUS "${ColorRed}HEXITOR plugin disabled due to HEXITOR=${HEXITOR}${ColorNormal}")
     install(CODE "
@@ -621,7 +621,7 @@ endif()
 
 if (NOT DEFINED OPENWITH OR OPENWITH)
     message(STATUS "OPENWITH plugin enabled")
-    add_subdirectory (OpenWith)
+    add_subdirectory (plugins/OpenWith)
 else()
     message(STATUS "${ColorRed}OPENWITH plugin disabled due to OPENWITH=${OPENWITH}${ColorNormal}")
     install(CODE "
@@ -631,7 +631,7 @@ endif()
 
 if (NOT DEFINED TRANSFORMER OR TRANSFORMER)
     message(STATUS "TRANSFORMER plugin enabled")
-    add_subdirectory (transformer)
+    add_subdirectory (plugins/transformer)
 else()
     message(STATUS "${ColorRed}TRANSFORMER plugin disabled due to TRANSFORMER=${TRANSFORMER}${ColorNormal}")
     install(CODE "
@@ -641,7 +641,7 @@ endif()
 
 if (NOT DEFINED IMAGEVIEWER OR IMAGEVIEWER)
     message(STATUS "IMAGEVIEWER plugin enabled")
-    add_subdirectory (ImageViewer)
+    add_subdirectory (plugins/ImageViewer)
 else()
     message(STATUS "${ColorRed}IMAGEVIEWER plugin disabled due to IMAGEVIEWER=${IMAGEVIEWER}${ColorNormal}")
     install(CODE "
@@ -651,7 +651,7 @@ endif()
 
 if (NOT DEFINED EDSORT OR EDSORT)
     message(STATUS "EDSORT plugin enabled")
-    add_subdirectory (edsort)
+    add_subdirectory (plugins/edsort)
 else()
     message(STATUS "${ColorRed}EDSORT plugin disabled due to EDSORT=${EDSORT}${ColorNormal}")
     install(CODE "
@@ -661,7 +661,7 @@ endif()
 
 if (NOT DEFINED MEMO OR MEMO)
     message(STATUS "MEMO plugin enabled")
-    add_subdirectory (memo)
+    add_subdirectory (plugins/memo)
 else()
     message(STATUS "${ColorRed}MEMO plugin disabled due to MEMO=${MEMO}${ColorNormal}")
     install(CODE "
@@ -671,7 +671,7 @@ endif()
 
 if (NOT DEFINED ADB OR ADB)
     message(STATUS "ADB plugin enabled")
-    add_subdirectory (adb)
+    add_subdirectory (plugins/adb)
 else()
     message(STATUS "${ColorRed}ADB plugin disabled due to ADB=${ADB}${ColorNormal}")
     install(CODE "
@@ -741,7 +741,7 @@ if (NOT DEFINED MTP OR MTP)
             set(_mtp_libmtp_kind "vendored static")
         endif()
         message(STATUS "MTP plugin enabled (libusb: ${_mtp_libusb_kind}; libmtp: ${_mtp_libmtp_kind})")
-        add_subdirectory(mtp)
+        add_subdirectory (plugins/mtp)
     endif()
 else()
     message(STATUS "${ColorRed}MTP plugin disabled due to MTP=${MTP}${ColorNormal}")

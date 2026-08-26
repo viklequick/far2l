@@ -103,6 +103,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 	const wchar_t *CPtrStr = nullptr;
 	FARString strErrStr;
 	wchar_t* ptrBuf = nullptr;
+	size_t FormattedErrLength = 0;
 
 	if (Flags & MSG_ERRORTYPE)
 		ErrorSets = GetErrorString(strErrStr);
@@ -194,6 +195,7 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 		// а теперь проврапим
 		// PtrStr=FarFormatText(ErrStr,MaxLength-(MaxLength > MAX_WIDTH_MESSAGE/2?1:0),ErrStr,sizeof(ErrStr),"\n",0); //?? MaxLength ??
 		FarFormatText(strErrStr, LenErrStr, strErrStr, L"\n", 0);	//?? MaxLength ??
+		FormattedErrLength = strErrStr.GetLength();
 	}
 
 	// vk: hack with strErrStr makes buffer overflow
@@ -222,7 +224,12 @@ static int ShowMessageSynched(DWORD Flags, int Buttons, const wchar_t *Title, co
 	CPtrStr = ptrBuf;  // strErrStr;
 	for (I = 0; I < CountErrorLine; I++) {
 		Str[I] = CPtrStr;
-		CPtrStr+= StrLength(CPtrStr) + 1;
+		CPtrStr+= StrLength(CPtrStr);
+		if (CPtrStr >= strErrStr.CPtr() + FormattedErrLength) {
+			++I;
+			break;
+		}
+		++CPtrStr;
 
 		if (!*CPtrStr)		// два идущих подряд нуля - "хандец" всему
 		{

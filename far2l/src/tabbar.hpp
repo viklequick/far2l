@@ -80,6 +80,8 @@ public:
 	void AddTab(const FARString& name){ tabPos.push_back({ name, 0, (int)name.CellsCount() }); }
 	void AddTab(const FARString& left, const FARString& right){ tabPos.push_back({ left, 0, (int)(left.CellsCount() + right.CellsCount() + 1), right }); }
 
+	void EnsureActiveVisible();
+
 	int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
 	int moreContextMenu();
 	int pathContextMenu(bool left, int x, int fromTab);
@@ -89,11 +91,21 @@ protected:
 	virtual void DisplayObject();
 
 	int render();
-	void setHoverMask(int tabNo, bool tab, bool del, bool leftPin, bool rightPin, bool more, bool menu, bool console);
+	void layout(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths);
+	void setHoverMask(int tabNo, 
+		bool tab, bool del, bool leftPin, bool rightPin, 
+		bool more, bool menu, bool console,
+		bool leftScroll = false, bool rightScroll = false);
 
 	std::vector<std::wstring> tabs;
 	int activeTab { 0 };
 	int hoveredTab { -1 };
+	
+	int visibleTab { 0 };
+	int leftAX  { -1 };
+	int rightAX { -1 };
+	bool leftAHovered { false };
+	bool rightAHovered { false };
 
 	int plusX { 0 };
 	bool plusHovered { false };

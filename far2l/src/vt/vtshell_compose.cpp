@@ -84,6 +84,19 @@ static std::string VT_ComposeInitialTitleCommand(const char *cd, const char *cmd
 	return out;
 }
 
+static bool VT_CommandNeedsTerminatingNewline(const char *cmd)
+{
+	const size_t length = strlen(cmd);
+	if (!length || cmd[length - 1] != '\n')
+		return true;
+
+	size_t backslashes = 0;
+	for (size_t i = length - 1; i && cmd[i - 1] == '\\'; --i)
+		++backslashes;
+
+	return backslashes & 1;
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////
 
 static std::atomic<unsigned int> s_vt_script_id{0};
@@ -161,7 +174,7 @@ void VT_ComposeCommandExec::Create(const IVTShellBackend &backend, const char *c
 		content+= StrPrintf("cd \"%s\" && %s", EscapeCmdStr(cd).c_str(), cmd);
 	}
 
-	if (*cmd == 0 || cmd[strlen(cmd) - 1] != '\n') {
+	if (VT_CommandNeedsTerminatingNewline(cmd)) {
 		content+= '\n';
 	}
 	content+= "FARVTRESULT=$?\n";

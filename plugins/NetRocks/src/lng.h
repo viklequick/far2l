@@ -321,6 +321,10 @@ enum LanguageID
 	MSHELLWay,
 	MSHELLWaySettings,
 	MFISHPLUSOptionsTitle,
+	MFISHPLUSHelperFlavor,
+	MFISHPLUSHelperFlavorAuto,
+	MFISHPLUSHelperFlavorPosix,
+	MFISHPLUSHelperFlavorPwsh,
 
 	MProxySettingsTitle,
 	MProxySettingsDisabled,

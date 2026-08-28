@@ -1175,6 +1175,7 @@ void EditorConfig(EditorOptions &EdOpt, bool Local, int EdCfg_ExpandTabs, int Ed
 	Builder.AddIntEditField(&EdOpt.TabSize, 3,	(Local && EdCfg_TabSize > 0 ? DIF_DISABLE : 0), false );
 	Builder.AddText(Msg::EditConfigTabSize);
 	Builder.AddCheckbox(Msg::EditShowWhiteSpace, &EdOpt.ShowWhiteSpace);
+	Builder.AddCheckbox(Msg::EditShowEOL, &EdOpt.ShowEOL);
 	Builder.AddCheckbox(Msg::EditShowKeyBar, &EdOpt.ShowKeyBar);
 	Builder.AddCheckbox(Msg::EditShowLineNumbers, &EdOpt.ShowLineNumbers);
 	Builder.ColumnBreak();

@@ -898,7 +898,7 @@ int FilePanels::ProcessKey(FarKey Key)
 		case KEY_CTRLSHIFTDOWN:
 		case KEY_CTRLSHIFTNUMPAD2: {
 			int &HeightDecrement =
-					(ActivePanel == LeftPanel) ? Opt.LeftHeightDecrement : Opt.RightHeightDecrement;
+					(ActiveTab().ActivePanel == ActiveTab().LeftPanel) ? Opt.LeftHeightDecrement : Opt.RightHeightDecrement;
 			const int min_decrement = CtrlObject->CmdLine->IsNotEmpty() ? 0 : -1;
 			if (HeightDecrement > min_decrement) {
 				HeightDecrement--;

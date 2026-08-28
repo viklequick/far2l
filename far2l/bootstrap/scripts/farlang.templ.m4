@@ -18896,6 +18896,17 @@ QuickViewFolder
 "Тека"
 "Каталог"
 
+QuickViewCalculating
+"Вычисление..."
+"Calculating..."
+"Počítám..."
+"Berechnung..."
+"Számítás..."
+"Obliczanie..."
+"Calculando..."
+"Обчислення..."
+"Вылічэнне..."
+
 QuickViewJunction
 "Связь"
 "Junction"

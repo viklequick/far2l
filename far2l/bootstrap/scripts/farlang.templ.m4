@@ -18907,6 +18907,17 @@ QuickViewCalculating
 "Обчислення..."
 "Вылічэнне..."
 
+QuickViewFolderScan
+"Анализируем:"
+"Scanning:"
+upd:"Scanning:"
+upd:"Scanning:"
+upd:"Scanning:"
+upd:"Scanning:"
+upd:"Scanning:"
+upd:"Scanning:"
+upd:"Scanning:"
+
 QuickViewJunction
 "Связь"
 "Junction"

@@ -45,7 +45,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ctrlobj.hpp"
 #include "interf.hpp"
 #include "execute.hpp"
-#include "dirinfo.hpp"
 #include "pathmix.hpp"
 #include "strmix.hpp"
 #include "mix.hpp"
@@ -248,19 +247,30 @@ FARString &QuickView::GetTitle(FARString &strTitle, int SubLen, int TruncSize)
 
 void QuickView::DisplayObject()
 {
-	if (Flags.Check(FSCROBJ_ISREDRAWING))
-		return;
+	if (!Flags.Check(FSCROBJ_ISREDRAWING)) {
+		Flags.Set(FSCROBJ_ISREDRAWING);
+		if (!QView && !ProcessingPluginCommand)
+			CtrlObject->Cp()->GetAnotherPanel(this)->UpdateViewPanel();
 
-	Flags.Set(FSCROBJ_ISREDRAWING);
+		if (QView)
+			QView->SetPosition(X1 + 1, Y1 + 1, X2 - 1, Y2 - 3);
+
+		PrintBox();
+		PrintFileDirInfo();
+
+		if (QView)
+			QView->Show();
+
+		Flags.Clear(FSCROBJ_ISREDRAWING);
+	}
+}
+
+void QuickView::PrintBox()
+{
+	Box(X1, Y1, X2, Y2, FarColorToReal(COL_PANELBOX), DOUBLE_BOX);
+
 	FARString strTitle;
 
-	if (!QView && !ProcessingPluginCommand)
-		CtrlObject->Cp()->GetAnotherPanel(this)->UpdateViewPanel();
-
-	if (QView)
-		QView->SetPosition(X1 + 1, Y1 + 1, X2 - 1, Y2 - 3);
-
-	Box(X1, Y1, X2, Y2, FarColorToReal(COL_PANELBOX), DOUBLE_BOX);
 	SetScreen(X1 + 1, Y1 + 1, X2 - 1, Y2 - 1, L' ', FarColorToReal(COL_PANELTEXT));
 	Hint(X1, Y1, X2, Y2, HintQuickView, HintObjectNone);
 	SetFarColor(Focus ? COL_PANELSELECTEDTITLE : COL_PANELTITLE);
@@ -272,6 +282,10 @@ void QuickView::DisplayObject()
 	}
 
 	DrawSeparator(Y2 - 2);
+}
+
+void QuickView::PrintFileDirInfo(const wchar_t *WalkedNowDir)
+{
 	SetFarColor(COL_PANELTEXT);
 	GotoXY(X1 + 1, Y2 - 1);
 	FS << fmt::Cells() << fmt::LeftAlign() << fmt::Size(X2 - X1 - 1) << PointToName(strCurFileName);
@@ -287,17 +301,17 @@ void QuickView::DisplayObject()
 	}
 
 	if (Directory) {
-		FormatString FString;
-		DirInfoData Data{DirCount, FileCount, ClusterSize, FileSize, PhysicalSize};
-		bool Calculating = false;
-		bool HaveDirectoryData = Directory == 4;
-		if (Directory == 1)
-			HaveDirectoryData = GetDirectoryScanData(Data, Calculating);
+		FormatString FString; 
+		if (Directory == -1) {
+			FString << Msg::QuickViewFolderScan << L' ' << (WalkedNowDir ? WalkedNowDir : strCurFileName.CPtr());
+		} else {
+			FString << Msg::QuickViewFolder << L" \"" << strCurFileName << L"\"";
+		}
 
-		FString << Msg::QuickViewFolder << L" \"" << strCurFileName << L"\"";
 		SetFarColor(COL_PANELTEXT);
 		GotoXY(X1 + 2, Y1 + 2);
-		PrintText(FString);
+		FS << fmt::Cells() << fmt::LeftAlign() << fmt::Size(X2 - X1 - 2) << FString.strValue();
+
 
 		/*if ((apiGetFileAttributes(strCurFileName)&FILE_ATTRIBUTE_REPARSE_POINT) == FILE_ATTRIBUTE_REPARSE_POINT)
 		{
@@ -331,14 +345,8 @@ void QuickView::DisplayObject()
 			}
 		}*/
 
-		if (HaveDirectoryData) {
-			if (Calculating) {
-				SetFarColor(COL_PANELINFOTEXT);
-				GotoXY(X1 + 2, Y1 + 3);
-				PrintText(Msg::QuickViewCalculating);
-				SetFarColor(COL_PANELTEXT);
-			}
-
+		if (Directory == 1 || Directory == 4 || Directory == -1) {
+			FormatString FString;
 			GotoXY(X1 + 2, Y1 + 4);
 			PrintText(Msg::QuickViewContains);
 			GotoXY(X1 + 2, Y1 + 6);
@@ -385,10 +393,7 @@ void QuickView::DisplayObject()
 				PrintText(strSize);
 			}
 		}
-	} else if (QView)
-		QView->Show();
-
-	Flags.Clear(FSCROBJ_ISREDRAWING);
+	}
 }
 
 int64_t QuickView::VMProcess(MacroOpcode OpCode, void *vParam, int64_t iParam)
@@ -612,8 +617,18 @@ void QuickView::ShowFile(const wchar_t *FileName, int TempFile, HANDLE hDirPlugi
 			else
 				Directory = 3;
 		} else {
-			Directory = 1;
-			StartDirectoryScan(strCurFileName);
+			Directory = -1;
+			PrintBox();
+			PrintFileDirInfo();
+			int ExitCode = GetDirInfo(Msg::QuickViewTitle, strCurFileName,
+					DirCount, FileCount, FileSize, PhysicalSize, ClusterSize, nullptr,
+					GETDIRINFO_ENHBREAK | GETDIRINFO_SCANSYMLINKDEF | GETDIRINFO_DONTREDRAWFRAME, this);
+			if (ExitCode == 1)
+				Directory = 1;
+			else if (ExitCode == -1)
+				Directory = 2;
+			else
+				Directory = 3;
 		}
 	} else {
 		if (!strCurFileName.IsEmpty()) {
@@ -761,6 +776,11 @@ BOOL QuickView::UpdateKeyBar()
 	KB->SetAllGroup(KBL_CTRLALTSHIFT, Msg::QViewCtrlAltShiftF1, 12);
 	DynamicUpdateKeyBar();
 	return TRUE;
+}
+
+void QuickView::OnDirInfoProgress(const wchar_t *WalkedNowDir)
+{
+	PrintFileDirInfo(WalkedNowDir);
 }
 
 void QuickView::DynamicUpdateKeyBar()

@@ -40,9 +40,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "format.hpp"
 
 class Viewer;
-struct DirInfoData;
-struct QuickViewDirScanState;
-class QuickViewDirScanner;
 
 class QuickView : public Panel, protected DirInfoProgressTracker
 {

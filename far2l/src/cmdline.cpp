@@ -919,7 +919,7 @@ void CommandLine::ProcessTabCompletion()
 
 	if (!strStr.IsEmpty()) {
 		std::string cmd = strStr.GetMB();
-		Panel *ActivePanel = CtrlObject->Cp()->ActivePanel;
+		Panel *ActivePanel = CtrlObject->Cp()->ActiveTab().ActivePanel;
 		if (ActivePanel->GetMode() == PLUGIN_PANEL) {
 			std::vector<std::string> panel_possibilities;
 			if (GetPanelPossibilities(ActivePanel, cmd, panel_possibilities)) {
@@ -1290,7 +1290,7 @@ int CommandLine::ProcessKey_Enter(FarKey Key)
 int CommandLine::ProcessKey(FarKey Key)
 {
 	// local file names have nothing to do with plugin panel's content, see #3485
-	CmdStr.SetFNComplete(CtrlObject->Cp()->ActivePanel->GetMode() != PLUGIN_PANEL);
+	CmdStr.SetFNComplete(CtrlObject->Cp()->ActiveTab().ActivePanel->GetMode() != PLUGIN_PANEL);
 
 	switch (Key) {
 		case KEY_MSWHEEL_UP | KEY_CTRL | KEY_SHIFT:

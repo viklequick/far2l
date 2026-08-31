@@ -54,7 +54,7 @@ enum GETDIRINFOFLAGS
 	GETDIRINFO_DONTREDRAWFRAME = 0x00000002,
 	GETDIRINFO_SCANSYMLINK     = 0x00000004,
 	GETDIRINFO_SCANSYMLINKDEF  = 0x00000008,
-	GETDIRINFO_USEFILTER       = 0x00000010
+	GETDIRINFO_EXTRASUMMARY    = 0x00000020,
 };
 
 struct DirInfoProgressTracker
@@ -62,12 +62,29 @@ struct DirInfoProgressTracker
 	virtual void OnDirInfoProgress(const wchar_t *WalkedNowDir) = 0;
 };
 
-int GetDirInfo(const wchar_t *Title, const wchar_t *DirName, uint32_t &DirCount, uint32_t &FileCount,
-		uint64_t &FileSize, uint64_t &PhysicalSize, uint32_t &ClusterSize,
-		FileFilter *Filter, DWORD Flags = GETDIRINFO_SCANSYMLINKDEF, DirInfoProgressTracker *tracker = nullptr);
+struct DirInfoTypeStats
+{
+	uint64_t Count{};
+	uint64_t Size{};
+};
 
-bool ScanDirInfo(const wchar_t *DirName, DirInfoData &Data, bool CountDirSize, bool ScanSymlinks,
-		const DirInfoProgress &Progress = {});
+struct DirInfoExtraSummary
+{
+	std::vector<std::pair<std::wstring, DirInfoTypeStats>> type_stats;
+	uint64_t filesystems{0};
+	uint64_t outer_symlinks{0};
+};
 
-int GetPluginDirInfo(HANDLE hPlugin, const wchar_t *DirName, uint32_t &DirCount, uint32_t &FileCount,
-		uint64_t &FileSize, uint64_t &PhysicalSize);
+struct DirInfo
+{
+	uint64_t FileSize{};
+	uint64_t PhysicalSize{};
+	uint64_t DirCount{};
+	uint64_t FileCount{};
+
+	std::unique_ptr<DirInfoExtraSummary> ExtraSummary;
+
+	int FromFS(const wchar_t *DirName, DWORD Flags = GETDIRINFO_SCANSYMLINKDEF, FileFilter *Filter = nullptr, DirInfoProgressTracker *tracker = nullptr);
+	int FromPlugin(HANDLE hPlugin, const wchar_t *DirName, DWORD Flags = GETDIRINFO_SCANSYMLINKDEF);
+};
+

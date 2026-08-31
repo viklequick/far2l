@@ -34,6 +34,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "headers.hpp"
 
 #include <limits>
+#include <malloc.h>
+
 #include "fileedit.hpp"
 #include "keyboard.hpp"
 #include "codepage.hpp"

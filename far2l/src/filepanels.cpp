@@ -92,6 +92,12 @@ void FilePanels::deactivatePanelsInTab(DoublePanel& activeTab)
 
 void FilePanels::activatePanelsInTab(DoublePanel& activeTab)
 {
+	if (activeTab.ActiveVisible || activeTab.PassiveVisible)
+		SetPanelPositions(activeTab,
+			FileList::IsModeFullScreen(Opt.LeftPanel.ViewMode),
+			FileList::IsModeFullScreen(Opt.RightPanel.ViewMode),
+			Opt.PanelsDisposition);
+
 	// show means right order -> active first
 	if(activeTab.ActiveVisible)  activeTab.ActivePanel->Show();
 	if(activeTab.PassiveVisible) activeTab.PassivePanel()->Show();
@@ -115,7 +121,7 @@ void FilePanels::activatePanelsInTab(DoublePanel& activeTab)
 		else
 			activeTab.RightPanel->SetFocus();
 	}*/
-	UpdateCmdLineVisibility(ActiveTab());
+	UpdateCmdLineVisibility(activeTab);
 
 	// FrameManager->RefreshFrame();
 }

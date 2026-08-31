@@ -204,7 +204,6 @@ int DirInfo::FromFS(const wchar_t *DirName, DWORD Flags, FileFilter *Filter, Dir
 
 	FARString strFullDirName;
 	FARString strFullName, strCurDirName, strLastDirName;
-	FARString strFullDirName;
 	ConvertNameToFull(DirName, strFullDirName);
 	SaveScreen SaveScr;
 	UndoGlobalSaveScrPtr UndSaveScr(&SaveScr);

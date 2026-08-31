@@ -58,6 +58,7 @@ int GetDirInfo(const wchar_t *Title, const wchar_t *DirName, uint32_t &DirCount,
 		uint64_t &FileSize, uint64_t &PhysicalSize, uint32_t &ClusterSize,
 		FileFilter *Filter, DWORD Flags, DirInfoProgressTracker *tracker)
 {
+	FARString strFullName, strCurDirName, strLastDirName;
 	FARString strFullDirName;
 	ConvertNameToFull(DirName, strFullDirName);
 	SaveScreen SaveScr;

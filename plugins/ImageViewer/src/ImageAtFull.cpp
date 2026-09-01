@@ -442,7 +442,7 @@ namespace
 			case DN_RESIZECONSOLE: {
 				const COORD *console_size = reinterpret_cast<const COORD *>(Param2);
 				g_far.SendDlgMessage(hDlg, DM_RESIZEDIALOG, 0, reinterpret_cast<LONG_PTR>(console_size));
-				SetExifDlgItemPositions(hDlg, console_size->X, console_size->Y);
+				SetExifDlgItemPositions(hDlg, console_size->X - 10, console_size->Y - 11);
 				if (bool *resized = reinterpret_cast<bool *>(g_far.SendDlgMessage(hDlg, DM_GETDLGDATA, 0, 0))) {
 					*resized = true;
 				}
@@ -490,7 +490,15 @@ bool ImageViewAtFull::ShowExifInfo()
 	items[EXIF_MEMO_IDX].PtrData      = exiftool_output.c_str();
 
 	bool resized = false;
-	HANDLE hdlg = g_far.DialogInit(g_far.ModuleNumber, far_rect.Left, far_rect.Top, far_rect.Right, far_rect.Bottom, nullptr, items, ARRAYSIZE(items), 0, 0, ExifDlgProc, reinterpret_cast<LONG_PTR>(&resized));
+	HANDLE hdlg = g_far.DialogInit(g_far.ModuleNumber, 
+		far_rect.Left + 5, 
+		far_rect.Top + 5, 
+		far_rect.Right - 5, 
+		far_rect.Bottom - 6, 
+		nullptr, items, ARRAYSIZE(items), 
+		0, 0, 
+		ExifDlgProc, 
+		reinterpret_cast<LONG_PTR>(&resized));
 	if (hdlg != INVALID_HANDLE_VALUE) {
 		g_far.DialogRun(hdlg);
 		g_far.DialogFree(hdlg);

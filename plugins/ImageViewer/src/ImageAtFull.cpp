@@ -27,7 +27,7 @@ protected:
 		const int info_text_dlgid = 5;
 
 		ConsoleRepaintsDeferScope crds(NULL);
-		std::wstring ws_title = CurFileSelected() ? L"* " : L"  ";
+		std::wstring ws_title = CurFileSelected() ? L"        * " : L"          ";
 		StrMB2Wide(CurFile(), ws_title, true);
 		FarDialogItemData dd_title = { ws_title.size(), (wchar_t*)ws_title.c_str() };
 

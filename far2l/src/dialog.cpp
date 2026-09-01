@@ -2011,9 +2011,6 @@ void Dialog::ShowDialog(unsigned ID)
 		if (CY2 > MaxY2 - Y1)
 			CY2 = MaxY2 - Y1;
 
-		short CW = CX2 - CX1 + 1;
-		short CH = CY2 - CY1 + 1;
-
 		/*if (IsOkCancelButtons(I)) {
 			CY1 = CY2 = BorderY2;
 		}*/
@@ -2066,6 +2063,10 @@ void Dialog::ShowDialog(unsigned ID)
 			SetScreen(X1+CX1,Y1+CY1,X1+CX2,Y1+CY2,' ',Attr&0xFF);
 
 #endif
+
+		short CW = CX2 - CX1 + 1;
+		short CH = CY2 - CY1 + 1;
+
 		switch (CurItem->Type) {
 				/* ***************************************************************** */
 			case DI_SINGLEBOX:
@@ -2108,6 +2109,7 @@ void Dialog::ShowDialog(unsigned ID)
 				if (!CurItem->strData.IsEmpty() && IsDrawTitle) {
 					// ! Пусть диалог сам заботится о ширине собственного заголовка.
 					strStr = CurItem->strData;
+					// if (Opt.Backend.UseModernLook) CW = X2 - X1 - 2;
 					TruncStrFromEnd(strStr, CW - 2);	// 5 ???
 					LenText = LenStrItem(I, strStr);
 

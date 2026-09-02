@@ -45,9 +45,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "dirmix.hpp"
 #include "manager.hpp"
 
-#ifdef __linux__
-
-#include <dirent.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -57,6 +54,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 #include <string>
+
+#if defined(__APPLE__)
+#include <libproc.h>
+#endif
+
+#ifdef __linux__
+#include <dirent.h>
+#endif
+
+#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__HAIKU__)
+#include <sys/types.h>
+#include <sys/sysctl.h>
+#include <sys/user.h>     // FreeBSD: kinfo_proc
+#endif
 
 static int is_pid_dir(const char *name) {
     for (const char *p = name; *p; p++)
@@ -68,6 +79,8 @@ static void enumerateProcesses(std::vector<std::wstring>& v, std::vector<int>& p
 {
 	v.clear();
 	pidv.clear();
+
+#ifdef __linux__
     struct dirent *entry;
 
     DIR *d = opendir("/proc");
@@ -147,8 +160,100 @@ static void enumerateProcesses(std::vector<std::wstring>& v, std::vector<int>& p
 		v.push_back(strStr.GetWide());
 		pidv.push_back(pid);
     }
-
     closedir(d);
+
+#endif
+#if defined(__APPLE__)
+    pid_t pids[40960];
+    int count = proc_listpids(PROC_ALL_PIDS, 0, pids, sizeof(pids));
+
+    for (int i = 0; i < count; i++) {
+        pid_t pid = pids[i];
+        if (pid <= 0) continue;
+
+        // ---- Get basic BSD info (name, etc.) ----
+        struct proc_bsdinfo bsd;
+        int ret = proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &bsd, sizeof(bsd));
+        if (ret <= 0) continue;
+
+        struct proc_taskinfo task;
+        ret = proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &task, sizeof(task));
+        if (ret <= 0) continue;
+
+        // CPU time (user + system) in nanoseconds + RSS
+        double cpu_seconds = (task.pti_total_user + task.pti_total_system) / 1e9;
+        unsigned long rss_kb = task.pti_resident_size / 1024;
+
+        /*
+        printf("PID: %d\n", pid);
+        printf("Name: %s\n", bsd.pbi_name);
+        printf("CPU time: %.2f s\n", cpu_seconds);
+        printf("RSS: %lu KB\n", rss_kb);
+        printf("----\n");
+        */
+
+		FARString strStr;
+		strStr.Format(L"%6.6d %lc %-25.25s %lc %6.4lf %lc %6ld Kb", pid, BoxSymbols[BS_V1], bsd.pbi_name, BoxSymbols[BS_V1], cpu_seconds, BoxSymbols[BS_V1], rss_kb);
+		v.push_back(strStr.GetWide());
+		pidv.push_back(pid);
+    }
+
+#endif
+#if defined(__OpenBSD__) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(__DragonFly__) || defined(__HAIKU__)
+    int mib[4] = { CTL_KERN, KERN_PROC, KERN_PROC_ALL, 0 };
+    struct kinfo_proc *procs = NULL;
+    size_t len = 0;
+
+    // First call: get required buffer size
+    if (sysctl(mib, 4, NULL, &len, NULL, 0) < 0) {
+        perror("sysctl size");
+        return;
+    }
+
+    procs = malloc(len);
+    if (!procs) return;
+
+    // Second call: retrieve process list
+    if (sysctl(mib, 4, procs, &len, NULL, 0) < 0) {
+        perror("sysctl data");
+        free(procs);
+        return;
+    }
+
+    int count = len / sizeof(struct kinfo_proc);
+
+    for (int i = 0; i < count; i++) {
+        struct kinfo_proc *p = &procs[i];
+
+        pid_t pid = p->ki_pid;
+        const char *name = p->ki_comm;
+
+        // CPU time (user + system) in microseconds
+        double cpu_seconds =
+            (p->ki_rusage.ru_utime.tv_sec +
+             p->ki_rusage.ru_stime.tv_sec) +
+            (p->ki_rusage.ru_utime.tv_usec +
+             p->ki_rusage.ru_stime.tv_usec) / 1e6;
+
+        // Resident memory size (RSS)
+        unsigned long rss_kb = p->ki_rssize * getpagesize() / 1024;
+
+        /*
+        printf("PID: %d\n", pid);
+        printf("Name: %s\n", name);
+        printf("CPU time: %.2f s\n", cpu_seconds);
+        printf("RSS: %lu KB\n", rss_kb);
+        printf("----\n");
+        */
+
+		FARString strStr;
+		strStr.Format(L"%6.6d %lc %-25.25s %lc %6.4lf %lc %6ld Kb", pid, BoxSymbols[BS_V1], name, BoxSymbols[BS_V1], cpu_seconds, BoxSymbols[BS_V1], rss_kb);
+		v.push_back(strStr.GetWide());
+		pidv.push_back(pid);
+    }
+
+    free(procs);
+#endif
 }
 
 void ShowProcessList()
@@ -215,9 +320,7 @@ void ShowProcessList()
 	}
 }
 
-#else
-
-void ShowProcessList()
+void ShowProcessList_OldPs()
 {
 	farExecuteA(GetMyScriptQuoted("ps.sh").c_str(), 0);
 	if (FrameManager) {
@@ -232,6 +335,3 @@ void ShowProcessList()
 	}
 */
 }
-
-#endif
-

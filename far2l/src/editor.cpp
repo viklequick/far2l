@@ -3317,7 +3317,7 @@ case KEY_CTRLNUMPAD3: {
 		*/
 		case KEY_CTRLALTLEFT:
 		case KEY_CTRLALTNUMPAD4: {
-			{
+			if (!m_bWordWrap) {
 				int SkipSpace = TRUE;
 				Pasting++;
 				Lock();
@@ -3355,7 +3355,7 @@ case KEY_CTRLNUMPAD3: {
 		}
 		case KEY_CTRLALTRIGHT:
 		case KEY_CTRLALTNUMPAD6: {
-			{
+			if (!m_bWordWrap) {
 				int SkipSpace = TRUE;
 				Pasting++;
 				Lock();

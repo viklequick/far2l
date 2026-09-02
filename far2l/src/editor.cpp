@@ -3449,6 +3449,9 @@ case KEY_CTRLNUMPAD3: {
 		case KEY_ALTSHIFTHOME:
 		case KEY_ALTSHIFTNUMPAD7:
 		case KEY_ALTHOME: {
+			if (m_bWordWrap)
+				return TRUE;
+
 			Pasting++;
 			Lock();
 
@@ -3463,16 +3466,17 @@ case KEY_CTRLNUMPAD3: {
 		case KEY_ALTSHIFTEND:
 		case KEY_ALTSHIFTNUMPAD1:
 		case KEY_ALTEND: {
+			if (m_bWordWrap)
+				return TRUE;
+
 			Pasting++;
 			Lock();
 
-			if (CurLine->GetCurPos() < CurLine->GetLength())
-				while (CurLine->GetCurPos() < CurLine->GetLength())
-					ProcessKey(KEY_ALTSHIFTRIGHT);
+			while (CurLine->GetCurPos() < CurLine->GetLength())
+				ProcessKey(KEY_ALTSHIFTRIGHT);
 
-			if (CurLine->GetCurPos() > CurLine->GetLength())
-				while (CurLine->GetCurPos() > CurLine->GetLength())
-					ProcessKey(KEY_ALTSHIFTLEFT);
+			while (CurLine->GetCurPos() > CurLine->GetLength())
+				ProcessKey(KEY_ALTSHIFTLEFT);
 
 			Unlock();
 			Pasting--;
@@ -3482,7 +3486,6 @@ case KEY_CTRLNUMPAD3: {
 		case KEY_ALTSHIFTPGUP:
 		case KEY_ALTSHIFTNUMPAD9:
 		case KEY_ALTPGUP: {
-
 			if (m_bWordWrap)
 				return TRUE;
 

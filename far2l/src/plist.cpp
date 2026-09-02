@@ -73,8 +73,8 @@ struct FarPidInfo {
 	std::wstring text;
 	std::string name;
 	int pid;
-	long rss;
-	long cpu_ticks;
+	unsigned long rss;
+	unsigned long cpu_ticks;
 };
 
 static int is_pid_dir(const char *name) {

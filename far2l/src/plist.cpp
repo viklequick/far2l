@@ -69,16 +69,23 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/user.h>     // FreeBSD: kinfo_proc
 #endif
 
+struct FarPidInfo {
+	std::wstring text;
+	std::string name;
+	int pid;
+	long rss;
+	long cpu_ticks;
+};
+
 static int is_pid_dir(const char *name) {
     for (const char *p = name; *p; p++)
         if (!isdigit(*p)) return 0;
     return 1;
 }
 
-static void enumerateProcesses(std::vector<std::wstring>& v, std::vector<int>& pidv) 
+static void enumerateProcesses(std::vector<FarPidInfo>& v) 
 {
 	v.clear();
-	pidv.clear();
 
 #ifdef __linux__
     struct dirent *entry;
@@ -156,9 +163,8 @@ static void enumerateProcesses(std::vector<std::wstring>& v, std::vector<int>& p
 		else                         cpuLoad = "high";
 
 		FARString strStr;
-		strStr.Format(L"%6.6d %lc %-25.25s %lc %6s %lc %6ld Kb", pid, BoxSymbols[BS_V1], name, BoxSymbols[BS_V1], cpuLoad, BoxSymbols[BS_V1], rss_kb);
-		v.push_back(strStr.GetWide());
-		pidv.push_back(pid);
+		strStr.Format(L"%8d %lc %-40.40s %lc %6s %lc %'8ld Mb", pid, BoxSymbols[BS_V1], name, BoxSymbols[BS_V1], cpuLoad, BoxSymbols[BS_V1], rss_kb / 1024);
+		v.push_back({ strStr.GetWide(), name, pid, rss_kb, total_time });
     }
     closedir(d);
 
@@ -193,9 +199,8 @@ static void enumerateProcesses(std::vector<std::wstring>& v, std::vector<int>& p
         */
 
 		FARString strStr;
-		strStr.Format(L"%6.6d %lc %-25.25s %lc %6.4lf %lc %6ld Kb", pid, BoxSymbols[BS_V1], bsd.pbi_name, BoxSymbols[BS_V1], cpu_seconds, BoxSymbols[BS_V1], rss_kb);
-		v.push_back(strStr.GetWide());
-		pidv.push_back(pid);
+		strStr.Format(L"%8d %lc %-40.40s %lc %6.4lf %lc %8ld Mb", pid, BoxSymbols[BS_V1], bsd.pbi_name, BoxSymbols[BS_V1], cpu_seconds, BoxSymbols[BS_V1], rss_kb / 1024);
+		v.push_back({ strStr.GetWide(), bsd.pbi_name, pid, rss_kb, total_time });
     }
 
 #endif
@@ -247,9 +252,8 @@ static void enumerateProcesses(std::vector<std::wstring>& v, std::vector<int>& p
         */
 
 		FARString strStr;
-		strStr.Format(L"%6.6d %lc %-25.25s %lc %6.4lf %lc %6ld Kb", pid, BoxSymbols[BS_V1], name, BoxSymbols[BS_V1], cpu_seconds, BoxSymbols[BS_V1], rss_kb);
-		v.push_back(strStr.GetWide());
-		pidv.push_back(pid);
+		strStr.Format(L"%8d %lc %-40.40s %lc %6.4lf %lc %6ld Mb", pid, BoxSymbols[BS_V1], name, BoxSymbols[BS_V1], cpu_seconds, BoxSymbols[BS_V1], rss_kb / 1024);
+		v.push_back({ strStr.GetWide(), name, pid, rss_kb, total_time });
     }
 
     free(procs);
@@ -258,49 +262,71 @@ static void enumerateProcesses(std::vector<std::wstring>& v, std::vector<int>& p
 
 void ShowProcessList()
 {
-	std::vector<std::wstring> v;
-	std::vector<int> pidv;
-	enumerateProcesses(v, pidv);
+	std::vector<FarPidInfo> v;
+	enumerateProcesses(v);
 
 	int GroupsLen = (int)v.size();
 	if (GroupsLen < 1) return; // nothing to display
 
 	MenuDataEx Groups[GroupsLen];
 	for (int j = 0; j < GroupsLen; ++j) {
-		Groups[j] = { v[j].c_str(), 0, 0 };
+		Groups[j] = { v[j].text.c_str(), 0, 0 };
 	}
 
 	VMenu ProcList(Msg::ProcessListTitle, Groups, GroupsLen, ScrY - 4);
 
 	ProcList.SetPosition(-1, -1, 0, 0);
 	ProcList.SetFlags(VMENU_WRAPMODE | VMENU_NOTCHANGE);
-	ProcList.ClearDone();
-
-	ProcList.AssignHighlights(FALSE);
 	ProcList.SetBottomTitle(Msg::ProcessListBottom);
+	ProcList.ClearDone();
 
 	ProcList.Show();
 
 	while (!ProcList.Done()) {
-		FarKey Key = ProcList.ReadInput();
+		FarKey key = ProcList.ReadInput();
 
-		switch (Key) {
+		switch (key) {
 		case KEY_F1:
 			Help::Present(L"TaskList");
 			break;
+		case 't': case 'T': /* sort by name */
+		case 'i': case 'I': /* sort by pid */
+		case 'p': case 'P': /* sort by cpu */
+		case 'm': case 'M': /* sort by RSS */
 		case KEY_CTRLR:	
 			ProcList.Hide();
 			ProcList.DeleteItems();
 
 			ProcList.SetPosition(-1,-1,0,0);
 
-			enumerateProcesses(v, pidv);
+			enumerateProcesses(v);
+
+			if (key == 't' || key == 'T')
+				std::sort(v.begin(), v.end(),
+				    [key](const FarPidInfo& a, const FarPidInfo& b) {
+				        return key == 'T' ? b.name < a.name : a.name < b.name;
+				    });
+			else if (key == 'i' || key == 'I')
+				std::sort(v.begin(), v.end(),
+				    [key](const FarPidInfo& a, const FarPidInfo& b) {
+				        return key == 'i' ? a.pid < b.pid : b.pid < a.pid;
+				    });
+			else if (key == 'p' || key == 'P')
+				std::sort(v.begin(), v.end(),
+				    [key](const FarPidInfo& a, const FarPidInfo& b) {
+				        return key == 'P' ? b.cpu_ticks < a.cpu_ticks : a.cpu_ticks < b.cpu_ticks;
+				    });
+			else if (key == 'm' || key == 'M')
+				std::sort(v.begin(), v.end(),
+				    [key](const FarPidInfo& a, const FarPidInfo& b) {
+				        return key == 'M' ? b.rss < a.rss : a.rss < b.rss;
+				    });
 
 			GroupsLen = (int)v.size();
 			for (int j = 0; j < GroupsLen; ++j) {
 				MenuItemEx item;
 				item.Clear();
-				item.strName = v[j].c_str();
+				item.strName = v[j].text.c_str();
                 item.AccelKey = 0;
 				item.Flags = 0;
 
@@ -311,7 +337,7 @@ void ShowProcessList()
 			break;
 		case KEY_NUMDEL:
 		case KEY_DEL: 
-			kill(pidv[ProcList.GetSelectPos()], SIGTERM);
+			kill(v[ProcList.GetSelectPos()].pid, SIGTERM);
 			break;
 		default:
 			ProcList.ProcessInput();

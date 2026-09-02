@@ -18808,15 +18808,15 @@ l:
 "Спіс &заданняў"
 
 ProcessListBottom
-"Редактирование: Del Ctrl+R"
-"Edit: Del Ctrl+R"
-"Edit: Del Ctrl+R"
-"Tasten: Entf StrgR"
-"Szerk.: Del Ctrl+R"
-"Edycja: Del Ctrl+R"
-"Editar: Del Ctrl+R"
-"Редагування: Del Ctrl+R"
-"Змена: Del Ctrl+R"
+"Редактирование: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Edit: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Edit: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Tasten: Entf StrgR, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Szerk.: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Edycja: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Editar: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Редагування: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"Змена: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
 
 KillProcessTitle
 "Удаление задачи"

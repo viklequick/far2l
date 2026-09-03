@@ -633,29 +633,21 @@ extern "C"
 	public:
 		Statocaster(const char *pathname, const char *name = nullptr, int dir_fd = -1)
 		{
-//			if (!pathname && !name) {
-//				_attr = INVALID_FILE_ATTRIBUTES;
-//				return;
-//			}
 #if USE_STATX
 			if (_statx_availabile()) {
 				bStatX = true;
-//				const char *stxpn = (name) ? name : pathname;
-//				int statx_fd = (dir_fd > 0) ? dir_fd : AT_FDCWD;
 				int statx_fd = AT_FDCWD;
 				const char *stxpn = pathname;
 
 				_attr = 0;
 				if (sdc_statx(statx_fd, stxpn, AT_SYMLINK_NOFOLLOW, STATX_ALL, &_stx_lnk) != 0) {
 					_attr = INVALID_FILE_ATTRIBUTES;
-					//fprintf(stderr, "statx failed[ %d ] = %d pathname %s name = %s\n", errno, dir_fd, pathname, name);
 					return;
 				}
 
 				if ((_stx_lnk.stx_mode & S_IFMT) == S_IFLNK) {
 					_attr |= FILE_ATTRIBUTE_REPARSE_POINT;
 					if (sdc_statx(statx_fd, stxpn, 0, STATX_ALL, &_stx_dst) != 0) {
-						//fprintf(stderr, "statx failed[ %d ] = %d pathname %s name = %s\n", errno, dir_fd, pathname, name);
 						_attr |= FILE_ATTRIBUTE_BROKEN;
 						_st_lnk.st_size = 0;
 					}
@@ -668,12 +660,6 @@ extern "C"
 				const auto &s = DereferencedStatX();
 				_attr |= EvaluateAttributesT(s.stx_mode, name);
 
-				//if (s.stx_attributes & STATX_ATTR_INODE_PINNED) {
-				//	_attr |= FILE_ATTRIBUTE_PINNED;
-				//}
-				//if (s.stx_attributes & STATX_ATTR_INODE_UNPINNED) {
-				//	_attr |= FILE_ATTRIBUTE_UNPINNED;
-				//}
 				if (s.stx_attributes & STATX_ATTR_COMPRESSED) {
 					_attr |= FILE_ATTRIBUTE_COMPRESSED;
 				}
@@ -710,11 +696,18 @@ extern "C"
 				_attr = INVALID_FILE_ATTRIBUTES;
 				return;
 			}
+
+			if (!name) {
+				name = PointToNamePart(pathname);
+			}
+
 			if ((_st_lnk.st_mode & S_IFMT) != S_IFLNK) {
 				_attr = 0;
+
 			} else if (os_call_int(sdc_stat, pathname, &_st_dst) < 0) {
 				_attr = FILE_ATTRIBUTE_REPARSE_POINT | FILE_ATTRIBUTE_BROKEN;
 				_st_lnk.st_size = 0;
+
 			} else {
 				_attr = FILE_ATTRIBUTE_REPARSE_POINT;
 			}
@@ -722,7 +715,6 @@ extern "C"
 			const auto &s = DereferencedStat();
 #if defined(__APPLE__) || defined(__FreeBSD__) || defined(__DragonFly__) || \
 	defined(__NetBSD__) || defined(__OpenBSD__) || defined(__sun)
-
 			if (s.st_flags & UF_HIDDEN) {
 				_attr |= FILE_ATTRIBUTE_HIDDEN;
 			}
@@ -732,7 +724,6 @@ extern "C"
 			if (s.st_flags & (SF_APPEND | UF_APPEND)) {
 				_attr |= FILE_ATTRIBUTE_APPEND;
 			}
-
 		#ifdef UF_COMPRESSED
 			if (s.st_flags & UF_COMPRESSED) {
 				_attr |= FILE_ATTRIBUTE_COMPRESSED;

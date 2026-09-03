@@ -103,12 +103,24 @@ static void enumerateProcesses(std::vector<FarPidInfo>& v)
 
         // ---- Read process name from /proc/<pid>/comm ----
         char path[256];
-        snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
+        snprintf(path, sizeof(path), "/proc/%d/comm", pid);
 
         FILE *f = fopen(path, "r");
         if (!f) continue;
 
+        char shortname[256];
+        if (!fgets(shortname, sizeof(shortname), f)) {
+            fclose(f);
+            continue;
+        }
+        fclose(f);
+
+        snprintf(path, sizeof(path), "/proc/%d/cmdline", pid);
+        f = fopen(path, "r");
+        if (!f) continue;
+
         char name[256];
+        *name = 0;
         if (!fgets(name, sizeof(name), f)) {
             fclose(f);
             continue;
@@ -145,8 +157,8 @@ static void enumerateProcesses(std::vector<FarPidInfo>& v)
         unsigned long page_kb = sysconf(_SC_PAGESIZE) / 1024;
         unsigned long rss_kb = rss * page_kb;
 
-        char* q = name + strlen(name) - 1;
-        while(q > name && isspace(*q)) --q;
+        char* q = shortname + strlen(shortname) - 1;
+        while(q > shortname && isspace(*q)) --q;
         q[1] = 0;
 
         /*
@@ -192,7 +204,10 @@ static void enumerateProcesses(std::vector<FarPidInfo>& v)
 		}
 
 		FARString strStr;
-		strStr.Format(L"%8d %lc %-12.12s %lc %-40.40s %lc %6s %lc %'8ld Mb", pid, BoxSymbols[BS_V1], uid_name, BoxSymbols[BS_V1], name, BoxSymbols[BS_V1], cpuLoad, BoxSymbols[BS_V1], rss_kb / 1024);
+		strStr.Format(L"%8d %lc %-12.12s %lc %-16.16s %lc %-40.40s %lc %6s %lc %'8ld Mb", 
+			pid, BoxSymbols[BS_V1], uid_name, BoxSymbols[BS_V1], 
+			shortname, BoxSymbols[BS_V1], name, BoxSymbols[BS_V1], 
+			cpuLoad, BoxSymbols[BS_V1], rss_kb / 1024);
 		v.push_back({ strStr.GetWide(), name, pid, rss_kb, total_time });
     }
     closedir(d);
@@ -369,7 +384,8 @@ void ShowProcessList()
 			break;
 		case KEY_NUMDEL:
 		case KEY_DEL: 
-			kill(v[ProcList.GetSelectPos()].pid, SIGTERM);
+			if(!kill(v[ProcList.GetSelectPos()].pid, SIGTERM))
+				ProcList.DeleteItem(ProcList.GetSelectPos());
 			break;
 		default:
 			ProcList.ProcessInput();

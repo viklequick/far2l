@@ -1894,7 +1894,6 @@ std::vector<MenuItemData> PluginManager::GetMenuItems(int ModalType, int StartPo
 		}
 	}
 
-	int MenuItemNumber = 0;
 	int Editor = ModalType == MODALTYPE_EDITOR, Viewer = ModalType == MODALTYPE_VIEWER,
 		Dialog = ModalType == MODALTYPE_DIALOG;
 
@@ -1947,7 +1946,6 @@ std::vector<MenuItemData> PluginManager::GetMenuItems(int ModalType, int StartPo
 				strName = strName.Format(L"   %ls", strName.CPtr());
 			
 			dataItem.name = strName.GetWide();
-			MenuItemNumber++;
 
 			dataItem.pluginItem.pPlugin = pPlugin;
 			dataItem.pluginItem.nItem = J;

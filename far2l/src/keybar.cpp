@@ -47,12 +47,11 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "vmenu.hpp"
 
-// 3 columns, 2 columns keys first, 2 columns keys last
-#define VIEW_MODE	0
-// у маков можно значки стащить ⌥ ⌘ ^ ⇧ но они караул мелкие
-#define MAC_CHARS	0
+// macos has specific characters ⌥ ⌘ ^ ⇧ 
 #ifdef APPLE
 #define MAC_CHARS	1
+#else
+#define MAC_CHARS	0
 #endif
 
 static DWORD KeyGroupMaps[][2] = {
@@ -88,24 +87,16 @@ static const wchar_t* prefixes[] = {
 #endif
 };
 
-
 KeyBar::KeyBar()
 	:
 	Owner(nullptr) /*, AltState(0), CtrlState(0), ShiftState(0), DisableMask(0),  RegReaded(FALSE) */
 {
 	_OT(SysLog(L"[%p] KeyBar::KeyBar()", this));
-	//memset(KeyTitles, 0, sizeof(KeyTitles));
-	//memset(KeyCounts, 0, sizeof(KeyCounts));
-	//memset(RegKeyTitles, 0, sizeof(RegKeyTitles));
-
-	//for (int i = 0; i < KEY_COUNT; i++) Hover[i] = 0;
-	//for (int i = 0; i < KEY_COUNT; i++) xPos[i] = -1;
 
 	for(int i = 0; i < KBL_GROUP_COUNT; ++i) {
 		KeyBarPlane r;
 		r.groupName = prefixes[i];
 		r.groupType = i;
-		//r.modifiers = KeyGroupMaps[i][1];
 		groups.push_back(r);
 	}
 
@@ -129,13 +120,8 @@ void KeyBar::PopKeyBarBack() {
 
 void KeyBar::SetOwner(ScreenObject *Owner){	KeyBar::Owner = Owner; }
 
-// static std::vector<std::wstring> PrevFKeyTitles;
-
 void KeyBar::Refresh(bool show, bool force_refresh_fkeys)
 {
-	// if (force_refresh_fkeys)
-	//	PrevFKeyTitles.clear();
-
 	if (show) {
 		Show();
 	} else {
@@ -168,7 +154,7 @@ int KeyBar::GetGroup(int alt, int shift, int ctrl, int meta) {
 
 std::wstring KeyBar::GetKeyName(int idx, int group) 
 {
-	return /*groups[group].groupName + */ groups[group].keys[idx].keyName;
+	return groups[group].keys[idx].keyName;
 }
 
 FarKey KeyBar::BuildShortcut(int group, int key) {
@@ -222,7 +208,7 @@ void KeyBar::RefreshObject(bool Render)
 		if(q) *q = 0;
 
 		if (Opt.Backend.UseModernLook && Render) 
-			LabelWidth = wcslen(/*Hover[i] ? Label :*/ labelHolder) + 3 + wcslen(keyLabel.c_str());
+			LabelWidth = wcslen(labelHolder) + 3 + wcslen(keyLabel.c_str());
 
 		if (Render && WhereX() + LabelWidth + (Opt.Backend.UseModernLook ? (int)strExtra.GetLength() : 0) < X2) {
 			groups[group].keys[i].x1 = WhereX();
@@ -249,13 +235,12 @@ void KeyBar::RefreshObject(bool Render)
 					palette = true;
 				}
 				SetColor(color2);
-				//FS << L"┋";
 
 				SetColor(color1);
 				FS << keyLabel.c_str();
 				SetColor(color2);
 				FS << L" ";
-				FS << (/*Hover[i] ? Label :*/ labelHolder);
+				FS << (labelHolder);
 				FS << L" ";
 			}
 			groups[group].keys[i].x2 = WhereX() - 1;
@@ -300,70 +285,21 @@ void KeyBar::RefreshObject(bool Render)
 	}
 }
 
-/* vk: this legacy kept unchanged */
+/* vk: this legacy code is dead */
 void KeyBar::ReadRegGroup(const wchar_t *RegGroup, const wchar_t *Language)
 {
-/*
-	if (!RegReaded || StrCmpI(strLanguage, Language) || StrCmpI(strRegGroupName, RegGroup)) {
-		memset(RegKeyTitles, 0, sizeof(RegKeyTitles));
-		strLanguage = Language;
-		strRegGroupName = RegGroup;
-
-		ConfigReader cfg_reader;
-		cfg_reader.SelectSectionFmt("KeyBarLabels/%ls/%ls", strLanguage.CPtr(), strRegGroupName.CPtr());
-		const auto &ValueNames = cfg_reader.EnumKeys();
-		for (const auto &strValueName : ValueNames) {
-			FARString strValue = cfg_reader.GetString(strValueName);
-			DWORD Key = KeyNameToKey(StrMB2Wide(strValueName).c_str());
-			DWORD Key0 = Key & (~KEY_CTRLMASK);
-			DWORD Ctrl = Key & KEY_CTRLMASK;
-
-			if (Key0 >= KEY_F1 && Key0 <= KEY_F24) {
-				size_t J;
-
-				for (J = 0; J < ARRAYSIZE(KeyGroupMaps); ++J)
-					if (KeyGroupMaps[J][1] == Ctrl)
-						break;
-
-				if (J <= ARRAYSIZE(KeyGroupMaps)) {
-					Key0-= KEY_F1;
-					int Group = KeyGroupMaps[J][0];
-					far_wcsncpy(RegKeyTitles[Group][Key0], strValue, ARRAYSIZE(RegKeyTitles[Group][Key0]));
-				}
-			}
-		}
-
-		RegReaded = TRUE;
-		fprintf(stderr, "[%ls] ReadRegGroup(%ls): done\n", Language, RegGroup);
-	}
-*/
 }
 
+/* vk: this legacy code is dead */
 void KeyBar::SetRegGroup(int Group)
 {
-/*
-	fprintf(stderr, "[%d] SetRegGroup %ls: start\n", Group, groups[Group].groupName.c_str());
-	groups[Group].keys.clear();
-	for (int I = 0; I < KEY_COUNT; I++) {
-		if (*RegKeyTitles[Group][I]) {
-			// far_wcsncpy(KeyTitles[Group][I], RegKeyTitles[Group][I], ARRAYSIZE(KeyTitles[Group][I]));
-			KeyBarElement k{KEY_F1 + KeyGroupMaps[Group][1], RegKeyTitles[Group][I], groups[Group].groupName + L"F" + std::to_wstring(I + 1) };
-			k.group = Group;
-			groups[Group].keys.push_back(k);
-			fprintf(stderr, "[%d, %d] SetRegGroup: %ls %ls\n", Group, I, k.keyName.c_str(), k.text.c_str());
-		}
-	}
-	fprintf(stderr, "[%d] SetRegGroup: done\n", Group);
-*/
 }
 
+/* vk: this legacy code is dead */
 void KeyBar::SetAllRegGroup()
 {
-/*
 	for (int I = 0; I < KBL_GROUP_COUNT; ++I)
 		SetRegGroup(I);
-	fprintf(stderr, "SetAllRegGroup: done\n");
-*/
 }
 
 void KeyBar::AddExtraKey(int group, FarKey key, const wchar_t* label, const wchar_t* keyName) {
@@ -380,26 +316,15 @@ void KeyBar::SetGroup(int Group, const wchar_t *const *Key, int KeyCount)
 	groups[Group].keys.clear();
 	for (int i = 0; i < KeyCount && i < KEY_COUNT; i++) {
 		if (Key[i]) {
-			// far_wcsncpy(KeyTitles[Group][i], Key[i], ARRAYSIZE(KeyTitles[Group][i]));
 			std::wstring keyLabel = std::wstring(L"F") + std::to_wstring(i + 1);
 			AddExtraKey(Group, KEY_F1 + i, Key[i] ? Key[i] : L"", keyLabel.c_str());
-            /*
-			KeyBarElement k{KEY_F1 + KeyGroupMaps[Group][1] + i, Key[i] ? Key[i] : L"" , groups[Group].groupName + L"F" + std::to_wstring(i + 1) };
-			k.group = Group;
-			groups[Group].keys.push_back(k);
-			fprintf(stderr, "[%d, %d] SetGroup: %ls %ls\n", Group, i, k.keyName.c_str(), k.text.c_str());
-            */
 		}
 	}
-	// KeyCounts[Group] = KeyCount;
 }
 
 void KeyBar::ClearGroup(int Group)
 {
-	//memset(KeyTitles[Group], 0, sizeof(KeyTitles[Group]));
-	//KeyCounts[Group] = 0;
 	groups[Group].keys.clear();
-	//fprintf(stderr, "[%d] ClearGroup: done\n", Group);
 }
 
 // Изменение любого Label
@@ -413,9 +338,6 @@ void KeyBar::Change(int Group, const wchar_t *NewStr, int Pos)
 			return;
 		}
 	}
-
-	//const KeyBarElement& k = groups[Group].keys[Pos];
-	//fprintf(stderr, "[%d, %d] Change: => %ls %ls\n", Group, Pos, k.keyName.c_str(), k.text.c_str());
 }
 
 // Групповая установка идущих подряд строк LNG для указанной группы
@@ -429,14 +351,7 @@ void KeyBar::SetAllGroup(int Group, FarLangMsg BaseMsg, int Count)
 		//far_wcsncpy(KeyTitles[Group][i], (BaseMsg + i).CPtr(), ARRAYSIZE(KeyTitles[Group][i]));
 		std::wstring keyLabel = std::wstring(L"F") + std::to_wstring(i + 1);
 		AddExtraKey(Group, KEY_F1 + i, (BaseMsg + i).CPtr(), keyLabel.c_str());
-        /*
-		KeyBarElement k{KEY_F1 + KeyGroupMaps[Group][1] + i, (BaseMsg + i).CPtr(), groups[Group].groupName + L"F" + std::to_wstring(i + 1) };
-		k.group = Group;
-		groups[Group].keys.push_back(k);
-		fprintf(stderr, "[%d, %d] SetAllGroup: %ls %ls\n", Group, i, k.keyName.c_str(), k.text.c_str());
-        */
 	}
-	//KeyCounts[Group] = Count;
 }
 
 int KeyBar::ProcessKey(FarKey Key)
@@ -446,7 +361,7 @@ int KeyBar::ProcessKey(FarKey Key)
 		case KEY_GOTFOCUS:
 			RedrawIfChanged();
 			return TRUE;
-	}	/* switch */
+	}
 
 	return FALSE;
 }
@@ -613,16 +528,7 @@ void KeyBar::SetDisableMask(int Mask)
 void KeyBar::ResizeConsole() {}
 
 static const wchar_t* GetDescriptionFromLabelIf(const wchar_t* label) {
-#if VIEW_MODE > 0
- 	const wchar_t* q = wcschr(label, L' ');
- 	if (q) {
- 		while(*q && *q == L' ') ++q;
- 		if (!*q) q = 0;
- 	}
-    return q ? q : label;
-#else
     return label;
-#endif
 }
 
 void KeyBar::ShowContextMenu() 
@@ -659,21 +565,13 @@ void KeyBar::ShowContextMenu()
 			std::wstring label = Label;
 			std::wstring keyLabel = GetKeyName(i, j);
 
-#if VIEW_MODE == 0 || VIEW_MODE == 2
 			std::wstring s = label;
     		if (s.size() < (size_t)width) s.resize(width, L' ');
     		s += keyLabel;
-#else
-			std::wstring s = keyLabel;
-    		if (s.size() < (size_t)keywidth) s.resize(keywidth, L' ');
-    		s += label;
-#endif
 
 			labels.push_back(s);
 		}
 	}
-
-	// std::sort(labels.begin(), labels.end());
 
 	// now we ready to fill menus
 	MenuDataEx Groups[cnt];
@@ -691,7 +589,7 @@ void KeyBar::ShowContextMenu()
 	FarKey key = 0;
 	{
 		int GroupsCode;
-		VMenu GroupsMenu(L"", Groups, GroupsLen, 0);
+		VMenu GroupsMenu(L"", Groups, GroupsLen, ScrY - 2);
 
 		for (;;) {
 			GroupsMenu.SetPosition(3, std::max(Y1 - GroupsLen - 3, 2), 0, 0);

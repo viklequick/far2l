@@ -2385,6 +2385,9 @@ BOOL FileList::SetCurDir(const wchar_t *NewDir, int ClosePlugin)
 		if (CheckFullScreen != IsFullScreen()) {
 			CtrlObject->Cp()->GetAnotherPanel(this)->Redraw();
 		}
+
+		// change dir removes highlight position in the list
+		LastHoveredIndex = -1;
 	}
 
 	if ((NewDir) && (*NewDir)) {

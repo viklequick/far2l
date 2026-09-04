@@ -1929,7 +1929,7 @@ void Dialog::ShowDialog(unsigned ID)
 
 		// перед прорисовкой подложки окна диалога
 		if (!DialogMode.Check(DMODE_NODRAWSHADOW))
-			Shadow(DialogMode.Check(DMODE_FULLSHADOW) != FALSE);	// "наводим" тень
+			Shadow(DialogMode.Check(DMODE_FULLSHADOW) != FALSE || Opt.Dialogs.EnforceFullShadow);	// "наводим" тень
 
 		if (!DialogMode.Check(DMODE_NODRAWPANEL)) {
 

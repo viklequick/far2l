@@ -286,6 +286,8 @@ const ConfigOpt g_cfg_opts[] {
 		L"InterfSettings", L"Update RGB colors to make it more contrast in interface and dialogs" },
 	{OST_COMMON,  NSecInterface, "EnforceThemeorrection", &Opt.Dialogs.EnforceThemeCorrection, 0,
 		L"InterfSettings", L"Update theme colors automatically for highlighting and effects" },
+	{OST_COMMON,  NSecInterface, "EnforceFullShadow", &Opt.Dialogs.EnforceFullShadow, 0,
+		L"InterfSettings", L"Make dialog shadows like in Web, on full screen" },
 
 	{OST_NONE,   NSecInterface, "ShowTimeoutDelFiles", &Opt.ShowTimeoutDelFiles, 50,
 		nullptr, L"Delay before showing progress for delete operations, in milliseconds" },

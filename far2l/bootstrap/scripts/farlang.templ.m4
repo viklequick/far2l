@@ -29928,6 +29928,17 @@ upd:"Auto-adjust colors contrast"
 upd:"Auto-adjust colors contrast"
 upd:"Auto-adjust colors contrast"
 
+EnforceFullShadow
+"Тени у диалогов как в Web, на весь экран"
+"Web-like dialog shadows"
+upd:"Web-like dialog shadows"
+upd:"Web-like dialog shadows"
+upd:"Web-like dialog shadows"
+upd:"Web-like dialog shadows"
+upd:"Web-like dialog shadows"
+upd:"Web-like dialog shadows"
+upd:"Web-like dialog shadows"
+
 PanelHelp
 upd:"Help                 F1"
 "Help                 F1"

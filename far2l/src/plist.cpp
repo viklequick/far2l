@@ -87,7 +87,7 @@ static const wchar_t CPU_LOAD_PLACEHOLDER[] = L"  ??.?%";
 
 #define AUTOREFRESH_MSEC 1000
 
-static void enumerateProcesses(std::vector<FarPidInfo>& v) 
+static void enumerateProcesses(std::vector<FarPidInfo>& v)
 {
 	v.clear();
 
@@ -164,9 +164,9 @@ static void enumerateProcesses(std::vector<FarPidInfo>& v)
 			cpu_time/= clock_tick;
 		}
 
-		text.Format(L"%8d %lc %-12.12s %lc %-16.16s %lc %-40.40s %lc %ls %lc %'8ld Mb", 
-			pid, BoxSymbols[BS_V1], uid_name.c_str(), BoxSymbols[BS_V1], 
-			proc_comm.c_str(), BoxSymbols[BS_V1], proc_cmdline.c_str(), BoxSymbols[BS_V1], 
+		text.Format(L"%8d %lc %-12.12s %lc %-16.16s %lc %-40.40s %lc %ls %lc %'8ld Mb",
+			pid, BoxSymbols[BS_V1], uid_name.c_str(), BoxSymbols[BS_V1],
+			proc_comm.c_str(), BoxSymbols[BS_V1], proc_cmdline.c_str(), BoxSymbols[BS_V1],
 			CPU_LOAD_PLACEHOLDER, BoxSymbols[BS_V1], rss_kb / 1024);
 		v.push_back({ text, proc_cmdline, pid, rss_kb, cpu_time, -1 });
 	}
@@ -417,20 +417,32 @@ void ShowProcessList()
 			schedule_refresh = autorefresh ? GetProcessUptimeMSec() : 0;
 			break;
 		case KEY_NUMDEL:
-		case KEY_DEL:
-			if (!kill(v[ProcList.GetSelectPos()].pid, SIGTERM)) {
-				for (int i = 0; i < 100; ++i, usleep(10000)) { // wait up to second for process exit
-					if (kill(v[ProcList.GetSelectPos()].pid, 0) != 0) {
-						ProcList.DeleteItem(ProcList.GetSelectPos());
-						break;
+		case KEY_DEL: {
+				FARString strTmp (Msg::KillProcessTitle);
+				strTmp.AppendFormat(L" (SIGTERM, pid: %d)", v[ProcList.GetSelectPos()].pid );
+				if (!Message(MSG_WARNING, 2, strTmp, Msg::KillProcessWarning, Msg::AskKillProcess,
+						Msg::KillProcessKill, Msg::Cancel)) {
+					if (!kill(v[ProcList.GetSelectPos()].pid, SIGTERM)) {
+						for (int i = 0; i < 100; ++i, usleep(10000)) { // wait up to second for process exit
+							if (kill(v[ProcList.GetSelectPos()].pid, 0) != 0) {
+								ProcList.DeleteItem(ProcList.GetSelectPos());
+								break;
+							}
+						}
 					}
 				}
 			}
 			break;
 		case KEY_SHIFTNUMDEL:
-		case KEY_SHIFTDEL:
-			if(!kill(v[ProcList.GetSelectPos()].pid, SIGKILL)) {
-				ProcList.DeleteItem(ProcList.GetSelectPos()); // it had no chance to survive
+		case KEY_SHIFTDEL: {
+				FARString strTmp (Msg::KillProcessTitle);
+				strTmp.AppendFormat(L" (SIGKILL, pid: %d)", v[ProcList.GetSelectPos()].pid );
+				if (!Message(MSG_WARNING, 2, strTmp, Msg::KillProcessWarning, Msg::AskKillProcess,
+						Msg::KillProcessKill, Msg::Cancel)) {
+					if(!kill(v[ProcList.GetSelectPos()].pid, SIGKILL)) {
+						ProcList.DeleteItem(ProcList.GetSelectPos()); // it had no chance to survive
+					}
+				}
 			}
 			break;
 		case KEY_HOME:

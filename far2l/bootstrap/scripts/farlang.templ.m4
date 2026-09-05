@@ -18599,15 +18599,15 @@ l:
 "Спіс &заданняў (PID, User, Name, Command, CPU, RSS)"
 
 ProcessListBottom
-"Редактирование: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Edit: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Edit: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Tasten: Entf StrgR, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Szerk.: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Edycja: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Editar: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Редагування: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"Змена: Del Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Entf, SIGKILL: Shitf+Entf, Refresh: StrgR, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
 
 KillProcessTitle
 "Удаление задачи"

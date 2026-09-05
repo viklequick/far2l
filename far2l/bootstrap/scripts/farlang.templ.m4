@@ -16917,7 +16917,7 @@ MenuCompareFolders
 
 MenuCompareFiles
 "Сравнение фа&йлов         Ctrl+D"
-"File &diff           Ctrl+D"
+"File diff           Ctrl+D"
 "Porovnat &soubory               Ctrl+D"
 "D&ateien vergleichen  Ctrl+D"
 "Fájl &diff           Ctrl+D"
@@ -17280,7 +17280,7 @@ MenuFileAssociations
 
 MenuBookmarks
 "Зак&ладки на папки"
-"Folder boo&kmarks"
+"Fol&der bookmarks"
 "A&dresářové zkratky"
 "Or&dnerschnellzugriff"
 "Mappa gyorsbillent&yűk"

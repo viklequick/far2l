@@ -67,39 +67,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "AllXLats.hpp"
 #include "ConfigOpt.hpp"
 #include "ConfigOptSaveLoad.hpp"
-
-static size_t WrapStaticText(const wchar_t *text, int width, FARString *lines, size_t lines_count)
-{
-	if (!lines || !lines_count)
-		return 0;
-
-	FARString wrapped;
-	FarFormatText((text && *text) ? text : L"(no description)", width, wrapped, L"\n", 0);
-
-	size_t wrapped_lines_count = 1;
-	for (size_t i = 0; i < wrapped.GetLength(); ++i) {
-		if (wrapped.At(i) == L'\n')
-			++wrapped_lines_count;
-	}
-
-	size_t start = 0;
-	for (size_t i = 0; i < lines_count; ++i) {
-		lines[i].Clear();
-
-		if (start >= wrapped.GetLength())
-			continue;
-
-		size_t end = start;
-		while (end < wrapped.GetLength() && wrapped.At(end) != L'\n')
-			++end;
-
-		lines[i] = wrapped.SubStr(start, end - start);
-		lines[i].TruncateByCells(width);
-		start = end + 1;
-	}
-
-	return wrapped_lines_count;
-}
+#include "strmix.hpp"
 
 class ConfigOptProps
 {
@@ -220,11 +188,26 @@ public:
 
 	const wchar_t *SaveName() const
 	{
-		if (_opt.save == OST_COMMON)
-			return L"common";
-		if (_opt.save == OST_PANELS)
-			return L"panels";
-		return L"never";
+		switch (_opt.save) {
+			case OST_COMMON:
+				return L"common";
+			case OST_PANELS:
+				return L"panels";
+			default:
+				return L"never";
+		}
+	}
+
+	const wchar_t *SaveNameShort() const
+	{
+		switch (_opt.save) {
+			case OST_COMMON:
+				return L"c";
+			case OST_PANELS:
+				return L"p";
+			default:
+				return L"-";
+		}
 	}
 
 	void MenuListAppend(VMenu &vm,
@@ -234,25 +217,35 @@ public:
 	{
 		MenuItemEx mi;
 		FARString fsn;
+
 		if (align_dot)
 		    fsn.Format(L"%*s.%-*s", len_sections, _opt.section, len_keys, _opt.key);
 		else {
 			mi.strName.Format(L"%s.%s", _opt.section, _opt.key);
 			fsn.Format(L"%-*ls", len_sections_keys, mi.strName.CPtr());
 		}
+<<<<<<< HEAD
 		const wchar_t* ChangedMark = Opt.Backend.UseModernLook ? L"★" : L"*";
+=======
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 
 		FormatString out1;
 		FormatString out2;
 		switch (_opt.type)
 		{
 			case ConfigOpt::T_BOOL: {
+<<<<<<< HEAD
 				out1 << (*_opt.value.b == _opt.def.b ? L" " : ChangedMark)
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"  bool" << BoxSymbols[BS_V1];
+=======
+				out1 << (*_opt.value.b == _opt.def.b ? L" " : L"*")
+					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"  bool";
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				out2 << (*_opt.value.b ? L"[x] true" : L"[ ] false");
 				break;
 			}
 			case ConfigOpt::T_INT: {
+<<<<<<< HEAD
 				out1 << (*_opt.value.i == _opt.def.i ? L" " : ChangedMark)
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"   int" << BoxSymbols[BS_V1];
 				out2 << *_opt.value.i << L" (" << fmt::Hex(static_cast<uint32_t>(*_opt.value.i), 0, true) << L")";
@@ -262,12 +255,28 @@ public:
 				out1 << (*_opt.value.dw == _opt.def.dw ? L" " : ChangedMark)
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L" dword" << BoxSymbols[BS_V1];
 				out2 << *_opt.value.dw << L" (" << fmt::Hex(static_cast<uint32_t>(*_opt.value.dw), 0, true) << L")";
+=======
+				out1 << (*_opt.value.i == _opt.def.i ? L" " : L"*")
+					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"   int";
+				out2 << *_opt.value.i << L" = " << fmt::Hex(static_cast<uint32_t>(*_opt.value.i), 0, true);
+				break;
+			}
+			case ConfigOpt::T_DWORD: {
+				out1 << (*_opt.value.dw == _opt.def.dw ? L" " : L"*")
+					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L" dword";
+				out2 << *_opt.value.dw << L" = " << fmt::Hex(static_cast<uint32_t>(*_opt.value.dw), 0, true);
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				break;
 			}
 			case ConfigOpt::T_STR: {
 				out1 << (_opt.def.str == nullptr ? L"?"
+<<<<<<< HEAD
 						: (*_opt.value.str == _opt.def.str ? L" " : ChangedMark))
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"string" << BoxSymbols[BS_V1];
+=======
+						: (*_opt.value.str == _opt.def.str ? L" " : L"*"))
+					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"string";
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				out2 << _opt.value.str->CPtr();
 				break;
 			}
@@ -280,34 +289,43 @@ public:
 			}
 			case ConfigOpt::T_BIN: {
 				out1 << (_opt.def.bin == nullptr || _opt.value.bin == nullptr ? L"?"
+<<<<<<< HEAD
 						: (memcmp(_opt.value.bin, _opt.def.bin, _opt.bin_size) == 0 ? L" " : ChangedMark))
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"binary" << BoxSymbols[BS_V1];
+=======
+						: (memcmp(_opt.value.bin, _opt.def.bin, _opt.bin_size) == 0 ? L" " : L"*"))
+					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"binary";
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				out2 << L"(binary has length " << static_cast<unsigned int>(_opt.bin_size) << L" bytes)";
 				break;
 			}
 			default: {
-				out1 << L"? " << fsn << L' ' << BoxSymbols[BS_V1];
+				out1 << L"? " << fsn << L' ';
 				out2 << L"unknown type ???";
 			}
 		}
+
+		out1 << BoxSymbols[BS_V1] << SaveNameShort() << BoxSymbols[BS_V1];
+
 		mi.strName = out1.strValue();
 		mi.strName += out2.strValue();
-		FARString description;
-		description = L"Selected: ";
-		description += _opt.section;
-		description += L'.';
-		description += _opt.key;
-		description += L"  Type: ";
-		description += TypeName();
-		description += L"  Saved: ";
-		description += SaveName();
-		description += L"  Value: ";
-		description += out2.strValue();
+
+		mi.strDescription = _opt.section;
+		mi.strDescription += L'.';
+		mi.strDescription += _opt.key;
+		mi.strDescription += L" (type: ";
+		mi.strDescription += TypeName();
+		mi.strDescription += L", saved: ";
+		mi.strDescription += SaveName();
+		mi.strDescription += L")\nValue";
+		if (_opt.type == ConfigOpt::T_STR)
+			mi.strDescription.AppendFormat(L" (length: %zu): \"%ls\"", out2.strValue().GetLength(), out2.strValue().CPtr() );
+		else
+			mi.strDescription += L": " + out2.strValue();
 		if (_opt.description && _opt.description[0]) {
-			description += L"\n\n";
-			description += _opt.description;
+			mi.strDescription += L"\n\n";
+			mi.strDescription += _opt.description;
 		}
-		mi.strDescription = description;
 		mi.UserData = reinterpret_cast<char *>(static_cast<DWORD_PTR>(option_index + 1));
 		mi.UserDataSize = sizeof(option_index);
 		vm.AddItem(&mi);
@@ -364,7 +382,7 @@ public:
 		em.AddFormat(L"%ls - %s.%s", title, _opt.section, _opt.key);
 		em.AddFormat(L"        Section: %s", _opt.section);
 		em.AddFormat(L"            Key: %s", _opt.key);
-		em.AddFormat(L" to config file: %ls", (_opt.save == OST_COMMON ? L"common" : (_opt.save == OST_PANELS ? L"panels" : L"never")));
+		em.AddFormat(L"       Saved in: %ls", (_opt.save == OST_COMMON ? L"common" : (_opt.save == OST_PANELS ? L"panels" : L"never")));
 		em.AddFormat(L"           Type: %s", type_psz);
 		em.AddDup(def_str.strValue());
 		em.AddDup(val_str.strValue());
@@ -374,10 +392,9 @@ public:
 		}
 		if (IsNotDefault()==1) {
 			em.AddDup(L"");
-			em.Add(L"Note: some parameters after update/reset");
-			em.Add(L"      not applied immediately in FAR2L");
-			em.Add(L"      and need relaunch feature");
-			em.Add(L"      or may be need save config & restart FAR2L");
+			em.Add(L"Note: Some changes may not take effect immediately.");
+			em.Add(L"      Save the configuration and restart FAR2L");
+			em.Add(L"      if necessary.");
 		}
 		em.Add(L"Continue");
 		SetMessageHelp(L"FarConfig");
@@ -517,13 +534,16 @@ public:
 		const wchar_t *HexMask = L"HHHHHHHH";
 		const short DLG_WIDTH = 76;
 		const int DESCRIPTION_WIDTH = DLG_WIDTH - 12;
-		const size_t MIN_DESCRIPTION_LINES = 3;
+		const size_t MIN_DESCRIPTION_LINES = 1;
 		const size_t MAX_DESCRIPTION_LINES = 8;
 		const size_t max_description_lines =
 			std::min(MAX_DESCRIPTION_LINES, static_cast<size_t>(std::max(1, ScrY - 24)));
 		FARString description_lines[MAX_DESCRIPTION_LINES];
+		const wchar_t *description = _opt.description;
+		if (!description || !*description)
+			description = L"(no description)";
 		const size_t wrapped_description_lines_count =
-			WrapStaticText(_opt.description, DESCRIPTION_WIDTH, description_lines, ARRAYSIZE(description_lines));
+			WrapTextToLines(description, DESCRIPTION_WIDTH, description_lines, ARRAYSIZE(description_lines));
 		const size_t description_lines_count = std::min(
 			std::max(MIN_DESCRIPTION_LINES, wrapped_description_lines_count),
 			max_description_lines);
@@ -544,8 +564,8 @@ public:
 			/*   2 */ {DI_TEXT,			21,  2, TEXT_X2,  2, {}, 0, fs_section.CPtr()},
 			/*   3 */ {DI_TEXT,			 5,  3, 20,             3, {}, 0, L"           Key:"},
 			/*   4 */ {DI_TEXT,			21,  3, TEXT_X2,  3, {}, 0, fs_key.CPtr()},
-			/*   5 */ {DI_TEXT,			 5,  4, 20,             4, {}, 0, L"to config file:"},
-			/*   6 */ {DI_TEXT,			21,  4, TEXT_X2,  4, {}, 0, (_opt.save == OST_COMMON ? L"common" : (_opt.save == OST_PANELS ? L"panels" : L"never"))},
+			/*   5 */ {DI_TEXT,			 5,  4, 20,             4, {}, 0, L"      Saved in:"},
+			/*   6 */ {DI_TEXT,			21,  4, TEXT_X2,  4, {}, 0, SaveName()},
 			/*   7 */ {DI_TEXT,			 5,  5, 20,             5, {}, 0, L"          Type:"},
 			/*   8 */ {DI_TEXT,			21,  5, TEXT_X2,  5, {}, 0, type_pwsz},
 			/*   9 */ {DI_TEXT,			 3,  6, 20,             6, {}, DIF_SEPARATOR, L" Values "},
@@ -582,12 +602,21 @@ public:
 			/*  40 */ {DI_TEXT,		5, 17, TEXT_X2, 17, {}, DIF_SHOWAMPERSAND, description_lines[5].CPtr()},
 			/*  41 */ {DI_TEXT,		5, 18, TEXT_X2, 18, {}, DIF_SHOWAMPERSAND, description_lines[6].CPtr()},
 			/*  42 */ {DI_TEXT,		5, 19, TEXT_X2, 19, {}, DIF_SHOWAMPERSAND, description_lines[7].CPtr()},
+<<<<<<< HEAD
 			/*  43 */ {DI_TEXT,		3, desc_separator_y, 20, desc_separator_y, {}, (Opt.Backend.UseModernLook ? 0 : DIF_SEPARATOR), L""},
 			/*  44 */ {DI_TEXT,		5, note_y, TEXT_X2, note_y, {}, DIF_SHOWAMPERSAND, L"Note: some parameters after update/reset"},
 			/*  45 */ {DI_TEXT,		5, note_y1, TEXT_X2, note_y1, {}, DIF_SHOWAMPERSAND, L"      not applied immediately in FAR2L"},
 			/*  46 */ {DI_TEXT,		5, note_y2, TEXT_X2, note_y2, {}, DIF_SHOWAMPERSAND, L"      and need relaunch feature"},
 			/*  47 */ {DI_TEXT,		5, note_y3, TEXT_X2, note_y3, {}, DIF_SHOWAMPERSAND, L"      or may be need save config & restart FAR2L"},
 			/*  48 */ {DI_TEXT,		3, bottom_separator_y, 20, bottom_separator_y, {}, (Opt.Backend.UseModernLook ? 0 : DIF_SEPARATOR), L""},
+=======
+			/*  43 */ {DI_TEXT,		3, desc_separator_y, 20, desc_separator_y, {}, DIF_SEPARATOR, L""},
+			/*  44 */ {DI_TEXT,		5, note_y, TEXT_X2, note_y, {}, DIF_SHOWAMPERSAND, L"Note: Some changes may not take effect immediately."},
+			/*  45 */ {DI_TEXT,		5, note_y1, TEXT_X2, note_y1, {}, DIF_SHOWAMPERSAND, L"      Save the configuration and restart FAR2L"},
+			/*  46 */ {DI_TEXT,		5, note_y2, TEXT_X2, note_y2, {}, DIF_SHOWAMPERSAND, L"      if necessary."},
+			/*  47 */ {DI_TEXT,		5, note_y3, TEXT_X2, note_y3, {}, DIF_SHOWAMPERSAND, L""},
+			/*  48 */ {DI_TEXT,		3, bottom_separator_y, 20, bottom_separator_y, {}, DIF_SEPARATOR, L""},
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 			/*  49 */ {DI_BUTTON,	0, button_y, 0,  button_y, {}, DIF_DEFAULT | DIF_CENTERGROUP | (is_editable ? 0 : DIF_DISABLE), Msg::Change},
 			/*  50 */ {DI_BUTTON,	0, button_y, 0,  button_y, {}, DIF_CENTERGROUP | (is_editable ? 0 : DIF_FOCUS), Msg::Cancel},
 			/*  51 */ {DI_BUTTON,	0, button_y, 0,  button_y, {}, DIF_CENTERGROUP | DIF_BTNNOCLOSE, L"Closest Help &Topic"}
@@ -741,8 +770,9 @@ static void ConfigOptAppendHeader(VMenu &vm, size_t len_sections_keys)
 	MenuItemEx mi;
 	FormatString header;
 	header << L"  " << fmt::Cells() << fmt::LeftAlign() << fmt::Size(len_sections_keys)
-		<< L"Key Path" << L' ' << BoxSymbols[BS_V1]
+		<< L"Section.Parameter" << L' ' << BoxSymbols[BS_V1]
 		<< L"  Type" << BoxSymbols[BS_V1]
+		<< L" " << BoxSymbols[BS_V1]
 		<< L"Value";
 	mi.strName = header.strValue();
 	mi.Flags = LIF_DISABLE;
@@ -803,7 +833,7 @@ void ConfigOptEdit()
 	//ListConfig.SetFlags(VMENU_WRAPMODE);
 	ListConfig.SetHelp(L"FarConfig");
 
-	ListConfig.SetBottomTitle(L"[Ctrl-Alt-F] Search  [Enter/F4] Edit  [Del] Reset  [Ctrl-H] Changed  [Ctrl-A] Align  [Esc] Exit");
+	ListConfig.SetBottomTitle(L"[Ctrl-Alt-F] Filter  [Enter/F4] Edit  [Del] Reset  [Ctrl-H] Changed  [Ctrl-A] Align  [Esc/F10] Exit");
 
 	for (size_t i = ConfigOptCount(); i--;) {
 		ConfigOptProps(g_cfg_opts[i])

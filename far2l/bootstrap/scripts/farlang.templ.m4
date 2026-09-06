@@ -18797,17 +18797,18 @@ DragCopy
 
 ProcessListTitle
 l:
-"Список задач (PID, User, Name, Command, CPU, RSS)"
-"Task list (PID, User, Name, Command, CPU, RSS)"
-"Seznam úloh (PID, User, Name, Command, CPU, RSS)"
-"Taskliste (PID, User, Name, Command, CPU, RSS)"
-"Futó programok (PID, User, Name, Command, CPU, RSS)"
-"Lista zadań (PID, User, Name, Command, CPU, RSS)"
-"Lista de tareas (PID, User, Name, Command, CPU, RSS)"
-"Список завдань (PID, User, Name, Command, CPU, RSS)"
-"Спіс &заданняў (PID, User, Name, Command, CPU, RSS)"
+"Список задач (Time, PID, User, Name, CPU, RSS), Автообновление: %s, Сортировка: %c"
+"Task list (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
+"Seznam úloh (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
+"Taskliste (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
+"Futó programok (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
+"Lista zadań (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
+"Lista de tareas (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
+"Список завдань (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
+"Спіс &заданняў (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
 
 ProcessListBottom
+<<<<<<< HEAD
 "SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
 "SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
 "SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
@@ -18817,6 +18818,17 @@ ProcessListBottom
 "SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
 "SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
 "SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
+=======
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"StrgR, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+"Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 
 KillProcessTitle
 "Удаление задачи"

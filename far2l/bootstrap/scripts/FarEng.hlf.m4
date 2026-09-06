@@ -2267,6 +2267,7 @@ of time if a folder was located on a currently unavailable remote resource.
 $ #Task list#
     The task list displays active tasks.
 
+<<<<<<< HEAD
     #Del#                Kill process: sends SIGTERM and checks if process really exited as result
     #Shift-Del#          Kill process: sends SIGKILL
     #Ctrl-R#             Autorefresh on/off
@@ -2275,6 +2276,18 @@ $ #Task list#
     #p/P#                Sort by CPU
     #m/M#                Sort by memory (Resident Set Size, RSS)
     #Ctrl-Alt-F#         Filter list items
+=======
+    #Del#                Kill process: sends #SIGTERM# and checks if process really exited as result
+    #Shift-Del#          Kill process: sends #SIGKILL#
+    #Ctrl-R#             Autorefresh on/off (if on, autorefresh each 1 s)
+    #t#/#T#                Sort by time
+    #n#/#N#                Sort by name
+    #i#/#I#                Sort by PID
+    #c#/#C#                Sort by CPU
+    #m#/#M#                Sort by memory (Resident Set Size, RSS)
+    #Ctrl-Alt-F#         Filter list items
+    #Ctrl-F10#           Go to #/proc/PID# directory in active panel (only in Linux)
+>>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 
     See also: common ~menu~@MenuCmd@ keyboard commands.
 

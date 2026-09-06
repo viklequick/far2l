@@ -981,7 +981,7 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 					FrameManager->ProcessKey(KEY_F12);
 					break;
 				case MENU_COMMANDS_PROCESSLIST:		// Task list
-					ShowProcessList(CtrlObject->Cp()->ActivePanel);
+					ShowProcessList(CtrlObject->Cp()->ActiveTab().ActivePanel);
 					break;
 				case MENU_COMMANDS_FARCONFIG:		// far:config
 					ConfigOptEdit();

@@ -18808,17 +18808,6 @@ l:
 "Спіс &заданняў (Time, PID, User, Name, CPU, RSS), AutoRefresh: %s, Sort: %c"
 
 ProcessListBottom
-<<<<<<< HEAD
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Entf, SIGKILL: Shitf+Entf, Refresh: StrgR, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-"SIGTERM: Del, SIGKILL: Shitf+Del, Refresh: Ctrl+R, Sort: t/T name, i/I PID, p/P CPU, m/M RSS, Search: ^⌥F"
-=======
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
@@ -18828,7 +18817,6 @@ ProcessListBottom
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
->>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 
 KillProcessTitle
 "Удаление задачи"

@@ -183,9 +183,8 @@ void QuickView::PrintContent(const wchar_t *WalkedNowDir)
 				PrintNamedValue(X1 + 3, y, FirstColumnLen - 1, Msg::QuickViewDevices, InsertCommas(di.DeviceCount, strTmp));
 			if (++y > 0)
 				PrintNamedValue(X1 + 3, y, FirstColumnLen - 1, Msg::QuickViewFolders, InsertCommas(di.DirCount, strTmp));
-			if (++y > 0) {
+			if (++y > 0)
 				PrintNamedValue(X1 + 3, y, FirstColumnLen - 1, Msg::QuickViewFiles, InsertCommas(di.FileCount, strTmp));
-			}
 			if (++y > 0)
 				PrintNamedValue(X1 + 3, y, FirstColumnLen - 1, Msg::QuickViewBytes, InsertCommas(di.FileSize, strTmp));
 			if (++y > 0)

@@ -514,18 +514,6 @@ void ShowProcessList(Panel *ActivePanel)
 			keep = AT_BOTTOM;
 			ProcList.ProcessInput();
 			break;
-#ifdef __linux__
-		case KEY_CTRLF10:
-			if (ActivePanel) {
-				FARString strProcDir;
-				strProcDir.Format(L"/proc/%d", v[ProcList.GetSelectPos()].pid);
-				if (CheckShortcutFolder(strProcDir, true)) {
-					ActivePanel->SetCurDir(strProcDir, TRUE);
-					return;
-				}
-			}
-			break;
-#endif
 		case KEY_NONE: case KEY_IDLE:
 			break;
 		default:
@@ -536,6 +524,16 @@ void ShowProcessList(Panel *ActivePanel)
 			ProcList.ProcessInput();
 		}
 	}
+#ifdef __linux__
+	int exit_pos = ProcList.GetExitCode();
+	if (exit_pos >= 0 && exit_pos < (int)v.size() && ActivePanel) {
+		FARString strProcDir;
+		strProcDir.Format(L"/proc/%d", v[exit_pos].pid);
+		if (CheckShortcutFolder(strProcDir, true)) {
+			ActivePanel->SetCurDir(strProcDir, TRUE);
+		}
+	}
+#endif
 }
 
 void ShowProcessList_OldPs()

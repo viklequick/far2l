@@ -3331,7 +3331,7 @@ bool ShellCopy::CalcTotalSize()
 				}
 
 				TotalCopySize+= di.FileSize;
-				TotalFilesToProcess+= di.FileCount;
+				TotalFilesToProcess+= di.DeviceCount + di.FileCount;
 			}
 		} else {
 			// Подсчитаем количество файлов

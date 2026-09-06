@@ -807,7 +807,11 @@ void Manager::ProcessMainLoop()
 			// используем копию структуры, т.к. LastInputRecord может внезапно измениться во время выполнения ProcessMouse
 			MOUSE_EVENT_RECORD mer = LastInputRecord.Event.MouseEvent;
 			ProcessMouse(&mer);
-		} else
+		}
+		else if (LastInputRecord.EventType == EXT_DROP_EVENT) {
+			ProcessDrop(&LastInputRecord.Event.DropTarget);
+		} 
+		else
 			ProcessKey(Key);
 	}
 }
@@ -1084,6 +1088,20 @@ int Manager::ProcessKey(DWORD Key)
 	}
 
 	_MANAGER(SysLog(-1));
+	return ret;
+}
+
+int Manager::ProcessDrop(EXT_DROP_EVENT_DATA* drop) {
+	int ret = FALSE;
+
+	if (CurrentFrame)
+		ret = CurrentFrame->ProcessDrop(drop);
+
+	if(drop->Text) {
+		free(drop->Text);
+		drop->Text = nullptr;
+	}
+
 	return ret;
 }
 

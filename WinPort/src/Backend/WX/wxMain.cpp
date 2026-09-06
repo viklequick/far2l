@@ -1,6 +1,5 @@
 #include "wxMain.h"
 #include <dlfcn.h>
-#include "../NotifySh.h"
 #include "wxWinTranslations.h"
 #include "wxKeyboardLedsState.h"
 #include "../../../utils/src/POpen.cpp"
@@ -8,6 +7,7 @@
 #include <memory>
 #include "wxPrinterSupport.h"
 #include "wxShareBackendOptions.h"
+#include "../NotifySh.h"
 
 #define AREAS_REDUCTION
 
@@ -609,9 +609,96 @@ wxBEGIN_EVENT_TABLE(WinPortPanel, wxPanel)
 	EVT_KILL_FOCUS(WinPortPanel::OnKillFocus )
 wxEND_EVENT_TABLE()
 
+///////////////////////////
+// Drag and drop support
+
+class MyDropTarget : public wxDropTarget
+{
+public:
+    MyDropTarget(WinPortPanel* self) {
+    	this->self = self;
+
+        // Create a composite data object
+        wxDataObjectComposite* comp = new wxDataObjectComposite;
+
+        // Add supported formats
+        m_textObj = new wxTextDataObject;
+        //m_urlObj  = new wxURLDataObject;
+        m_fileObj = new wxFileDataObject;
+
+        comp->Add(m_textObj, true);   // primary
+        //comp->Add(m_urlObj);
+        comp->Add(m_fileObj);
+
+        SetDataObject(comp);
+    }
+
+    virtual wxDragResult OnData(wxCoord x, wxCoord y, wxDragResult def) override
+    {
+        if (!GetData())
+            return wxDragNone;
+
+        // Check which format was received
+        if (!m_textObj->GetText().empty())
+        {
+            HandleText(m_textObj->GetText());
+        }
+        /*else if (!m_urlObj->GetURL().empty())
+        {
+            HandleURL(m_urlObj->GetURL());
+        }*/
+        else if (!m_fileObj->GetFilenames().empty())
+        {
+            HandleFiles(m_fileObj->GetFilenames());
+        }
+
+        return def;
+    }
+
+private:
+    wxTextDataObject* m_textObj;
+    //wxURLDataObject*  m_urlObj;
+    wxFileDataObject* m_fileObj;
+    WinPortPanel* self { nullptr };
+
+    void HandleText(const wxString& text)
+    {
+        fprintf(stderr, "Dropped TEXT: %ls\n", text.wc_str());
+        self->DragDropHandleText(text);
+    }
+
+    void HandleURL(const wxString& text)
+    {
+        fprintf(stderr, "Dropped URL: %ls\n", text.wc_str());
+        self->DragDropHandleText(text);
+    }
+
+    void HandleFiles(const wxArrayString& files)
+    {
+        for (auto& f : files) {
+            fprintf(stderr, "Dropped FILE: %ls\n", f.wc_str());
+            self->DragDropHandleFile(f);
+        }
+    }
+};
+
+void WinPortPanel::DragDropHandleText(const wxString& text) {
+	INPUT_RECORD ir = {};
+	ir.EventType = EXT_DROP_EVENT;
+	ir.Event.DropTarget.DropType = DROP_TYPE_TEXT;
+	ir.Event.DropTarget.Text = wcsdup(text.wc_str());
+	wxConsoleInputShim::Enqueue(&ir, 1);
+}
+
+void WinPortPanel::DragDropHandleFile(const wxString& file) {
+	INPUT_RECORD ir = {};
+	ir.EventType = EXT_DROP_EVENT;
+	ir.Event.DropTarget.DropType = DROP_TYPE_FILE;
+	ir.Event.DropTarget.Text = wcsdup(file.wc_str());
+	wxConsoleInputShim::Enqueue(&ir, 1);
+}
 
 ///////////////////////////
-
 
 WinPortPanel::WinPortPanel(WinPortFrame *frame, const wxPoint& pos, const wxSize& size)
 	: _paint_context(this), _frame(frame), _refresh_rects_throttle(WINPORT(GetTickCount)())
@@ -652,6 +739,8 @@ WinPortPanel::WinPortPanel(WinPortFrame *frame, const wxPoint& pos, const wxSize
 	_periodic_timer->Start(g_TIMER_PERIOD);
 	OnConsoleOutputTitleChanged();
 	_resize_pending = RP_INSTANT;
+
+	SetDropTarget(new MyDropTarget(this));
 }
 
 WinPortPanel::~WinPortPanel()
@@ -763,7 +852,6 @@ void WinPortPanel::OnTouchbarKey(bool alternate, int index)
 	wxConsoleInputShim::Enqueue(&ir, 1);
 	ir.Event.KeyEvent.bKeyDown = FALSE;
 	wxConsoleInputShim::Enqueue(&ir, 1);
-
 }
 
 void WinPortPanel::SetConsoleSizeFromWindow()
@@ -2459,4 +2547,40 @@ void WinPortPanel::OnConsoleOverrideColor(DWORD Index, DWORD *ColorFG, DWORD *Co
 
 	auto fn = std::bind(&ConsoleOverrideColorInMain, Index, ColorFG, ColorBK);
 	CallInMainNoRet(fn);
+}
+
+void StartDragHelper::StartDrag(const wxString& text, const wxString& url, const wxArrayString& files) {
+    wxDataObjectComposite* comp = new wxDataObjectComposite;
+
+    wxTextDataObject* textObj = nullptr;
+    if (!text.empty()) {
+        textObj = new wxTextDataObject(text);
+        comp->Add(textObj, true); // primary
+    }
+
+    // Add URL if provided
+    /*
+    wxURLDataObject* urlObj = nullptr;
+    if (!url.empty()) {
+        urlObj = new wxURLDataObject(url);
+        comp->Add(urlObj);
+    } */
+
+    // Add files if provided
+    wxFileDataObject* fileObj = nullptr;
+    if (!files.empty()) {
+        fileObj = new wxFileDataObject;
+        for (auto& f : files)
+            fileObj->AddFile(f);
+        comp->Add(fileObj);
+    }
+
+    // If nothing was provided, do nothing
+    if (comp->GetFormatCount() == 0)
+        return;
+
+    wxDropSource source(self);
+    source.SetData(*comp);
+
+    source.DoDragDrop(wxDrag_CopyOnly);
 }

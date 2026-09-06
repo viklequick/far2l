@@ -175,6 +175,7 @@ public:
 	void ExitMainLoop(int Ask);
 	int ProcessKey(DWORD key);
 	int ProcessMouse(MOUSE_EVENT_RECORD *me);
+	int ProcessDrop(EXT_DROP_EVENT_DATA* drop);
 
 	void PluginsMenu();		// вызываем меню по F11
 	void SwitchToPanels();

@@ -20,6 +20,7 @@
 #include <wx/debug.h>
 #include <wx/filename.h>
 #include <wx/stdpaths.h>
+#include <wx/dnd.h>
 
 #include "ExclusiveHotkeys.h"
 #include <set>
@@ -193,6 +194,9 @@ public:
 	void OnChar( wxKeyEvent& event );
 	virtual void OnTouchbarKey(bool alternate, int index);
 	void SetClientCharSize(int cw, int ch);
+
+    void DragDropHandleText(const wxString& text);
+    void DragDropHandleFile(const wxString& file);
 };
 
 ///////////////////////////////////////////
@@ -243,3 +247,14 @@ public:
 	void SetInitialSize();
 	void SaveWindowState();
 };
+
+class StartDragHelper {
+public:
+	StartDragHelper(WinPortPanel* self) { this->self = self; }
+
+	void StartDrag(const wxString& text, const wxString& url, const wxArrayString& files);
+
+private:
+    WinPortPanel* self { nullptr };
+};
+

@@ -609,6 +609,14 @@ typedef struct _BRACKETED_PASTE {
     BOOL bStartPaste;
 } BRACKETED_PASTE, *PBRACKETED_PASTE;
 
+#define DROP_TYPE_TEXT  1
+#define DROP_TYPE_FILE  2
+
+typedef struct _EXT_DROP_EVENT_DATA {
+    short DropType;
+    wchar_t* Text; // receiver should free the buffer
+} EXT_DROP_EVENT_DATA;
+
 #define KEY_EVENT         0x0001 // Event contains key event record
 #define MOUSE_EVENT       0x0002 // Event contains mouse event record
 #define WINDOW_BUFFER_SIZE_EVENT 0x0004 // Event contains window change event record
@@ -618,6 +626,7 @@ typedef struct _BRACKETED_PASTE {
 #define CALLBACK_EVENT 0x0040 // callback to be invoked when its record dequeued, its translated into NOOP_EVENT when invoked
 #define NOOP_EVENT 0x0080 // nothing interesting, typically injected to kick events dispatcher
 
+#define EXT_DROP_EVENT 0x0100 // drop target
 
 typedef struct _INPUT_RECORD {
     WORD EventType;
@@ -628,6 +637,7 @@ typedef struct _INPUT_RECORD {
         MENU_EVENT_RECORD MenuEvent;
         FOCUS_EVENT_RECORD FocusEvent;
         BRACKETED_PASTE BracketedPaste;
+        EXT_DROP_EVENT_DATA DropTarget;
         CALLBACK_EVENT_RECORD CallbackEvent;
     } Event;
 } INPUT_RECORD, *PINPUT_RECORD;

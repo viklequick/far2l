@@ -224,78 +224,48 @@ public:
 			mi.strName.Format(L"%s.%s", _opt.section, _opt.key);
 			fsn.Format(L"%-*ls", len_sections_keys, mi.strName.CPtr());
 		}
-<<<<<<< HEAD
 		const wchar_t* ChangedMark = Opt.Backend.UseModernLook ? L"★" : L"*";
-=======
->>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 
 		FormatString out1;
 		FormatString out2;
 		switch (_opt.type)
 		{
 			case ConfigOpt::T_BOOL: {
-<<<<<<< HEAD
 				out1 << (*_opt.value.b == _opt.def.b ? L" " : ChangedMark)
-					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"  bool" << BoxSymbols[BS_V1];
-=======
-				out1 << (*_opt.value.b == _opt.def.b ? L" " : L"*")
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"  bool";
->>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				out2 << (*_opt.value.b ? L"[x] true" : L"[ ] false");
 				break;
 			}
 			case ConfigOpt::T_INT: {
-<<<<<<< HEAD
 				out1 << (*_opt.value.i == _opt.def.i ? L" " : ChangedMark)
-					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"   int" << BoxSymbols[BS_V1];
-				out2 << *_opt.value.i << L" (" << fmt::Hex(static_cast<uint32_t>(*_opt.value.i), 0, true) << L")";
-				break;
-			}
-			case ConfigOpt::T_DWORD: {
-				out1 << (*_opt.value.dw == _opt.def.dw ? L" " : ChangedMark)
-					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L" dword" << BoxSymbols[BS_V1];
-				out2 << *_opt.value.dw << L" (" << fmt::Hex(static_cast<uint32_t>(*_opt.value.dw), 0, true) << L")";
-=======
-				out1 << (*_opt.value.i == _opt.def.i ? L" " : L"*")
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"   int";
 				out2 << *_opt.value.i << L" = " << fmt::Hex(static_cast<uint32_t>(*_opt.value.i), 0, true);
 				break;
 			}
 			case ConfigOpt::T_DWORD: {
-				out1 << (*_opt.value.dw == _opt.def.dw ? L" " : L"*")
+				out1 << (*_opt.value.dw == _opt.def.dw ? L" " : ChangedMark)
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L" dword";
 				out2 << *_opt.value.dw << L" = " << fmt::Hex(static_cast<uint32_t>(*_opt.value.dw), 0, true);
->>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				break;
 			}
 			case ConfigOpt::T_STR: {
 				out1 << (_opt.def.str == nullptr ? L"?"
-<<<<<<< HEAD
 						: (*_opt.value.str == _opt.def.str ? L" " : ChangedMark))
-					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"string" << BoxSymbols[BS_V1];
-=======
-						: (*_opt.value.str == _opt.def.str ? L" " : L"*"))
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"string";
->>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				out2 << _opt.value.str->CPtr();
 				break;
 			}
 			case ConfigOpt::T_WSTRBUF: {
 				out1 << (_opt.def.str == nullptr ? L"?"
 						: (!wcscmp(_opt.value.wstr, _opt.def.str) ? L" " : ChangedMark))
-					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"wchr[]" << BoxSymbols[BS_V1];
+					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"wchr[]";
 				out2 << _opt.value.wstr;
 				break;
 			}
 			case ConfigOpt::T_BIN: {
 				out1 << (_opt.def.bin == nullptr || _opt.value.bin == nullptr ? L"?"
-<<<<<<< HEAD
 						: (memcmp(_opt.value.bin, _opt.def.bin, _opt.bin_size) == 0 ? L" " : ChangedMark))
-					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"binary" << BoxSymbols[BS_V1];
-=======
-						: (memcmp(_opt.value.bin, _opt.def.bin, _opt.bin_size) == 0 ? L" " : L"*"))
 					<< L' ' << fsn << L' ' << BoxSymbols[BS_V1] << L"binary";
->>>>>>> e39783a21a409531633eb950dd707f227cb969ce
 				out2 << L"(binary has length " << static_cast<unsigned int>(_opt.bin_size) << L" bytes)";
 				break;
 			}
@@ -602,21 +572,12 @@ public:
 			/*  40 */ {DI_TEXT,		5, 17, TEXT_X2, 17, {}, DIF_SHOWAMPERSAND, description_lines[5].CPtr()},
 			/*  41 */ {DI_TEXT,		5, 18, TEXT_X2, 18, {}, DIF_SHOWAMPERSAND, description_lines[6].CPtr()},
 			/*  42 */ {DI_TEXT,		5, 19, TEXT_X2, 19, {}, DIF_SHOWAMPERSAND, description_lines[7].CPtr()},
-<<<<<<< HEAD
-			/*  43 */ {DI_TEXT,		3, desc_separator_y, 20, desc_separator_y, {}, (Opt.Backend.UseModernLook ? 0 : DIF_SEPARATOR), L""},
-			/*  44 */ {DI_TEXT,		5, note_y, TEXT_X2, note_y, {}, DIF_SHOWAMPERSAND, L"Note: some parameters after update/reset"},
-			/*  45 */ {DI_TEXT,		5, note_y1, TEXT_X2, note_y1, {}, DIF_SHOWAMPERSAND, L"      not applied immediately in FAR2L"},
-			/*  46 */ {DI_TEXT,		5, note_y2, TEXT_X2, note_y2, {}, DIF_SHOWAMPERSAND, L"      and need relaunch feature"},
-			/*  47 */ {DI_TEXT,		5, note_y3, TEXT_X2, note_y3, {}, DIF_SHOWAMPERSAND, L"      or may be need save config & restart FAR2L"},
-			/*  48 */ {DI_TEXT,		3, bottom_separator_y, 20, bottom_separator_y, {}, (Opt.Backend.UseModernLook ? 0 : DIF_SEPARATOR), L""},
-=======
 			/*  43 */ {DI_TEXT,		3, desc_separator_y, 20, desc_separator_y, {}, DIF_SEPARATOR, L""},
 			/*  44 */ {DI_TEXT,		5, note_y, TEXT_X2, note_y, {}, DIF_SHOWAMPERSAND, L"Note: Some changes may not take effect immediately."},
 			/*  45 */ {DI_TEXT,		5, note_y1, TEXT_X2, note_y1, {}, DIF_SHOWAMPERSAND, L"      Save the configuration and restart FAR2L"},
 			/*  46 */ {DI_TEXT,		5, note_y2, TEXT_X2, note_y2, {}, DIF_SHOWAMPERSAND, L"      if necessary."},
 			/*  47 */ {DI_TEXT,		5, note_y3, TEXT_X2, note_y3, {}, DIF_SHOWAMPERSAND, L""},
-			/*  48 */ {DI_TEXT,		3, bottom_separator_y, 20, bottom_separator_y, {}, DIF_SEPARATOR, L""},
->>>>>>> e39783a21a409531633eb950dd707f227cb969ce
+			/*  48 */ {DI_TEXT,		3, bottom_separator_y, 20, bottom_separator_y, {}, (Opt.Backend.UseModernLook ? 0 : DIF_SEPARATOR), L""},
 			/*  49 */ {DI_BUTTON,	0, button_y, 0,  button_y, {}, DIF_DEFAULT | DIF_CENTERGROUP | (is_editable ? 0 : DIF_DISABLE), Msg::Change},
 			/*  50 */ {DI_BUTTON,	0, button_y, 0,  button_y, {}, DIF_CENTERGROUP | (is_editable ? 0 : DIF_FOCUS), Msg::Cancel},
 			/*  51 */ {DI_BUTTON,	0, button_y, 0,  button_y, {}, DIF_CENTERGROUP | DIF_BTNNOCLOSE, L"Closest Help &Topic"}

@@ -633,6 +633,12 @@ public:
         SetDataObject(comp);
     }
 
+    virtual bool OnDrop(wxCoord x, wxCoord y) override
+    {
+        m_dropPos = wxPoint(x, y);
+        return true;    // allow drop
+    }
+
     virtual wxDragResult OnData(wxCoord x, wxCoord y, wxDragResult def) override
     {
         if (!GetData())
@@ -660,41 +666,52 @@ private:
     //wxURLDataObject*  m_urlObj;
     wxFileDataObject* m_fileObj;
     WinPortPanel* self { nullptr };
+    wxPoint m_dropPos;
 
     void HandleText(const wxString& text)
     {
         fprintf(stderr, "Dropped TEXT: %ls\n", text.wc_str());
-        self->DragDropHandleText(text);
+        self->DragDropHandleText(text, m_dropPos.x, m_dropPos.y);
     }
 
     void HandleURL(const wxString& text)
     {
         fprintf(stderr, "Dropped URL: %ls\n", text.wc_str());
-        self->DragDropHandleText(text);
+        self->DragDropHandleText(text, m_dropPos.x, m_dropPos.y);
     }
 
     void HandleFiles(const wxArrayString& files)
     {
         for (auto& f : files) {
             fprintf(stderr, "Dropped FILE: %ls\n", f.wc_str());
-            self->DragDropHandleFile(f);
+            self->DragDropHandleFile(f, m_dropPos.x, m_dropPos.y);
         }
     }
 };
 
-void WinPortPanel::DragDropHandleText(const wxString& text) {
+void WinPortPanel::DragDropHandleText(const wxString& text, int x , int y) {
 	INPUT_RECORD ir = {};
 	ir.EventType = EXT_DROP_EVENT;
 	ir.Event.DropTarget.DropType = DROP_TYPE_TEXT;
 	ir.Event.DropTarget.Text = wcsdup(text.wc_str());
+
+	COORD pos_char = TranslateMousePosition( x, y);
+	ir.Event.DropTarget.X = pos_char.X;
+	ir.Event.DropTarget.Y = pos_char.Y;
+
 	wxConsoleInputShim::Enqueue(&ir, 1);
 }
 
-void WinPortPanel::DragDropHandleFile(const wxString& file) {
+void WinPortPanel::DragDropHandleFile(const wxString& file, int x, int y) {
 	INPUT_RECORD ir = {};
 	ir.EventType = EXT_DROP_EVENT;
 	ir.Event.DropTarget.DropType = DROP_TYPE_FILE;
 	ir.Event.DropTarget.Text = wcsdup(file.wc_str());
+
+	COORD pos_char = TranslateMousePosition( x, y);
+	ir.Event.DropTarget.X = pos_char.X;
+	ir.Event.DropTarget.Y = pos_char.Y;
+
 	wxConsoleInputShim::Enqueue(&ir, 1);
 }
 
@@ -1970,10 +1987,8 @@ void WinPortPanel::OnSize(wxSizeEvent &event)
 	}
 }
 
-COORD WinPortPanel::TranslateMousePosition( wxMouseEvent &event )
-{
-	wxClientDC dc(this);
-	wxPoint pos = event.GetLogicalPosition(dc);
+COORD WinPortPanel::TranslateMousePosition( int logicalX, int logicalY ) {
+	wxPoint pos(logicalX, logicalY);
 	if (pos.x < 0) pos.x = 0;
 	if (pos.y < 0) pos.y = 0;
 
@@ -1987,6 +2002,13 @@ COORD WinPortPanel::TranslateMousePosition( wxMouseEvent &event )
 	if ( (USHORT)out.X >= width) out.X = width - 1;
 	if ( (USHORT)out.Y >= height) out.Y = height - 1;
 	return out;
+}
+
+COORD WinPortPanel::TranslateMousePosition( wxMouseEvent &event )
+{
+	wxClientDC dc(this);
+	wxPoint pos = event.GetLogicalPosition(dc);
+	return TranslateMousePosition(pos.x, pos.y);
 }
 
 void WinPortPanel::OnMouse( wxMouseEvent &event )

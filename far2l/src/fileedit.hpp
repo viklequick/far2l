@@ -137,6 +137,8 @@ public:
 	InternalEditorBookMark* GetBookmark(){ return m_editor->GetBookmark(); }
 	FARString GetLine(int row, int col, int maxlen){ return m_editor->GetLine(row, col, maxlen); }
 
+	virtual int ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent);
+
 private:
 	Editor *m_editor;
 	KeyBar EditKeyBar;

@@ -155,6 +155,7 @@ class WinPortPanel: public wxPanel, protected IConsoleOutputBackend
 	void OnKillFocus( wxFocusEvent &event );
 	void ResetInputState();
 	COORD TranslateMousePosition( wxMouseEvent &event );
+	COORD TranslateMousePosition( int logicvalX, int logicalY );
 	void DamageAreaBetween(COORD c1, COORD c2);
 	void ResetTimerIdling();
 
@@ -195,8 +196,8 @@ public:
 	virtual void OnTouchbarKey(bool alternate, int index);
 	void SetClientCharSize(int cw, int ch);
 
-    void DragDropHandleText(const wxString& text);
-    void DragDropHandleFile(const wxString& file);
+    void DragDropHandleText(const wxString& text, int x, int y);
+    void DragDropHandleFile(const wxString& file, int x, int y);
 };
 
 ///////////////////////////////////////////

@@ -3114,3 +3114,21 @@ int FileEditor::IsOptionActive(int hMenu, int vMenu) {
 	}
 	return FALSE;
 }
+
+/* 
+typedef struct _EXT_DROP_EVENT_DATA {
+    short DropType;
+    wchar_t* Text; // receiver should free the buffer
+} EXT_DROP_EVENT_DATA;
+*/
+
+int FileEditor::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) {
+	if (!DropEvent->Text) return FALSE;
+
+	wchar_t* buf = DropEvent->Text;
+	m_editor->BeginBulkLoad();
+	for(; *buf; ++buf) m_editor->ProcessKey(*buf);
+	m_editor->EndBulkLoad();
+	m_editor->TextChanged(1);
+	return TRUE;
+}

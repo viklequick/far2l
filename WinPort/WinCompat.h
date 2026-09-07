@@ -615,6 +615,8 @@ typedef struct _BRACKETED_PASTE {
 typedef struct _EXT_DROP_EVENT_DATA {
     short DropType;
     wchar_t* Text; // receiver should free the buffer
+    short X;
+    short Y;
 } EXT_DROP_EVENT_DATA;
 
 #define KEY_EVENT         0x0001 // Event contains key event record

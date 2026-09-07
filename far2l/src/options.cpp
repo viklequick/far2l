@@ -55,13 +55,16 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "usermenu.hpp"
 #include "datetime.hpp"
 #include "setcolor.hpp"
-#include "plist.hpp"
 #include "filetype.hpp"
 #include "Bookmarks.hpp"
 #include "strmix.hpp"
 #include "interf.hpp"
 #include "codepage.hpp"
 #include "MaskGroups.hpp"
+
+#include "plist.hpp"
+#include "netlist.hpp"
+#include "sensorlist.hpp"
 
 enum enumMenus
 {
@@ -151,6 +154,8 @@ enum enumCommandsMenu
 	MENU_COMMANDS_PLUGINCOMMANDS,
 	MENU_COMMANDS_WINDOWSLIST,
 	MENU_COMMANDS_PROCESSLIST,
+	MENU_COMMANDS_SOCKETLIST,
+	MENU_COMMANDS_SENSORLIST,
 	MENU_COMMANDS_SEPARATOR4,
 	MENU_COMMANDS_FARCONFIG,
 	MENU_COMMANDS_MACROBROWSER,
@@ -564,6 +569,8 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 		{Msg::MenuPluginCommands,   0,             KEY_F11   },
 		{Msg::MenuWindowsList,      0,             KEY_F12   },
 		{Msg::MenuProcessList,      0,             KEY_CTRLW },
+		{Msg::MenuSocketList,       0,             KEY_CTRLSHIFTW },
+		{Msg::MenuSensorList,       0,             0 },
 		{L"",                       LIF_SEPARATOR, 0         },
 		{Msg::MenuFarConfig,        0,             0         },
 		{Msg::MenuMacroBrowser,     0,             0         },
@@ -982,6 +989,12 @@ void ShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent)
 					break;
 				case MENU_COMMANDS_PROCESSLIST:		// Task list
 					ShowProcessList(CtrlObject->Cp()->ActiveTab().ActivePanel);
+					break;
+				case MENU_COMMANDS_SOCKETLIST:		// Task list
+					ShowSocketList(CtrlObject->Cp()->ActiveTab().ActivePanel);
+					break;
+				case MENU_COMMANDS_SENSORLIST:		// Task list
+					ShowSensorList(CtrlObject->Cp()->ActiveTab().ActivePanel);
 					break;
 				case MENU_COMMANDS_FARCONFIG:		// far:config
 					ConfigOptEdit();

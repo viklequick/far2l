@@ -50,6 +50,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "message.hpp"
 #include "config.hpp"
 #include "plist.hpp"
+#include "netlist.hpp"
 #include "pathmix.hpp"
 #include "strmix.hpp"
 #include "exitcode.hpp"
@@ -959,6 +960,9 @@ int Manager::ProcessKey(DWORD Key)
 			switch (Key) {
 				case KEY_CTRLW:
 					ShowProcessList(CtrlObject->Cp()->ActiveTab().ActivePanel);
+					return TRUE;
+				case KEY_CTRLSHIFTW:
+					ShowSocketList(CtrlObject->Cp()->ActiveTab().ActivePanel);
 					return TRUE;
 				case KEY_F11:
 					PluginsMenu();

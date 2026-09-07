@@ -189,6 +189,10 @@ src/shoco/shoco.c
 
 src/powerline.cpp
 src/tabbar.cpp
+src/netstat_enum.cpp
+src/sensor_enum.cpp
+src/netlist.cpp
+src/sensorlist.cpp
 )
 
 # Option to disable building macro subsystem completely

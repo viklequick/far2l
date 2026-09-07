@@ -17333,6 +17333,28 @@ MenuProcessList
 "Список &завдань            Ctrl+W"
 "Спіс &задачаў              Ctrl+W"
 
+MenuSocketList
+"Список соединений        Ctrl+Shift+W"
+"Socket list         Ctrl+Shift+W"
+"Seznam úloh                    Ctrl+Shift+W"
+"Socketliste          Strg+Shift+W"
+"Futó soketo         Ctrl+W"
+"Lista soketow             Ctrl+W"
+"Lista de soketo       Ctrl+W"
+"Список sockets            Ctrl+W"
+"Спіс sockets              Ctrl+W"
+
+MenuSensorList
+"Sensors"
+"Sensors"
+"Sensors"
+"Sensors"
+"Sensors"
+"Sensors"
+"Sensors"
+"Sensors"
+"Sensors"
+
 MenuFarConfig
 "Редактор конфигура&ции"
 "Configuration &editor"
@@ -18817,6 +18839,52 @@ ProcessListBottom
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
 "Ctrl+R, Kill: [Shift+]Del Sort: t/T time, n/N name, i/I PID, c/C CPU, m/M RSS, Search: ^⌥F"
+
+SocketListTitle
+l:
+"Список соединений (Proto, State, LocalAddr, Remote Addr, Program), Автообновление: %s, Сортировка: %c"
+"Connections list (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+"sockets úloh (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+"Socketliste (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+"Futó sockets (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+"Lista sockets (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+"Lista de sockets (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+"Список sockets (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+"Спіс sockets (Proto, State, LocalAddr, Remote Addr, Program), AutoRefresh: %s, Sort: %c"
+
+SocketListBottom
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+"Ctrl+R Sort: t/T proto, n/N program, i/I state, c/C loCal, m/M reMote, Search: ^⌥F"
+
+SensorListTitle
+l:
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), Автообновление: %s, Сортировка: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+"Sensors (Category, Chip, Sensor, Value, Status, Limits), AutoRefresh: %s, Sort: %c"
+
+SensorListBottom
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
+"Ctrl+R Sort: t/T Type, n/N seNsor, i/I chIp, c/C Current, m/M alarMed, Search: ^⌥F"
 
 KillProcessTitle
 "Удаление задачи"

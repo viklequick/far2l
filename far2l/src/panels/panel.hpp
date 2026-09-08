@@ -335,6 +335,8 @@ public:
 	virtual void Show();
 	int SetPluginCommand(int Command, int Param1, LONG_PTR Param2);
 	int PanelProcessMouse(MOUSE_EVENT_RECORD *MouseEvent, int &RetCode);
+	virtual int ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent){ return FALSE; }
+
 	void ChangeDisk();
 	int GetFocus() { return (Focus); };
 	int GetType() { return (Type); };

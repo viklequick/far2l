@@ -1876,6 +1876,13 @@ void CommandLine::ResizeConsole()
 	}
 }
 
+int CommandLine::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) 
+{
+	if (!DropEvent->Text) return FALSE;
+	for(wchar_t* buf = DropEvent->Text; *buf; ++buf) ProcessKey(*buf);
+	return TRUE;
+}
+
 int CommandLine::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	if (MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED

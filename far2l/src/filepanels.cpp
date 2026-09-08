@@ -1280,6 +1280,39 @@ void FilePanels::DisplayObject()
 #endif
 }
 
+int FilePanels::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) {
+	if (!DropEvent->Text) return FALSE;
+
+	int MsX = DropEvent->X;
+	int MsY = DropEvent->Y;
+
+	if (MsY <= Y1 + 2 + (Opt.ShowMenuBar ? 1 : 0)) return FALSE; // tab bar, menu and border does not allow drop events
+	if (MsX <= X1 + 1 || MsX >= X2 - 1) return FALSE; // edges of the panels are not drop sources
+	if (MsY > Y2 - (Opt.ShowKeyBar ? 1 : 0)) return FALSE;
+
+	if (ActiveTab().LeftPanel->IsVisible()) {
+		int pX1, pX2, pY1, pY2;
+		ActiveTab().LeftPanel->GetPosition(pX1, pY1, pX2, pY2);
+		if (MsX >= pX1 + 1 && MsX <= pX2 - 1 && MsY >= pY1 + 1 && MsY <= pY2 - 1) {
+			if(ActiveTab().LeftPanel->ProcessDrop(DropEvent)) 
+				return TRUE;
+		}
+	}
+
+	if (ActiveTab().RightPanel->IsVisible()) {
+		int pX1, pX2, pY1, pY2;
+		ActiveTab().RightPanel->GetPosition(pX1, pY1, pX2, pY2);
+		if (MsX >= pX1 + 1 && MsX <= pX2 - 1 && MsY >= pY1 + 1 && MsY <= pY2 - 1) {
+			if(ActiveTab().RightPanel->ProcessDrop(DropEvent)) 
+				return TRUE;
+		}
+	}
+
+	if(CtrlObject->CmdLine->IsVisible()) 
+		CtrlObject->CmdLine->ProcessDrop(DropEvent);
+	return TRUE;
+}
+
 int FilePanels::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	int MsX = MouseEvent->dwMousePosition.X;

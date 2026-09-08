@@ -2673,6 +2673,23 @@ int FileList::GetColumnTitleByMouse(int MsX) {
 	return 0;
 }
 
+int FileList::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) 
+{
+	if (!DropEvent->Text) return FALSE;
+	int MsX = DropEvent->X;
+	int MsY = DropEvent->Y;
+
+	if(MsX <= X1 || MsX >= X2 || MsY <= Y1 || MsY >= Y2) return FALSE;
+	if(DropEvent->DropType != DROP_TYPE_FILE) return FALSE;
+
+	// vk: todo: copy file from drop event
+	// technically it should be looks like this
+	// ShellCopy ShCopy(this, FALSE, FALSE, FALSE, Ask, ToPlugin, nullptr, Drag && AnotherDir);
+	// vbut we have no source panel at all so we need another way to copy
+
+	return TRUE;
+}
+
 int FileList::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	FileListItem *CurPtr;

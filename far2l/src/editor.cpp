@@ -9335,3 +9335,22 @@ void Editor::EndBulkLoad()
 	fprintf(stderr, "* Editor: load took %lu msec\n", (unsigned long)(GetProcessUptimeMSec() - m_BulkLoadStartTime));
 	EcoString::sDebugPrintStats("loaded");
 }
+
+int Editor::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) {
+	if (!DropEvent->Text) return FALSE;
+
+	// move cursor to mouse position
+	MouseTarget target;
+	if (ComputeMouseTarget(DropEvent->X, DropEvent->Y, target)) {
+		ApplyMouseTarget(target, false, false, true);
+	}
+
+	// then paste
+	wchar_t* buf = DropEvent->Text;
+	BeginBulkLoad();
+	for(; *buf; ++buf) ProcessKey(*buf);
+	EndBulkLoad();
+	TextChanged(1);
+	Show();
+	return TRUE;
+}

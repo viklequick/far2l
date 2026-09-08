@@ -424,6 +424,8 @@ public:
 public:
 	virtual int ProcessKey(FarKey Key);
 	virtual int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
+	virtual int ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent);
+
 	virtual int64_t VMProcess(MacroOpcode OpCode, void *vParam = nullptr, int64_t iParam = 0);
 	virtual void Show();
 	virtual void Hide();

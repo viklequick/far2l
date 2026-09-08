@@ -3713,6 +3713,44 @@ bool Dialog::IsItemVisible(int I, int BorderY1, int BorderY2)
 	return true;
 }
 
+int Dialog::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) 
+{
+	CriticalSectionLock Lock(CS);
+	int MsX, MsY;
+	SMALL_RECT Rect;
+
+	if (!DialogMode.Check(DMODE_SHOW))
+		return FALSE;
+
+	if (!DropEvent->Text)
+		return FALSE;
+	
+	MsX = DropEvent->X;
+	MsY = DropEvent->Y - ScrollY;
+
+  	// first, we need actual borders
+	int BorderY1 = Y1, BorderY2 = Y2;
+	CountBorders(BorderY1, BorderY2);
+
+	for (unsigned int I = ItemCount - 1; I != (unsigned)-1; I--) {
+		if (Item[I]->Type == DI_SINGLEBOX || Item[I]->Type == DI_DOUBLEBOX ) continue;
+		if (Item[I]->Flags & (DIF_DISABLE | DIF_HIDDEN)) continue;
+		if (!IsItemVisible(I, BorderY1, BorderY2)) continue;
+
+		GetItemRect(I, Rect);
+		Rect.Left+= X1;
+		Rect.Top+= Y1;
+		Rect.Right+= X1;
+		Rect.Bottom+= Y1;
+
+		if (MsX >= Rect.Left && MsY >= Rect.Top && MsX <= Rect.Right && MsY <= Rect.Bottom && FarIsEdit(Item[I]->Type)) {
+			DlgEdit *EditLine = (DlgEdit *)(Item[I]->ObjPtr);
+			EditLine->ProcessDrop(DropEvent);
+		}
+	}
+	return TRUE;
+}
+
 int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 {
 	CriticalSectionLock Lock(CS);

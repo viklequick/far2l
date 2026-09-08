@@ -184,6 +184,20 @@ int DlgEdit::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		return lineEdit->ProcessMouse(MouseEvent);
 }
 
+int DlgEdit::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) {
+	if (!DropEvent->Text) return FALSE;
+
+	wchar_t* buf = DropEvent->Text;
+	for(; *buf; ++buf) {
+		if (Type == DLGEDIT_MULTILINE) {
+			DialogEditorPluginScope scope(multiEdit);
+			multiEdit->ProcessKey(*buf);
+		} else
+			lineEdit->ProcessKey(*buf);
+	}
+	return TRUE;
+}
+
 void DlgEdit::DisplayObject()
 {
 

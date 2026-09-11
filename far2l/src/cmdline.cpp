@@ -233,6 +233,15 @@ static int RunMultilineDialog(FARString &text, DialogDataEx *DlgData, size_t ite
 		MultilineDialogMode mode)
 {
 	static const wchar_t kCmdlineMemoFilename[] = L"cmdline.bash";
+	static const wchar_t kCmdlineMemoFilename[] = L"Far2lUserMenu.bash";
+	const int min_width = 40;
+	const int min_height = 12;
+	const int dlg_w = Max(min_width, Min(ScrX - 2, Max(76, (ScrX * 3) / 4)));
+	const int dlg_h = Max(min_height, Min(ScrY - 2, Max(20, (ScrY * 2) / 3)));
+	const int sep_y = dlg_h - 4;
+	const int btn_y = dlg_h - 3;
+//	const int dlg_w = Max(min_width, Min(ScrX - 2, 76));
+//	const int dlg_h = Max(min_height, Min(ScrY - 2, 20));
 
 	std::vector<DialogItemEx> DlgItems(item_count);
 	DataToItemEx(DlgData, DlgItems.data(), item_count);

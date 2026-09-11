@@ -229,10 +229,9 @@ struct MultilineDialogConfig
 };
 
 static int RunMultilineDialog(FARString &text, DialogDataEx *DlgData, size_t item_count,
-		const MultilineDialogConfig &cfg, int min_width, int min_height, int dlg_w, int dlg_h,
+		const MultilineDialogConfig &cfg, int _min_width, int _min_height, int _dlg_w, int _dlg_h,
 		MultilineDialogMode mode)
 {
-	static const wchar_t kCmdlineMemoFilename[] = L"cmdline.bash";
 	static const wchar_t kCmdlineMemoFilename[] = L"Far2lUserMenu.bash";
 	const int min_width = 40;
 	const int min_height = 12;

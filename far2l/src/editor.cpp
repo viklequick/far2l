@@ -7623,6 +7623,7 @@ int Editor::EditorControl(int Command, void *Param)
 				Info->CodePage = m_codepage;
 				Info->WindowX = X1;
 				Info->WindowY = Y1;
+				Info->StartX = X1 + CalculateLineNumberWidth();
 				if (m_bWordWrap)
 				{
 					// For plugins (e.g., Colorer) to correctly process long lines that are wrapped,

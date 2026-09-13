@@ -206,9 +206,9 @@ static void Ruler()
     uint64_t rulecolor = Editor_GetTrueColorForRuler(&Info, &EInfo) /* | Options.RulerColor */;
     int ydelta = EInfo.CurLine == 0 ? 1 : 0;
 
-    for( i=EInfo.WindowX; i<EInfo.WindowSizeX; i+=10 ){
+    for( i=EInfo.StartX; i<EInfo.WindowSizeX; i+=10 ){
         _tstrcpy(buff,sz4dot);
-        buff[apiSnprintf(buff, sizeof(buff)/sizeof(buff[0]), szDecimalFmt, (i?i:1)+EInfo.LeftPos)]=_T('.');
+        buff[apiSnprintf(buff, sizeof(buff)/sizeof(buff[0]), szDecimalFmt, (i-EInfo.StartX?i-EInfo.StartX:1)+EInfo.LeftPos)]=_T('.');
         Info.Text(i, EInfo.WindowY + ydelta, rulecolor, buff); // vk: color
     }
 }

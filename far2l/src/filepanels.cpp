@@ -234,8 +234,6 @@ void FilePanels::Init(DoublePanel& activeTab)
 void FilePanels::Init()
 {
 	Init(ActiveTab());
-	// todo: if many tabs were saved earler, it is a good place to restore
-
 	if (!Opt.strLeftFolderList.IsEmpty() && !Opt.strRightFolderList.IsEmpty()) {
 		wchar_t* ldup = wcsdup(Opt.strLeftFolderList.CPtr());  // separator is `|`
 		wchar_t* rdup = wcsdup(Opt.strRightFolderList.CPtr());
@@ -253,6 +251,7 @@ void FilePanels::Init()
 
 			if(foundTabs > 0) {
 				AppendNewTab();
+				// it moves ActiveTab to newly added tab
 			}
 
 			tabs[TabActive].LeftPanel->InitCurDir(left);
@@ -265,6 +264,7 @@ void FilePanels::Init()
             ++foundTabs;
 		}
 
+		if (switchTo < 0 || switchTo >= (int)tabs.size()) switchTo = 0;
 		SwitchActiveTabTo(switchTo);
 
 		free(ldup);
@@ -1351,6 +1351,7 @@ void FilePanels::ResizeConsole()
 	TopTabBar.ResizeConsole();
 	SetScreenPosition();
 	CtrlObject->CmdLine->ResizeConsole();
+	SetTabNames();
 	_OT(SysLog(L"[%p] FilePanels::ResizeConsole() {%d, %d - %d, %d}", this, X1, Y1, X2, Y2));
 }
 
@@ -1462,6 +1463,7 @@ void FilePanels::Update()
 	//if(ActiveTab().ActivePanel->IsVisible()) 	 ActiveTab().ActivePanel->Update(UPDATE_KEEP_SELECTION);
 	//if(ActiveTab().PassivePanel()->IsVisible())  ActiveTab().PassivePanel()->Update(UPDATE_KEEP_SELECTION);
 	FrameManager->RefreshFrame();
+	SetTabNames();
 	//Redraw();
 }
 

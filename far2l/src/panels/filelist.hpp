@@ -321,6 +321,10 @@ public:
 	virtual void MoveToMouse(MOUSE_EVENT_RECORD *MouseEvent);
 	virtual int MouseToPosition(MOUSE_EVENT_RECORD *MouseEvent);
 	virtual int MouseToColumn(MOUSE_EVENT_RECORD *MouseEvent);
+
+	virtual int MouseToPosition(int X, int Y);
+	virtual int MouseToColumn(int X);
+
 	virtual void SetFocus();
 	virtual void Update(int Mode);
 	/*

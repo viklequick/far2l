@@ -2682,10 +2682,21 @@ int FileList::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent)
 	if(MsX <= X1 || MsX >= X2 || MsY <= Y1 || MsY >= Y2) return FALSE;
 	if(DropEvent->DropType != DROP_TYPE_FILE) return FALSE;
 
-	// vk: todo: copy file from drop event
+	FARString target;
+	GetCurDir(target);
+	int file = MouseToPosition(MsX, MsY);
+	if ((ListData[file]->FileAttr & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) {
+		// drop on folder
+		target += L"/";
+		target += ListData[file]->strName;
+	}
+
 	// technically it should be looks like this
 	// ShellCopy ShCopy(this, FALSE, FALSE, FALSE, Ask, ToPlugin, nullptr, Drag && AnotherDir);
 	// vbut we have no source panel at all so we need another way to copy
+
+	// now we have source `DropEvent->Text` and `target`; all we need is to copy recursively.
+	// vk: todo: copy file from drop event
 
 	return TRUE;
 }
@@ -2975,8 +2986,13 @@ void FileList::MoveToMouse(MOUSE_EVENT_RECORD *MouseEvent)
 
 int FileList::MouseToColumn(MOUSE_EVENT_RECORD *MouseEvent)
 {
+	return MouseToColumn((int)MouseEvent->dwMousePosition.X);
+}
+
+int FileList::MouseToColumn(int x)
+{
 	int CurColumn = 1, ColumnsWidth, I;
-	int PanelX = MouseEvent->dwMousePosition.X - X1 - 1;
+	int PanelX = x - X1 - 1;
 	int Level = 0;
 
 	for (ColumnsWidth = I = 0; I < ViewSettings.ColumnCount; I++) {
@@ -2998,10 +3014,15 @@ int FileList::MouseToColumn(MOUSE_EVENT_RECORD *MouseEvent)
 
 int FileList::MouseToPosition(MOUSE_EVENT_RECORD *MouseEvent)
 {
-	int CurColumn = MouseToColumn(MouseEvent);
+	return MouseToPosition((int)MouseEvent->dwMousePosition.X, (int)MouseEvent->dwMousePosition.Y);
+}
+
+int FileList::MouseToPosition(int x, int y)
+{
+	int CurColumn = MouseToColumn(x);
 	//	if (!CurColumn)
 	//		CurColumn=1;
-	int CurFile = CurTopFile + MouseEvent->dwMousePosition.Y - Y1 - 1 - Opt.ShowColumnTitles;
+	int CurFile = CurTopFile + y - Y1 - 1 - Opt.ShowColumnTitles;
 
 	if (CurColumn > 1)
 		CurFile+= (CurColumn - 1) * Height;

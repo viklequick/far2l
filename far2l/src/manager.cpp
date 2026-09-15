@@ -635,14 +635,28 @@ void Manager::DeactivateFrame(Frame *Deactivated, int Direction)
 	if (Direction) {
 		// earlier it was:
 		// FramePos+= Direction;
+
 		// Now it is more complicated for case some frams has sub-panels
 		int frameId = FramePos;
 		int subpanels = FrameList[frameId]->GetSubpanelCount();
 		if (subpanels > 0) {
-			int subactive = FrameList[frameId]->GetSelectedSubpanel();
-			subactive += Direction;
-			if(subactive < 0 || subactive >= subpanels) 
-				FramePos += Direction;
+			int oldsub = FrameList[frameId]->GetSelectedSubpanel();
+			int subactive = oldsub + Direction;
+
+			// switch across tabs while it are not edges
+			if(subactive < 0 || subactive >= subpanels) {
+				if (FrameCount > 1) // edges meant to switch to other frame (if applicable)
+					FramePos += Direction;
+				else { // we're alone -> cycle across tabs
+					if (subactive < 0) subactive = subpanels - 1;
+					else if (subactive >= subpanels) subactive = 0;
+
+					if (oldsub == subactive)
+						FramePos += Direction;
+					else
+						FrameList[frameId]->ActivateSubpanel(subactive);
+				}
+			}
 			else {
 				FrameList[frameId]->ActivateSubpanel(subactive);
 			}

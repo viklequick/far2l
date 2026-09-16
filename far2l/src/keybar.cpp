@@ -51,7 +51,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifdef APPLE
 #define MAC_CHARS	1
 #else
-#define MAC_CHARS	0
+#define MAC_CHARS	1
 #endif
 
 static DWORD KeyGroupMaps[][2] = {

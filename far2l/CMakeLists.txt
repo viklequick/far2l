@@ -193,6 +193,10 @@ src/netstat_enum.cpp
 src/sensor_enum.cpp
 src/netlist.cpp
 src/sensorlist.cpp
+
+src/tm/BufferRing.cpp
+src/tm/LocalFileSystem.cpp
+src/tm/TransferManager.cpp
 )
 
 # Option to disable building macro subsystem completely
@@ -266,6 +270,7 @@ target_include_directories(far2l PRIVATE
     src/macro
     src/plug
     src/vt
+    src/tm
     src/shoco
     ${CMAKE_CURRENT_BINARY_DIR}
     ${UCHARDET_INCLUDE_DIRS}

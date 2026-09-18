@@ -544,10 +544,10 @@ SHAREDSYMBOL void WINAPI EXP_NAME(GetPluginInfo)( struct PluginInfo *pInfo )
     pInfo->Flags                     = PF_EDITOR | PF_DISABLEPANELS;
 
     /*
-    if ( isPluginMenu() ) {
+    if ( isPluginMenu() ) {*/
         pInfo->PluginMenuStrings         = &mnu;
         pInfo->PluginMenuStringsNumber   = 1;
-    }*/
+    /*}*/
 
     pInfo->PluginConfigStrings       = &mnu;
     pInfo->PluginConfigStringsNumber = 1;

@@ -122,32 +122,6 @@ extern "C" __attribute__((visibility("hidden"))) uint64_t Editor_GetTrueColorFor
 	HoverResult r = ComputeControlAccent(fg, bg);
 	r = ComputeHoverColors(r.fg_hover, r.bg_hover);
 	r.bg_hover = SoftenToFocusedState_LAB(r.bg_hover);
-	/* 
-RGB SoftenToDisabledState_LAB(const RGB& cc, 
-	double L_center = 60.0, //
-	double L_strength = 0.5,  // how strongly to pull L toward center
-	double C_strength = 0.7);  // how strongly to desaturate
-RGB SoftenToHoverState_LAB(const RGB& cc,
-	const RGB& tint = { 0.0, 0.5, 1.0 }, // default light blue
-	double L_boost = 0.10,   // +10% brightness
-	double C_boost = 0.20,   // +20% chroma
-	double tint_max = 0.40,  // max tint for pure black/white
-	double tint_min = 0.10,  // min tint for slightly neutral colors
-	double C_neutral = 20.0); // chroma threshold for "neutral"
-RGB SoftenToFocusedState_LAB(const RGB& cc,
-	const RGB& focusTint = { 0.4, 0.1, 1.0 }, // subtle blue-violet
-	double L_boost = 0.05,   // +5% brightness
-	double C_boost = 0.30,   // +30% chroma
-	double tint_max = 0.25,  // max tint for pure neutrals
-	double tint_min = 0.05,  // min tint for slightly neutral colors
-	double C_neutral = 45.0); // chroma threshold for "neutral"
-RGB SoftenToPressedState_LAB(const RGB& fg,
-	const RGB& bgC,          // background LAB
-	double L_push = 0.25,   // how strongly to push toward background L*
-	double C_reduce = 0.40, // reduce chroma by 40%
-	double neutral_tint = 0.20, // tint neutrals toward bg
-	double C_neutral = 15.0);    // threshold for “neutral”
-	*/
 	
 	RGB newFg;
 	ComputeContrast(r.fg_hover, r.bg_hover, newFg);

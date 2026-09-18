@@ -3797,8 +3797,8 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 					Item[I]->Hover = 1;
 					newHover = I;
 				}
-				else if (MsOY == MiniToolY && (MsX == MiniToolX || MsX == MiniToolX + 1)) {
-					MiniToolHover = MsX == MiniToolX ? 0 : 1;
+				else if (MsOY == MiniToolY && (MsX >= MiniToolX && MsX <= MiniToolX + 3)) {
+					MiniToolHover = MsX <= MiniToolX + 1 ? 0 : 1;
 					newHover = I;
 				}
 
@@ -3883,7 +3883,7 @@ int Dialog::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			}
 			else if (MsOY == MiniToolY && (MsX >= MiniToolX && MsX <= MiniToolX + 5) && MouseEvent->dwButtonState & (FROM_LEFT_1ST_BUTTON_PRESSED)) {
 				fprintf(stderr, ".mini tool bar %d\n", MsX - MiniToolX);
-				ProcessMiniToolBar(MsX - MiniToolX);
+				ProcessMiniToolBar((MsX - MiniToolX)/2); /* wide double characters */
 				return TRUE;
 			}
 		}

@@ -2064,6 +2064,7 @@ void VMenu::ShowMenu(bool IsParent, bool ForceFrameRedraw)
 
 					if (Opt.Backend.UseModernLook) {
 						GotoXY(X1 + 2, Y);
+						SetColor(Colors[VMenuColorText]);
 						FS << L" " << fmt::Cells() << fmt::LeftAlign() << fmt::Size(ItemWidth) << Item[I]->strName << L" ";
 					}
 					else {

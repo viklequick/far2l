@@ -349,7 +349,6 @@ int TabBar::render()
 			tabPos[i].left.CPtr(),
 			tabPos[i].right.CPtr());
         */
-		tabPos[i].x = WhereX() - X1;
 
 		if (X1 + tabPos[i].x + tabPos[i].w > X2 - gap) {
 			more = true;
@@ -362,11 +361,11 @@ int TabBar::render()
 
 		if (tabPos.size() > 1){
 			SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, leftPinHovered == (int)i ? 1 : 0, 0, 0));
+			tabPos[i].leftPinX = WhereX() - X1;
 			FS << L"🧷";
-			tabPos[i].leftPinX = WhereX() - X1 - 1;
-			tabPos[i].x = WhereX() - X1;
 		} 
 
+		tabPos[i].x = WhereX() - X1;
 		color2 = SoftenItemColor(FarColorToReal(active ? COL_HMENUSELECTEDTEXT : COL_HMENUTEXT), // COL_EDITORSTATUS
 			/*active ? 1 :*/ 0, 
 			hover ? 1 : 0, 0, 0);
@@ -375,12 +374,12 @@ int TabBar::render()
 		FS << tabPos[i].display;
 		if (tabPos.size() > 1){ 
 			SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, rightPinHovered == (int)i ? 1 : 0, 0, 0));
+			tabPos[i].rightPinX = WhereX() - X1;
 			FS << L"📎";
-			tabPos[i].rightPinX = WhereX() - X1 - 1;
 
 			SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, delHovered == (int)i ? 1 : 0, 0, 0));
+			tabPos[i].delX = WhereX() - X1;
 			FS << L" ✘";
-			tabPos[i].delX = WhereX() - X1 - 2;
 		}
     }
 
@@ -506,7 +505,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				return TRUE;
 			}
 		}
-		else if (tabPos[i].delX > 0 && pos >= tabPos[i].delX && pos <= tabPos[i].delX + 3) { // delete sign
+		else if (tabPos[i].delX > 0 && pos >= tabPos[i].delX && pos <= tabPos[i].delX + 2) { // delete sign
 			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
 				setHoverMask(i, false, true, false, false, false, false, false, false, false);
 				return TRUE;
@@ -518,7 +517,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 	}
 
-	if (MsX >= plusX && MsX < plusX + 4) { // plus sign
+	if (MsX >= plusX && MsX <= plusX + 3) { // plus sign
 		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
 			setHoverMask(-1, true, false, false, false, false, false, false, false, false);
 			return TRUE;
@@ -528,7 +527,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			return TRUE;
 		}
 	}
-	else if (moreX > 0 && MsX >= moreX && MsX < moreX + 2) { // more sign
+	else if (moreX > 0 && MsX >= moreX && MsX <= moreX + 2) { // more sign
 		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
 			setHoverMask(-1, false, false, false, false, true, false, false, false, false);
 			return TRUE;

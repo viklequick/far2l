@@ -1720,7 +1720,6 @@ namespace WXCustomDrawChar
 		p.FillRectangle(m.left + (p.fw / 2), m.top, m.right, m.bottom);
 	}
 
-#if 0 // TODO: optimize
 	static void Draw_2591_2593(Painter &p, unsigned int start_y, unsigned int cx)
 	{	/* ░ ▒ ▓ */
 		CharMetrics m(p, start_y, cx);
@@ -1731,7 +1730,20 @@ namespace WXCustomDrawChar
 			}
 		}
 	}
-#endif
+
+	static void Draw_progress_empty(Painter &p, unsigned int start_y, unsigned int cx)
+	{
+		CharMetrics m(p, start_y, cx);
+		int gap = (m.bottom - m.top) * 5 / 6;
+		p.FillRectangle2(m.left, m.top + gap, m.right, m.bottom - gap, wxBRUSHSTYLE_CROSSDIAG_HATCH);
+	}
+
+	static void Draw_progress_fill(Painter &p, unsigned int start_y, unsigned int cx)
+	{	
+		CharMetrics m(p, start_y, cx);
+		int gap = (m.bottom - m.top) * 5 / 6;
+		p.FillRectangle2(m.left, m.top + gap, m.right, m.bottom - gap, wxBRUSHSTYLE_SOLID);
+	}
 
 	static void Draw_2594(Painter &p, unsigned int start_y, unsigned int cx) /* ▔ */
 	{
@@ -2046,12 +2058,16 @@ namespace WXCustomDrawChar
 //not fadable
 			case 0x2580: return Draw_2580; /* ▀ */
 
-			case 0x2581 ... 0x2588: return Draw_2581_2588; /* '▁' '▂' '▃' '▄' '▅' '▆' '▇' '█' */
+			case 0x2581 ... 0x2587 /* 0x25888 */: return Draw_2581_2588; /* '▁' '▂' '▃' '▄' '▅' '▆' '▇' '█' */
 			case 0x2589 ... 0x258f: return Draw_2589_258f;   /* '▉' '▊' '▋' '▌' '▍' '▎' '▏' */
 
 			case 0x2590: return Draw_2590; /* ▐ */
 
 			// case 0x2591 ... 0x2593 : return Draw_2591_2593; /* ░ ▒ ▓ */
+			
+			// hacking progress bar
+			case 0x2588: return Draw_progress_fill;
+			case 0x2591: return Draw_progress_empty;
 
 			case 0x2594: return Draw_2594; /* ▔ */
 			case 0x2595: return Draw_2595; /* ▕ */

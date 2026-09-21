@@ -1040,6 +1040,18 @@ struct WXCustomDrawCharPainter : WXCustomDrawChar::Painter
 		_painter._dc.DrawRectangle(left, top, right + 1 - left , bottom + 1 - top);
 	}
 
+	inline void FillRectangle2Impl(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom, wxBrushStyle style)
+	{
+		wxBrush oldBrush = _painter._dc.GetBrush(); 
+		wxColour brushColor = oldBrush.GetColour();
+
+		wxBrush x(brushColor, style);
+
+		_painter._dc.SetBrush(x);
+		_painter._dc.DrawRectangle(left, top, right + 1 - left , bottom + 1 - top);
+		_painter._dc.SetBrush(oldBrush);
+	}
+
 	inline void FillGradientRectangleImpl(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 	{
 		wxBrush oldBrush = _painter._dc.GetBrush(); 
@@ -1152,6 +1164,11 @@ int WXCustomDrawChar::Painter::GetFontAscent()
 void WXCustomDrawChar::Painter::FillRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)
 {
 	((WXCustomDrawCharPainter *)this)->FillRectangleImpl(left, top, right, bottom);
+}
+
+void WXCustomDrawChar::Painter::FillRectangle2(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom, wxBrushStyle style)
+{
+	((WXCustomDrawCharPainter *)this)->FillRectangle2Impl(left, top, right, bottom, style);
 }
 
 void WXCustomDrawChar::Painter::FillGradientRectangle(wxCoord left, wxCoord top, wxCoord right, wxCoord bottom)

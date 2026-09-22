@@ -13,18 +13,25 @@ enum class TransferMode {
 };
 
 enum class QuestionType {
-    OVERWRITE_EXISTING,     // Destination file already exists
-    MOVE_READ_ONLY_SOURCE,  // Move requested but source is read-only
-    IO_ERROR,               // Read or write I/O error occurred
-    PERMISSION_DENIED       // Permission error accessing source or target
+    OVERWRITE_EXISTING,         // Destination file already exists (regular file or link)
+    LINK_DESTINATION_EXISTS,    // Source is symlink, destination exists
+    FOLDER_DESTINATION_IS_FILE, // Source is folder, destination exists as a file
+    FILE_DESTINATION_IS_FOLDER, // Source is file, destination exists as a folder
+    MOVE_READ_ONLY_SOURCE,      // Move requested but source is read-only
+    IO_ERROR,                   // Non-critical read or write I/O error
+    PERMISSION_DENIED,          // Permission error accessing source or target
+    CRITICAL_IO_ERROR,          // Fatal/Device I/O error (ENOSPC, EDQUOT, EROFS, EIO) - engine pauses all transfers
+    NO_SPACE_LEFT               // Specific out-of-disk-space error
 };
 
 enum class QuestionAnswer {
     PROMPT,     // Needs user interaction
-    OVERWRITE,  // Overwrite destination file entirely
+    OVERWRITE,  // Overwrite destination file (or truncate/update symlink target in-place)
     APPEND,     // Append source to destination
     RESUME,     // Resume copying from destination file size
-    SKIP,       // Skip current file / item
+    SKIP,       // Skip current file / item (or skip folder tree if folder skipped)
+    RENAME,     // Rename destination file (folder case) or rename source output target (file case) preserving extension
+    PLACE_INTO, // Place file inside existing destination folder as destination/folder/file
     RETRY,      // Retry the failed operation
     CANCEL      // Abort entire transfer session
 };
@@ -54,6 +61,14 @@ struct DirEntry {
     off_t size = 0;
 };
 
+// Dynamic transfer job request with individual destination folder
+struct TransferJobRequest {
+    uint64_t job_id = 0;
+    std::string source_path;
+    std::string destination_dir;
+    TransferMode mode = TransferMode::COPY;
+};
+
 struct TransferQuestion {
     uint64_t id = 0;
     QuestionType type = QuestionType::OVERWRITE_EXISTING;
@@ -72,8 +87,9 @@ struct TransferOptions {
     TransferMode mode = TransferMode::COPY;
     size_t num_readers = 4;
     size_t num_writers = 4;
-    size_t buffer_ring_capacity = 32;       // Common buffer chunk pool count
+    size_t buffer_ring_size_mb = 64;        // Configurable ring buffer size: 16 MB to 1024 MB (1 GB)
     size_t chunk_size = 1024 * 1024;        // 1MB default adaptive chunk
+    size_t buffer_ring_capacity = 64;       // Common buffer chunk pool count (e.g. size_mb * 1MB / chunk_size)
     size_t small_file_mmap_threshold = 2 * 1024 * 1024; // 2MB threshold for mmap
     bool enable_cow = true;                 // Attempt copy-on-write (FICLONE / clonefile)
     bool enable_sparse = true;              // Preserve sparse file holes
@@ -82,6 +98,7 @@ struct TransferOptions {
     bool preserve_permissions = true;       // Preserve POSIX mode bits
     bool preserve_ownership = true;         // Preserve uid/gid (when privileged / sudo)
     bool verify_integrity = false;          // Verify CRC32 checksum of data blocks
+    bool service_mode = false;              // Run as persistent background transfer service
 };
 
 struct TransferProgress {
@@ -94,11 +111,15 @@ struct TransferProgress {
     uint32_t errors_count = 0;
     uint32_t questions_resolved_count = 0;
     uint32_t active_questions_count = 0;
+    uint32_t active_jobs_count = 0;
     double current_speed_mb_s = 0.0;
     double progress_percent = 0.0;
     std::string current_source_item;
     std::string current_target_item;
     double elapsed_seconds = 0.0;
+    bool is_paused_for_io_error = false;
+    std::string io_error_reason;
+    size_t buffer_ring_size_mb = 64;
 };
 
 struct TransferMetrics {
@@ -111,9 +132,12 @@ struct TransferMetrics {
     uint32_t error_count = 0;
     uint32_t questions_resolved_count = 0;
     uint32_t active_questions_count = 0;
+    uint32_t total_jobs_processed = 0;
     double average_speed_mb_s = 0.0;
     double elapsed_seconds = 0.0;
     uint64_t cow_cloned_bytes = 0;
     uint64_t sparse_bytes_skipped = 0;
     uint64_t mmap_transferred_bytes = 0;
+    bool had_critical_io_error = false;
+    size_t buffer_ring_size_mb = 64;
 };

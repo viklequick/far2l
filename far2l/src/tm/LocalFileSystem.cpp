@@ -258,6 +258,10 @@ bool LocalFileSystem::removeDirectory(const std::string& path) {
     return (rmdir(path.c_str()) == 0);
 }
 
+bool LocalFileSystem::renameFile(const std::string& oldPath, const std::string& newPath) {
+    return (rename(oldPath.c_str(), newPath.c_str()) == 0);
+}
+
 std::string LocalFileSystem::readSymlink(const std::string& path) {
     std::vector<char> buffer(1024, 0);
     while (true) {

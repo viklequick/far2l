@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <algorithm>
 
 BufferRing::BufferRing(size_t chunkCount, size_t chunkSize)
     : chunk_count_(chunkCount > 0 ? chunkCount : 16),
@@ -23,6 +24,12 @@ BufferRing::BufferRing(size_t chunkCount, size_t chunkSize)
         }
     }
 }
+
+BufferRing::BufferRing(size_t totalSizeMB)
+    : BufferRing(
+        std::clamp<size_t>(totalSizeMB, 16, 1024),
+        1024 * 1024
+      ) {}
 
 BufferRing::~BufferRing() {
     shutdown();

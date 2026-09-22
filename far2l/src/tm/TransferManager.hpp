@@ -29,6 +29,8 @@ struct TransferItem {
     bool resolved = false;
     QuestionAnswer user_decision = QuestionAnswer::PROMPT;
     off_t resume_offset = 0;
+    off_t src_start_offset = 0;
+    off_t dst_start_offset = 0;
     bool is_append = false;
 };
 
@@ -51,10 +53,24 @@ public:
 
     // Start transfer operation with initial source paths and target destination directory
     // Target is always a folder. Sources can be files or folders.
-    bool start(const std::vector<std::string>& sources, const std::string& targetDir);
+    bool start(const std::vector<std::string>& sources = {}, const std::string& targetDir = "");
+
+    // Start as a persistent global/common background transfer service
+    bool startService();
+    void stopService();
+
+    // Dynamic multi-destination transfers: add files/folders with individual target destinations
+    uint64_t addTransferJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode = TransferMode::COPY);
+    std::vector<uint64_t> addTransferJobs(const std::vector<std::string>& sources, const std::string& destinationDir, TransferMode mode = TransferMode::COPY);
 
     // Dynamic background transfer: add new sources to copy queue while transfer is in progress
     void addSource(const std::string& sourcePath);
+    void addSource(const std::string& sourcePath, const std::string& destinationDir);
+
+    // Buffer ring configuration (16 MB to 1024 MB)
+    void setBufferRingSizeMB(size_t sizeMB, size_t chunkSize = 1024 * 1024);
+    size_t getBufferRingSizeMB() const;
+    size_t getBufferRingCapacityBytes() const;
 
     // Wait until all queued items and file transfers are completed
     void wait();
@@ -66,8 +82,13 @@ public:
     void pause();
     void resume();
     bool isRunning() const { return running_.load(std::memory_order_acquire); }
-    bool isPaused() const { return paused_.load(std::memory_order_acquire); }
+    bool isPaused() const { return paused_.load(std::memory_order_acquire) || io_error_paused_.load(std::memory_order_acquire); }
     bool isCancelled() const { return cancelled_.load(std::memory_order_acquire); }
+    bool isPausedForIoError() const { return io_error_paused_.load(std::memory_order_acquire); }
+    std::string getIoErrorReason() const;
+
+    // Retry or resolve critical I/O error (e.g. after freeing disk space for ENOSPC)
+    bool recoverCriticalIo(bool retry);
 
     // Metrics and status inspection (thread-safe)
     TransferMetrics getMetrics() const;
@@ -124,9 +145,18 @@ private:
     std::atomic<uint64_t> next_item_id_{1};
     std::atomic<uint32_t> active_transfers_{0};
 
-    // Dynamic sources pending scanner
-    std::deque<std::string> pending_dynamic_sources_;
+    // Dynamic sources & jobs pending scanner
+    std::deque<TransferJobRequest> pending_job_requests_;
     std::condition_variable cv_sources_;
+    std::atomic<uint64_t> next_job_id_{1};
+    std::atomic<uint32_t> total_jobs_processed_{0};
+
+    // Critical I/O pause & recovery state
+    std::atomic<bool> io_error_paused_{false};
+    std::string io_error_reason_;
+    mutable std::mutex io_error_mutex_;
+    std::condition_variable cv_io_recover_;
+    uint64_t active_critical_question_id_{0};
 
     // Question Pool
     mutable std::mutex question_mutex_;
@@ -147,6 +177,7 @@ private:
     std::atomic<uint64_t> cow_bytes_{0};
     std::atomic<uint64_t> sparse_bytes_skipped_{0};
     std::atomic<uint64_t> mmap_bytes_{0};
+    std::atomic<bool> had_critical_io_error_{false};
 
     std::chrono::steady_clock::time_point start_time_;
     std::string current_source_display_;
@@ -163,6 +194,10 @@ private:
     void writerWorker(size_t threadIndex);
     void progressWorker();
 
+    // Critical I/O handling
+    static bool isCriticalIoError(int err);
+    QuestionAnswer handleCriticalIo(const std::string& path, int errCode, const std::string& opName);
+
     // Transfer algorithms
     void scanSource(const std::string& srcPath, const std::string& targetBase);
     bool processSingleItem(TransferItem& item);
@@ -178,6 +213,11 @@ private:
 
     // Modal Interaction
     QuestionAnswer resolveQuestion(TransferItem& item, QuestionType type, const std::string& msg, int err = 0);
+    static std::string generateUniqueRenamedPath(IFileSystem* fs, const std::string& originalPath);
+
+    // Skipped directory tree tracking (when user skips a folder)
+    std::vector<std::string> skipped_dir_prefixes_;
+    mutable std::mutex skipped_dirs_mutex_;
 
     // Symlink path manipulation
     std::string recomputeRelativeSymlink(const std::string& rawTarget,

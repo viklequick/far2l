@@ -49,6 +49,7 @@ struct BufferChunk {
 class BufferRing {
 public:
     BufferRing(size_t chunkCount, size_t chunkSize);
+    explicit BufferRing(size_t totalSizeMB);
     ~BufferRing();
 
     // Non-copyable
@@ -77,6 +78,8 @@ public:
     // Metrics & Diagnostics
     size_t getCapacity() const { return chunk_count_; }
     size_t getChunkSize() const { return chunk_size_; }
+    size_t getTotalSizeBytes() const { return chunk_count_ * chunk_size_; }
+    size_t getTotalSizeMB() const { return (chunk_count_ * chunk_size_) / (1024 * 1024); }
     size_t getFreeChunkCount();
     size_t getReadyChunkCount();
 

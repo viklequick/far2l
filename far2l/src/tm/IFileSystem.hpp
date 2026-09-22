@@ -53,6 +53,7 @@ public:
     virtual std::vector<DirEntry> listDirectory(const std::string& path) = 0;
     virtual bool removeFile(const std::string& path) = 0;
     virtual bool removeDirectory(const std::string& path) = 0;
+    virtual bool renameFile(const std::string& oldPath, const std::string& newPath) = 0;
 
     // Symbolic link operations
     virtual std::string readSymlink(const std::string& path) = 0;

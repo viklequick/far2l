@@ -15,10 +15,43 @@ namespace fs = std::filesystem;
 TransferManager::TransferManager(std::shared_ptr<IFileSystem> fs_impl, TransferOptions options)
     : fs_(fs_impl ? std::move(fs_impl) : std::make_shared<LocalFileSystem>()),
       options_(options) {
+    if (options_.buffer_ring_size_mb >= 16 && options_.buffer_ring_size_mb <= 1024) {
+        options_.buffer_ring_capacity = (options_.buffer_ring_size_mb * 1024 * 1024) / options_.chunk_size;
+    }
     buffer_ring_ = std::make_unique<BufferRing>(options_.buffer_ring_capacity, options_.chunk_size);
 }
 
 TransferManager::~TransferManager() {
+    cancel();
+    wait();
+}
+
+void TransferManager::setBufferRingSizeMB(size_t sizeMB, size_t chunkSize) {
+    if (running_.load(std::memory_order_relaxed)) {
+        return;
+    }
+    sizeMB = std::clamp<size_t>(sizeMB, 16, 1024);
+    options_.buffer_ring_size_mb = sizeMB;
+    options_.chunk_size = (chunkSize > 0) ? chunkSize : (1024 * 1024);
+    options_.buffer_ring_capacity = (sizeMB * 1024 * 1024) / options_.chunk_size;
+    buffer_ring_ = std::make_unique<BufferRing>(options_.buffer_ring_capacity, options_.chunk_size);
+}
+
+size_t TransferManager::getBufferRingSizeMB() const {
+    return buffer_ring_ ? buffer_ring_->getTotalSizeMB() : options_.buffer_ring_size_mb;
+}
+
+size_t TransferManager::getBufferRingCapacityBytes() const {
+    return buffer_ring_ ? buffer_ring_->getTotalSizeBytes() : (options_.buffer_ring_size_mb * 1024 * 1024);
+}
+
+bool TransferManager::startService() {
+    options_.service_mode = true;
+    return start({}, "");
+}
+
+void TransferManager::stopService() {
+    options_.service_mode = false;
     cancel();
     wait();
 }
@@ -29,26 +62,33 @@ bool TransferManager::start(const std::vector<std::string>& sources, const std::
     }
 
     target_dir_ = targetDir;
-    // Ensure target folder exists
-    if (!fs_->exists(target_dir_)) {
-        if (!fs_->createDirectories(target_dir_)) {
+    if (!target_dir_.empty()) {
+        if (!fs_->exists(target_dir_)) {
+            if (!fs_->createDirectories(target_dir_)) {
+                return false;
+            }
+        } else if (!fs_->isDirectory(target_dir_)) {
             return false;
         }
-    } else if (!fs_->isDirectory(target_dir_)) {
-        return false;
     }
 
     running_.store(true, std::memory_order_release);
     cancelled_.store(false, std::memory_order_release);
     paused_.store(false, std::memory_order_release);
+    io_error_paused_.store(false, std::memory_order_release);
     discovery_finished_.store(false, std::memory_order_release);
     start_time_ = std::chrono::steady_clock::now();
 
-    // Push initial sources
-    {
+    // Push initial sources / jobs
+    if (!sources.empty() && !targetDir.empty()) {
         std::lock_guard<std::mutex> lock(queue_mutex_);
         for (const auto& src : sources) {
-            pending_dynamic_sources_.push_back(src);
+            TransferJobRequest req;
+            req.job_id = next_job_id_++;
+            req.source_path = src;
+            req.destination_dir = targetDir;
+            req.mode = options_.mode;
+            pending_job_requests_.push_back(std::move(req));
         }
     }
 
@@ -73,13 +113,44 @@ bool TransferManager::start(const std::vector<std::string>& sources, const std::
     return true;
 }
 
-void TransferManager::addSource(const std::string& sourcePath) {
-    if (!running_.load(std::memory_order_acquire)) return;
+uint64_t TransferManager::addTransferJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode) {
+    if (!running_.load(std::memory_order_acquire)) {
+        startService();
+    }
+    if (!fs_->exists(destinationDir)) {
+        fs_->createDirectories(destinationDir);
+    }
+
+    uint64_t jId = next_job_id_++;
+    TransferJobRequest req;
+    req.job_id = jId;
+    req.source_path = sourcePath;
+    req.destination_dir = destinationDir;
+    req.mode = mode;
+
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
-        pending_dynamic_sources_.push_back(sourcePath);
+        pending_job_requests_.push_back(std::move(req));
     }
     cv_sources_.notify_one();
+    return jId;
+}
+
+std::vector<uint64_t> TransferManager::addTransferJobs(const std::vector<std::string>& sources, const std::string& destinationDir, TransferMode mode) {
+    std::vector<uint64_t> ids;
+    ids.reserve(sources.size());
+    for (const auto& src : sources) {
+        ids.push_back(addTransferJob(src, destinationDir, mode));
+    }
+    return ids;
+}
+
+void TransferManager::addSource(const std::string& sourcePath) {
+    addTransferJob(sourcePath, target_dir_.empty() ? "." : target_dir_, options_.mode);
+}
+
+void TransferManager::addSource(const std::string& sourcePath, const std::string& destinationDir) {
+    addTransferJob(sourcePath, destinationDir, options_.mode);
 }
 
 void TransferManager::wait() {
@@ -142,28 +213,38 @@ void TransferManager::resume() {
 
 void TransferManager::discoveryWorker() {
     while (running_.load(std::memory_order_acquire) && !cancelled_.load(std::memory_order_acquire)) {
-        std::string currentSource;
+        TransferJobRequest currentJob;
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
-            if (pending_dynamic_sources_.empty()) {
-                // If nothing in dynamic sources, check if we're done or wait
+            if (pending_job_requests_.empty()) {
                 discovery_finished_.store(true, std::memory_order_release);
-                // Wait for potential dynamic additions or cancellation
-                cv_sources_.wait_for(lock, std::chrono::milliseconds(50), [this]() {
-                    return !pending_dynamic_sources_.empty() || cancelled_.load() || !running_.load();
-                });
-                if (pending_dynamic_sources_.empty()) {
-                    break;
+                if (options_.service_mode) {
+                    cv_sources_.wait(lock, [this]() {
+                        return !pending_job_requests_.empty() || cancelled_.load() || !running_.load();
+                    });
+                    if (cancelled_.load() || !running_.load()) {
+                        break;
+                    }
+                } else {
+                    cv_sources_.wait_for(lock, std::chrono::milliseconds(50), [this]() {
+                        return !pending_job_requests_.empty() || cancelled_.load() || !running_.load();
+                    });
+                    if (pending_job_requests_.empty()) {
+                        break;
+                    }
                 }
                 discovery_finished_.store(false, std::memory_order_release);
             }
 
-            currentSource = pending_dynamic_sources_.front();
-            pending_dynamic_sources_.pop_front();
+            if (pending_job_requests_.empty()) continue;
+
+            currentJob = std::move(pending_job_requests_.front());
+            pending_job_requests_.pop_front();
+            total_jobs_processed_++;
         }
 
-        if (!currentSource.empty()) {
-            scanSource(currentSource, target_dir_);
+        if (!currentJob.source_path.empty()) {
+            scanSource(currentJob.source_path, currentJob.destination_dir);
         }
     }
     discovery_finished_.store(true, std::memory_order_release);
@@ -280,7 +361,7 @@ void TransferManager::readerWorker(size_t /*threadIndex*/) {
                 break;
             }
 
-            if (paused_.load(std::memory_order_relaxed)) {
+            if (paused_.load(std::memory_order_relaxed) || io_error_paused_.load(std::memory_order_relaxed)) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(20));
                 continue;
             }
@@ -311,6 +392,11 @@ void TransferManager::readerWorker(size_t /*threadIndex*/) {
 
 void TransferManager::writerWorker(size_t /*threadIndex*/) {
     while (running_.load(std::memory_order_acquire) && !cancelled_.load(std::memory_order_acquire)) {
+        if (paused_.load(std::memory_order_relaxed) || io_error_paused_.load(std::memory_order_relaxed)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            continue;
+        }
+
         // Writers grab chunks prepared by reader pipelines
         BufferChunk* chunk = buffer_ring_->acquireReadyChunk();
         if (!chunk) {
@@ -321,7 +407,24 @@ void TransferManager::writerWorker(size_t /*threadIndex*/) {
         if (chunk->bytes_valid > 0 && chunk->dst_fd >= 0) {
             ssize_t written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
             if (written < 0 || static_cast<size_t>(written) != chunk->bytes_valid) {
-                buffer_ring_->markChunkFailed(chunk, errno ? errno : EIO);
+                int err = errno ? errno : EIO;
+                if (isCriticalIoError(err)) {
+                    QuestionAnswer act = handleCriticalIo("chunk write offset " + std::to_string(chunk->dst_offset), err, "write");
+                    if (act == QuestionAnswer::RETRY) {
+                        // User recovered disk space or device; retry writing
+                        written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
+                        if (written > 0 && static_cast<size_t>(written) == chunk->bytes_valid) {
+                            bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
+                            buffer_ring_->releaseCommittedChunk(chunk);
+                            continue;
+                        }
+                    } else if (act == QuestionAnswer::CANCEL) {
+                        buffer_ring_->markChunkFailed(chunk, err);
+                        cancel();
+                        break;
+                    }
+                }
+                buffer_ring_->markChunkFailed(chunk, err);
                 error_count_++;
                 continue;
             }
@@ -332,8 +435,149 @@ void TransferManager::writerWorker(size_t /*threadIndex*/) {
     }
 }
 
+bool TransferManager::isCriticalIoError(int err) {
+    return (err == ENOSPC || err == EDQUOT || err == EROFS || err == EIO || err == EBUSY || err == ENODEV);
+}
+
+std::string TransferManager::getIoErrorReason() const {
+    std::lock_guard<std::mutex> lock(io_error_mutex_);
+    return io_error_reason_;
+}
+
+QuestionAnswer TransferManager::handleCriticalIo(const std::string& path, int errCode, const std::string& opName) {
+    had_critical_io_error_.store(true, std::memory_order_relaxed);
+    io_error_paused_.store(true, std::memory_order_release);
+
+    std::string errStr = std::strerror(errCode);
+    std::string reason = (errCode == ENOSPC) ? "No space left on device (ENOSPC)" :
+                         (errCode == EDQUOT) ? "Disk quota exceeded (EDQUOT)" :
+                         (errCode == EROFS)  ? "Read-only file system (EROFS)" :
+                         ("Critical I/O error: " + errStr + " (errno " + std::to_string(errCode) + ")");
+    {
+        std::lock_guard<std::mutex> lock(io_error_mutex_);
+        io_error_reason_ = reason + " during " + opName + " on: " + path;
+    }
+
+    TransferQuestion q;
+    q.id = next_question_id_++;
+    q.type = (errCode == ENOSPC) ? QuestionType::NO_SPACE_LEFT : QuestionType::CRITICAL_IO_ERROR;
+    q.source_path = path;
+    q.target_path = path;
+    q.error_code = errCode;
+    q.message = reason + ". All transfers paused to preserve data integrity. Free storage space or fix device, then select [Retry] or [Cancel].";
+
+    active_critical_question_id_ = q.id;
+
+    // Add to question pool
+    {
+        std::lock_guard<std::mutex> lock(question_mutex_);
+        active_questions_.push_back(q);
+    }
+    cv_questions_.notify_all();
+
+    // Check callback
+    bool rememberDummy = false;
+    QuestionAnswer answer = QuestionAnswer::PROMPT;
+    if (question_cb_) {
+        answer = question_cb_(q, rememberDummy);
+    } else {
+        answer = onQuestion(q, rememberDummy);
+    }
+
+    if (answer == QuestionAnswer::PROMPT) {
+        std::unique_lock<std::mutex> lock(question_mutex_);
+        cv_questions_.wait(lock, [this, qId = q.id, &answer]() {
+            if (cancelled_.load(std::memory_order_relaxed)) {
+                answer = QuestionAnswer::CANCEL;
+                return true;
+            }
+            if (!io_error_paused_.load(std::memory_order_relaxed)) {
+                answer = QuestionAnswer::RETRY;
+                return true;
+            }
+            for (const auto& activeQ : active_questions_) {
+                if (activeQ.id == qId) return false;
+            }
+            return true;
+        });
+    }
+
+    if (answer == QuestionAnswer::RETRY) {
+        io_error_paused_.store(false, std::memory_order_release);
+        {
+            std::lock_guard<std::mutex> lock(io_error_mutex_);
+            io_error_reason_.clear();
+        }
+        cv_items_.notify_all();
+    } else if (answer == QuestionAnswer::CANCEL) {
+        cancel();
+    }
+
+    return answer;
+}
+
+bool TransferManager::recoverCriticalIo(bool retry) {
+    if (!io_error_paused_.load(std::memory_order_relaxed)) {
+        return false;
+    }
+
+    if (retry) {
+        io_error_paused_.store(false, std::memory_order_release);
+        {
+            std::lock_guard<std::mutex> lock(io_error_mutex_);
+            io_error_reason_.clear();
+        }
+        {
+            std::lock_guard<std::mutex> lock(question_mutex_);
+            for (auto it = active_questions_.begin(); it != active_questions_.end(); ++it) {
+                if (it->type == QuestionType::CRITICAL_IO_ERROR || it->type == QuestionType::NO_SPACE_LEFT) {
+                    active_questions_.erase(it);
+                    break;
+                }
+            }
+        }
+        cv_questions_.notify_all();
+        cv_items_.notify_all();
+        return true;
+    } else {
+        cancel();
+        return true;
+    }
+}
+
+std::string TransferManager::generateUniqueRenamedPath(IFileSystem* fs, const std::string& originalPath) {
+    try {
+        fs::path p(originalPath);
+        fs::path parent = p.parent_path();
+        std::string stem = p.stem().string();
+        std::string ext = p.extension().string();
+
+        int counter = 1;
+        while (counter < 100000) {
+            std::string candidateName = stem + " (" + std::to_string(counter) + ")" + ext;
+            fs::path candidate = parent.empty() ? fs::path(candidateName) : (parent / candidateName);
+            if (!fs->exists(candidate.string())) {
+                return candidate.string();
+            }
+            counter++;
+        }
+    } catch (...) {}
+    return originalPath;
+}
+
 bool TransferManager::processSingleItem(TransferItem& item) {
     if (cancelled_.load(std::memory_order_relaxed)) return false;
+
+    // Check if item belongs to a skipped folder
+    {
+        std::lock_guard<std::mutex> lock(skipped_dirs_mutex_);
+        for (const auto& prefix : skipped_dir_prefixes_) {
+            if (item.src_path == prefix || item.src_path.rfind(prefix + "/", 0) == 0) {
+                // Item is inside a skipped folder tree
+                return true;
+            }
+        }
+    }
 
     if (item.is_directory) {
         return transferDirectory(item);
@@ -345,8 +589,48 @@ bool TransferManager::processSingleItem(TransferItem& item) {
 }
 
 bool TransferManager::transferDirectory(TransferItem& item) {
-    bool created = fs_->createDirectories(item.dst_path);
-    if (!created) return false;
+    bool dstExists = fs_->exists(item.dst_path);
+    if (dstExists) {
+        if (fs_->isDirectory(item.dst_path)) {
+            // Destination is already a folder: simply omit mkdir() without errors
+        } else {
+            // Destination is a file/link: ask user for overwrite, skip, or rename
+            QuestionAnswer answer = resolveQuestion(
+                item, QuestionType::FOLDER_DESTINATION_IS_FILE,
+                "Destination exists and is a file, but source is a folder: " + item.dst_path);
+            if (answer == QuestionAnswer::CANCEL) {
+                cancel();
+                return false;
+            }
+            if (answer == QuestionAnswer::SKIP) {
+                // Skip source folder with all its files and subfolders
+                {
+                    std::lock_guard<std::mutex> lock(skipped_dirs_mutex_);
+                    skipped_dir_prefixes_.push_back(item.src_path);
+                }
+                return true;
+            }
+            if (answer == QuestionAnswer::RENAME) {
+                // Rename destination file preserving its extension, then make directory
+                std::string renamedDst = generateUniqueRenamedPath(fs_.get(), item.dst_path);
+                bool okRename = fs_->renameFile(item.dst_path, renamedDst);
+                if (!okRename) {
+                    error_count_++;
+                    return false;
+                }
+                bool created = fs_->createDirectories(item.dst_path);
+                if (!created) return false;
+            } else {
+                // OVERWRITE: delete file, create folder and go forward
+                fs_->removeFile(item.dst_path);
+                bool created = fs_->createDirectories(item.dst_path);
+                if (!created) return false;
+            }
+        }
+    } else {
+        bool created = fs_->createDirectories(item.dst_path);
+        if (!created) return false;
+    }
 
     if (options_.preserve_permissions || options_.preserve_timestamps) {
         fs_->copyMetadata(item.src_path, item.dst_path, options_.preserve_ownership);
@@ -413,16 +697,24 @@ bool TransferManager::transferSymlink(TransferItem& item) {
 
     // Collision check for symlink destination
     if (fs_->exists(item.dst_path)) {
-        QuestionAnswer answer = resolveQuestion(item, QuestionType::OVERWRITE_EXISTING,
-                                                "Target symlink already exists: " + item.dst_path);
+        // Link case: ask user for overwrite or skip.
+        QuestionAnswer answer = resolveQuestion(
+            item, QuestionType::LINK_DESTINATION_EXISTS,
+            "Target destination already exists for symlink: " + item.dst_path);
         if (answer == QuestionAnswer::CANCEL) {
             cancel();
             return false;
         }
         if (answer == QuestionAnswer::SKIP) {
+            // Skip means do nothing and move to the next source
             return true;
         }
-        fs_->removeFile(item.dst_path);
+        // Overwrite means delete old file when possible and make symlink
+        if (fs_->isDirectory(item.dst_path)) {
+            fs_->removeDirectory(item.dst_path);
+        } else {
+            fs_->removeFile(item.dst_path);
+        }
     }
 
     bool ok = fs_->createSymlink(finalTarget, item.dst_path);
@@ -551,39 +843,90 @@ bool TransferManager::transferFile(TransferItem& item) {
     }
 
     // Check collision if destination exists
-    FileStat dstSt = fs_->statFile(item.dst_path, false);
     int dstFlags = O_WRONLY | O_CREAT;
     off_t startOffset = 0;
+    off_t srcOffset = 0;
 
-    if (dstSt.exists) {
-        QuestionAnswer answer = resolveQuestion(item, QuestionType::OVERWRITE_EXISTING,
-                                                "Destination file already exists: " + item.dst_path);
-        if (answer == QuestionAnswer::CANCEL) {
-            cancel();
-            return false;
-        }
-        if (answer == QuestionAnswer::SKIP) {
-            // Count bytes as skipped or preserved
-            files_transferred_++;
-            return true;
-        }
-        if (answer == QuestionAnswer::APPEND) {
-            dstFlags = O_WRONLY | O_APPEND;
-            startOffset = dstSt.size;
-        } else if (answer == QuestionAnswer::RESUME) {
-            if (dstSt.size < srcSt.size) {
-                startOffset = dstSt.size;
-                bytes_transferred_.fetch_add(startOffset, std::memory_order_relaxed);
-            } else {
-                // Already fully transferred or larger
-                files_transferred_++;
+    bool dstExists = fs_->exists(item.dst_path);
+    if (dstExists) {
+        FileStat dstLStat = fs_->statFile(item.dst_path, false);
+        bool isRealDir = (!dstLStat.is_symlink && dstLStat.is_directory);
+
+        // Case: source/file is a file and destination/file is a folder
+        if (isRealDir) {
+            QuestionAnswer answer = resolveQuestion(
+                item, QuestionType::FILE_DESTINATION_IS_FOLDER,
+                "Destination exists and is a folder, but source is a file: " + item.dst_path);
+            if (answer == QuestionAnswer::CANCEL) {
+                cancel();
+                return false;
+            }
+            if (answer == QuestionAnswer::SKIP) {
                 return true;
             }
-        } else {
-            // OVERWRITE: truncate existing
-            dstFlags |= O_TRUNC;
+            // PLACE_INTO: place as destination/file/file
+            fs::path srcP(item.src_path);
+            std::string fname = srcP.filename().string();
+            item.dst_path = (item.dst_path.back() == '/') ? (item.dst_path + fname) : (item.dst_path + "/" + fname);
+
+            // Re-evaluate if destination/file/file already exists
+            dstExists = fs_->exists(item.dst_path);
+            if (dstExists) {
+                dstLStat = fs_->statFile(item.dst_path, false);
+                isRealDir = (!dstLStat.is_symlink && dstLStat.is_directory);
+            }
+        }
+
+        // Case: destination/file exists and is a regular file or link
+        if (dstExists && !isRealDir) {
+            FileStat dstStatFollow = fs_->statFile(item.dst_path, true);
+            QuestionAnswer answer = resolveQuestion(
+                item, QuestionType::OVERWRITE_EXISTING,
+                "Destination file already exists (" + std::string(dstLStat.is_symlink ? "symlink" : "file") + "): " + item.dst_path);
+
+            if (answer == QuestionAnswer::CANCEL) {
+                cancel();
+                return false;
+            }
+            if (answer == QuestionAnswer::SKIP) {
+                // simply move to the next item
+                return true;
+            }
+            if (answer == QuestionAnswer::RENAME) {
+                // Rename source copy destination, keeping original destination file intact
+                item.dst_path = generateUniqueRenamedPath(fs_.get(), item.dst_path);
+                dstFlags = O_WRONLY | O_CREAT | O_TRUNC;
+                startOffset = 0;
+                srcOffset = 0;
+            } else if (answer == QuestionAnswer::APPEND) {
+                // Open destination file for writing, set pointer to end of file
+                dstFlags = O_WRONLY | O_CREAT;
+                startOffset = dstStatFollow.exists ? dstStatFollow.size : 0;
+                srcOffset = 0;
+                item.is_append = true;
+            } else if (answer == QuestionAnswer::RESUME) {
+                // Open destination at end, open source at destination size
+                off_t resumePos = dstStatFollow.exists ? dstStatFollow.size : 0;
+                if (resumePos >= srcSt.size) {
+                    files_transferred_++;
+                    return true;
+                }
+                dstFlags = O_WRONLY | O_CREAT;
+                startOffset = resumePos;
+                srcOffset = resumePos;
+                bytes_transferred_.fetch_add(resumePos, std::memory_order_relaxed);
+            } else {
+                // OVERWRITE: do not delete destination/file, open and truncate prior to writes
+                // If destination is a link, this updates the referred file without breaking the link
+                dstFlags = O_WRONLY | O_CREAT | O_TRUNC;
+                startOffset = 0;
+                srcOffset = 0;
+            }
         }
     }
+
+    item.src_start_offset = srcOffset;
+    item.dst_start_offset = startOffset;
 
     int srcFd = fs_->openFile(item.src_path, O_RDONLY);
     if (srcFd < 0) {
@@ -594,6 +937,15 @@ bool TransferManager::transferFile(TransferItem& item) {
     }
 
     int dstFd = fs_->openFile(item.dst_path, dstFlags, srcSt.mode ? (srcSt.mode & 0777) : 0644);
+    if (dstFd < 0) {
+        int err = errno ? errno : EIO;
+        if (isCriticalIoError(err)) {
+            QuestionAnswer act = handleCriticalIo(item.dst_path, err, "open destination");
+            if (act == QuestionAnswer::RETRY) {
+                dstFd = fs_->openFile(item.dst_path, dstFlags, srcSt.mode ? (srcSt.mode & 0777) : 0644);
+            }
+        }
+    }
     if (dstFd < 0) {
         fs_->closeFile(srcFd);
         QuestionAnswer ans = resolveQuestion(item, QuestionType::PERMISSION_DENIED,
@@ -719,26 +1071,34 @@ bool TransferManager::transferSmallFileMmap(TransferItem& item, int srcFd, int d
 }
 
 bool TransferManager::transferChunked(TransferItem& item, int srcFd, int dstFd) {
-    off_t offset = item.resume_offset;
+    off_t srcStart = item.src_start_offset;
+    off_t dstStart = item.dst_start_offset;
     off_t fileSize = item.size;
 
+    if (srcStart >= fileSize) {
+        return true;
+    }
+
+    off_t bytesToTransfer = fileSize - srcStart;
+    off_t bytesCopied = 0;
+
     // First attempt kernel zero-copy copy_file_range if supported
-    while (offset < fileSize && !cancelled_.load(std::memory_order_relaxed)) {
-        off_t srcOff = offset;
-        off_t dstOff = offset;
-        size_t chunkLen = std::min<size_t>(16 * 1024 * 1024, fileSize - offset);
+    while (bytesCopied < bytesToTransfer && !cancelled_.load(std::memory_order_relaxed)) {
+        off_t srcOff = srcStart + bytesCopied;
+        off_t dstOff = dstStart + bytesCopied;
+        size_t chunkLen = std::min<size_t>(16 * 1024 * 1024, bytesToTransfer - bytesCopied);
 
         ssize_t ret = fs_->copyFileRange(srcFd, &srcOff, dstFd, &dstOff, chunkLen);
         if (ret > 0) {
             bytes_transferred_.fetch_add(ret, std::memory_order_relaxed);
-            offset += ret;
+            bytesCopied += ret;
             continue;
         }
         // If copy_file_range returns EXDEV or ENOSYS, fall through to BufferRing
         break;
     }
 
-    if (offset >= fileSize) {
+    if (bytesCopied >= bytesToTransfer) {
         return true;
     }
 
@@ -747,7 +1107,7 @@ bool TransferManager::transferChunked(TransferItem& item, int srcFd, int dstFd) 
     std::condition_variable cvFileDone;
     std::mutex fileMutex;
 
-    while (offset < fileSize && !cancelled_.load(std::memory_order_relaxed)) {
+    while (bytesCopied < bytesToTransfer && !cancelled_.load(std::memory_order_relaxed)) {
         BufferChunk* chunk = buffer_ring_->acquireFreeChunk();
         if (!chunk) {
             // Ring shutdown
@@ -756,15 +1116,15 @@ bool TransferManager::transferChunked(TransferItem& item, int srcFd, int dstFd) 
 
         chunk->src_fd = srcFd;
         chunk->dst_fd = dstFd;
-        chunk->src_offset = offset;
-        chunk->dst_offset = offset;
+        chunk->src_offset = srcStart + bytesCopied;
+        chunk->dst_offset = dstStart + bytesCopied;
         chunk->task_id = item.id;
         chunk->in_flight_counter = &inFlight;
         chunk->cv_file_done = &cvFileDone;
         chunk->file_done_mutex = &fileMutex;
 
-        size_t toRead = std::min<size_t>(chunk->capacity, fileSize - offset);
-        ssize_t bytesRead = fs_->readFile(srcFd, chunk->buffer, toRead, offset);
+        size_t toRead = std::min<size_t>(chunk->capacity, bytesToTransfer - bytesCopied);
+        ssize_t bytesRead = fs_->readFile(srcFd, chunk->buffer, toRead, chunk->src_offset);
 
         if (bytesRead <= 0) {
             int err = (bytesRead < 0) ? errno : 0;
@@ -777,8 +1137,8 @@ bool TransferManager::transferChunked(TransferItem& item, int srcFd, int dstFd) 
             chunk->crc32 = BufferRing::computeCRC32(chunk->buffer, bytesRead);
         }
 
-        offset += bytesRead;
-        bool isEof = (offset >= fileSize);
+        bytesCopied += bytesRead;
+        bool isEof = (bytesCopied >= bytesToTransfer);
         inFlight.fetch_add(1, std::memory_order_release);
         buffer_ring_->publishReadyChunk(chunk, bytesRead, isEof, 0);
     }
@@ -835,6 +1195,9 @@ TransferMetrics TransferManager::getMetrics() const {
     m.cow_cloned_bytes = cow_bytes_.load(std::memory_order_relaxed);
     m.sparse_bytes_skipped = sparse_bytes_skipped_.load(std::memory_order_relaxed);
     m.mmap_transferred_bytes = mmap_bytes_.load(std::memory_order_relaxed);
+    m.had_critical_io_error = had_critical_io_error_.load(std::memory_order_relaxed);
+    m.buffer_ring_size_mb = getBufferRingSizeMB();
+    m.total_jobs_processed = total_jobs_processed_.load(std::memory_order_relaxed);
 
     std::lock_guard<std::mutex> lock(question_mutex_);
     m.active_questions_count = static_cast<uint32_t>(active_questions_.size());
@@ -857,6 +1220,17 @@ TransferProgress TransferManager::getProgress() const {
     p.total_dirs = total_dirs_.load(std::memory_order_relaxed);
     p.errors_count = error_count_.load(std::memory_order_relaxed);
     p.questions_resolved_count = questions_resolved_.load(std::memory_order_relaxed);
+    p.is_paused_for_io_error = io_error_paused_.load(std::memory_order_relaxed);
+    {
+        std::lock_guard<std::mutex> lock(io_error_mutex_);
+        p.io_error_reason = io_error_reason_;
+    }
+    p.buffer_ring_size_mb = getBufferRingSizeMB();
+
+    {
+        std::lock_guard<std::mutex> lock(queue_mutex_);
+        p.active_jobs_count = static_cast<uint32_t>(pending_job_requests_.size());
+    }
 
     {
         std::lock_guard<std::mutex> lock(question_mutex_);

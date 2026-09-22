@@ -37,6 +37,7 @@ public:
     std::vector<DirEntry> listDirectory(const std::string& path) override;
     bool removeFile(const std::string& path) override;
     bool removeDirectory(const std::string& path) override;
+    bool renameFile(const std::string& oldPath, const std::string& newPath) override;
 
     std::string readSymlink(const std::string& path) override;
     bool createSymlink(const std::string& target, const std::string& linkPath) override;

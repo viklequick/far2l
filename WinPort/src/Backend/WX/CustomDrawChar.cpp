@@ -1735,7 +1735,7 @@ namespace WXCustomDrawChar
 	{
 		CharMetrics m(p, start_y, cx);
 		int gap = (m.bottom - m.top) * 5 / 6;
-		p.FillRectangle2(m.left, m.top + gap, m.right, m.bottom - gap, wxBRUSHSTYLE_CROSSDIAG_HATCH);
+		p.FillRectangle2(m.left, m.top + gap, m.right, m.bottom - gap, wxBRUSHSTYLE_VERTICAL_HATCH /* wxBRUSHSTYLE_CROSSDIAG_HATCH */);
 	}
 
 	static void Draw_progress_fill(Painter &p, unsigned int start_y, unsigned int cx)
@@ -2066,8 +2066,12 @@ namespace WXCustomDrawChar
 			// case 0x2591 ... 0x2593 : return Draw_2591_2593; /* ░ ▒ ▓ */
 			
 			// hacking progress bar
-			case 0x2588: return Draw_progress_fill;
-			case 0x2591: return Draw_progress_empty;
+			case 0x2588: 
+				if (options && options->UseModernLook) return Draw_progress_fill;
+				break;
+			case 0x2591: 
+				if (options && options->UseModernLook) return Draw_progress_empty;
+				break;
 
 			case 0x2594: return Draw_2594; /* ▔ */
 			case 0x2595: return Draw_2595; /* ▕ */

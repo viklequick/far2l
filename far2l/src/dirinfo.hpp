@@ -60,6 +60,8 @@ enum GETDIRINFOFLAGS
 struct DirInfoProgressTracker
 {
 	virtual void OnDirInfoProgress(const wchar_t *WalkedNowDir) = 0;
+	virtual bool IsDirInfoCancelled() const { return false; }
+	virtual bool AllowDirInfoUserBreak() const { return true; }
 };
 
 struct DirInfoTypeStats
@@ -89,4 +91,3 @@ struct DirInfo
 	int FromFS(const wchar_t *DirName, DWORD Flags = GETDIRINFO_SCANSYMLINKDEF, FileFilter *Filter = nullptr, DirInfoProgressTracker *tracker = nullptr);
 	int FromPlugin(HANDLE hPlugin, const wchar_t *DirName, DWORD Flags = GETDIRINFO_SCANSYMLINKDEF);
 };
-

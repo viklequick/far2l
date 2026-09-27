@@ -1035,7 +1035,7 @@ int TreeList::ProcessKey(FarKey Key)
 		case KEY_SHIFTF6: {
 			if (SetCurPath()) {
 				int ToPlugin = 0;
-				ShellCopy ShCopy(this, Key == KEY_SHIFTF6, FALSE, TRUE, TRUE, ToPlugin, nullptr);
+				ShellCopy::Execute(this, Key == KEY_SHIFTF6, FALSE, TRUE, TRUE, ToPlugin, nullptr);
 			}
 
 			return TRUE;
@@ -1058,7 +1058,7 @@ int TreeList::ProcessKey(FarKey Key)
 					return TRUE;
 
 				{
-					ShellCopy ShCopy(this, Move, Link, FALSE, Ask, ToPlugin, nullptr);
+					ShellCopy::Execute(this, Move, Link, FALSE, Ask, ToPlugin, nullptr);
 				}
 
 				if (ToPlugin == 1) {

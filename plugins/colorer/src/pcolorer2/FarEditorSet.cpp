@@ -87,19 +87,18 @@ void FarEditorSet::openMenu(bool fullMenu)
     }
 
     if (!fullMenu) {
-      wchar_t buf1[200] {}, buf2[200] {}, buf3[200] {};
-      wcscpy(buf1, GetMsg(mViewerColoring));
-      wcscpy(buf2, GetMsg(mViewerColoring));
-      wcscpy(buf3, GetMsg(mViewerColoring));
-      wcscat(buf1, L" ");
-      wcscat(buf2, L" ");
-      wcscat(buf3, L" ");
-      wcscat(buf1, GetMsg(mViewerColoringDisabled));
-      wcscat(buf2, GetMsg(mViewerColoringQuickView));
-      wcscat(buf3, GetMsg(mViewerColoringAll));
-      menuElements[0].Text = buf1;
-      menuElements[1].Text = buf2;
-      menuElements[2].Text = buf3;
+      std::wstring buf1 = GetMsg(mViewerColoring);
+      buf1 += L" ";
+      buf1 += GetMsg(mViewerColoringDisabled);
+      std::wstring buf2 = GetMsg(mViewerColoring);
+      buf2 += L" ";
+      buf2 += GetMsg(mViewerColoringQuickView);
+      std::wstring buf3 = GetMsg(mViewerColoring);
+      buf3 += L" ";
+      buf3 += GetMsg(mViewerColoringAll);
+      menuElements[0].Text = buf1.c_str();
+      menuElements[1].Text = buf2.c_str();
+      menuElements[2].Text = buf3.c_str();
       menuElements[Opt.viewerColoring].Checked = 1;
       menuElements[3].Separator = 1;
       menuElements[4].Text = GetMsg(mReloadBase);

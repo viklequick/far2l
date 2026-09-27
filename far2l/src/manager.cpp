@@ -546,7 +546,6 @@ Frame *Manager::FrameMenu()
 				if (!CheckCanLoseFocus)
 					ModalMenuItem.SetDisable(TRUE);
 
-<<<<<<< HEAD
 				int I = 0;
 				for (; I < FrameCount; I++) {
 					/* "*" если файл изменен */

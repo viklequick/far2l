@@ -2142,6 +2142,17 @@ int FileEditor::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			if (!m_editor->ProcessMouse(MouseEvent))
 				return FALSE;
 
+	bool right_down = (MouseEvent->dwButtonState & RIGHTMOST_BUTTON_PRESSED) != 0;
+	bool any_down = (MouseEvent->dwControlKeyState & (SHIFT_PRESSED | LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED | LEFT_ALT_PRESSED | RIGHT_ALT_PRESSED)) != 0;
+	if (right_down && !any_down
+			&& !(MouseEvent->dwEventFlags & MOUSE_MOVED)
+			&& MouseEvent->dwMousePosition.X >= X1 && MouseEvent->dwMousePosition.X <= X2
+			&& MouseEvent->dwMousePosition.Y >= Y1 && MouseEvent->dwMousePosition.Y <= Y2) {
+		int X = MouseEvent->dwMousePosition.X;
+		int Y = MouseEvent->dwMousePosition.Y;
+		EditorRightMenu(this, X + 1, std::max(Y - 10, Y1));
+	}
+
 	return TRUE;
 }
 

@@ -153,4 +153,5 @@ enum enumViewMenu
 };
 
 void EditorShellOptions(int LastCommand, MOUSE_EVENT_RECORD *MouseEvent, FileEditor* fileEditor);
+void EditorRightMenu(FileEditor* fileEditor, int X, int Y);
 

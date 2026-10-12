@@ -21,6 +21,7 @@ enum class ChunkState {
 struct BufferChunk {
     uint32_t chunk_id = 0;
     uint64_t task_id = 0;
+    uint64_t job_id = 0;
     int src_fd = -1;
     int dst_fd = -1;
     off_t src_offset = 0;

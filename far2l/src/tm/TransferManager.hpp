@@ -8,6 +8,7 @@
 #include <vector>
 #include <deque>
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <mutex>
 #include <condition_variable>
@@ -18,6 +19,7 @@
 
 struct TransferItem {
     uint64_t id = 0;
+    uint64_t job_id = 0;
     std::string src_path;
     std::string dst_path;
     std::string root_src;     // Original source tree root for relative symlink calculation
@@ -60,7 +62,7 @@ public:
     void stopService();
 
     // Dynamic multi-destination transfers: add files/folders with individual target destinations
-    virtual uint64_t addTransferJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode = TransferMode::COPY);
+    uint64_t addTransferJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode = TransferMode::COPY);
     uint64_t addDynamicJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode = TransferMode::COPY) {
         return addTransferJob(sourcePath, destinationDir, mode);
     }
@@ -107,12 +109,25 @@ public:
     std::vector<FolderScanProgress> getFolderScanProgresses() const;
     bool getFolderScanProgress(uint64_t jobId, FolderScanProgress& outProgress) const;
 
+    // Per-job independent copy progress inspection (thread-safe)
+    std::vector<TransferProgress> getJobProgresses() const;
+    bool getJobProgress(uint64_t jobId, TransferProgress& outProgress) const;
+    std::unordered_map<uint64_t, TransferProgress> getJobProgressMap() const;
+
     // Answer an active question from the question pool manually (e.g. from UI or interactive CLI)
     bool answerQuestion(uint64_t questionId, QuestionAnswer answer, bool rememberForType = false);
 
     // Set callback lambdas (alternative to inheriting and overriding virtual methods)
-    void setProgressCallback(std::function<void(const TransferProgress&)> cb) {
+    void setProgressCallback(std::function<void(const TransferProgress& jobProgress, const TransferProgress& totalProgress)> cb) {
         progress_cb_ = std::move(cb);
+    }
+    void setProgressCallback(std::function<void(const TransferProgress& totalProgress)> cb) {
+        progress_cb_ = [cb = std::move(cb)](const TransferProgress&, const TransferProgress& tot) {
+            cb(tot);
+        };
+    }
+    void setJobProgressCallback(std::function<void(const TransferProgress& jobProgress)> cb) {
+        job_progress_cb_ = std::move(cb);
     }
     void setQuestionCallback(std::function<QuestionAnswer(const TransferQuestion&, bool&)> cb) {
         question_cb_ = std::move(cb);
@@ -131,7 +146,9 @@ public:
 
 protected:
     // Virtual callbacks intended to be overridden in derived classes (e.g. far2l dialogs/TUI)
-    virtual void onProgress(const TransferProgress& progress);
+    virtual void onProgress(const TransferProgress& jobProgress, const TransferProgress& totalProgress);
+    virtual void onProgress(const TransferProgress& totalProgress);
+    virtual void onJobProgress(const TransferProgress& jobProgress);
     virtual QuestionAnswer onQuestion(const TransferQuestion& question, bool& rememberForType);
     virtual void onFolderScanProgress(const FolderScanProgress& scan);
 
@@ -201,7 +218,8 @@ private:
     mutable std::mutex display_mutex_;
 
     // Callbacks
-    std::function<void(const TransferProgress&)> progress_cb_;
+    std::function<void(const TransferProgress& jobProgress, const TransferProgress& totalProgress)> progress_cb_;
+    std::function<void(const TransferProgress& jobProgress)> job_progress_cb_;
     std::function<QuestionAnswer(const TransferQuestion&, bool&)> question_cb_;
     std::function<void(const FolderScanProgress&)> scan_progress_cb_;
 
@@ -264,4 +282,15 @@ private:
     bool processScanTask(const FolderScanTask& task);
     void updateJobScanProgress(uint64_t jobId, const std::string& currentItem, uint32_t newFiles, uint32_t newFolders, uint64_t newBytes);
     void completeJobScan(uint64_t jobId);
+
+    // Per-job copy progress tracking
+    mutable std::mutex job_mutex_;
+    std::map<uint64_t, TransferProgress> job_progresses_;
+    std::atomic<uint64_t> current_active_job_id_{0};
+
+    void recordJobBytesTransferred(uint64_t jobId, uint64_t bytes);
+    void recordJobFileCompleted(uint64_t jobId);
+    void recordJobDirectoryCompleted(uint64_t jobId);
+    void recordJobError(uint64_t jobId);
+    void checkJobCompletion(TransferProgress& jp);
 };

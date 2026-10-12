@@ -88,7 +88,18 @@ bool TransferManager::start(const std::vector<std::string>& sources, const std::
             req.source_path = src;
             req.destination_dir = targetDir;
             req.mode = options_.mode;
-            pending_job_requests_.push_back(std::move(req));
+            pending_job_requests_.push_back(req);
+
+            {
+                std::lock_guard<std::mutex> jLock(job_mutex_);
+                TransferProgress jp;
+                jp.job_id = req.job_id;
+                jp.source_path = src;
+                jp.destination_dir = targetDir;
+                jp.mode = options_.mode;
+                jp.is_completed = false;
+                job_progresses_[req.job_id] = jp;
+            }
         }
     }
 
@@ -127,6 +138,17 @@ uint64_t TransferManager::addTransferJob(const std::string& sourcePath, const st
     req.source_path = sourcePath;
     req.destination_dir = destinationDir;
     req.mode = mode;
+
+    {
+        std::lock_guard<std::mutex> jLock(job_mutex_);
+        TransferProgress jp;
+        jp.job_id = jId;
+        jp.source_path = sourcePath;
+        jp.destination_dir = destinationDir;
+        jp.mode = mode;
+        jp.is_completed = false;
+        job_progresses_[jId] = jp;
+    }
 
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
@@ -267,6 +289,16 @@ void TransferManager::discoveryWorker() {
 
 void TransferManager::scanSource(const std::string& srcPath, const std::string& targetBase) {
     uint64_t jId = next_job_id_++;
+    {
+        std::lock_guard<std::mutex> jLock(job_mutex_);
+        TransferProgress jp;
+        jp.job_id = jId;
+        jp.source_path = srcPath;
+        jp.destination_dir = targetBase;
+        jp.mode = options_.mode;
+        jp.is_completed = false;
+        job_progresses_[jId] = jp;
+    }
     enqueueFolderScan(jId, srcPath, targetBase);
 }
 
@@ -274,6 +306,7 @@ void TransferManager::enqueueFolderScan(uint64_t jobId, const std::string& srcPa
     FileStat st = fs_->statFile(srcPath, false);
     if (!st.exists) {
         error_count_++;
+        recordJobError(jobId);
         std::lock_guard<std::mutex> sLock(scan_mutex_);
         FolderScanProgress sp;
         sp.job_id = jobId;
@@ -325,8 +358,14 @@ void TransferManager::enqueueFolderScan(uint64_t jobId, const std::string& srcPa
         total_scanned_folders_++;
         total_dirs_++;
 
+        {
+            std::lock_guard<std::mutex> jLock(job_mutex_);
+            job_progresses_[jobId].total_dirs++;
+        }
+
         TransferItem dirItem;
         dirItem.id = next_item_id_++;
+        dirItem.job_id = jobId;
         dirItem.src_path = srcPath;
         dirItem.dst_path = destRootItem;
         dirItem.root_src = srcPath;
@@ -364,8 +403,16 @@ void TransferManager::enqueueFolderScan(uint64_t jobId, const std::string& srcPa
         total_files_++;
         total_bytes_.fetch_add(st.size, std::memory_order_relaxed);
 
+        {
+            std::lock_guard<std::mutex> jLock(job_mutex_);
+            auto& jp = job_progresses_[jobId];
+            jp.total_files++;
+            jp.total_bytes += st.size;
+        }
+
         TransferItem fileItem;
         fileItem.id = next_item_id_++;
+        fileItem.job_id = jobId;
         fileItem.src_path = srcPath;
         fileItem.dst_path = destRootItem;
         fileItem.root_src = srcPath;
@@ -403,6 +450,7 @@ bool TransferManager::processScanTask(const FolderScanTask& task) {
         std::string childDst = task.current_dst_dir + "/" + entry.name;
         TransferItem item;
         item.id = next_item_id_++;
+        item.job_id = task.job_id;
         item.src_path = entry.full_path;
         item.dst_path = childDst;
         item.root_src = task.root_src;
@@ -442,6 +490,14 @@ bool TransferManager::processScanTask(const FolderScanTask& task) {
         for (auto& itm : newItems) {
             pending_items_.push_back(std::move(itm));
         }
+    }
+
+    {
+        std::lock_guard<std::mutex> jLock(job_mutex_);
+        auto& jp = job_progresses_[task.job_id];
+        jp.total_files += foundFiles;
+        jp.total_dirs += foundDirs;
+        jp.total_bytes += foundBytes;
     }
 
     FolderScanProgress currentProgressSnapshot;
@@ -550,6 +606,16 @@ void TransferManager::readerWorker(size_t /*threadIndex*/) {
             active_transfers_++;
         }
 
+        current_active_job_id_.store(item.job_id, std::memory_order_relaxed);
+        {
+            std::lock_guard<std::mutex> jLock(job_mutex_);
+            auto it = job_progresses_.find(item.job_id);
+            if (it != job_progresses_.end()) {
+                it->second.current_source_item = item.src_path;
+                it->second.current_target_item = item.dst_path;
+            }
+        }
+
         {
             std::lock_guard<std::mutex> lock(display_mutex_);
             current_source_display_ = item.src_path;
@@ -560,6 +626,7 @@ void TransferManager::readerWorker(size_t /*threadIndex*/) {
         bool success = processSingleItem(item);
         if (!success) {
             error_count_++;
+            recordJobError(item.job_id);
         }
 
         active_transfers_--;
@@ -592,6 +659,7 @@ void TransferManager::writerWorker(size_t /*threadIndex*/) {
                         written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
                         if (written > 0 && static_cast<size_t>(written) == chunk->bytes_valid) {
                             bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
+                            recordJobBytesTransferred(chunk->job_id, written);
                             buffer_ring_->releaseCommittedChunk(chunk);
                             continue;
                         }
@@ -603,9 +671,11 @@ void TransferManager::writerWorker(size_t /*threadIndex*/) {
                 }
                 buffer_ring_->markChunkFailed(chunk, err);
                 error_count_++;
+                recordJobError(chunk->job_id);
                 continue;
             }
             bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
+            recordJobBytesTransferred(chunk->job_id, written);
         }
 
         buffer_ring_->releaseCommittedChunk(chunk);
@@ -822,6 +892,7 @@ bool TransferManager::transferDirectory(TransferItem& item) {
     }
 
     dirs_transferred_++;
+    recordJobDirectoryCompleted(item.job_id);
     return true;
 }
 
@@ -904,6 +975,7 @@ bool TransferManager::transferSymlink(TransferItem& item) {
             fs_->removeFile(item.src_path);
         }
         files_transferred_++;
+        recordJobFileCompleted(item.job_id);
     }
     return ok;
 }
@@ -1086,12 +1158,14 @@ bool TransferManager::transferFile(TransferItem& item) {
                 off_t resumePos = dstStatFollow.exists ? dstStatFollow.size : 0;
                 if (resumePos >= srcSt.size) {
                     files_transferred_++;
+                    recordJobFileCompleted(item.job_id);
                     return true;
                 }
                 dstFlags = O_WRONLY | O_CREAT;
                 startOffset = resumePos;
                 srcOffset = resumePos;
                 bytes_transferred_.fetch_add(resumePos, std::memory_order_relaxed);
+                recordJobBytesTransferred(item.job_id, resumePos);
             } else {
                 // OVERWRITE: do not delete destination/file, open and truncate prior to writes
                 // If destination is a link, this updates the referred file without breaking the link
@@ -1140,6 +1214,7 @@ bool TransferManager::transferFile(TransferItem& item) {
             ok = true;
             cow_bytes_.fetch_add(srcSt.size, std::memory_order_relaxed);
             bytes_transferred_.fetch_add(srcSt.size, std::memory_order_relaxed);
+            recordJobBytesTransferred(item.job_id, srcSt.size);
         }
     }
 
@@ -1154,6 +1229,7 @@ bool TransferManager::transferFile(TransferItem& item) {
         if (ok) {
             mmap_bytes_.fetch_add(srcSt.size, std::memory_order_relaxed);
             bytes_transferred_.fetch_add(srcSt.size, std::memory_order_relaxed);
+            recordJobBytesTransferred(item.job_id, srcSt.size);
         }
     }
 
@@ -1177,6 +1253,7 @@ bool TransferManager::transferFile(TransferItem& item) {
             fs_->removeFile(item.src_path);
         }
         files_transferred_++;
+        recordJobFileCompleted(item.job_id);
     }
 
     return ok;
@@ -1221,6 +1298,7 @@ bool TransferManager::transferSparseFile(TransferItem& item, int srcFd, int dstF
                 return false;
             }
             bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
+            recordJobBytesTransferred(item.job_id, written);
             extentOffset += written;
         }
 
@@ -1268,6 +1346,7 @@ bool TransferManager::transferChunked(TransferItem& item, int srcFd, int dstFd) 
         ssize_t ret = fs_->copyFileRange(srcFd, &srcOff, dstFd, &dstOff, chunkLen);
         if (ret > 0) {
             bytes_transferred_.fetch_add(ret, std::memory_order_relaxed);
+            recordJobBytesTransferred(item.job_id, ret);
             bytesCopied += ret;
             continue;
         }
@@ -1296,6 +1375,7 @@ bool TransferManager::transferChunked(TransferItem& item, int srcFd, int dstFd) 
         chunk->src_offset = srcStart + bytesCopied;
         chunk->dst_offset = dstStart + bytesCopied;
         chunk->task_id = item.id;
+        chunk->job_id = item.job_id;
         chunk->in_flight_counter = &inFlight;
         chunk->cv_file_done = &cvFileDone;
         chunk->file_done_mutex = &fileMutex;
@@ -1351,11 +1431,55 @@ void TransferManager::progressWorker() {
         TransferProgress prog = getProgress();
         prog.current_speed_mb_s = speedMBs;
 
-        if (progress_cb_) {
-            progress_cb_(prog);
-        } else {
-            onProgress(prog);
+        // Determine active job progress
+        TransferProgress activeJobProg;
+        uint64_t activeId = current_active_job_id_.load(std::memory_order_relaxed);
+        bool foundActive = false;
+        if (activeId != 0) {
+            foundActive = getJobProgress(activeId, activeJobProg);
         }
+        if (!foundActive && !prog.job_progresses.empty()) {
+            for (const auto& jp : prog.job_progresses) {
+                if (!jp.is_completed) {
+                    activeJobProg = jp;
+                    foundActive = true;
+                    break;
+                }
+            }
+            if (!foundActive) {
+                activeJobProg = prog.job_progresses.back();
+            }
+        }
+        activeJobProg.current_speed_mb_s = speedMBs;
+
+        // Dispatch per-job progress callbacks for all tracked jobs
+        for (const auto& jp : prog.job_progresses) {
+            onJobProgress(jp);
+        }
+
+        // Dispatch dual onProgress callback (active/current job + overall total progress)
+        if (progress_cb_) {
+            progress_cb_(activeJobProg, prog);
+        } else {
+            onProgress(activeJobProg, prog);
+        }
+    }
+
+    // Final flush of progress updates when transfer service completes or is cancelled
+    TransferProgress finalProg = getProgress();
+    finalProg.current_speed_mb_s = 0.0;
+    for (const auto& jp : finalProg.job_progresses) {
+        onJobProgress(jp);
+    }
+    TransferProgress finalActiveJobProg;
+    if (!finalProg.job_progresses.empty()) {
+        finalActiveJobProg = finalProg.job_progresses.back();
+    }
+    finalActiveJobProg.current_speed_mb_s = 0.0;
+    if (progress_cb_) {
+        progress_cb_(finalActiveJobProg, finalProg);
+    } else {
+        onProgress(finalActiveJobProg, finalProg);
     }
 }
 
@@ -1389,6 +1513,7 @@ TransferMetrics TransferManager::getMetrics() const {
     m.total_scanned_files = total_scanned_files_.load(std::memory_order_relaxed);
     m.total_scanned_folders = total_scanned_folders_.load(std::memory_order_relaxed);
     m.total_scanned_bytes = total_scanned_bytes_.load(std::memory_order_relaxed);
+    m.job_progresses = getJobProgresses();
     return m;
 }
 
@@ -1441,6 +1566,7 @@ TransferProgress TransferManager::getProgress() const {
     p.total_scanned_folders = total_scanned_folders_.load(std::memory_order_relaxed);
     p.total_scanned_bytes = total_scanned_bytes_.load(std::memory_order_relaxed);
     p.is_scanning_active = any_scanning_active_.load(std::memory_order_relaxed);
+    p.job_progresses = getJobProgresses();
 
     return p;
 }
@@ -1465,14 +1591,115 @@ bool TransferManager::getFolderScanProgress(uint64_t jobId, FolderScanProgress& 
     return false;
 }
 
+std::vector<TransferProgress> TransferManager::getJobProgresses() const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    std::vector<TransferProgress> result;
+    result.reserve(job_progresses_.size());
+    for (const auto& [_, jp] : job_progresses_) {
+        result.push_back(jp);
+    }
+    return result;
+}
+
+bool TransferManager::getJobProgress(uint64_t jobId, TransferProgress& outProgress) const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = job_progresses_.find(jobId);
+    if (it != job_progresses_.end()) {
+        outProgress = it->second;
+        return true;
+    }
+    return false;
+}
+
+std::unordered_map<uint64_t, TransferProgress> TransferManager::getJobProgressMap() const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    std::unordered_map<uint64_t, TransferProgress> result;
+    for (const auto& [id, jp] : job_progresses_) {
+        result[id] = jp;
+    }
+    return result;
+}
+
+void TransferManager::recordJobBytesTransferred(uint64_t jobId, uint64_t bytes) {
+    if (jobId == 0) return;
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = job_progresses_.find(jobId);
+    if (it != job_progresses_.end()) {
+        it->second.bytes_transferred += bytes;
+        if (it->second.total_bytes > 0) {
+            it->second.progress_percent = std::min<double>(100.0,
+                (static_cast<double>(it->second.bytes_transferred) / it->second.total_bytes) * 100.0);
+        }
+        checkJobCompletion(it->second);
+    }
+}
+
+void TransferManager::recordJobFileCompleted(uint64_t jobId) {
+    if (jobId == 0) return;
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = job_progresses_.find(jobId);
+    if (it != job_progresses_.end()) {
+        it->second.files_transferred++;
+        if (it->second.total_files > 0 && it->second.total_bytes == 0) {
+            it->second.progress_percent = std::min<double>(100.0,
+                (static_cast<double>(it->second.files_transferred) / it->second.total_files) * 100.0);
+        }
+        checkJobCompletion(it->second);
+    }
+}
+
+void TransferManager::recordJobDirectoryCompleted(uint64_t jobId) {
+    if (jobId == 0) return;
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = job_progresses_.find(jobId);
+    if (it != job_progresses_.end()) {
+        it->second.dirs_transferred++;
+        checkJobCompletion(it->second);
+    }
+}
+
+void TransferManager::recordJobError(uint64_t jobId) {
+    if (jobId == 0) return;
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = job_progresses_.find(jobId);
+    if (it != job_progresses_.end()) {
+        it->second.errors_count++;
+    }
+}
+
+void TransferManager::checkJobCompletion(TransferProgress& jp) {
+    bool scanFinished = false;
+    {
+        std::lock_guard<std::mutex> sLock(scan_mutex_);
+        auto it = folder_scans_.find(jp.job_id);
+        if (it != folder_scans_.end() && it->second.is_completed) {
+            scanFinished = true;
+        }
+    }
+    if (scanFinished && jp.files_transferred >= jp.total_files && jp.dirs_transferred >= jp.total_dirs) {
+        jp.is_completed = true;
+        jp.progress_percent = 100.0;
+    }
+}
+
 std::vector<TransferQuestion> TransferManager::getActiveQuestions() const {
     std::lock_guard<std::mutex> lock(question_mutex_);
     return active_questions_;
 }
 
 // Default virtual overrides
-void TransferManager::onProgress(const TransferProgress& /*progress*/) {
+void TransferManager::onProgress(const TransferProgress& /*jobProgress*/, const TransferProgress& totalProgress) {
+    onProgress(totalProgress);
+}
+
+void TransferManager::onProgress(const TransferProgress& /*totalProgress*/) {
     // Default no-op, overridden by subclasses or custom progress callback
+}
+
+void TransferManager::onJobProgress(const TransferProgress& jobProgress) {
+    if (job_progress_cb_) {
+        job_progress_cb_(jobProgress);
+    }
 }
 
 QuestionAnswer TransferManager::onQuestion(const TransferQuestion& /*question*/, bool& /*rememberForType*/) {

@@ -124,6 +124,12 @@ struct TransferOptions {
 };
 
 struct TransferProgress {
+    uint64_t job_id = 0;                    // 0 for total session, or individual job_id
+    std::string source_path;               // Source path for this transfer job
+    std::string destination_dir;           // Destination directory for this job
+    TransferMode mode = TransferMode::COPY;
+    bool is_completed = false;             // True when all items of this job are transferred
+
     uint64_t bytes_transferred = 0;
     uint64_t total_bytes = 0;
     uint32_t files_transferred = 0;
@@ -149,6 +155,9 @@ struct TransferProgress {
     uint32_t total_scanned_folders = 0;
     uint64_t total_scanned_bytes = 0;
     bool is_scanning_active = false;
+
+    // Per-job file copy progress status list
+    std::vector<TransferProgress> job_progresses;
 };
 
 struct TransferMetrics {
@@ -175,4 +184,7 @@ struct TransferMetrics {
     uint32_t total_scanned_files = 0;
     uint32_t total_scanned_folders = 0;
     uint64_t total_scanned_bytes = 0;
+
+    // Per-job file copy progress status list
+    std::vector<TransferProgress> job_progresses;
 };

@@ -90,6 +90,7 @@ public:
 	virtual ~FilePanels();
 	void UpdateCmdLineVisibility(bool repos = false);
 	void UpdateTabBar();
+	void UpdateOsdPane();
 
 private:
 	void Init(DoublePanel& tab);

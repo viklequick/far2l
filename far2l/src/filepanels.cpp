@@ -553,6 +553,20 @@ void FilePanels::ActivateOsdPane() {
 	}
 }
 
+void FilePanels::UpdateOsdPane() {
+	bool has = osd.HasActiveLines();
+	if (osd.IsVisible() && !has) {
+		osd.Hide();
+		Redraw();
+	}
+	else if (!osd.IsVisible() && has) {
+		osd.Show();
+	}
+	else if (osd.IsVisible() && has) {
+		osd.Redraw();
+	}
+}
+
 int FilePanels::SetAnotherPanelFocus()
 {
 	int Ret = FALSE;

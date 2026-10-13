@@ -693,6 +693,29 @@ private:
     }
 };
 
+static bool GetClipboardFiles(std::vector<wxString>& v)
+{
+    if (!wxTheClipboard->Open())
+        return false;
+
+    bool has_files = wxTheClipboard->IsSupported(wxDF_FILENAME);
+    if (!has_files) {
+    	wxTheClipboard->Close();
+        return false;
+    }
+
+    wxFileDataObject data;
+    if (wxTheClipboard->GetData(data)) {
+        const wxArrayString& files = data.GetFilenames();
+        v.reserve(files.size());
+
+        for (const auto& file : files)
+            v.push_back(file);
+    }
+    wxTheClipboard->Close();
+    return v.size() > 0;
+}
+
 void WinPortPanel::DragDropHandleText(const wxString& text, int x , int y) {
 	INPUT_RECORD ir = {};
 	ir.EventType = EXT_DROP_EVENT;
@@ -1619,6 +1642,18 @@ void WinPortPanel::OnKeyDown( wxKeyEvent& event )
 	if (_key_tracker.RightAlt() && !_key_tracker.LeftControl()) {
 		activeMods &= ~LEFT_CTRL_PRESSED;
 	}
+
+    /* vk: ^V for files enforces drop event */
+    if ((ir.Event.KeyEvent.dwControlKeyState & (LEFT_ALT_PRESSED | SHIFT_PRESSED | LEFT_CTRL_PRESSED | RIGHT_CTRL_PRESSED)) == LEFT_CTRL_PRESSED
+    		&& (uni == L'V' || uni == L'v') ) {
+
+		std::vector<wxString> v;
+		if(GetClipboardFiles(v)) {
+        	for (auto& f : v) DragDropHandleFile(f, -1, -1);
+			event.Skip();
+			return;
+        }
+    }
 
     /* vk: damn switch off the alt-enter behavior */
     /*

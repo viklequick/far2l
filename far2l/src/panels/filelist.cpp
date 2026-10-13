@@ -2676,11 +2676,22 @@ int FileList::GetColumnTitleByMouse(int MsX) {
 int FileList::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) 
 {
 	if (!DropEvent->Text) return FALSE;
+	if (DropEvent->DropType != DROP_TYPE_FILE) return FALSE;
+
 	int MsX = DropEvent->X;
 	int MsY = DropEvent->Y;
 
+	// special case: ^V with files is a drop event
+	if (MsX < 0 && MsY < 0) {
+		FARString target;
+		GetCurDir(target);
+
+		// vk: todo: copy file from drop event
+
+		return TRUE;
+	}
+
 	if(MsX <= X1 || MsX >= X2 || MsY <= Y1 || MsY >= Y2) return FALSE;
-	if(DropEvent->DropType != DROP_TYPE_FILE) return FALSE;
 
 	FARString target;
 	GetCurDir(target);
@@ -2693,7 +2704,7 @@ int FileList::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent)
 
 	// technically it should be looks like this
 	// ShellCopy ShCopy(this, FALSE, FALSE, FALSE, Ask, ToPlugin, nullptr, Drag && AnotherDir);
-	// vbut we have no source panel at all so we need another way to copy
+	// but we have no source panel at all so we need another way to copy
 
 	// now we have source `DropEvent->Text` and `target`; all we need is to copy recursively.
 	// vk: todo: copy file from drop event

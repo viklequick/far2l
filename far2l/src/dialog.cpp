@@ -3722,7 +3722,7 @@ int Dialog::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent)
 	if (!DialogMode.Check(DMODE_SHOW))
 		return FALSE;
 
-	if (!DropEvent->Text)
+	if (!DropEvent->Text || DropEvent->X < 0 || DropEvent->Y < 0)
 		return FALSE;
 	
 	MsX = DropEvent->X;

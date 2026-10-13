@@ -9438,7 +9438,7 @@ void Editor::EndBulkLoad()
 }
 
 int Editor::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) {
-	if (!DropEvent->Text) return FALSE;
+	if (!DropEvent->Text || DropEvent->X < 0 || DropEvent->Y < 0) return FALSE;
 
 	// move cursor to mouse position
 	MouseTarget target;

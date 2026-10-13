@@ -1325,6 +1325,16 @@ int FilePanels::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) {
 	int MsX = DropEvent->X;
 	int MsY = DropEvent->Y;
 
+	if (MsX < 0 && MsY < 0) { // special case: drop to active pane, no mouse coords provided
+		if (ActiveTab().ActivePanel->IsVisible()) {
+			return ActiveTab().ActivePanel->ProcessDrop(DropEvent);
+		}
+		if (CtrlObject->CmdLine->IsVisible()) {
+			return CtrlObject->CmdLine->ProcessDrop(DropEvent);
+		}
+		return TRUE;
+	}
+
 	if (MsY <= Y1 + 2 + (Opt.ShowMenuBar ? 1 : 0)) return FALSE; // tab bar, menu and border does not allow drop events
 	if (MsX <= X1 + 1 || MsX >= X2 - 1) return FALSE; // edges of the panels are not drop sources
 	if (MsY > Y2 - (Opt.ShowKeyBar ? 1 : 0)) return FALSE;

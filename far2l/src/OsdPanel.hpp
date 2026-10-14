@@ -195,6 +195,9 @@ public:
                                               const std::wstring& fill = L"█",
                                               const std::wstring& empty = L"░");
 
+    static std::wstring BuildPercentString(double v, size_t maxLen);
+    static std::wstring BuildSizeString(int64_t v, size_t maxLen);
+
 private:
     std::wstring FormatRowString(const RowItem& item, size_t availableWidth) const;
     void TriggerRedrawIfEnabled();

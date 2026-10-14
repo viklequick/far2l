@@ -10,6 +10,9 @@
 #include <sstream>
 #include <vector>
 
+#include <iostream>
+#include <string>
+
 OsdPanel::OsdPanel(int x1, int y1, int maxWidth, int maxHeight)
     : ScreenObject(),
       m_maxWidth(maxWidth),
@@ -660,3 +663,85 @@ void OsdPanel::DisplayObject() {
         }
     }
 }
+
+/* text formats engine */
+
+static std::wstring Fit(const std::vector<std::wstring>& candidates, std::size_t maxWidth) {
+    auto it = std::find_if(candidates.begin(), candidates.end(),
+        [maxWidth](const auto s) {
+            return s.size() <= maxWidth;
+        });
+
+    if (it != candidates.end()) return *it;
+    return candidates.empty() ? std::wstring {} : candidates.back();
+}
+
+static std::vector<std::wstring> GenerateFloatVariants(double value,  std::wstring suffix = {}) {
+    std::vector<std::wstring> result;
+    for (int precision = 3; precision >= 0; --precision) {
+        std::wostringstream ss;
+        ss << std::fixed << std::setprecision(precision) << value << suffix;
+        result.push_back(ss.str());
+    }
+    return result;
+}
+
+std::wstring OsdPanel::BuildPercentString(double value, size_t maxWidth) {
+	return Fit(GenerateFloatVariants(value, L"%"), maxWidth);
+}
+
+std::wstring OsdPanel::BuildSizeString(int64_t bytes, size_t maxWidth) {
+    static constexpr const wchar_t* units[] = {L" ", L"K", L"M", L"G", L"T", L"P", L"E"}; // small numbers need no modifier suffix
+    std::vector<std::wstring> candidates;
+
+    double value = static_cast<double>(bytes);
+    std::size_t unit = 0;
+
+    while (value >= 1024.0 && unit + 1 < std::size(units)) {
+        value /= 1024.0;
+        ++unit;
+    }
+    for (int precision = 3; precision >= 0; --precision) {
+        std::wostringstream ss;
+        ss << std::fixed << std::setprecision(precision) << value << units[unit];
+        candidates.push_back(ss.str());
+    }
+
+    if (unit > 0) {
+        std::wostringstream ss;
+        ss << static_cast<std::uint64_t>(std::round(value)) << units[unit];
+        candidates.push_back(ss.str());
+    }
+    return Fit(candidates, maxWidth);
+}
+
+/*
+std::wstring OsdPanel::BuildSizeString(int64_t bytes, size_t maxWidth) {
+    static constexpr const char* units[] = { "B", "K", "M", "G", "T", "P", "E" };
+
+    double value = static_cast<double>(bytes);
+    size_t unit = 0;
+
+    while (value >= 1024.0 && unit + 1 < std::size(units)) {
+        value /= 1024.0;
+        ++unit;
+    }
+
+    for (;;) {
+        for (int decimals = 2; decimals >= 0; --decimals) {
+            std::ostringstream ss;
+            ss << std::fixed << std::setprecision(decimals) << value << units[unit];
+            if (ss.str().size() <= maxWidth) return ss.str();
+        }
+
+        if (value < 1024.0 || unit + 1 >= std::size(units)) {
+            std::ostringstream ss;
+            ss << static_cast<uint64_t>(std::round(value)) << units[unit];
+            return ss.str();
+        }
+
+        value /= 1024.0;
+        ++unit;
+    }
+} */
+

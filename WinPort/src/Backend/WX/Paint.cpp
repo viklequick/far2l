@@ -460,7 +460,7 @@ int random_int(int min, int max)
     return min + rand() % (max - min + 1);
 }
 
-void ConsolePaintContext::OnPaint(wxDC &dc, SMALL_RECT *qedit)
+void ConsolePaintContext::OnPaint(wxPaintDC &dc, SMALL_RECT *qedit)
 {
 	if (UNLIKELY(_stage == STG_NOT_REFRESHED)) {
 		// not refreshed yet - so early start so nothing to paint yet
@@ -802,7 +802,7 @@ void CursorProps::Update()
 
 //////////////////////
 
-ConsolePainter::ConsolePainter(ConsolePaintContext *context, wxDC &dc, wxString &buffer, CursorProps &cursor_props) :
+ConsolePainter::ConsolePainter(ConsolePaintContext *context, wxPaintDC &dc, wxString &buffer, CursorProps &cursor_props) :
 	_context(context), _dc(dc), _buffer(buffer), _cursor_props(cursor_props),
 	_start_cx((unsigned int)-1), _start_back_cx((unsigned int)-1), _prev_fit_font_index(0),
 	_prev_underlined(false), _prev_strikeout(false), _prev_bold(false)

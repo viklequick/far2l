@@ -517,8 +517,8 @@ static bool ShouldShowPanelImages()
 		return false;
 
 	FilePanels *cp = CtrlObject->Cp();
-	Panel *lp = cp->LeftPanel;
-	Panel *rp = cp->RightPanel;
+	Panel *lp = cp->ActiveTab().LeftPanel;
+	Panel *rp = cp->ActiveTab().RightPanel;
 	return (lp && lp->GetType() == QVIEW_PANEL && lp->IsVisible())
 			|| (rp && rp->GetType() == QVIEW_PANEL && rp->IsVisible());
 }

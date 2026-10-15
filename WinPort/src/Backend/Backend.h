@@ -9,7 +9,7 @@
 ///   Something changed in code below.
 ///   "WinCompat.h" changed in a way affecting code below.
 ///   Behavior of backend's code changed in incompatible way.
-#define FAR2L_BACKEND_ABI_VERSION	0x12
+#define FAR2L_BACKEND_ABI_VERSION	0x13
 
 class IConsoleOutputBackend
 {
@@ -45,6 +45,7 @@ public:
 	virtual bool OnSetConsoleImage(const char *id, DWORD64 flags, const SMALL_RECT *area, DWORD width, DWORD height, const void *buffer) = 0;
 	virtual bool OnTransformConsoleImage(const char *id, const SMALL_RECT *area, uint16_t tf) = 0;
 	virtual bool OnDeleteConsoleImage(const char *id) = 0;
+	virtual bool OnSetConsoleImageVisibility(const char *id, bool visible, const SMALL_RECT *exclusions, size_t count) { return false; }
 
 	virtual const char *OnConsoleBackendInfo(int entity) = 0;
 };
@@ -227,6 +228,7 @@ public:
 	virtual bool OnSetConsoleImage(const char *id, DWORD64 flags, const SMALL_RECT *area, DWORD width, DWORD height, const void *buffer) = 0;
 	virtual bool OnTransformConsoleImage(const char *id, const SMALL_RECT *area, uint16_t tf) = 0;
 	virtual bool OnDeleteConsoleImage(const char *id) = 0;
+	virtual bool OnSetConsoleImageVisibility(const char *id, bool visible, const SMALL_RECT *exclusions, size_t count) { return false; }
 
 	virtual const char *BackendInfo(int entity) = 0;
 

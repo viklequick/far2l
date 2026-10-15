@@ -20,14 +20,14 @@ public:
     virtual ~IFileSystem() = default;
 
     // Path & Stat operations
-    virtual bool exists(const std::string& path) = 0;
-    virtual bool isDirectory(const std::string& path) = 0;
-    virtual bool isSymlink(const std::string& path) = 0;
-    virtual bool isReadOnly(const std::string& path) = 0;
-    virtual FileStat statFile(const std::string& path, bool followSymlinks = false) = 0;
+    virtual bool exists(const std::wstring& path) = 0;
+    virtual bool isDirectory(const std::wstring& path) = 0;
+    virtual bool isSymlink(const std::wstring& path) = 0;
+    virtual bool isReadOnly(const std::wstring& path) = 0;
+    virtual FileStat statFile(const std::wstring& path, bool followSymlinks = false) = 0;
 
     // File I/O operations
-    virtual int openFile(const std::string& path, int flags, mode_t mode = 0644) = 0;
+    virtual int openFile(const std::wstring& path, int flags, mode_t mode = 0644) = 0;
     virtual void closeFile(int fd) = 0;
     virtual ssize_t readFile(int fd, void* buf, size_t count, off_t offset) = 0;
     virtual ssize_t writeFile(int fd, const void* buf, size_t count, off_t offset) = 0;
@@ -48,22 +48,22 @@ public:
     virtual void unmapFile(void* addr, size_t length) = 0;
 
     // Directory operations
-    virtual bool createDirectory(const std::string& path, mode_t mode = 0755) = 0;
-    virtual bool createDirectories(const std::string& path) = 0;
-    virtual std::vector<DirEntry> listDirectory(const std::string& path) = 0;
-    virtual bool removeFile(const std::string& path) = 0;
-    virtual bool removeDirectory(const std::string& path) = 0;
-    virtual bool renameFile(const std::string& oldPath, const std::string& newPath) = 0;
+    virtual bool createDirectory(const std::wstring& path, mode_t mode = 0755) = 0;
+    virtual bool createDirectories(const std::wstring& path) = 0;
+    virtual std::vector<DirEntry> listDirectory(const std::wstring& path) = 0;
+    virtual bool removeFile(const std::wstring& path) = 0;
+    virtual bool removeDirectory(const std::wstring& path) = 0;
+    virtual bool renameFile(const std::wstring& oldPath, const std::wstring& newPath) = 0;
 
     // Symbolic link operations
-    virtual std::string readSymlink(const std::string& path) = 0;
-    virtual bool createSymlink(const std::string& target, const std::string& linkPath) = 0;
+    virtual std::wstring readSymlink(const std::wstring& path) = 0;
+    virtual bool createSymlink(const std::wstring& target, const std::wstring& linkPath) = 0;
 
     // Metadata, times, permissions, and extended attributes
-    virtual bool copyMetadata(const std::string& src, const std::string& dst, bool copyOwnership = false) = 0;
-    virtual bool copyXattrs(const std::string& src, const std::string& dst) = 0;
-    virtual bool setPermissions(const std::string& path, mode_t mode) = 0;
-    virtual bool setOwnership(const std::string& path, uid_t uid, gid_t gid) = 0;
-    virtual bool setTimestamps(const std::string& path, int64_t atime_sec, long atime_nsec,
+    virtual bool copyMetadata(const std::wstring& src, const std::wstring& dst, bool copyOwnership = false) = 0;
+    virtual bool copyXattrs(const std::wstring& src, const std::wstring& dst) = 0;
+    virtual bool setPermissions(const std::wstring& path, mode_t mode) = 0;
+    virtual bool setOwnership(const std::wstring& path, uid_t uid, gid_t gid) = 0;
+    virtual bool setTimestamps(const std::wstring& path, int64_t atime_sec, long atime_nsec,
                                int64_t mtime_sec, long mtime_nsec) = 0;
 };

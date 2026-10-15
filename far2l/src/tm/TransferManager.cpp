@@ -1,5 +1,6 @@
 #include "TransferManager.hpp"
 #include "LocalFileSystem.hpp"
+#include "WideUtils.hpp"
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -47,7 +48,7 @@ size_t TransferManager::getBufferRingCapacityBytes() const {
 
 bool TransferManager::startService() {
     options_.service_mode = true;
-    return start({}, "");
+    return start({}, L"");
 }
 
 void TransferManager::stopService() {
@@ -56,7 +57,7 @@ void TransferManager::stopService() {
     wait();
 }
 
-bool TransferManager::start(const std::vector<std::string>& sources, const std::string& targetDir) {
+bool TransferManager::start(const std::vector<std::wstring>& sources, const std::wstring& targetDir) {
     if (running_.load(std::memory_order_relaxed)) {
         return false;
     }
@@ -124,7 +125,7 @@ bool TransferManager::start(const std::vector<std::string>& sources, const std::
     return true;
 }
 
-uint64_t TransferManager::addTransferJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode) {
+uint64_t TransferManager::addTransferJob(const std::wstring& sourcePath, const std::wstring& destinationDir, TransferMode mode) {
     if (!running_.load(std::memory_order_acquire)) {
         startService();
     }
@@ -158,7 +159,7 @@ uint64_t TransferManager::addTransferJob(const std::string& sourcePath, const st
     return jId;
 }
 
-std::vector<uint64_t> TransferManager::addTransferJobs(const std::vector<std::string>& sources, const std::string& destinationDir, TransferMode mode) {
+std::vector<uint64_t> TransferManager::addTransferJobs(const std::vector<std::wstring>& sources, const std::wstring& destinationDir, TransferMode mode) {
     std::vector<uint64_t> ids;
     ids.reserve(sources.size());
     for (const auto& src : sources) {
@@ -167,11 +168,11 @@ std::vector<uint64_t> TransferManager::addTransferJobs(const std::vector<std::st
     return ids;
 }
 
-void TransferManager::addSource(const std::string& sourcePath) {
-    addTransferJob(sourcePath, target_dir_.empty() ? "." : target_dir_, options_.mode);
+void TransferManager::addSource(const std::wstring& sourcePath) {
+    addTransferJob(sourcePath, target_dir_.empty() ? L"." : target_dir_, options_.mode);
 }
 
-void TransferManager::addSource(const std::string& sourcePath, const std::string& destinationDir) {
+void TransferManager::addSource(const std::wstring& sourcePath, const std::wstring& destinationDir) {
     addTransferJob(sourcePath, destinationDir, options_.mode);
 }
 
@@ -287,7 +288,7 @@ void TransferManager::discoveryWorker() {
     discovery_finished_.store(true, std::memory_order_release);
 }
 
-void TransferManager::scanSource(const std::string& srcPath, const std::string& targetBase) {
+void TransferManager::scanSource(const std::wstring& srcPath, const std::wstring& targetBase) {
     uint64_t jId = next_job_id_++;
     {
         std::lock_guard<std::mutex> jLock(job_mutex_);
@@ -302,7 +303,7 @@ void TransferManager::scanSource(const std::string& srcPath, const std::string& 
     enqueueFolderScan(jId, srcPath, targetBase);
 }
 
-void TransferManager::enqueueFolderScan(uint64_t jobId, const std::string& srcPath, const std::string& targetBase) {
+void TransferManager::enqueueFolderScan(uint64_t jobId, const std::wstring& srcPath, const std::wstring& targetBase) {
     FileStat st = fs_->statFile(srcPath, false);
     if (!st.exists) {
         error_count_++;
@@ -317,18 +318,18 @@ void TransferManager::enqueueFolderScan(uint64_t jobId, const std::string& srcPa
         return;
     }
 
-    std::string baseName;
+    std::wstring baseName;
     try {
         fs::path p(srcPath);
-        baseName = p.filename().string();
-        if (baseName.empty() || baseName == ".") {
-            baseName = p.parent_path().filename().string();
+        baseName = p.filename().wstring();
+        if (baseName.empty() || baseName == L".") {
+            baseName = p.parent_path().filename().wstring();
         }
     } catch (...) {
-        baseName = "copied_item";
+        baseName = L"copied_item";
     }
 
-    std::string destRootItem = (targetBase.back() == '/') ? (targetBase + baseName) : (targetBase + "/" + baseName);
+    std::wstring destRootItem = PathCombine(targetBase, baseName);
 
     if (st.is_directory && !st.is_symlink) {
         FolderScanProgress sp;
@@ -438,7 +439,7 @@ bool TransferManager::processScanTask(const FolderScanTask& task) {
     uint32_t foundFiles = 0;
     uint32_t foundDirs = 0;
     uint64_t foundBytes = 0;
-    std::string lastItem = task.current_src_dir;
+    std::wstring lastItem = task.current_src_dir;
 
     std::vector<TransferItem> newItems;
     std::vector<FolderScanTask> newSubtasks;
@@ -447,7 +448,7 @@ bool TransferManager::processScanTask(const FolderScanTask& task) {
     for (const auto& entry : entries) {
         if (cancelled_.load(std::memory_order_relaxed)) break;
 
-        std::string childDst = task.current_dst_dir + "/" + entry.name;
+        std::wstring childDst = PathCombine(task.current_dst_dir, entry.name);
         TransferItem item;
         item.id = next_item_id_++;
         item.job_id = task.job_id;
@@ -653,7 +654,7 @@ void TransferManager::writerWorker(size_t /*threadIndex*/) {
             if (written < 0 || static_cast<size_t>(written) != chunk->bytes_valid) {
                 int err = errno ? errno : EIO;
                 if (isCriticalIoError(err)) {
-                    QuestionAnswer act = handleCriticalIo("chunk write offset " + std::to_string(chunk->dst_offset), err, "write");
+                    QuestionAnswer act = handleCriticalIo(L"chunk write offset " + std::to_wstring(chunk->dst_offset), err, L"write");
                     if (act == QuestionAnswer::RETRY) {
                         // User recovered disk space or device; retry writing
                         written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
@@ -686,23 +687,23 @@ bool TransferManager::isCriticalIoError(int err) {
     return (err == ENOSPC || err == EDQUOT || err == EROFS || err == EIO || err == EBUSY || err == ENODEV);
 }
 
-std::string TransferManager::getIoErrorReason() const {
+std::wstring TransferManager::getIoErrorReason() const {
     std::lock_guard<std::mutex> lock(io_error_mutex_);
     return io_error_reason_;
 }
 
-QuestionAnswer TransferManager::handleCriticalIo(const std::string& path, int errCode, const std::string& opName) {
+QuestionAnswer TransferManager::handleCriticalIo(const std::wstring& path, int errCode, const std::wstring& opName) {
     had_critical_io_error_.store(true, std::memory_order_relaxed);
     io_error_paused_.store(true, std::memory_order_release);
 
     std::string errStr = std::strerror(errCode);
-    std::string reason = (errCode == ENOSPC) ? "No space left on device (ENOSPC)" :
-                         (errCode == EDQUOT) ? "Disk quota exceeded (EDQUOT)" :
-                         (errCode == EROFS)  ? "Read-only file system (EROFS)" :
-                         ("Critical I/O error: " + errStr + " (errno " + std::to_string(errCode) + ")");
+    std::wstring reason = (errCode == ENOSPC) ? L"No space left on device (ENOSPC)" :
+                          (errCode == EDQUOT) ? L"Disk quota exceeded (EDQUOT)" :
+                          (errCode == EROFS)  ? L"Read-only file system (EROFS)" :
+                          (L"Critical I/O error: " + NarrowToWide(errStr) + L" (errno " + std::to_wstring(errCode) + L")");
     {
         std::lock_guard<std::mutex> lock(io_error_mutex_);
-        io_error_reason_ = reason + " during " + opName + " on: " + path;
+        io_error_reason_ = reason + L" during " + opName + L" on: " + path;
     }
 
     TransferQuestion q;
@@ -711,7 +712,7 @@ QuestionAnswer TransferManager::handleCriticalIo(const std::string& path, int er
     q.source_path = path;
     q.target_path = path;
     q.error_code = errCode;
-    q.message = reason + ". All transfers paused to preserve data integrity. Free storage space or fix device, then select [Retry] or [Cancel].";
+    q.message = reason + L". All transfers paused to preserve data integrity. Free storage space or fix device, then select [Retry] or [Cancel].";
 
     active_critical_question_id_ = q.id;
 
@@ -792,19 +793,19 @@ bool TransferManager::recoverCriticalIo(bool retry) {
     }
 }
 
-std::string TransferManager::generateUniqueRenamedPath(IFileSystem* fs, const std::string& originalPath) {
+std::wstring TransferManager::generateUniqueRenamedPath(IFileSystem* fs, const std::wstring& originalPath) {
     try {
         fs::path p(originalPath);
         fs::path parent = p.parent_path();
-        std::string stem = p.stem().string();
-        std::string ext = p.extension().string();
+        std::wstring stem = p.stem().wstring();
+        std::wstring ext = p.extension().wstring();
 
         int counter = 1;
         while (counter < 100000) {
-            std::string candidateName = stem + " (" + std::to_string(counter) + ")" + ext;
+            std::wstring candidateName = stem + L" (" + std::to_wstring(counter) + L")" + ext;
             fs::path candidate = parent.empty() ? fs::path(candidateName) : (parent / candidateName);
-            if (!fs->exists(candidate.string())) {
-                return candidate.string();
+            if (!fs->exists(candidate.wstring())) {
+                return candidate.wstring();
             }
             counter++;
         }
@@ -819,7 +820,7 @@ bool TransferManager::processSingleItem(TransferItem& item) {
     {
         std::lock_guard<std::mutex> lock(skipped_dirs_mutex_);
         for (const auto& prefix : skipped_dir_prefixes_) {
-            if (item.src_path == prefix || item.src_path.rfind(prefix + "/", 0) == 0) {
+            if (item.src_path == prefix || item.src_path.rfind(prefix + L"/", 0) == 0) {
                 // Item is inside a skipped folder tree
                 return true;
             }
@@ -844,7 +845,7 @@ bool TransferManager::transferDirectory(TransferItem& item) {
             // Destination is a file/link: ask user for overwrite, skip, or rename
             QuestionAnswer answer = resolveQuestion(
                 item, QuestionType::FOLDER_DESTINATION_IS_FILE,
-                "Destination exists and is a file, but source is a folder: " + item.dst_path);
+                L"Destination exists and is a file, but source is a folder: " + item.dst_path);
             if (answer == QuestionAnswer::CANCEL) {
                 cancel();
                 return false;
@@ -859,7 +860,7 @@ bool TransferManager::transferDirectory(TransferItem& item) {
             }
             if (answer == QuestionAnswer::RENAME) {
                 // Rename destination file preserving its extension, then make directory
-                std::string renamedDst = generateUniqueRenamedPath(fs_.get(), item.dst_path);
+                std::wstring renamedDst = generateUniqueRenamedPath(fs_.get(), item.dst_path);
                 bool okRename = fs_->renameFile(item.dst_path, renamedDst);
                 if (!okRename) {
                     error_count_++;
@@ -896,11 +897,11 @@ bool TransferManager::transferDirectory(TransferItem& item) {
     return true;
 }
 
-std::string TransferManager::recomputeRelativeSymlink(const std::string& rawTarget,
-                                                      const std::string& symlinkSrcPath,
-                                                      const std::string& symlinkDstPath,
-                                                      const std::string& rootSrcTree) {
-    if (rawTarget.empty() || rawTarget[0] == '/') {
+std::wstring TransferManager::recomputeRelativeSymlink(const std::wstring& rawTarget,
+                                                      const std::wstring& symlinkSrcPath,
+                                                      const std::wstring& symlinkDstPath,
+                                                      const std::wstring& rootSrcTree) {
+    if (rawTarget.empty() || rawTarget[0] == L'/') {
         // Absolute symlink: copied as is
         return rawTarget;
     }
@@ -911,8 +912,8 @@ std::string TransferManager::recomputeRelativeSymlink(const std::string& rawTarg
         fs::path canonicalRootSrc = fs::weakly_canonical(rootSrcTree);
 
         // Check if the target is inside the source subtree
-        auto rootStr = canonicalRootSrc.string();
-        auto targetStr = canonicalTarget.string();
+        auto rootStr = canonicalRootSrc.wstring();
+        auto targetStr = canonicalTarget.wstring();
 
         bool insideSourceTree = false;
         if (targetStr.rfind(rootStr, 0) == 0) {
@@ -928,7 +929,7 @@ std::string TransferManager::recomputeRelativeSymlink(const std::string& rawTarg
             // Recompute relative path so destination points to the exact same external target!
             fs::path dstDir = fs::path(symlinkDstPath).parent_path();
             fs::path recomputed = fs::relative(canonicalTarget, dstDir);
-            return recomputed.string();
+            return recomputed.wstring();
         }
     } catch (...) {
         return rawTarget;
@@ -936,19 +937,19 @@ std::string TransferManager::recomputeRelativeSymlink(const std::string& rawTarg
 }
 
 bool TransferManager::transferSymlink(TransferItem& item) {
-    std::string rawTarget = fs_->readSymlink(item.src_path);
+    std::wstring rawTarget = fs_->readSymlink(item.src_path);
     if (rawTarget.empty()) {
         return false;
     }
 
-    std::string finalTarget = recomputeRelativeSymlink(rawTarget, item.src_path, item.dst_path, item.root_src);
+    std::wstring finalTarget = recomputeRelativeSymlink(rawTarget, item.src_path, item.dst_path, item.root_src);
 
     // Collision check for symlink destination
     if (fs_->exists(item.dst_path)) {
         // Link case: ask user for overwrite or skip.
         QuestionAnswer answer = resolveQuestion(
             item, QuestionType::LINK_DESTINATION_EXISTS,
-            "Target destination already exists for symlink: " + item.dst_path);
+            L"Target destination already exists for symlink: " + item.dst_path);
         if (answer == QuestionAnswer::CANCEL) {
             cancel();
             return false;
@@ -980,7 +981,7 @@ bool TransferManager::transferSymlink(TransferItem& item) {
     return ok;
 }
 
-QuestionAnswer TransferManager::resolveQuestion(TransferItem& item, QuestionType type, const std::string& msg, int err) {
+QuestionAnswer TransferManager::resolveQuestion(TransferItem& item, QuestionType type, const std::wstring& msg, int err) {
     // Check if we already have a remembered answer for this QuestionType
     {
         std::lock_guard<std::mutex> lock(question_mutex_);
@@ -1081,7 +1082,7 @@ bool TransferManager::transferFile(TransferItem& item) {
     // Check move with read-only source requirement
     if (options_.mode == TransferMode::MOVE && srcSt.is_read_only) {
         QuestionAnswer answer = resolveQuestion(item, QuestionType::MOVE_READ_ONLY_SOURCE,
-                                                "Source file is read-only. Proceed with move: " + item.src_path);
+                                                L"Source file is read-only. Proceed with move: " + item.src_path);
         if (answer == QuestionAnswer::CANCEL) {
             cancel();
             return false;
@@ -1105,7 +1106,7 @@ bool TransferManager::transferFile(TransferItem& item) {
         if (isRealDir) {
             QuestionAnswer answer = resolveQuestion(
                 item, QuestionType::FILE_DESTINATION_IS_FOLDER,
-                "Destination exists and is a folder, but source is a file: " + item.dst_path);
+                L"Destination exists and is a folder, but source is a file: " + item.dst_path);
             if (answer == QuestionAnswer::CANCEL) {
                 cancel();
                 return false;
@@ -1115,8 +1116,8 @@ bool TransferManager::transferFile(TransferItem& item) {
             }
             // PLACE_INTO: place as destination/file/file
             fs::path srcP(item.src_path);
-            std::string fname = srcP.filename().string();
-            item.dst_path = (item.dst_path.back() == '/') ? (item.dst_path + fname) : (item.dst_path + "/" + fname);
+            std::wstring fname = srcP.filename().wstring();
+            item.dst_path = PathCombine(item.dst_path, fname);
 
             // Re-evaluate if destination/file/file already exists
             dstExists = fs_->exists(item.dst_path);
@@ -1129,9 +1130,10 @@ bool TransferManager::transferFile(TransferItem& item) {
         // Case: destination/file exists and is a regular file or link
         if (dstExists && !isRealDir) {
             FileStat dstStatFollow = fs_->statFile(item.dst_path, true);
+            std::wstring fileTypeStr = dstLStat.is_symlink ? L"symlink" : L"file";
             QuestionAnswer answer = resolveQuestion(
                 item, QuestionType::OVERWRITE_EXISTING,
-                "Destination file already exists (" + std::string(dstLStat.is_symlink ? "symlink" : "file") + "): " + item.dst_path);
+                L"Destination file already exists (" + fileTypeStr + L"): " + item.dst_path);
 
             if (answer == QuestionAnswer::CANCEL) {
                 cancel();
@@ -1182,7 +1184,7 @@ bool TransferManager::transferFile(TransferItem& item) {
     int srcFd = fs_->openFile(item.src_path, O_RDONLY);
     if (srcFd < 0) {
         QuestionAnswer ans = resolveQuestion(item, QuestionType::PERMISSION_DENIED,
-                                             "Cannot open source file: " + item.src_path, errno);
+                                             L"Cannot open source file: " + item.src_path, errno);
         if (ans == QuestionAnswer::CANCEL) cancel();
         return false;
     }
@@ -1191,7 +1193,7 @@ bool TransferManager::transferFile(TransferItem& item) {
     if (dstFd < 0) {
         int err = errno ? errno : EIO;
         if (isCriticalIoError(err)) {
-            QuestionAnswer act = handleCriticalIo(item.dst_path, err, "open destination");
+            QuestionAnswer act = handleCriticalIo(item.dst_path, err, L"open destination");
             if (act == QuestionAnswer::RETRY) {
                 dstFd = fs_->openFile(item.dst_path, dstFlags, srcSt.mode ? (srcSt.mode & 0777) : 0644);
             }
@@ -1200,7 +1202,7 @@ bool TransferManager::transferFile(TransferItem& item) {
     if (dstFd < 0) {
         fs_->closeFile(srcFd);
         QuestionAnswer ans = resolveQuestion(item, QuestionType::PERMISSION_DENIED,
-                                             "Cannot open destination file: " + item.dst_path, errno);
+                                             L"Cannot open destination file: " + item.dst_path, errno);
         if (ans == QuestionAnswer::CANCEL) cancel();
         return false;
     }

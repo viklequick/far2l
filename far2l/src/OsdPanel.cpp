@@ -521,7 +521,7 @@ std::wstring OsdPanel::BuildProgressBarString(int64_t current, int64_t minVal, i
     std::wstring percentStr = L"";
     if (showPercentage) {
         std::wostringstream oss;
-        oss << L" [" << std::setw(3) << percent << L"%]";
+        oss << std::setw(3) << percent << L"%";
         percentStr = oss.str();
     }
 
@@ -684,6 +684,10 @@ static std::vector<std::wstring> GenerateFloatVariants(double value,  std::wstri
         result.push_back(ss.str());
     }
     return result;
+}
+
+std::wstring OsdPanel::BuildRealString(double v, size_t maxWidth) {
+	return Fit(GenerateFloatVariants(v, L""), maxWidth);
 }
 
 std::wstring OsdPanel::BuildPercentString(double value, size_t maxWidth) {

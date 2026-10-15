@@ -47,13 +47,13 @@ enum class ScanState {
 // Independent progress metrics for a scanned folder in the copy queue
 struct FolderScanProgress {
     uint64_t job_id = 0;
-    std::string folder_path;
-    std::string destination_dir;
+    std::wstring folder_path;
+    std::wstring destination_dir;
     ScanState state = ScanState::QUEUED;
     uint32_t scanned_files = 0;
     uint32_t scanned_folders = 0;
     uint64_t scanned_bytes = 0;
-    std::string current_item;
+    std::wstring current_item;
     double elapsed_ms = 0.0;
     bool is_completed = false;
 };
@@ -76,8 +76,8 @@ struct FileStat {
 };
 
 struct DirEntry {
-    std::string name;
-    std::string full_path;
+    std::wstring name;
+    std::wstring full_path;
     bool is_directory = false;
     bool is_symlink = false;
     off_t size = 0;
@@ -86,23 +86,23 @@ struct DirEntry {
 // Dynamic transfer job request with individual destination folder
 struct TransferJobRequest {
     uint64_t job_id = 0;
-    std::string source_path;
-    std::string destination_dir;
+    std::wstring source_path;
+    std::wstring destination_dir;
     TransferMode mode = TransferMode::COPY;
 };
 
 struct TransferQuestion {
     uint64_t id = 0;
     QuestionType type = QuestionType::OVERWRITE_EXISTING;
-    std::string source_path;
-    std::string target_path;
-    std::string message;
+    std::wstring source_path;
+    std::wstring target_path;
+    std::wstring message;
     off_t source_size = 0;
     off_t target_size = 0;
     int64_t source_mtime = 0;
     int64_t target_mtime = 0;
     int error_code = 0;
-    std::string details;
+    std::wstring details;
 };
 
 struct TransferOptions {
@@ -125,8 +125,8 @@ struct TransferOptions {
 
 struct TransferProgress {
     uint64_t job_id = 0;                    // 0 for total session, or individual job_id
-    std::string source_path;               // Source path for this transfer job
-    std::string destination_dir;           // Destination directory for this job
+    std::wstring source_path;               // Source path for this transfer job
+    std::wstring destination_dir;           // Destination directory for this job
     TransferMode mode = TransferMode::COPY;
     bool is_completed = false;             // True when all items of this job are transferred
 
@@ -142,11 +142,11 @@ struct TransferProgress {
     uint32_t active_jobs_count = 0;
     double current_speed_mb_s = 0.0;
     double progress_percent = 0.0;
-    std::string current_source_item;
-    std::string current_target_item;
+    std::wstring current_source_item;
+    std::wstring current_target_item;
     double elapsed_seconds = 0.0;
     bool is_paused_for_io_error = false;
-    std::string io_error_reason;
+    std::wstring io_error_reason;
     size_t buffer_ring_size_mb = 64;
 
     // Per-folder independent scanning progress

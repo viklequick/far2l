@@ -20,10 +20,10 @@
 struct TransferItem {
     uint64_t id = 0;
     uint64_t job_id = 0;
-    std::string src_path;
-    std::string dst_path;
-    std::string root_src;     // Original source tree root for relative symlink calculation
-    std::string root_dst;     // Original destination directory
+    std::wstring src_path;
+    std::wstring dst_path;
+    std::wstring root_src;     // Original source tree root for relative symlink calculation
+    std::wstring root_dst;     // Original destination directory
     bool is_directory = false;
     bool is_symlink = false;
     off_t size = 0;
@@ -55,22 +55,22 @@ public:
 
     // Start transfer operation with initial source paths and target destination directory
     // Target is always a folder. Sources can be files or folders.
-    bool start(const std::vector<std::string>& sources = {}, const std::string& targetDir = "");
+    bool start(const std::vector<std::wstring>& sources = {}, const std::wstring& targetDir = L"");
 
     // Start as a persistent global/common background transfer service
     bool startService();
     void stopService();
 
     // Dynamic multi-destination transfers: add files/folders with individual target destinations
-    uint64_t addTransferJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode = TransferMode::COPY);
-    uint64_t addDynamicJob(const std::string& sourcePath, const std::string& destinationDir, TransferMode mode = TransferMode::COPY) {
+    uint64_t addTransferJob(const std::wstring& sourcePath, const std::wstring& destinationDir, TransferMode mode = TransferMode::COPY);
+    uint64_t addDynamicJob(const std::wstring& sourcePath, const std::wstring& destinationDir, TransferMode mode = TransferMode::COPY) {
         return addTransferJob(sourcePath, destinationDir, mode);
     }
-    std::vector<uint64_t> addTransferJobs(const std::vector<std::string>& sources, const std::string& destinationDir, TransferMode mode = TransferMode::COPY);
+    std::vector<uint64_t> addTransferJobs(const std::vector<std::wstring>& sources, const std::wstring& destinationDir, TransferMode mode = TransferMode::COPY);
 
     // Dynamic background transfer: add new sources to copy queue while transfer is in progress
-    void addSource(const std::string& sourcePath);
-    void addSource(const std::string& sourcePath, const std::string& destinationDir);
+    void addSource(const std::wstring& sourcePath);
+    void addSource(const std::wstring& sourcePath, const std::wstring& destinationDir);
 
     void setAnswerForType(QuestionType type, QuestionAnswer answer) {
         std::lock_guard<std::mutex> lock(question_mutex_);
@@ -95,7 +95,7 @@ public:
     bool isPaused() const { return paused_.load(std::memory_order_acquire) || io_error_paused_.load(std::memory_order_acquire); }
     bool isCancelled() const { return cancelled_.load(std::memory_order_acquire); }
     bool isPausedForIoError() const { return io_error_paused_.load(std::memory_order_acquire); }
-    std::string getIoErrorReason() const;
+    std::wstring getIoErrorReason() const;
 
     // Retry or resolve critical I/O error (e.g. after freeing disk space for ENOSPC)
     bool recoverCriticalIo(bool retry);
@@ -156,7 +156,7 @@ private:
     std::shared_ptr<IFileSystem> fs_;
     TransferOptions options_;
 
-    std::string target_dir_;
+    std::wstring target_dir_;
     std::unique_ptr<BufferRing> buffer_ring_;
 
     // Threading
@@ -186,7 +186,7 @@ private:
 
     // Critical I/O pause & recovery state
     std::atomic<bool> io_error_paused_{false};
-    std::string io_error_reason_;
+    std::wstring io_error_reason_;
     mutable std::mutex io_error_mutex_;
     std::condition_variable cv_io_recover_;
     uint64_t active_critical_question_id_{0};
@@ -213,8 +213,8 @@ private:
     std::atomic<bool> had_critical_io_error_{false};
 
     std::chrono::steady_clock::time_point start_time_;
-    std::string current_source_display_;
-    std::string current_target_display_;
+    std::wstring current_source_display_;
+    std::wstring current_target_display_;
     mutable std::mutex display_mutex_;
 
     // Callbacks
@@ -231,10 +231,10 @@ private:
 
     // Critical I/O handling
     static bool isCriticalIoError(int err);
-    QuestionAnswer handleCriticalIo(const std::string& path, int errCode, const std::string& opName);
+    QuestionAnswer handleCriticalIo(const std::wstring& path, int errCode, const std::wstring& opName);
 
     // Transfer algorithms
-    void scanSource(const std::string& srcPath, const std::string& targetBase);
+    void scanSource(const std::wstring& srcPath, const std::wstring& targetBase);
     bool processSingleItem(TransferItem& item);
     bool transferFile(TransferItem& item);
     bool transferDirectory(TransferItem& item);
@@ -247,26 +247,26 @@ private:
     bool transferChunked(TransferItem& item, int srcFd, int dstFd);
 
     // Modal Interaction
-    QuestionAnswer resolveQuestion(TransferItem& item, QuestionType type, const std::string& msg, int err = 0);
-    static std::string generateUniqueRenamedPath(IFileSystem* fs, const std::string& originalPath);
+    QuestionAnswer resolveQuestion(TransferItem& item, QuestionType type, const std::wstring& msg, int err = 0);
+    static std::wstring generateUniqueRenamedPath(IFileSystem* fs, const std::wstring& originalPath);
 
     // Skipped directory tree tracking (when user skips a folder)
-    std::vector<std::string> skipped_dir_prefixes_;
+    std::vector<std::wstring> skipped_dir_prefixes_;
     mutable std::mutex skipped_dirs_mutex_;
 
     // Symlink path manipulation
-    std::string recomputeRelativeSymlink(const std::string& rawTarget,
-                                         const std::string& symlinkSrcPath,
-                                         const std::string& symlinkDstPath,
-                                         const std::string& rootSrcTree);
+    std::wstring recomputeRelativeSymlink(const std::wstring& rawTarget,
+                                         const std::wstring& symlinkSrcPath,
+                                         const std::wstring& symlinkDstPath,
+                                         const std::wstring& rootSrcTree);
 
     // Multithreaded Folder Scanning via shared reader/worker thread pool
     struct FolderScanTask {
         uint64_t job_id = 0;
-        std::string current_src_dir;
-        std::string current_dst_dir;
-        std::string root_src;
-        std::string root_dst;
+        std::wstring current_src_dir;
+        std::wstring current_dst_dir;
+        std::wstring root_src;
+        std::wstring root_dst;
     };
 
     mutable std::mutex scan_mutex_;
@@ -278,9 +278,9 @@ private:
     std::atomic<uint64_t> total_scanned_bytes_{0};
     std::atomic<bool> any_scanning_active_{false};
 
-    void enqueueFolderScan(uint64_t jobId, const std::string& srcPath, const std::string& targetBase);
+    void enqueueFolderScan(uint64_t jobId, const std::wstring& srcPath, const std::wstring& targetBase);
     bool processScanTask(const FolderScanTask& task);
-    void updateJobScanProgress(uint64_t jobId, const std::string& currentItem, uint32_t newFiles, uint32_t newFolders, uint64_t newBytes);
+    void updateJobScanProgress(uint64_t jobId, const std::wstring& currentItem, uint32_t newFiles, uint32_t newFolders, uint64_t newBytes);
     void completeJobScan(uint64_t jobId);
 
     // Per-job copy progress tracking

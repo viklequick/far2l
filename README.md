@@ -56,7 +56,7 @@ Final configuration: Continuous improvement. Continuous integration. Continuous 
 There is no final release. There is only the next release. And the next. And the next.
 
 # far2l [![tag](https://img.shields.io/github/tag/elfmz/far2l.svg)](https://github.com/elfmz/far2l/tags)
-Linux fork of fork of FAR Manager v2 (http://farmanager.com/ -> https://github.com/elfmz/far2l -> 
+Linux orthodox file manager were started as fork of FAR Manager v2 (http://farmanager.com/ -> https://github.com/elfmz/far2l -> 
 https://github.com/far2l/far2l -> you are here).   
 
 Works also on macOS and BSD.

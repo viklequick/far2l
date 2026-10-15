@@ -707,7 +707,7 @@ void Manager::DeactivateFrame(Frame *Deactivated, int Direction)
 	_MANAGER(CleverSysLog clv(L"Manager::DeactivateFrame (Frame *Deactivated,int Direction)"));
 	_MANAGER(SysLog(L"Deactivated=%p, Direction=%d", Deactivated, Direction));
 
-	if (Direction) {
+	if (Direction != 0) {
 		// earlier it was:
 		// FramePos+= Direction;
 

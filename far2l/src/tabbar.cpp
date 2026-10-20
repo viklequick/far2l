@@ -197,29 +197,29 @@ void TabBar::EnsureActiveVisible()
 {
     if (tabPos.size() < 2 || activeTab < 0 || activeTab >= (int)tabPos.size()) return;
 
-	// left case is simple
-	if (activeTab < visibleTab) {
-		visibleTab = activeTab;
-		return;
-	}
-
 	size_t maxWidth;
 	int gap;
-
-    size_t N = tabPos.size();
-	std::vector<size_t> leafWidths(N);
+	std::vector<size_t> leafWidths(tabPos.size());
 
 	layout(maxWidth, gap, leafWidths);
+	ensureActiveVisible(maxWidth, gap, leafWidths);
+}
+
+void TabBar::ensureActiveVisible(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths) 
+{
+    if (tabPos.size() < 2 || activeTab < 0 || activeTab >= (int)tabPos.size()) return;
+
+    size_t N = tabPos.size();
 	int CurX = 0;
 	int sepw = cells(L"│🧷📲📎 ✘");
+
+	fprintf(stderr, "ensureActiveVisible: tabs=%d active=%d visible=%d\n", (int)N, activeTab, visibleTab);
 
     for (size_t i = visibleTab; i < N; ++i) {
         CurX += tabPos[i].w + sepw;
 		if (CurX < (int)maxWidth && (int)i == activeTab) // active tab is visible
 			return;
     }
-
-    if (activeTab < 0 || activeTab >= (int)tabPos.size()) return;
 
     // Now we have found the active tab is not visible, we need to scroll tab bar horizontally
     CurX = 0;
@@ -230,6 +230,12 @@ void TabBar::EnsureActiveVisible()
         }
     	CurX += tabPos[i].w + sepw;
     }
+
+	// fallback: left case is simple
+	if (activeTab < visibleTab) {
+		visibleTab = activeTab;
+		return;
+	}
 
     visibleTab = activeTab; // fallback
 }
@@ -306,6 +312,7 @@ int TabBar::render()
 	std::vector<size_t> leafWidths(N);
 
 	layout(maxWidth, gap, leafWidths);
+	ensureActiveVisible(maxWidth, gap, leafWidths);
 	 
 	int activeIndex = activeTab;
 

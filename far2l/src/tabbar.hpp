@@ -92,6 +92,7 @@ protected:
 
 	int render();
 	void layout(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths);
+	void ensureActiveVisible(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths);
 	void setHoverMask(int tabNo, 
 		bool tab, bool del, bool leftPin, bool rightPin, 
 		bool more, bool menu, bool console,

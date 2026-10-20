@@ -1498,7 +1498,7 @@ int FilePanels::SetTabNames()
 
 	TopTabBar.SetActive(TabActive);
 	TopTabBar.SetHovered(TabHovered);
-	TopTabBar.EnsureActiveVisible();
+	// TopTabBar.EnsureActiveVisible();
 	TopTabBar.Redraw();
 	return 0;
 }

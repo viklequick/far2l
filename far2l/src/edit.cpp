@@ -2330,11 +2330,15 @@ void Edit::ProcessPasteEventFromPrimary()
 			fprintf(stderr, "Middle button clicked => looking for clip text\n");
 
 			bool IsVertical;	
-			wchar_t *ClipText = clip.Paste(IsVertical, -1);
+			std::optional<std::wstring> clipData = clip.Paste(IsVertical);
+			wchar_t* ClipText = clipData ? wcsdup(clipData->c_str()) : nullptr;
 
-			if (ClipText) fprintf(stderr, "Middle button clicked => `%ls`\n", ClipText);
+			if (ClipText){ 
+				fprintf(stderr, "Middle button clicked => `%ls`\n", ClipText);
+   				DoPaste(ClipText);
+                free(ClipText);
+            }
 
-			DoPaste(ClipText);
 			clip.Close();
 		}
     	clip.SetUseSelectionWhenPossible(0);

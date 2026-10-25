@@ -3988,13 +3988,11 @@ int Editor::AutoGrabToClipboard ()
 		return status;
 	}
 
-	wchar_t *CopyData = Block2Text(nullptr);
-	if (!CopyData) return status;
+	std::wstring _s;
+	Block2Text(_s);
 
-	if (wcslen(CopyData) < 1) {
-		free(CopyData);
-		return status;
-	}
+	const wchar_t *CopyData = _s.c_str();
+	if (!CopyData || !*CopyData) return status;
 
 	Clipboard clip;
 	if(clip.SetUseSelectionWhenPossible(1) > 0) {
@@ -4006,7 +4004,6 @@ int Editor::AutoGrabToClipboard ()
 	}
 
 	if (CopyData) {
-		free(CopyData);
 		status = 1;
 	}
 

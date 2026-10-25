@@ -465,11 +465,11 @@ void *wxClipboardBackend::OnClipboardSetData(UINT format, void *data)
 		}
 #endif
 
-		g_wx_data_to_clipboard->Add(new wxTextDataObjectTweaked(wx_str));
+		AddDataToClipboard(new wxTextDataObjectTweaked(wx_str));
 		wxCustomDataObject *cdo = new wxCustomDataObject(wxT("text/plain;charset=utf-8"));
 		const auto & tmp = wx_str.ToStdString();
 		cdo->SetData(tmp.size(), tmp.c_str()); // not including ending NUL char
-		g_wx_data_to_clipboard->Add(cdo);
+		AddDataToClipboard(cdo);
 
 #if (MAC_CLIPBOARD_HACK == 1)
 		CopyToPasteboard(cc.first, cc.second);
@@ -498,11 +498,11 @@ void *wxClipboardBackend::OnClipboardSetData(UINT format, void *data)
 		}
 #endif
 
-		g_wx_data_to_clipboard->Add(new wxTextDataObjectTweaked(wx_str));
+		AddDataToClipboard(new wxTextDataObjectTweaked(wx_str));
 
 		wxCustomDataObject *cdo = new wxCustomDataObject(wxT("text/plain;charset=utf-8"));
 		cdo->SetData(cc.second, cc.first); // not including ending NUL char
-		g_wx_data_to_clipboard->Add(cdo);
+		AddDataToClipboard(cdo);
 
 #if (MAC_CLIPBOARD_HACK == 1)
 		CopyToPasteboard(cc.first, cc.second);
@@ -511,7 +511,7 @@ void *wxClipboardBackend::OnClipboardSetData(UINT format, void *data)
 	} else if (format == CF_HTML) {
 		const auto &cc = ClipboardCharsAndCountWithoutNUL<char>(data, len);
 		auto *cdo = new wxHTMLDataObject(wxString::FromUTF8(cc.first, cc.second));
-		g_wx_data_to_clipboard->Add(cdo);
+		AddDataToClipboard(cdo);
 
 	} else {
 		const wxDataFormat *data_format = g_wx_custom_formats.Lookup(format);

@@ -7,7 +7,7 @@
 
 struct IOSC52Interactor
 {
-	virtual void OSC52SetClipboard(const char *text, bool is_primary) = 0;
+	virtual void OSC52SetClipboard(const std::string &text, bool is_primary) = 0;
 	virtual std::string OSC52RequestClipboardData(bool is_primary) = 0;
 };
 

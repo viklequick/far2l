@@ -9,19 +9,16 @@
 #include <utils.h>
 #include <dlfcn.h>
 
-// wxOSX 3.3.3 pastes text with interleaved NULs, see https://github.com/wxWidgets/wxWidgets/issues/26680
 #if defined(__APPLE__) && (wxMAJOR_VERSION == 3) && (wxMINOR_VERSION == 3) && (wxRELEASE_NUMBER == 3)
-#define CLIPBOARD_NATIVE_ONLY 1
-#else
-#define CLIPBOARD_NATIVE_ONLY 0
-#endif
-
+// wxOSX 3.3.3 pastes text with interleaved NULs, see https://github.com/wxWidgets/wxWidgets/issues/26680
+#define MAC_CLIPBOARD_HACK 2
+#include "Mac/pasteboard.h"
+#elif defined(__APPLE__) && (wxMAJOR_VERSION == 3) && ((wxMINOR_VERSION == 1) || CLIPBOARD_NATIVE_ONLY)
 // #698: Mac: Copying to clipboard stopped working in wx 3.1.
-#if defined(__APPLE__) && (wxMAJOR_VERSION == 3) && ((wxMINOR_VERSION == 1) || CLIPBOARD_NATIVE_ONLY)
-#define CLIPBOARD_HACK 1
+#define MAC_CLIPBOARD_HACK 1
 #include "Mac/pasteboard.h"
 #else
-#define CLIPBOARD_HACK 0
+#define MAC_CLIPBOARD_HACK 0
 #endif
 
 #include "wxClipboardBackend.h"
@@ -149,7 +146,7 @@ void wxClipboardBackend::OnClipboardClose()
 		fprintf(stderr, "CloseClipboard without data\n");
 	}
 
-#if !defined(__WXGTK__) && !CLIPBOARD_NATIVE_ONLY
+#if !defined(__WXGTK__) && (MAC_CLIPBOARD_HACK != 2)
 	// it never did what supposed to, and under Ubuntu 22.04/Wayland it started to kill gnome-shell
 	wxTheClipboard->Flush();
 #endif
@@ -443,59 +440,78 @@ void *wxClipboardBackend::OnClipboardSetData(UINT format, void *data)
 	return data;
 #endif
 
-#ifdef __WXQT__ 
-	if (wxClipboardType == WxClipboardType::Primary) {
-		wxString wx_str((const wchar_t *)data);
-		setTextAsPrimarySelection(wx_str);
-		return data;
-	}
-#endif
-
-#if defined(__WXGTK__) && defined(__WXGTK3__)
-	if (wxClipboardType == WxClipboardType::Primary && detectWxBackend() == WxBackendType::NativeWayland) {
-		wxString wx_str((const wchar_t *)data);
-		setTextAsPrimarySelection(wx_str);
-		return data;
-	}
-#endif
-
 	size_t len = WINPORT(ClipboardSize)(data);
 	fprintf(stderr, "SetClipboardData: format=%u len=%lu\n", format, (unsigned long)len);
 	if (format == CF_UNICODETEXT) {
-
-		wxString wx_str((const wchar_t *)data);
-
-		AddDataToClipboard(new wxTextDataObjectTweaked(wx_str));
-
-#ifndef __APPLE__
-		// needed by apps that look for the MIME type rather than for wxDF_TEXT;
-		// on macOS it only forces the composite that corrupts the UTF-8 flavor
-		wxCustomDataObject *cdo = new wxCustomDataObject(wxT("text/plain;charset=utf-8"));
-		const std::string &tmp = wx_str.ToStdString();
-		cdo->SetData(tmp.size(), tmp.c_str()); // not including ending NUL char
-		AddDataToClipboard(cdo);
+		const auto &cc = ClipboardCharsAndCountWithoutNUL<wchar_t>(data, len);
+#if (MAC_CLIPBOARD_HACK == 2)
+		CopyToPasteboard(cc.first, cc.second);
+		return data;
 #endif
 
-#if (CLIPBOARD_HACK)
-		CopyToPasteboard((const wchar_t *)data);
+		wxString wx_str(cc.first, cc.second);
+
+#ifdef __WXQT__ 
+		if (wxClipboardType == WxClipboardType::Primary) {
+			setTextAsPrimarySelection(wx_str);
+			return data;
+		}
+#endif
+
+#if defined(__WXGTK__) && defined(__WXGTK3__)
+		if (wxClipboardType == WxClipboardType::Primary && detectWxBackend() == WxBackendType::NativeWayland) {
+			setTextAsPrimarySelection(wx_str);
+			return data;
+		}
+#endif
+
+		g_wx_data_to_clipboard->Add(new wxTextDataObjectTweaked(wx_str));
+		wxCustomDataObject *cdo = new wxCustomDataObject(wxT("text/plain;charset=utf-8"));
+		const auto & tmp = wx_str.ToStdString();
+		cdo->SetData(tmp.size(), tmp.c_str()); // not including ending NUL char
+		g_wx_data_to_clipboard->Add(cdo);
+
+#if (MAC_CLIPBOARD_HACK == 1)
+		CopyToPasteboard(cc.first, cc.second);
 #endif
 
 	} else if (format == CF_TEXT) {
-		AddDataToClipboard(new wxTextDataObjectTweaked(wxString::FromUTF8((const char *)data)));
+		const auto &cc = ClipboardCharsAndCountWithoutNUL<char>(data, len);
 
-#ifndef __APPLE__
-		wxCustomDataObject *cdo = new wxCustomDataObject(wxT("text/plain;charset=utf-8"));
-		cdo->SetData(strlen((const char *)data), data); // not including ending NUL char
-		AddDataToClipboard(cdo);
+#if (MAC_CLIPBOARD_HACK == 2)
+		CopyToPasteboard(cc.first, cc.second);
+		return data;
+#endif
+		wxString wx_str = wxString::FromUTF8(cc.first, cc.second);
+
+#ifdef __WXQT__ 
+		if (wxClipboardType == WxClipboardType::Primary) {
+			setTextAsPrimarySelection(wx_str);
+			return data;
+		}
 #endif
 
-#if (CLIPBOARD_HACK)
-		CopyToPasteboard((const char *)data);
+#if defined(__WXGTK__) && defined(__WXGTK3__)
+		if (wxClipboardType == WxClipboardType::Primary && detectWxBackend() == WxBackendType::NativeWayland) {
+			setTextAsPrimarySelection(wx_str);
+			return data;
+		}
+#endif
+
+		g_wx_data_to_clipboard->Add(new wxTextDataObjectTweaked(wx_str));
+
+		wxCustomDataObject *cdo = new wxCustomDataObject(wxT("text/plain;charset=utf-8"));
+		cdo->SetData(cc.second, cc.first); // not including ending NUL char
+		g_wx_data_to_clipboard->Add(cdo);
+
+#if (MAC_CLIPBOARD_HACK == 1)
+		CopyToPasteboard(cc.first, cc.second);
 #endif
 
 	} else if (format == CF_HTML) {
-		auto *cdo = new wxHTMLDataObject(wxString::FromUTF8((const char *)data));
-		AddDataToClipboard(cdo);
+		const auto &cc = ClipboardCharsAndCountWithoutNUL<char>(data, len);
+		auto *cdo = new wxHTMLDataObject(wxString::FromUTF8(cc.first, cc.second));
+		g_wx_data_to_clipboard->Add(cdo);
 
 	} else {
 		const wxDataFormat *data_format = g_wx_custom_formats.Lookup(format);
@@ -547,30 +563,30 @@ void *wxClipboardBackend::OnClipboardGetData(UINT format)
 		}
 		wxString wx_str = data.GetHTML();
 		const auto &utf8 = wx_str.utf8_str();
-		p = ClipboardAllocFromZeroTerminatedString<char>(utf8);
+		p = ClipboardAllocFrom(utf8.data(), utf8.length() + 1).first; // include final NUL
 
 	} else if (format == CF_UNICODETEXT || format == CF_TEXT) {
 
 		wxString wx_str;
 		bool data_found = false;
 
-		wxTextDataObject data;
-		if (wxTheClipboard->GetData( data )) {
-			fprintf(stderr, "OnClipboardGetData(%u) - found wx-compatible text format\n", format);
-			wx_str = data.GetText();
-			data_found = true;
-		}
-
+		// look first for MIME format as it supports embedded NUL chars while 'usual' wxTheClipboard truncates text on them
 		wxCustomDataObject cdo_utf8(wxT("text/plain;charset=utf-8"));
-		if (!data_found && wxTheClipboard->GetData(cdo_utf8)) {
+		if (/*!data_found && */wxTheClipboard->GetData(cdo_utf8)) {
 			const void* cdo_data = cdo_utf8.GetData();
 			size_t cdo_size = cdo_utf8.GetSize();
 			if (cdo_size > 0) {
-				fprintf(stderr, "OnClipboardGetData(%u) - found MIME-compatible text format\n", format);
-				const char *str = static_cast<const char*>(cdo_data);
-				wx_str = wxString::FromUTF8(str, strnlen(str, cdo_size));
+				wx_str = wxString::FromUTF8(static_cast<const char*>(cdo_data), cdo_size);
+				fprintf(stderr, "OnClipboardGetData(%u) - found MIME-compatible text format [%lu]\n", format, (unsigned long)wx_str.size());
 				data_found = true;
 			}
+		}
+
+		wxTextDataObject data;
+		if (!data_found && wxTheClipboard->GetData( data )) {
+			wx_str = data.GetText();
+			fprintf(stderr, "OnClipboardGetData(%u) - found wx-compatible text format [%lu]\n", format, (unsigned long)wx_str.size());
+			data_found = true;
 		}
 
 		if (!data_found) {
@@ -579,12 +595,13 @@ void *wxClipboardBackend::OnClipboardGetData(UINT format)
 		}
 
 		if (format == CF_UNICODETEXT) {
-			const auto &wc = wx_str.wc_str();
-			p = ClipboardAllocFromZeroTerminatedString<wchar_t>(wc);
+			std::wstring tmp(wx_str.wc_str(), wx_str.size());
+			p = ClipboardAllocFrom(tmp.c_str(), tmp.size() + 1).first; // include final NUL
 
 		} else {
-			const auto &utf8 = wx_str.utf8_str();
-			p = ClipboardAllocFromZeroTerminatedString<char>(utf8);
+			auto buf = wx_str.utf8_str();
+			std::string tmp(buf.data(), buf.length());
+			p = ClipboardAllocFrom(tmp.c_str(), tmp.size() + 1).first; // include final NUL
 		}
 
 	} else {

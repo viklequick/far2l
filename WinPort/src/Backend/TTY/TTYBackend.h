@@ -163,8 +163,8 @@ class TTYBackend : IConsoleOutputBackend, ITTYInputSpecialSequenceHandler, IFar2
 
 protected:
 	// IOSC52Interactor
-	virtual void OSC52SetClipboard(const char *text, bool is_primary_buffer);
 	virtual std::string OSC52RequestClipboardData(bool is_primary_buffer);
+	virtual void OSC52SetClipboard(const std::string &text, bool is_primary_buffer);
 
 	// IFar2lInteractor
 	virtual bool Far2lInteract(StackSerializer &stk_ser, bool wait);

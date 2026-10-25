@@ -50,6 +50,7 @@ void TabBar::DisplayObject()
 	if (tabs.size() > 0) {
 		tabPos.clear();
 		tabPos.reserve(tabs.size());
+		cachedTabChanged = true;
 		for(size_t i = 0; i < tabs.size(); ++i) {
 			tabPos.push_back( { tabs[i] } );
 		}
@@ -183,6 +184,7 @@ std::wstring shortenLeaf(const std::wstring& leaf, size_t maxLeafWidth) {
 }
 
 void TabBar::SetTabs(const std::vector<TabNameAndPos>& v, int activeTab) {
+	cachedTabChanged = true;
 	tabs.clear();
 	tabPos = v;
 	if (activeTab != GetActive()) SetActive(activeTab);
@@ -191,6 +193,18 @@ void TabBar::SetTabs(const std::vector<TabNameAndPos>& v, int activeTab) {
 static size_t cells(const wchar_t* s) {
 	FARString x = s;
 	return x.CellsCount();
+}
+
+bool TabBar::IsTabVisible(int tab) 
+{
+    if (tabPos.size() < 2 || tab < 0 || tab >= (int)tabPos.size()) return true;
+
+	size_t maxWidth;
+	int gap;
+	std::vector<size_t> leafWidths(tabPos.size());
+
+	layout(maxWidth, gap, leafWidths);
+	return isTabVisible(tab, maxWidth, gap, leafWidths);
 }
 
 void TabBar::EnsureActiveVisible() 
@@ -205,32 +219,40 @@ void TabBar::EnsureActiveVisible()
 	ensureActiveVisible(maxWidth, gap, leafWidths);
 }
 
-void TabBar::ensureActiveVisible(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths) 
+bool TabBar::isTabVisible(int tab, size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths) 
 {
-    if (tabPos.size() < 2 || activeTab < 0 || activeTab >= (int)tabPos.size()) return;
+    if (tabPos.size() < 2 || tab < 0 || tab >= (int)tabPos.size()) return true;
+    size_t N = tabPos.size();
+	int CurX = 0;
+	int sepw = cells(L"│🧷📲📎 ✘");
+
+    for (size_t i = visibleTab; i < N; ++i) {
+        CurX += tabPos[i].w + sepw;
+		if (CurX < (int)maxWidth && (int)i == tab) // tab is visible
+			return true;
+    }
+    return false;
+}
+
+void TabBar::ensureActiveVisible(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths)
+{
+	if (isTabVisible(activeTab, maxWidth, gap, leafWidths))
+		return;
 
     size_t N = tabPos.size();
 	int CurX = 0;
 	int sepw = cells(L"│🧷📲📎 ✘");
 
-	fprintf(stderr, "ensureActiveVisible: tabs=%d active=%d visible=%d\n", (int)N, activeTab, visibleTab);
-
-    for (size_t i = visibleTab; i < N; ++i) {
-        CurX += tabPos[i].w + sepw;
-		if (CurX < (int)maxWidth && (int)i == activeTab) // active tab is visible
-			return;
-    }
-
     // Now we have found the active tab is not visible, we need to scroll tab bar horizontally
     CurX = 0;
-    for (size_t i = activeTab; i >= 0; --i) {
+    for (size_t i = activeTab; i < N && i >= 0; --i) {
         if (CurX + tabPos[i].w + sepw > (int)maxWidth) {
         	visibleTab = i + 1;
             return;
         }
     	CurX += tabPos[i].w + sepw;
     }
-
+                                          
 	// fallback: left case is simple
 	if (activeTab < visibleTab) {
 		visibleTab = activeTab;
@@ -243,17 +265,27 @@ void TabBar::ensureActiveVisible(size_t& maxWidth, int& gap, std::vector<size_t>
 void TabBar::layout(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths) 
 {
 	maxWidth = X2 - X1 + 1;
-	gap = 1 + 3 + 4 + 4; /* console + new tab + menu + more + arrows */
+	gap = 4 + 3 + 4 + 4; /* console + new tab + menu + more + arrows */
     if (tabPos.empty()) return;
 
     if (!Opt.ShowMenuBar) gap += 3;
     if (!Opt.ShowMenuBar && Opt.Clock) maxWidth -= 5;
     maxWidth -= gap;
 
+    // avoid continuous layout() when data didn't changed
+	if (cachedTabWidth == X2 - X1 + 1 && !cachedTabChanged) {
+		leafWidths = cachedLeafWidths;
+		return;
+	}
+
+	cachedTabWidth = X2 - X1 + 1;
+	cachedTabChanged = false;
+	cachedLeafWidths = leafWidths;
+
     compactifyFileNamesUpTo(tabPos);
 
     std::wstring separator = tabPos.size() > 1 ? L"║🧷📜📎 ✘" :  L"║📜";
-    maxWidth -= tabPos.size() == 1 ? 1 : 2; // first file has icon too + arrows
+    // maxWidth -= tabPos.size() == 1 ? 1 : 2; // first file has icon too + arrows
     size_t N = tabPos.size();
     size_t sepWidth = separator.size();
 
@@ -263,12 +295,12 @@ void TabBar::layout(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths)
     for(size_t i = 0; i < N; ++i) tabPos[i].x = -1;
 
     if (maxWidth <= totalSepWidth) {
-        // Not enough space even for separators → one button here
+        // Not enough space even for separators → one buttons here
         return;
     }
 
     // Minimum width per leaf
-    size_t minLeafWidth = std::max(15UL, (maxWidth - totalSepWidth) / N); // we have scroll so we can make tab visible all time
+    size_t minLeafWidth = std::max(5UL, (maxWidth - totalSepWidth) / N);
 
     // First pass: compute actual widths for each leaf
     for (size_t i = 0; i < N; ++i) {
@@ -299,6 +331,9 @@ void TabBar::layout(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths)
 		tabPos[i].display = shortenLeaf(tabPos[i], leafWidths[i]);
 		tabPos[i].w = (int)tabPos[i].display.CellsCount();
 	}
+
+	// final cached copy
+	cachedLeafWidths = leafWidths;
 }
 
 int TabBar::render() 
@@ -312,7 +347,7 @@ int TabBar::render()
 	std::vector<size_t> leafWidths(N);
 
 	layout(maxWidth, gap, leafWidths);
-	ensureActiveVisible(maxWidth, gap, leafWidths);
+	if (!cachedInTabScroll) ensureActiveVisible(maxWidth, gap, leafWidths);
 	 
 	int activeIndex = activeTab;
 
@@ -324,7 +359,10 @@ int TabBar::render()
 
     leftAX = rightAX = -1;
     if (tabPos.size() > 1) {
-	   	SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, leftAHovered ? 1 : 0, 0, 0));
+    	if (visibleTab == 0)
+        	SoftenColorToDisabled(FarColorToReal(COL_HMENUTEXT));
+		else
+		   	SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, leftAHovered ? 1 : 0, 0, 0));
     	leftAX = WhereX();
 	    FS << L"⏴ ";
 
@@ -357,7 +395,7 @@ int TabBar::render()
 			tabPos[i].right.CPtr());
         */
 
-		if (X1 + tabPos[i].x + tabPos[i].w > X2 - gap) {
+		if (WhereX() + tabPos[i].w > X2 - gap) {
 			more = true;
 			tabPos[i].x = -1;
 			break;
@@ -394,7 +432,10 @@ int TabBar::render()
     FS << L"|";
 
     if(tabPos.size() > 1) {
-	   	SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, rightAHovered ? 1 : 0, 0, 0));
+    	if (visibleTab == (int)tabPos.size() - 1)
+        	SoftenColorToDisabled(FarColorToReal(COL_HMENUTEXT));
+		else
+		   	SetColor(SoftenItemColor(FarColorToReal(COL_HMENUTEXT), 0, rightAHovered ? 1 : 0, 0, 0));
     	rightAX = WhereX();
 	    FS << L"⏵ ";
     }
@@ -428,6 +469,7 @@ int TabBar::render()
 }
 
 void TabBar::SetTexts(const std::vector<std::wstring>& v, int _activeTab) {
+	cachedTabChanged = true;
 	tabPos.clear();
 	tabs = v;
 	activeTab = _activeTab;
@@ -478,6 +520,8 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
 				SetActive(i);
 				CtrlObject->Cp()->SwitchActiveTabTo(i);
+				cachedTabChanged = true;
+				cachedInTabScroll = false;
 				Redraw();
 				return TRUE;
 			}
@@ -493,6 +537,8 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				int k = pathContextMenu(true, tabPos[i].leftPinX, i);
 				if (k >= 0 && k != ActiveTab()) {
 					CtrlObject->Cp()->SwapTo(i, k, true);
+					cachedTabChanged = true;
+					cachedInTabScroll = false;
 					Redraw();
 				}
 				return TRUE;
@@ -506,6 +552,8 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
 				int k = pathContextMenu(false, tabPos[i].rightPinX, i);
 				if (k >= 0 && k != ActiveTab()) {
+					cachedTabChanged = true;
+					cachedInTabScroll = false;
 					CtrlObject->Cp()->SwapTo(i, k, false);
 					Redraw();
 				}
@@ -518,7 +566,11 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				return TRUE;
 			}
 			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+				cachedTabChanged = true;
+				cachedInTabScroll = false;
+				visibleTab = 0;
 				CtrlObject->Cp()->DeleteTab(i);
+				Redraw();
 				return TRUE;
 			}
 		}
@@ -530,7 +582,11 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 			return TRUE;
 		}
 		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+			cachedTabChanged = true;
+			cachedInTabScroll = false;
+			visibleTab = 0;
 			CtrlObject->Cp()->AppendNewTab();
+			Redraw();
 			return TRUE;
 		}
 	}
@@ -546,6 +602,8 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 				SetActive(tab);
 				CtrlObject->Cp()->SwitchActiveTabTo(tab);
 				CtrlObject->Cp()->Update();
+				cachedTabChanged = true;
+				cachedInTabScroll = false;
 				Redraw();
 			}
 			return TRUE;
@@ -559,6 +617,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
 			// enforce F9 key
 			FrameManager->ProcessKey(KEY_F9);
+			cachedInTabScroll = false;
 			return TRUE;
 		}
 	}
@@ -569,30 +628,39 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 		}
 		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
 			FrameManager->ProcessKey(KEY_CTRLO);
+			cachedInTabScroll = false;
 			return TRUE;
 		}
 	}
-	else if (leftAX > 0 && MsX >= leftAX && MsX < leftAX + 2) { // console sign
+	else if (leftAX > 0 && MsX >= leftAX && MsX < leftAX + 2 && visibleTab > 0) { // scroll tabs to left
 		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
 			setHoverMask(-1, false, false, false, false, false, false, false, true, false);
 			return TRUE;
 		}
 		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
 			// FrameManager->ProcessKey(KEY_CTRLO);
-			if (visibleTab > 0) --visibleTab;
-			Redraw();
+			if (visibleTab > 0){ 
+				--visibleTab;
+				cachedInTabScroll = true;
+				Redraw();
+			}
 			return TRUE;
 		}
 	}
-	else if (rightAX > 0 && MsX >= rightAX && MsX < rightAX + 2) { // console sign
-		if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
-			setHoverMask(-1, false, false, false, false, false, false, false, false, true);
-			return TRUE;
-		}
-		else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
-			if (visibleTab < (int)tabPos.size() - 2) ++visibleTab;
-			Redraw();
-			return TRUE;
+	else if (rightAX > 0 && MsX >= rightAX && MsX < rightAX + 2 && visibleTab < (int)tabPos.size() - 1) { // scroll tabs to right
+		if (!IsTabVisible((int)tabPos.size() - 1)) {
+			if ((MouseEvent->dwEventFlags & MOUSE_MOVED)) {
+				setHoverMask(-1, false, false, false, false, false, false, false, false, true);
+				return TRUE;
+			}
+			else if ((MouseEvent->dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED)) {
+				if (visibleTab < (int)tabPos.size() - 1){ 
+					++visibleTab;
+					cachedInTabScroll = true;
+					Redraw();
+				}
+				return TRUE;
+			}
 		}
 	}
 

@@ -1268,7 +1268,7 @@ void FilePanels::DisplayObject()
 	if (Opt.ShowMenuBar)
 		CtrlObject->TopMenuBar->Show();
 
-	SetTabNames();
+	// SetTabNames();
 	TopTabBar.Show();
 	CtrlObject->CmdLine->Show();
 
@@ -1400,7 +1400,7 @@ void FilePanels::ResizeConsole()
 	TopTabBar.ResizeConsole();
 	SetScreenPosition();
 	CtrlObject->CmdLine->ResizeConsole();
-	SetTabNames();
+	// SetTabNames();
 	_OT(SysLog(L"[%p] FilePanels::ResizeConsole() {%d, %d - %d, %d}", this, X1, Y1, X2, Y2));
 }
 
@@ -1498,7 +1498,6 @@ int FilePanels::SetTabNames()
 
 	TopTabBar.SetActive(TabActive);
 	TopTabBar.SetHovered(TabHovered);
-	// TopTabBar.EnsureActiveVisible();
 	TopTabBar.Redraw();
 	return 0;
 }
@@ -1512,7 +1511,7 @@ void FilePanels::Update()
 	//if(ActiveTab().ActivePanel->IsVisible()) 	 ActiveTab().ActivePanel->Update(UPDATE_KEEP_SELECTION);
 	//if(ActiveTab().PassivePanel()->IsVisible())  ActiveTab().PassivePanel()->Update(UPDATE_KEEP_SELECTION);
 	FrameManager->RefreshFrame();
-	SetTabNames();
+	UpdateTabBar();
 	//Redraw();
 }
 
@@ -1545,6 +1544,8 @@ int FilePanels::AppendNewTab() {
 
 	SwitchActiveTabTo(tabNo);
 
+	UpdateTabBar();
+
 	for(size_t i = 0; i < tabs.size(); ++i) {
 		fprintf(stderr, "\tappendNewTab after switch: [%d] active=%p left=%p right=%p\n", 
 			(int)i, tabs[i].ActivePanel, tabs[i].LeftPanel, tabs[i].RightPanel);
@@ -1575,6 +1576,8 @@ void FilePanels::DeleteTab(int tabNo) {
 	if (TabActive != oldActive)
 		activatePanelsInTab(tabs[TabActive]);
 	destroyPanelsGracefully(panel);
+
+	UpdateTabBar();
 
 	Redraw();
 
@@ -1639,6 +1642,8 @@ void FilePanels::SwapTo(int srcTab, int dstTab, bool isLeft) {
 
 	if (srcTab == TabActive) activatePanelsInTab(src);
 	if (dstTab == TabActive) activatePanelsInTab(dst);
+
+	UpdateTabBar();
 
 	FrameManager->RefreshFrame();
 }

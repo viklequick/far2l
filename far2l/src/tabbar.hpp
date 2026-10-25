@@ -68,7 +68,7 @@ public:
 
 	void SetTabs(const std::vector<TabNameAndPos>& v, int activeTab = -1);
 	void SetTexts(const std::vector<std::wstring>& v, int activeTab = -1);
-	const std::vector<std::wstring>& GetTabNames(){ return tabs; }
+	//const std::vector<std::wstring>& GetTabNames(){ return tabs; }
 	int ActiveTab(){ return activeTab; }
 	int GetActive(){ return activeTab; }
 	const std::vector<TabNameAndPos>& GetTabPositions(){ return tabPos; }
@@ -76,11 +76,12 @@ public:
 
 	void SetActive(int x){ activeTab = x; }
 	void SetHovered(int x){ hoveredTab = x; }
-	void Clear(){ tabs.clear(); tabPos.clear(); }
-	void AddTab(const FARString& name){ tabPos.push_back({ name, 0, (int)name.CellsCount() }); }
-	void AddTab(const FARString& left, const FARString& right){ tabPos.push_back({ left, 0, (int)(left.CellsCount() + right.CellsCount() + 1), right }); }
+	void Clear(){ tabs.clear(); tabPos.clear(); cachedTabChanged = true; }
+	void AddTab(const FARString& name){ tabPos.push_back({ name, 0, (int)name.CellsCount() }); cachedTabChanged = true; }
+	void AddTab(const FARString& left, const FARString& right){ tabPos.push_back({ left, 0, (int)(left.CellsCount() + right.CellsCount() + 1), right }); cachedTabChanged = true; }
 
 	void EnsureActiveVisible();
+	bool IsTabVisible(int tabNo);
 
 	int ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent);
 	int moreContextMenu();
@@ -93,6 +94,7 @@ protected:
 	int render();
 	void layout(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths);
 	void ensureActiveVisible(size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths);
+	bool isTabVisible(int tabNo, size_t& maxWidth, int& gap, std::vector<size_t>& leafWidths);
 	void setHoverMask(int tabNo, 
 		bool tab, bool del, bool leftPin, bool rightPin, 
 		bool more, bool menu, bool console,
@@ -121,6 +123,12 @@ protected:
 	bool consoleHovered { false };
 
 	std::vector<TabNameAndPos> tabPos;
+
+	// layout() cache
+	int cachedTabWidth { -1 };
+	bool cachedTabChanged { false };
+	bool cachedInTabScroll { false };
+	std::vector<size_t> cachedLeafWidths;
 };
 
 std::wstring widestCommonPrefix(const std::vector<std::wstring>& paths);

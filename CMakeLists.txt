@@ -749,6 +749,9 @@ else()
         " COMPONENT system)
 endif()
 
+message(STATUS "Weather plugin enabled")
+add_subdirectory (plugins/weather)
+
 ##############################
 # common install directives
 

@@ -92,6 +92,7 @@ public:
 
 	// Добавляет поле типа DI_FIXEDIT для редактирования указанного числового значения.
 	virtual ItemReference AddIntEditField(int *Value, int Width, int Flags = 0, bool newLine = true);
+	virtual ItemReference AddDoubleEditField(double *Value, int Width, int Flags = 0, bool newLine = true);
 
 	// Добавляет выпадающий список с указанными значениями.
 	virtual ItemReference AddComboBox(int *Value, int Width, DialogBuilderListItem *Items, int ItemCount, DWORD Flags = DIF_NONE, bool newLine = true);

@@ -452,7 +452,8 @@ typedef enum {
     HintHelpViewer,
     HintCommandLine,
     HintKeyBar,
-    HintPanic
+    HintPanic,
+    HintOSD
 } HintContainerType;
 
 typedef enum {

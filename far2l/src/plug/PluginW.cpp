@@ -581,6 +581,7 @@ void CreatePluginStartupInfo(Plugin *pPlugin, PluginStartupInfo *PSI, FarStandar
 		StartupInfo.PluginsControl = farPluginsControl;
 		StartupInfo.FileFilterControl = farFileFilterControl;
 		StartupInfo.RegExpControl = farRegExpControl;
+		StartupInfo.OsdAPI = (FARAPIGETOSD)farGetOsdPanel;
 	}
 
 	*PSI = StartupInfo;

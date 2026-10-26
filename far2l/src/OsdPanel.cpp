@@ -76,9 +76,7 @@ void OsdPanel::SetDefaultColors(uint64_t color) {
 }
 
 void OsdPanel::TriggerRedrawIfEnabled() {
-    if (m_autoRedraw && IsVisible()) {
-        Redraw();
-    }
+    if (m_autoRedraw && IsVisible())      Redraw();
 }
 
 // --- General Line API ---
@@ -93,6 +91,9 @@ int OsdPanel::AddLine(const std::wstring& text, uint64_t color) {
         item.color = (color != 0) ? color : m_defaultColor;
         m_rows.push_back(std::move(item));
         idx = static_cast<int>(m_rows.size()) - 1;
+        m_rows[idx].visible = true;
+
+        fprintf(stderr, "\tOSD[%d] = `%ls`\n", idx, m_rows[idx].rawText.c_str());
     }
     TriggerRedrawIfEnabled();
     return idx;
@@ -202,6 +203,7 @@ int OsdPanel::AddPath(const std::wstring& prefix, const std::wstring& suffix,
         item.color = (color != 0) ? color : m_defaultColor;
         m_rows.push_back(std::move(item));
         idx = static_cast<int>(m_rows.size()) - 1;
+        m_rows[idx].visible = true;
     }
     TriggerRedrawIfEnabled();
     return idx;
@@ -244,6 +246,7 @@ int OsdPanel::AddNumeric(const std::wstring& prefix, const std::wstring& suffix,
         item.color = (color != 0) ? color : m_defaultColor;
         m_rows.push_back(std::move(item));
         idx = static_cast<int>(m_rows.size()) - 1;
+        m_rows[idx].visible = true;
     }
     TriggerRedrawIfEnabled();
     return idx;
@@ -289,6 +292,7 @@ int OsdPanel::AddProgressBar(const std::wstring& prefix, const std::wstring& suf
         item.color = (color != 0) ? color : m_defaultColor;
         m_rows.push_back(std::move(item));
         idx = static_cast<int>(m_rows.size()) - 1;
+        m_rows[idx].visible = true;
     }
     TriggerRedrawIfEnabled();
     return idx;
@@ -329,6 +333,7 @@ std::pair<int, int> OsdPanel::GetPreferredSize() const {
         // In vertical orientation: height is max row length, width is count of rows
         int maxHeight = 0;
         for (const auto& row : m_rows) {
+        	if (!row.visible) continue;
             std::wstring formatted = FormatRowString(row, 120);
             maxHeight = std::max(maxHeight, static_cast<int>(formatted.length()));
         }
@@ -338,6 +343,7 @@ std::pair<int, int> OsdPanel::GetPreferredSize() const {
     // Horizontal orientation: height is row count, width is maximum item length
     int maxWidth = 0;
     for (const auto& row : m_rows) {
+    	if (!row.visible) continue;
         std::wstring formatted = FormatRowString(row, 120);
         maxWidth = std::max(maxWidth, static_cast<int>(formatted.length()));
     }
@@ -603,6 +609,8 @@ void OsdPanel::DisplayObject() {
     int maxHeight = 0;
 
 
+	SetScreen(X1, Y1, X2, Y2, L' ', FarColorToReal(COL_PANELTEXT));
+	Hint(X1, Y1, X2, Y2, HintOSD, HintObjectNone);
     Box(X1, Y1, X2, Y2, FarColorToReal(COL_PANELBOX), SINGLE_BOX);
 
     {
@@ -748,4 +756,3 @@ std::wstring OsdPanel::BuildSizeString(int64_t bytes, size_t maxWidth) {
         ++unit;
     }
 } */
-

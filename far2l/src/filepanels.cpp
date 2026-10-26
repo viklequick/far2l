@@ -540,16 +540,31 @@ void FilePanels::ActivateOsdPane() {
 			auto prefSize = osd.GetPreferredSize();
 			int prefW = prefSize.first;
 			int prefH = prefSize.second; 
-			int maxH = py2 - py1 - 4;
-			int maxW = px2 - py1 - 4;
+
+			int maxH = py2 - py1 - 8;
+			int maxW = px2 - px1 - 4;
 
 			if(prefH > maxH) prefH = maxH;
 			if(prefW > maxW) prefW = maxW;
 
-			osd.SetPosition(px2 - prefW - 2, py2 - prefH - 2, px2 - 2, py2 -2);
+			int ox1 = px2 - prefW - 2;
+			int oy1 = py2 - prefH - 6;
+			int ox2 = px2 - 6;
+			int oy2 = py2 - 6;
+
+			osd.SetPosition(ox1, oy1, ox2, oy2);
 			osd.SetMaxSize(prefW, prefH);
+			fprintf(stderr, "OSD: %d,%d..%d,%d, %dx%d of %dx%d\n", ox1, oy1, ox2, oy2, prefW, prefH, maxW, maxH);
 			osd.Show();
 		}
+		else {
+			osd.Hide();
+			fprintf(stderr, "OSD: auto hidden\n");
+		}
+	}
+	else {
+		osd.Hide();
+		fprintf(stderr, "OSD: hidden, no lines\n");
 	}
 }
 
@@ -587,9 +602,10 @@ int FilePanels::SetAnotherPanelFocus()
 
 	if (Ret) {
 		SetTabNames();
-		if (osd.HasActiveLines()) ActivateOsdPane();
 		TopTabBar.Show();
 	}
+
+	if (osd.HasActiveLines()) ActivateOsdPane();
 
 	return Ret;
 }
@@ -1317,6 +1333,7 @@ void FilePanels::DisplayObject()
 		}
 	}*/
 #endif
+	if(osd.IsVisible()) osd.DisplayObject();
 }
 
 int FilePanels::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent) {

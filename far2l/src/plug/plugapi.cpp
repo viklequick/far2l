@@ -168,6 +168,14 @@ static int FarColorDialogSynched(const int flags, uint64_t *c)
 int WINAPI FarColorDialog(const int flags, uint64_t *c)
 {
 	return InterThreadCall<int, 0>(std::bind(FarColorDialogSynched, flags, c));
+}
+
+static void* farGetOsdPanelRef(){
+	return (void*)(CtrlObject->Cp()->GetOsdPanel());
+}
+
+void* WINAPI GetOsdPanel() {
+	return InterThreadCall<void*, nullptr>(std::bind(farGetOsdPanelRef));
 	return 0;
 }
 

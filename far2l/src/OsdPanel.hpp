@@ -13,6 +13,7 @@
 #include <cmath>
 
 #include "scrobj.hpp"
+#include "farosdpanel.hpp"
 
 /**
  * @brief Dynamic OSD (On-Screen Display) text UI widget for Far2l.
@@ -21,7 +22,7 @@
  * intelligent path middle-truncation, automatic progress bars, formatted numerics,
  * and dynamic max-dimension clipping with preferred size calculations.
  */
-class OsdPanel : public ScreenObject {
+class OsdPanel : public ScreenObject, public OsdPanelInterface {
 public:
     enum class Orientation {
         Horizontal, // Standard row-by-row rendering

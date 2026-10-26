@@ -415,6 +415,7 @@ CreatePluginStartupInfoA(PluginA *pPlugin, oldfar::PluginStartupInfo *PSI, oldfa
 		StartupInfo.DefDlgProc = FarDefDlgProcA;
 		StartupInfo.InputBox = FarInputBoxA;
 		StartupInfo.ColorDialog = FarColorDialogA;
+		StartupInfo.OsdAPI = (FARAPIGETOSD)farGetOsdPanel;
 	}
 
 	*PSI = StartupInfo;

@@ -506,6 +506,10 @@ public:
 			return ItemReference(*this);
 		}
 
+		virtual ItemReference AddDoubleEditField(double *Value, int Width, int Flags = 0, bool newLine = true) {
+			return ItemReference(*this);
+		}
+
 		ItemReference AddLabeledIntEditField(FarLangMsg LabelId, int *Value, int Width, int Flags = 0, bool newLine = true) {
 			AddText(LabelId, false);
 			return AddIntEditField(Value, Width, Flags, newLine);

@@ -1011,6 +1011,12 @@ int WINAPI FarInputBoxA(const char *Title, const char *Prompt, const char *Histo
 	return ret;
 }
 
+extern void* WINAPI GetOsdPanel();
+
+void* WINAPI farGetOsdPanel() {
+	return GetOsdPanel();
+}
+
 int WINAPI FarColorDialogA(const int flags, uint64_t *c)
 {
 	return (int)GetColorDialog(c, true);

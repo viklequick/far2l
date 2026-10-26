@@ -131,6 +131,33 @@ public:
 	}
 };
 
+class PluginDoubleEditFieldBinding: public DialogAPIBinding
+{
+private:
+	double *Value;
+	TCHAR Buffer[32];
+
+public:
+	PluginDoubleEditFieldBinding(const PluginStartupInfo &aInfo, HANDLE *aHandle, int aID, double *aValue, int Width)
+		: DialogAPIBinding(aInfo, aHandle, aID),
+		  Value(aValue)
+	{
+		swprintf(Buffer, 32, L"%g", *aValue);
+	}
+
+	virtual void SaveValue(FarDialogItem *Item, int RadioGroupIndex)
+	{
+		const TCHAR *DataPtr = (const TCHAR *) Info.SendDlgMessage(*DialogHandle, DM_GETCONSTTEXTPTR, ID, 0);
+		wchar_t *endptr = 0;
+		*Value = wcstod(DataPtr, &endptr);
+	}
+
+	TCHAR *GetBuffer()
+	{
+		return Buffer;
+	}
+};
+
 #else
 
 class PluginEditFieldBinding: public DialogItemBinding<FarDialogItem>
@@ -176,6 +203,24 @@ public:
 	const TCHAR *GetMask()
 	{
 		return Mask;
+	}
+};
+
+class PluginDoubleEditFieldBinding: public DialogItemBinding<FarDialogItem>
+{
+private:
+	const PluginStartupInfo &Info;
+	double *Value;
+
+public:
+	PluginIntEditFieldBinding(const PluginStartupInfo &aInfo, double *aValue, int Width)
+		: Info(aInfo), Value(aValue)
+	{
+	}
+
+	virtual void SaveValue(FarDialogItem *Item, int RadioGroupIndex)
+	{
+		*Value = strtod(Item->Data);
 	}
 };
 
@@ -285,6 +330,21 @@ public:
 #else
 			Item->Mask = Binding->GetMask();
 #endif
+			Add(Item);
+			if (newLine) AddNL();
+			SetItemBinding(Item, Binding);
+			return Item;
+		}
+
+		virtual ItemReference AddDoubleEditField(double *Value, int Width, int Flags = 0, bool newLine = true)
+		{
+			auto Item = AddDialogItem(DI_FIXEDIT, EMPTY_TEXT);
+			Item->Flags |= DIF_MASKEDIT;
+			Item->Width = Width;
+			PluginDoubleEditFieldBinding *Binding;
+			Binding = new PluginDoubleEditFieldBinding(Info, &DialogHandle, DialogItemsCount-1, Value, Width);
+			Item->PtrData = Binding->GetBuffer();
+
 			Add(Item);
 			if (newLine) AddNL();
 			SetItemBinding(Item, Binding);

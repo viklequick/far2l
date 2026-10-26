@@ -74,6 +74,19 @@ struct EditFieldIntBinding : public DialogItemBinding<DialogItemEx>
 	const TCHAR *GetMask() { return Mask; }
 };
 
+struct EditFieldDoubleBinding : public DialogItemBinding<DialogItemEx>
+{
+	double *IntValue;
+
+	EditFieldDoubleBinding(double *aIntValue, int Width) :	IntValue(aIntValue)	{}
+
+	virtual void SaveValue(DialogItemEx *Item, int RadioGroupIndex)
+	{
+		wchar_t *endptr;
+		*IntValue = wcstod(Item->strData, &endptr);
+	}
+};
+
 /*
 static bool IsEditField(DialogItemEx *Item)
 {
@@ -159,6 +172,24 @@ DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddIntEditField(in
 	Item->Flags|= Flags;
 	Item->Flags|= DIF_MASKEDIT;
 	Item->strMask = Binding->GetMask();
+	return Item;
+}
+
+DialogBuilderBase<DialogItemEx>::ItemReference DialogBuilder::AddDoubleEditField(double *Value, int Width, int Flags, bool newLine)
+{
+	auto Item = AddDialogItem(DI_FIXEDIT, L"");
+	wchar_t buf[32];
+	swprintf(buf, 32, L"%g", *Value);
+	Item->strData = buf;
+	Item->Width = Width;
+
+	Add(Item);
+	if (newLine) AddNL();
+
+	EditFieldDoubleBinding *Binding = new EditFieldDoubleBinding(Value, Width);
+	SetItemBinding(Item, Binding);
+	Item->Flags|= Flags;
+	Item->Flags|= DIF_MASKEDIT;
 	return Item;
 }
 

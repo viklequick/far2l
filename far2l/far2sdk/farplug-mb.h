@@ -1480,6 +1480,8 @@ namespace oldfar
 		uint64_t *Color
 	);
 
+	typedef void* (WINAPI *FARAPIGETOSD)();
+
 // <C&C++>
 	typedef int (WINAPIV *FARSTDSPRINTF)(char *Buffer,const char *Format,...);
 	typedef int (WINAPIV *FARSTDSNPRINTF)(char *Buffer,size_t Sizebuf,const char *Format,...);
@@ -1723,6 +1725,7 @@ namespace oldfar
 		FARAPIDEFDLGPROC       DefDlgProc;
 		DWORD_PTR              Reserved;
 		FARAPIVIEWERCONTROL    ViewerControl;
+		FARAPIGETOSD           OsdAPI;
 	};
 
 

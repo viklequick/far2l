@@ -161,4 +161,6 @@ public:
 	virtual void ActivateSubpanel(int i){ SwitchActiveTabTo(i); }
 
 	void GetActiveTabPaths(FARString& leftFolderList, FARString& rightFolderList, int& activeTab);
+
+	OsdPanelInterface* GetOsdPanel(){ return &osd; }
 };

@@ -63,14 +63,7 @@ public:
 	bool Copy(const std::wstring &Data, bool IsVertical = false);
 	bool CopyWithHtml(const std::wstring &Data, const char *Html);
 
-	std::optional<std::wstring> Paste(bool &IsVertical);
-
-	inline std::optional<std::wstring> Paste()
-	{
-		bool IsVertical;
-		return Paste(IsVertical);
-	}
-
+	std::optional<std::wstring> Paste(bool *IsVertical = nullptr);
 
 	int IsUseSelectionWhenPossible() const { return UseSelectionWhenPossible; }
 	int SetUseSelectionWhenPossible(int option);

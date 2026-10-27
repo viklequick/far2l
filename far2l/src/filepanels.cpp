@@ -1621,13 +1621,27 @@ void FilePanels::EnlistAllPaths(std::vector<std::wstring>& holder, bool left, bo
 }
 
 void FilePanels::SwapTo(int srcTab, int dstTab, bool isLeft) {
+	if (dstTab == srcTab) return;
+	
 	DoublePanel& src = tabs[srcTab];
 	DoublePanel& dst = tabs[dstTab];
 
 	Panel *Swap;
 	int SwapType;
+
 	if (srcTab == TabActive) deactivatePanelsInTab(src);
 	if (dstTab == TabActive) deactivatePanelsInTab(dst);
+	
+	// vk: we need to hide all panels but keep their states
+	/*
+	for(size_t i = 0; i < tabs.size(); ++i) {
+		tabs[i].LeftPanel->Hide();
+		tabs[i].RightPanel->Hide();
+	}*/
+
+	// do not forget to recompute active panel after the swap; otherwiss half of functions will refer to wromg panel
+	bool srcLeftActive = src.LeftPanel == src.ActivePanel;
+	bool dstLeftActive = dst.LeftPanel == dst.ActivePanel;
 
 	if (isLeft) {
 
@@ -1657,8 +1671,14 @@ void FilePanels::SwapTo(int srcTab, int dstTab, bool isLeft) {
 		src.LastRightType = SwapType;
 	}
 
+	src.ActivePanel = srcLeftActive ? src.LeftPanel : src.RightPanel;
+	dst.ActivePanel = dstLeftActive ? dst.LeftPanel : dst.RightPanel;
+
 	if (srcTab == TabActive) activatePanelsInTab(src);
 	if (dstTab == TabActive) activatePanelsInTab(dst);
+
+	// and then we need to restore active tab
+	// activatePanelsInTab(tabs[TabActive]);
 
 	UpdateTabBar();
 

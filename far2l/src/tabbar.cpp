@@ -507,7 +507,7 @@ int TabBar::ProcessMouse(MOUSE_EVENT_RECORD *MouseEvent)
 	delHovered = leftPinHovered = rightPinHovered = -1;
 	leftAHovered = rightAHovered = false;
 
-	for(size_t i = 0; i < tabPos.size(); ++i) {
+	for(size_t i = visibleTab; i < tabPos.size(); ++i) {
 		if(tabPos[i].x < 0 || tabPos[i].w <= 0)
 			continue;
 		if (pos >= tabPos[i].x && pos <= tabPos[i].x + tabPos[i].w) { // tab

@@ -469,6 +469,7 @@ class VTShell : VTOutputReader::IProcessor, VTInputReader::IProcessor, IVTShell
 		_leader_pid = r;
 		const auto when_started = GetProcessUptimeMSec();
 		clock_t when_printed_cmd = 0;
+		// vk: why?
 		MakeConsoleDisabled(true);
 		VT_ComposeMarker(_startup_marker);
 		std::string cmd = "\n ";

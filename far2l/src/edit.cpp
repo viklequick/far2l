@@ -2336,7 +2336,7 @@ void Edit::ProcessPasteEventFromPrimary()
 			if (ClipText){ 
 				fprintf(stderr, "Middle button clicked => `%ls`\n", ClipText);
    				DoPaste(ClipText);
-                free(ClipText);
+                // DoPaste will call free(ClipText); itself
             }
 
 			clip.Close();

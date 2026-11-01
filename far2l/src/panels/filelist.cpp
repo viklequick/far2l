@@ -2687,6 +2687,7 @@ int FileList::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent)
 		GetCurDir(target);
 
 		// vk: todo: copy file from drop event
+		CtrlObject->Cp()->GetTransferEngine()->addTransferJob(DropEvent->Text, target.GetWide());
 
 		return TRUE;
 	}
@@ -2708,6 +2709,7 @@ int FileList::ProcessDrop(EXT_DROP_EVENT_DATA *DropEvent)
 
 	// now we have source `DropEvent->Text` and `target`; all we need is to copy recursively.
 	// vk: todo: copy file from drop event
+	CtrlObject->Cp()->GetTransferEngine()->addTransferJob(DropEvent->Text, target.GetWide());
 
 	return TRUE;
 }

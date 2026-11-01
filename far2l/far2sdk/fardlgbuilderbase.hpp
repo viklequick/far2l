@@ -202,14 +202,28 @@ class DialogBuilderBase
 public:
 	friend class ItemReference;
 
+#ifdef UNICODE
+using t_string = std::wstring;
+#define TC(x)	L##x
+#else
+using t_string = std::string;
+#define TC(x)	x
+#endif
+
 	class ItemReference
 	{
 		DialogBuilderBase<T> &Builder;
 		ssize_t Index;
+		t_string textHolder;
 
 	public:
 		ItemReference(DialogBuilderBase<T> &Builder_, ssize_t Index_ = -1)
 			: Builder(Builder_), Index(Index_)
+		{
+		}
+
+		ItemReference(DialogBuilderBase<T> &Builder_, ssize_t Index_, const TCHAR* Text)
+			: Builder(Builder_), Index(Index_), textHolder(Text)
 		{
 		}
 
@@ -231,6 +245,7 @@ public:
 		}
 
 		int ID() const { return Index; }
+		const TCHAR* Holder(){ return textHolder.c_str(); }
 	};
 
 	protected:
@@ -349,17 +364,31 @@ public:
 			}
 		}
 
-		ItemReference AddDialogItem(int Type, const TCHAR *Text) {
+		ItemReference AddDialogItem(int Type, const TCHAR *Text, bool copy = false) {
 			if (DialogItemsCount == DialogItemsAllocated) ReallocDialogItems();
 
 			int Index = DialogItemsCount++;
 			T *Item = &DialogItems [Index];
-			InitDialogItem(Item, Text);
-			Item->Type = Type;
-			Bindings [Index] = nullptr;
-			Item->Width = 0;
 
-			return ItemReference(*this, Index);
+			if(copy) {
+				auto item = ItemReference(*this, Index, Text);
+				Text = item.Holder();
+
+				InitDialogItem(Item, Text);
+				Item->Type = Type;
+				Bindings [Index] = nullptr;
+				Item->Width = 0;
+
+				return item;
+			}
+			else {
+				InitDialogItem(Item, Text);
+				Item->Type = Type;
+				Bindings [Index] = nullptr;
+				Item->Width = 0;
+
+				return ItemReference(*this, Index);
+			}
 		}
 
 		int ItemWidth(const T &Item) {
@@ -492,8 +521,8 @@ public:
 
 	public:
 		/* old APi through new one */
-		// Добавляет статический текст, расположенный на отдельной строке в диалоге.
 
+		// Добавляет статический текст из перевода, в текущей строке строке в диалоге, и если newLine = true - то заканчивает строку 
 		virtual ItemReference AddText(FarLangMsg LabelId, bool newLine = true) {
 			auto Item = AddDialogItem(DI_TEXT, GetLangString(LabelId));
 			Add(Item);
@@ -501,6 +530,7 @@ public:
 			return Item;
 		}
 
+		// Добавляет статический текст, в текущей строке строке в диалоге, и если newLine = true - то заканчивает строку 
 		virtual ItemReference AddText(const TCHAR* text, bool newLine = true) {
 			auto Item = AddDialogItem(DI_TEXT, text);
 			Add(Item);
@@ -508,23 +538,30 @@ public:
 			return Item;
 		}
 
+		// Добавляет статический текст, в текущей строке строке в диалоге, и если newLine = true - то заканчивает строку 
+		// В отличие от просто AddText(), текст копирует в ItemReference. Нужен для AddWrappedText().
+		virtual ItemReference AddTextCopy(const TCHAR* text, bool newLine = true) {
+			auto Item = AddDialogItem(DI_TEXT, text, true);
+			Add(Item);
+			if (newLine) AddNL();
+			return Item;
+		}
+
+		// Разбивает текст из переводов на подстроки с учетом переводов строк внутри и символов табуляции, 
+		// а также разрезает на подстроки при достижении максимальной длинны текста
 		virtual std::vector<ItemReference> AddWrappedText(FarLangMsg LabelId, int width) {
 			return AddWrappedText((TCHAR*)GetLangString(LabelId), width);
 		}
 
+		// Разбивает текст на подстроки с учетом переводов строк внутри и символов табуляции, 
+		// а также разрезает на подстроки при достижении максимальной длинны текста
 		virtual std::vector<ItemReference> AddWrappedText(const TCHAR* text, int width) {
 			return AddWrappedText((TCHAR*)text, width);
 		}
 
-#ifdef UNICODE
-using t_string = std::wstring;
-#define TC(x)	L##x
-#else
-using t_string = std::string;
-#define TC(x)	x
-#endif
 #define TAB_SIZE 4
 
+        /* реализация разрезания на подстроки, на С++ чтобы не утонуть в ручном управлении памятью */
     	t_string expandTabs(const t_string& src) {
     		t_string result;
         	result.reserve(src.size());
@@ -609,6 +646,10 @@ using t_string = std::string;
 		    return result;
 		}
 
+		// Разбивает текст на подстроки с учетом переводов строк внутри и символов табуляции, 
+		// а также разрезает на подстроки при достижении максимальной длинны текста
+		// Фактически, это то же самое что разрезать строки на части и позвать AddText() для каждой.
+		// Считается, что строка статическая и ее не нужно менять в диалоге на что-то еще в динамике. 
 		virtual std::vector<ItemReference> AddWrappedText(TCHAR* text, int width = 70) {
 			t_string x = text;
 			std::vector<ItemReference> v;
@@ -618,13 +659,17 @@ using t_string = std::string;
 				if(lines[i].length() == 0)
 					AddEmptyLine();
 				else 
-					v.push_back(AddText(lines[i].c_str()));
+					v.push_back(AddTextCopy(lines[i].c_str()));
 			}
 			return v;
 		}
 
-		virtual ItemReference AddMultiLineText(FarLangMsg LabelId, int height = 1) {
+        // Добавление многострочного текста в диалог, текст будет занимать указанное число строк
+        // В отличие от AddWrappedText() текст резервирует под себя место как единственный контрол
+        // И разрезать на строки уже будет dialog.cpp в момент отрисовки.
+		virtual ItemReference AddMultiLineText(FarLangMsg LabelId, int width = 0, int height = 1) {
 			auto Item = AddDialogItem(DI_TEXT, GetLangString(LabelId));
+			Item->Width = width > 0 ? width : 0;
 			Item->Height = (height > 0 ? height : 1) - 1; /* one-line is added automatically */
 			Add(Item);
 			AddNLBy(Item);
@@ -736,7 +781,7 @@ using t_string = std::string;
 			AddNL();
 		}
 
-		// Добавляет группу радиокнопок vertically
+		// Добавляет группу радиокнопок vertically + instant callback
 		virtual void AddRadioButtons(int *Value, int OptionCount, FarLangMsg MessageIDs[],
 				std::function<void(const int buttonID, void* ctx)> cb, void* ctx) 
 		{
@@ -752,7 +797,7 @@ using t_string = std::string;
 			}
 		}
 
-		// Добавляет горизонтальную группу радиокнопок.
+		// Добавляет горизонтальную группу радиокнопок + instant callback.
 		virtual void AddRadioButtonsHorz(int *Value, int OptionCount, FarLangMsg MessageIDs[],
 				std::function<void(const int buttonID, void* ctx)> cb, void* ctx)	
 		{
@@ -766,6 +811,7 @@ using t_string = std::string;
 			AddNL();
 		}
 
+        /* Добавляет текстовые редакторы для чисел */
 		virtual ItemReference AddIntEditField(int *Value, int Width, int Flags = 0, bool newLine = true) {
 			return ItemReference(*this);
 		}
@@ -774,6 +820,7 @@ using t_string = std::string;
 			return ItemReference(*this);
 		}
 
+        /* wrapper для добавления сразу с текстом слева/справа */
 		ItemReference AddLabeledIntEditField(FarLangMsg LabelId, int *Value, int Width, int Flags = 0, bool newLine = true) {
 			AddText(LabelId, false);
 			return AddIntEditField(Value, Width, Flags, newLine);
@@ -785,6 +832,7 @@ using t_string = std::string;
 			return edit;
 		}
 
+        /* строковый редактор */
 		virtual ItemReference AddEditField(TCHAR *Value, int Width, const wchar_t *HistoryID = nullptr, int Flags = 0, bool newLine = true) {
 			return ItemReference(*this);
 		}
@@ -796,6 +844,7 @@ using t_string = std::string;
 			return ItemReference(*this);
 		}
 
+        /* редакторы с instant callback */
 		virtual ItemReference AddIntEditField(int *Value, int Width, int Flags, bool newLine,
 				std::function<void(const int buttonID, void* ctx)> cb, void* ctx) 
 		{
@@ -808,6 +857,7 @@ using t_string = std::string;
 			return ItemReference(*this);
 		}
 
+        /* комбо боксы */
 		virtual ItemReference AddComboBox(int *Value, int Width, DialogBuilderListItem *Items, int ItemCount, DWORD Flags = DIF_NONE, bool newLine = true) { 
 			return ItemReference(*this); 
 		}
@@ -826,7 +876,7 @@ using t_string = std::string;
 			return ItemReference(*this); 
 		}
 
-		// Начинает располагать поля диалога в две колонки.
+		// Начинает располагать поля диалога в несколько колонок
 		void StartColumns()	{ AddColumnView(); }
 		void ColumnBreak() { AddNewColumn(); }
 		void EndColumns() { EndColumnView(); }
@@ -856,6 +906,7 @@ using t_string = std::string;
 			return Button;
 		}
 
+        /* добавляет необязательный разделитель */
 		void AddSeparator(FarLangMsg MessageId = FarLangMsg {-1}) {
 			if (UseModernLook) AddEmptyLine();
 
@@ -868,6 +919,7 @@ using t_string = std::string;
 			if (UseModernLook) AddEmptyLine();
 		}
 
+        /* добавляет несколько кнопок в ряд (или несколько рядов, если в один не помещается) */
 		std::vector<ItemReference> AddButtonsLine(FarLangMsg buttons[], int buttonsCount, int defaultIdx = 0, int maxWidth = 0) {
 			std::vector<ItemReference> v;
 			v.reserve(buttonsCount);
@@ -916,13 +968,16 @@ using t_string = std::string;
 			AddNL();
 		}
 
+        /* создает заглушку, невидимую в диалоге */
 		ItemReference AddNone()	{
 			return ItemReference(*this);
 		}
 
+        /* флаги при создании диалога */
 		void SetDialogFlags(DWORD flags) { dialogFlags = flags; }
 		DWORD GetDialogFlags() const { return dialogFlags; };
 
+        /* показываем диалог и возвращаем кнопку которая была нажата (если это выход по кнопке) */
 		bool ShowDialog(int *id = nullptr) {
 			UpdateBorderSize();
 			int Result = DoShowDialog();
@@ -938,6 +993,7 @@ using t_string = std::string;
 			return false;
 		}
 
+        /* внутренняя кухня для instant callback */
 		void TrySaveValueImmediate(int id) {
 			if (Bindings [id] && Bindings [id]->supportsTrySave() )
 				Bindings [id]->TrySaveValue(&DialogItems [id], 0);

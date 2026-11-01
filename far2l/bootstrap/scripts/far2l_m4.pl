@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use warnings;
 use strict;
+use File::Spec;
 
 # Значения для замены
 
@@ -35,6 +36,27 @@ while (my $line = <STDIN>) {
     if ($line =~ /^`/ || $line =~ /`#-#'/ || $line =~ /Perl regexp`s/) {
         $line =~ s/[`']//g;
     }
+
+	if ($line =~ /^\s*include_dir\("([^"]+)"\)\s*$/) {
+	    my $dir = $1;
+
+	    opendir(my $dh, $dir)
+	        or die "Cannot open directory $dir: $!";
+
+	    foreach my $file (sort grep { -f File::Spec->catfile($dir, $_) } readdir($dh)) {
+	        open(my $fh, "<", File::Spec->catfile($dir, $file))
+	            or die "Cannot open $file: $!";
+
+	        while (my $inc = <$fh>) {
+	            print $inc;
+	        }
+
+	        close($fh);
+	    }
+
+	    closedir($dh);
+	    next;
+	}
 
     print "$line";
 }

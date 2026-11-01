@@ -24,10 +24,14 @@ add_custom_target(bootstrap
         DEPENDS farlang.templ lang.inc ${HLFFILES}
 )
 
+file(GLOB TRANSLATION_FILES
+    "${SCRIPTS}/translations.d/*"
+)
+
 add_custom_command(OUTPUT "${BOOTSTRAP}/farlang.templ"
     COMMAND cat "${SCRIPTS}/farlang.templ.m4" | perl -I. ${M4PL} > "${BOOTSTRAP}/farlang.templ"
     WORKING_DIRECTORY "${SCRIPTS}"
-    DEPENDS "${SCRIPTS}/farlang.templ.m4" "${SCRIPTS}/far2l_m4.pl"
+    DEPENDS "${SCRIPTS}/farlang.templ.m4" "${SCRIPTS}/far2l_m4.pl" ${TRANSLATION_FILES}
     COMMENT "generating language template"
 )
 

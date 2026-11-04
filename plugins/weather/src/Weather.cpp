@@ -44,11 +44,6 @@ static void shutdown() {
 	weatherCore->Shutdown();
 }
 
-SHAREDSYMBOL void WINAPI ExitFARW(void)
-{
-	weatherCore->Shutdown();
-}
-
 #include <string_view>
 #include <cmath>
 
@@ -136,6 +131,7 @@ SHAREDSYMBOL int WINAPI ProcessSynchroEventW(int Event, void *Param)
 		if (osdRowNumber < 0){ 
 			fprintf(stderr, "ProcessSynchroEventW: %d -> up, osd api = %p, row = %d, NEW `%ls`\n", Event, osd, osdRowNumber, row.c_str());
 			osdRowNumber = osd->AddLine(row);
+			osd->UpdateRowHint(osdRowNumber, HintWeather);
 		}
 		else {
 			fprintf(stderr, "ProcessSynchroEventW: %d -> up, osd api = %p, row = %d, UPD\n", Event, osd, osdRowNumber);
@@ -213,4 +209,9 @@ SHAREDSYMBOL int WINAPI EXP_NAME(Configure)(int) {
 		}
 	}
 	return 0;
+}
+
+SHAREDSYMBOL void WINAPI ExitFARW(void)
+{
+	weatherCore->Shutdown();
 }

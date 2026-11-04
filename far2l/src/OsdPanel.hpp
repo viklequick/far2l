@@ -69,6 +69,7 @@ public:
 
         // Styling
         uint64_t color{0x00FFFFFF00000080}; // Far2l Navy Blue
+        HintObjectType hint { HintText };
     };
 
 private:
@@ -127,6 +128,8 @@ public:
      * @param fieldText Text to insert (will be padded or truncated to match width).
      */
     void UpdateField(int rowNumber, int colOffset, int width, const std::wstring& fieldText);
+
+    virtual void UpdateRowHint(int rowNum, HintObjectType hint) override { m_rows[rowNum].hint = hint; }
 
     // --- Path API (Intelligent Middle-Truncation) ---
 

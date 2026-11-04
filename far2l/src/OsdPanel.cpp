@@ -519,6 +519,7 @@ void OsdPanel::DisplayObject() {
             GotoXY(X1 + 1, y);
             SetColor(row.color);
             Text(formatted.c_str());
+            HintAt(HintOSD, row.hint, false, false, false);
         }
     } else {
         // Vertical column orientation
@@ -534,6 +535,7 @@ void OsdPanel::DisplayObject() {
                 std::wstring singleChar(1, formatted[charIdx]);
 	            SetColor(row.color);
                 Text(singleChar.c_str());
+                HintAt(HintOSD, row.hint, false, false, false);
             }
         }
     }

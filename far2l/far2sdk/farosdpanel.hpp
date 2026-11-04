@@ -25,6 +25,7 @@ public:
     virtual int AddPath(const std::wstring& prefix, const std::wstring& suffix, const std::wstring& pathToFile, uint64_t color = 0) = 0;
     virtual void UpdatePath(int rowNumber, const std::wstring& pathToFile) = 0;
     virtual std::wstring GetPath(int rowNumber) const = 0;
+    virtual void UpdateRowHint(int rowNum, HintObjectType hint) = 0;
 
     // --- Numeric API ---
     virtual int AddNumeric(const std::wstring& prefix, const std::wstring& suffix, double value, int precision = 1, uint64_t color = 0) = 0;

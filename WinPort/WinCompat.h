@@ -474,7 +474,8 @@ typedef enum {
     HintBox,
     HintTitle,
     HintImage,
-    HintScrollBar
+    HintScrollBar,
+    HintWeather
 } HintObjectType;
 
 typedef struct _CHAR_INFO {

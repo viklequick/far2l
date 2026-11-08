@@ -347,6 +347,7 @@ struct FindFileOptions
 	bool FindCaseSensitiveFileMask;
 	bool CollectFiles;
 	bool UseFilter;
+	bool RespectGitIgnore;
 	bool FindAlternateStreams;
 	FARString strSearchInFirstSize;
 

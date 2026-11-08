@@ -12,6 +12,8 @@ or via `git log --no-merges --pretty=format:"%as: %B"`).
 * Fix directory creation with quotes in the name
 * Several bugfixes and improvements
 
+* Find file (**Alt+F7**): **Respect Git ignore rules** for local searches, enabled by default when the `git` command is available. Uses Git's repository and global excludes while retaining tracked files and skipping ignored directory trees.
+
 ## 2.9.1 beta (2026-10-07)
 * GUI|WX: Drag files out of far2l panels
 * Quick view panel: Directory summary information improvements; colorer on for file preview

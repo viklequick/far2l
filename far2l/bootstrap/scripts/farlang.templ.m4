@@ -30095,7 +30095,6 @@ upd:"Auto-adjust colors contrast"
 upd:"Auto-adjust colors contrast"
 upd:"Auto-adjust colors contrast"
 
-<<<<<<< HEAD
 EnforceFullShadow
 "Тени у диалогов как в Web, на весь экран"
 "Web-like dialog shadows"
@@ -31021,8 +31020,6 @@ upd:"Cascade frames"
 upd:"Cascade frames"
 upd:"Cascade frames"
 
-include_dir("./translations.d")
-=======
 FindRespectGitIgnore
 "Учитывать правила Git ignore"
 "Respect Git ignore rules"
@@ -31045,7 +31042,7 @@ upd:"Git ignore rules could not be applied in %ls. Search continued there withou
 upd:"Git ignore rules could not be applied in %ls. Search continued there without them. Check that Git is installed and the repository is accessible."
 upd:"Git ignore rules could not be applied in %ls. Search continued there without them. Check that Git is installed and the repository is accessible."
 
->>>>>>> pr3695
+include_dir("./translations.d")
 #Must be the last
 NewFileName
 l:

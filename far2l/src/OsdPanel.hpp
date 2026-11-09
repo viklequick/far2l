@@ -26,12 +26,12 @@
 class OsdPanel : public ScreenObject, public OsdPanelInterface {
 public:
     enum class Orientation {
-        Horizontal, // Standard row-by-row rendering
+        Horizontal = 1, // Standard row-by-row rendering
         Vertical    // Vertical column / stacked character rendering
     };
 
     enum class RowType {
-        PlainText,      // Plain string
+        PlainText = 1,      // Plain string
         SubFieldText,   // Base string with dynamic character field overlays
         Path,           // Dynamic path with middle-truncation
         Numeric,        // Dynamic floating-point or integer value
@@ -89,7 +89,7 @@ private:
     uint64_t m_accentColor{0x0000FFFF000000080}; // Cyan
 
     // Whether changes should auto-trigger Redraw()
-    bool m_autoRedraw{true};
+    bool m_autoRedraw{false};
 
 public:
     OsdPanel(int x1 = 2, int y1 = 2, int maxWidth = 60, int maxHeight = 15);

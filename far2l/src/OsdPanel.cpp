@@ -93,7 +93,7 @@ int OsdPanel::AddLine(const std::wstring& text, uint64_t color) {
         idx = static_cast<int>(m_rows.size()) - 1;
         m_rows[idx].visible = true;
 
-        fprintf(stderr, "\tOSD[%d] = `%ls`\n", idx, m_rows[idx].rawText.c_str());
+        fprintf(stderr, "add\tOSD[%d] = `%ls`\n", idx, m_rows[idx].rawText.c_str());
     }
     TriggerRedrawIfEnabled();
     return idx;
@@ -204,6 +204,8 @@ int OsdPanel::AddPath(const std::wstring& prefix, const std::wstring& suffix,
         m_rows.push_back(std::move(item));
         idx = static_cast<int>(m_rows.size()) - 1;
         m_rows[idx].visible = true;
+
+        fprintf(stderr, "add\tOSD[%d] = `%ls`\n", idx, m_rows[idx].rawText.c_str());
     }
     TriggerRedrawIfEnabled();
     return idx;
@@ -475,7 +477,6 @@ void OsdPanel::DisplayObject() {
     int maxWidth = 0;
     int maxHeight = 0;
 
-
 	SetScreen(X1, Y1, X2, Y2, L' ', FarColorToReal(COL_PANELTEXT));
 	Hint(X1, Y1, X2, Y2, HintOSD, HintObjectNone);
     Box(X1, Y1, X2, Y2, FarColorToReal(COL_PANELBOX), SINGLE_BOX);
@@ -520,6 +521,9 @@ void OsdPanel::DisplayObject() {
             SetColor(row.color);
             Text(formatted.c_str());
             HintAt(HintOSD, row.hint, false, false, false);
+
+            fprintf(stderr, "\tOSD[%ld] = `%ls` type=%d `%ls`\n", i, formatted.c_str(), (int)row.type, row.rawText.c_str());
+
         }
     } else {
         // Vertical column orientation

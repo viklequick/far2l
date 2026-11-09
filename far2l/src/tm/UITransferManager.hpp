@@ -12,7 +12,7 @@ public:
 	virtual uint64_t addTransferJob(const std::wstring& sourcePath, const std::wstring& destinationDir, TransferMode mode = TransferMode::COPY) override;
 
 protected:
-    void onProgress(const TransferProgress& jobProgress, const TransferProgress& prog) override;
+    void onTransferProgress(const TransferItemProgress& currentItem, const TransferProgress& jobProgress) override;
     void onFolderScanProgress(const FolderScanProgress& scan) override;
     QuestionAnswer onQuestion(const TransferQuestion& q, bool& rememberForType) override;
 

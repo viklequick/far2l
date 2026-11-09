@@ -29,45 +29,57 @@
 
 /*     │❓/run/me...cus_mechaicus.svg  ███░░░░░░░░░ 19%│
        │📄   1/   1 📁   1/   1 💾 18M/ 75M 📶4.34 M/s │        */
-void UITransferManager::onProgress(const TransferProgress& jobProgress, const TransferProgress& prog) {
-	int row = jobToRow[jobProgress.job_id];
+// Complete progress metrics for an individual transfer job
+void UITransferManager::onTransferProgress(const TransferItemProgress& jobProgress, const TransferProgress& prog)  {
+	fprintf(stderr, "onTransferProgress: %ld %ls -> %ls %ld of %ld\n", 
+		prog.job_id, 
+		jobProgress.source_path.c_str(), 
+		jobProgress.destination_path.c_str(),
+		jobProgress.bytes_transferred,
+		jobProgress.total_bytes);
 
-	std::wstring icon = L"⚙️";
-	if (jobProgress.is_completed) icon = L"🌿";
-	if (jobProgress.is_scanning_active) icon = L"🍃";
-	if (jobProgress.active_questions_count > 0) icon = L"❓";
-	if (jobProgress.is_paused_for_io_error) icon = L"‼️";
+	int row = jobToRow.find(prog.job_id) != jobToRow.end() ? jobToRow[prog.job_id] : -1;
+	if (row < 0) return;
+
+	const wchar_t* icon = L"⚙️";
+	if (jobProgress.is_completed || prog.is_completed) icon = L"🌿";
+	// if (jobProgress.active_questions_count > 0) icon = L"❓";
+	if (prog.is_paused_for_io_error) icon = L"‼️";
+	if (prog.is_cancelled) icon = L"🍁";
 
 	// first line: icon, current file, progress meter
 	osd->UpdateField(row, 0, 1, icon);
 	int lineW = osd->GetMaxWidth() - 2 - 2 - 16; /* │⚙️ ...  ███░░░░░░░░░ 00%│ */
-	osd->UpdateField(row, 1, lineW, TruncatePathMiddle(jobProgress.current_target_item, lineW));
+	osd->UpdateField(row, 1, lineW, TruncatePathMiddle(jobProgress.destination_path, lineW));
 	osd->UpdateField(row, 2 + lineW, 16, OsdPanel::BuildProgressBarString(jobProgress.bytes_transferred, 0, jobProgress.total_bytes, 16, true));
 
 	// second line: counters
-	if (jobProgress.is_paused_for_io_error) 
-		osd->UpdateLine(row + 1, jobProgress.io_error_reason);
+	if (prog.is_paused_for_io_error) 
+		osd->UpdateLine(row + 1, prog.io_error_reason);
 	else {
-		osd->UpdateField(row + 1, 2, 4, BuildSizeString(jobProgress.files_transferred, 4));
-        osd->UpdateField(row + 1, 7, 4, BuildSizeString(jobProgress.total_files, 4));
-		osd->UpdateField(row + 1, 13, 4, BuildSizeString(jobProgress.dirs_transferred, 4));
-        osd->UpdateField(row + 1, 18, 4, BuildSizeString(jobProgress.total_dirs, 4));
-		osd->UpdateField(row + 1, 24, 4, BuildSizeString(jobProgress.bytes_transferred, 4));
-        osd->UpdateField(row + 1, 29, 4, BuildSizeString(jobProgress.total_bytes, 4));
-        osd->UpdateField(row + 1, 35, 4, BuildRealString(jobProgress.current_speed_mb_s, 4));
+		osd->UpdateField(row + 1, 2, 4, BuildSizeString(prog.files_transferred, 4));
+        osd->UpdateField(row + 1, 7, 4, BuildSizeString(prog.total_files, 4));
+		osd->UpdateField(row + 1, 13, 4, BuildSizeString(prog.dirs_transferred, 4));
+        osd->UpdateField(row + 1, 18, 4, BuildSizeString(prog.total_dirs, 4));
+		osd->UpdateField(row + 1, 24, 4, BuildSizeString(prog.bytes_transferred, 4));
+        osd->UpdateField(row + 1, 29, 4, BuildSizeString(prog.total_bytes, 4));
+        osd->UpdateField(row + 1, 35, 4, BuildRealString(prog.current_speed_mb_s, 4));
 	}
 
-	if (jobProgress.is_completed) { 
+	if (jobProgress.is_completed || prog.is_cancelled) { 
 		osd->CompleteLine(row);
 		osd->CompleteLine(row + 1);
-		jobToRow.erase(jobProgress.job_id);
+		jobToRow.erase(prog.job_id);
 	}
 }
 
 void UITransferManager::onFolderScanProgress(const FolderScanProgress& scan) {
-	int row = jobToRow[scan.job_id];
+	fprintf(stderr, "onFolderScanProgress: %ld\n", scan.job_id);
 
-	std::wstring icon = L"🔍";
+	int row = jobToRow.find(scan.job_id) != jobToRow.end() ? jobToRow[scan.job_id] : -1;
+	if (row < 0) return;
+
+	const wchar_t* icon = L"🔍";
 	if (scan.is_completed || scan.state == ScanState::COMPLETED) icon = L"🌿";
 	if (scan.state == ScanState::CANCELLED || scan.state == ScanState::FAILED) icon = L"‼️";
 
@@ -281,6 +293,8 @@ QuestionAnswer UITransferManager::onQuestion(const TransferQuestion& q, bool& re
 
 uint64_t UITransferManager::addTransferJob(const std::wstring& sourcePath, const std::wstring& destinationDir, TransferMode mode) {
 	uint64_t job = TransferManager::addTransferJob(sourcePath, destinationDir, mode);
+
+	fprintf(stderr, "add transfer job: %ls -> %ls\n", sourcePath.c_str(), destinationDir.c_str());
 
 	// add new block in osd pane and then place it into map
 	int row = osd->AddPath(L"⏱️", L"                ", sourcePath);

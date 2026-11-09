@@ -23,12 +23,11 @@ TransferManager::TransferManager(std::shared_ptr<IFileSystem> fs_impl, TransferO
 }
 
 TransferManager::~TransferManager() {
-    cancel();
-    wait();
+    stopService();
 }
 
 void TransferManager::setBufferRingSizeMB(size_t sizeMB, size_t chunkSize) {
-    if (running_.load(std::memory_order_relaxed)) {
+    if (service_running_.load(std::memory_order_relaxed)) {
         return;
     }
     sizeMB = std::clamp<size_t>(sizeMB, 16, 1024);
@@ -47,116 +46,113 @@ size_t TransferManager::getBufferRingCapacityBytes() const {
 }
 
 bool TransferManager::startService() {
-    options_.service_mode = true;
-    return start({}, L"");
-}
-
-void TransferManager::stopService() {
-    options_.service_mode = false;
-    cancel();
-    wait();
-}
-
-bool TransferManager::start(const std::vector<std::wstring>& sources, const std::wstring& targetDir) {
-    if (running_.load(std::memory_order_relaxed)) {
+    if (service_running_.load(std::memory_order_acquire)) {
         return false;
     }
 
-    target_dir_ = targetDir;
-    if (!target_dir_.empty()) {
-        if (!fs_->exists(target_dir_)) {
-            if (!fs_->createDirectories(target_dir_)) {
-                return false;
-            }
-        } else if (!fs_->isDirectory(target_dir_)) {
-            return false;
-        }
-    }
-
-    running_.store(true, std::memory_order_release);
-    cancelled_.store(false, std::memory_order_release);
-    paused_.store(false, std::memory_order_release);
+    service_running_.store(true, std::memory_order_release);
+    service_paused_.store(false, std::memory_order_release);
     io_error_paused_.store(false, std::memory_order_release);
-    discovery_finished_.store(false, std::memory_order_release);
-    start_time_ = std::chrono::steady_clock::now();
 
-    // Push initial sources / jobs
-    if (!sources.empty() && !targetDir.empty()) {
-        std::lock_guard<std::mutex> lock(queue_mutex_);
-        for (const auto& src : sources) {
-            TransferJobRequest req;
-            req.job_id = next_job_id_++;
-            req.source_path = src;
-            req.destination_dir = targetDir;
-            req.mode = options_.mode;
-            pending_job_requests_.push_back(req);
-
-            {
-                std::lock_guard<std::mutex> jLock(job_mutex_);
-                TransferProgress jp;
-                jp.job_id = req.job_id;
-                jp.source_path = src;
-                jp.destination_dir = targetDir;
-                jp.mode = options_.mode;
-                jp.is_completed = false;
-                job_progresses_[req.job_id] = jp;
-            }
-        }
-    }
-
-    // Spawn scanner/discovery thread
+    // Spawn scanner/discovery worker thread
     discovery_thread_ = std::thread(&TransferManager::discoveryWorker, this);
 
-    // Spawn Reader thread pool
+    // Spawn Reader worker thread pool
     size_t readers = std::max<size_t>(1, options_.num_readers);
     for (size_t i = 0; i < readers; ++i) {
         reader_threads_.emplace_back(&TransferManager::readerWorker, this, i);
     }
 
-    // Spawn Writer thread pool
+    // Spawn Writer worker thread pool
     size_t writers = std::max<size_t>(1, options_.num_writers);
     for (size_t i = 0; i < writers; ++i) {
         writer_threads_.emplace_back(&TransferManager::writerWorker, this, i);
     }
 
-    // Spawn throttled Progress thread (~10 Hz)
-    progress_thread_ = std::thread(&TransferManager::progressWorker, this);
-
     return true;
 }
 
+void TransferManager::stopService() {
+    if (!service_running_.load(std::memory_order_acquire)) {
+        return;
+    }
+
+    // Mark all remaining jobs as cancelled
+    {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        for (auto& [id, j] : jobs_) {
+            j->is_cancelled = true;
+            j->progress.is_cancelled = true;
+            j->active_items.clear();
+        }
+    }
+
+    if (buffer_ring_) {
+        buffer_ring_->shutdown();
+    }
+
+    // Wake up all condition variables
+    cv_sources_.notify_all();
+    cv_items_.notify_all();
+    cv_questions_.notify_all();
+    cv_io_recover_.notify_all();
+    cv_job_done_.notify_all();
+    cv_all_done_.notify_all();
+
+    if (discovery_thread_.joinable()) {
+        discovery_thread_.join();
+    }
+    for (auto& t : reader_threads_) {
+        if (t.joinable()) t.join();
+    }
+    reader_threads_.clear();
+
+    for (auto& t : writer_threads_) {
+        if (t.joinable()) t.join();
+    }
+    writer_threads_.clear();
+
+    service_running_.store(false, std::memory_order_release);
+}
+
 uint64_t TransferManager::addTransferJob(const std::wstring& sourcePath, const std::wstring& destinationDir, TransferMode mode) {
-    if (!running_.load(std::memory_order_acquire)) {
+    if (!service_running_.load(std::memory_order_acquire)) {
         startService();
     }
+
     if (!fs_->exists(destinationDir)) {
         fs_->createDirectories(destinationDir);
     }
 
-    uint64_t jId = next_job_id_++;
-    TransferJobRequest req;
-    req.job_id = jId;
-    req.source_path = sourcePath;
-    req.destination_dir = destinationDir;
-    req.mode = mode;
+    auto job = std::make_shared<TransferJobRequest>();
+    job->job_id = next_job_id_++;
+    job->source_path = sourcePath;
+    job->destination_dir = destinationDir;
+    job->mode = mode;
+
+    job->scan_progress.job_id = job->job_id;
+    job->scan_progress.folder_path = sourcePath;
+    job->scan_progress.destination_dir = destinationDir;
+    job->scan_progress.state = ScanState::SCANNING;
+
+    job->progress.job_id = job->job_id;
+    job->progress.source_path = sourcePath;
+    job->progress.destination_dir = destinationDir;
+    job->progress.mode = mode;
+    job->progress.buffer_ring_size_mb = getBufferRingSizeMB();
 
     {
-        std::lock_guard<std::mutex> jLock(job_mutex_);
-        TransferProgress jp;
-        jp.job_id = jId;
-        jp.source_path = sourcePath;
-        jp.destination_dir = destinationDir;
-        jp.mode = mode;
-        jp.is_completed = false;
-        job_progresses_[jId] = jp;
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        jobs_[job->job_id] = job;
     }
 
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
-        pending_job_requests_.push_back(std::move(req));
+        pending_job_requests_.push_back(job);
     }
-    cv_sources_.notify_one();
-    return jId;
+    cv_sources_.notify_all();
+
+    return job->job_id;
 }
 
 std::vector<uint64_t> TransferManager::addTransferJobs(const std::vector<std::wstring>& sources, const std::wstring& destinationDir, TransferMode mode) {
@@ -168,543 +164,91 @@ std::vector<uint64_t> TransferManager::addTransferJobs(const std::vector<std::ws
     return ids;
 }
 
-void TransferManager::addSource(const std::wstring& sourcePath) {
-    addTransferJob(sourcePath, target_dir_.empty() ? L"." : target_dir_, options_.mode);
+bool TransferManager::waitForJob(uint64_t jobId) {
+    std::unique_lock<std::mutex> lock(job_mutex_);
+    cv_job_done_.wait(lock, [&]() {
+        auto it = jobs_.find(jobId);
+        if (it == jobs_.end()) return true;
+        return it->second->is_completed || it->second->is_cancelled || !service_running_.load(std::memory_order_acquire);
+    });
+    return true;
 }
 
-void TransferManager::addSource(const std::wstring& sourcePath, const std::wstring& destinationDir) {
-    addTransferJob(sourcePath, destinationDir, options_.mode);
-}
-
-void TransferManager::wait() {
-    // Wait for discovery to finish scanning all items
-    if (discovery_thread_.joinable()) {
-        discovery_thread_.join();
-    }
-
-    // Wait until all pending items and folder scan tasks are processed
+bool TransferManager::cancelJob(uint64_t jobId) {
+    std::shared_ptr<TransferJobRequest> job;
     {
-        std::unique_lock<std::mutex> lock(queue_mutex_);
-        cv_all_done_.wait(lock, [this]() {
-            bool hasScan = false;
-            {
-                std::lock_guard<std::mutex> sLock(scan_mutex_);
-                hasScan = !pending_scan_tasks_.empty() || any_scanning_active_.load();
-            }
-            return (pending_items_.empty() && !hasScan && active_transfers_.load() == 0) ||
-                   cancelled_.load();
-        });
-    }
-
-    // Stop and unblock reader/writer workers
-    running_.store(false, std::memory_order_release);
-    if (buffer_ring_) {
-        buffer_ring_->shutdown();
-    }
-    cv_items_.notify_all();
-
-    for (auto& t : reader_threads_) {
-        if (t.joinable()) t.join();
-    }
-    reader_threads_.clear();
-
-    for (auto& t : writer_threads_) {
-        if (t.joinable()) t.join();
-    }
-    writer_threads_.clear();
-
-    if (progress_thread_.joinable()) {
-        progress_thread_.join();
-    }
-}
-
-void TransferManager::cancel() {
-    cancelled_.store(true, std::memory_order_release);
-    running_.store(false, std::memory_order_release);
-    if (buffer_ring_) {
-        buffer_ring_->shutdown();
-    }
-    {
-        std::lock_guard<std::mutex> sLock(scan_mutex_);
-        pending_scan_tasks_.clear();
-        for (auto& [_, sp] : folder_scans_) {
-            if (sp.state == ScanState::SCANNING || sp.state == ScanState::QUEUED) {
-                sp.state = ScanState::CANCELLED;
-            }
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        auto it = jobs_.find(jobId);
+        if (it == jobs_.end()) {
+            return false;
         }
-        any_scanning_active_.store(false, std::memory_order_release);
+        job = it->second;
+        job->is_cancelled = true;
+        job->progress.is_cancelled = true;
+        job->active_items.clear();
     }
-    cv_items_.notify_all();
-    cv_sources_.notify_all();
+
+    // Emit final progress pitch with cancelled status
+    TransferItemProgress cancelledProg;
+    cancelledProg.source_path = job->source_path;
+    cancelledProg.destination_path = job->destination_dir;
+    cancelledProg.is_completed = false;
+    onTransferProgress(cancelledProg, job->progress);
+
+    cv_job_done_.notify_all();
     cv_all_done_.notify_all();
-    cv_questions_.notify_all();
+    return true;
 }
 
-void TransferManager::pause() {
-    paused_.store(true, std::memory_order_release);
-}
-
-void TransferManager::resume() {
-    paused_.store(false, std::memory_order_release);
-    cv_items_.notify_all();
-}
-
-void TransferManager::discoveryWorker() {
-    while (running_.load(std::memory_order_acquire) && !cancelled_.load(std::memory_order_acquire)) {
-        TransferJobRequest currentJob;
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex_);
-            if (pending_job_requests_.empty()) {
-                discovery_finished_.store(true, std::memory_order_release);
-                if (options_.service_mode) {
-                    cv_sources_.wait(lock, [this]() {
-                        return !pending_job_requests_.empty() || cancelled_.load() || !running_.load();
-                    });
-                    if (cancelled_.load() || !running_.load()) {
-                        break;
-                    }
-                } else {
-                    cv_sources_.wait_for(lock, std::chrono::milliseconds(50), [this]() {
-                        return !pending_job_requests_.empty() || cancelled_.load() || !running_.load();
-                    });
-                    if (pending_job_requests_.empty()) {
-                        break;
-                    }
-                }
-                discovery_finished_.store(false, std::memory_order_release);
-            }
-
-            if (pending_job_requests_.empty()) continue;
-
-            currentJob = std::move(pending_job_requests_.front());
-            pending_job_requests_.pop_front();
-            total_jobs_processed_++;
-        }
-
-        if (!currentJob.source_path.empty()) {
-            enqueueFolderScan(currentJob.job_id, currentJob.source_path, currentJob.destination_dir);
-        }
+bool TransferManager::pauseJob(uint64_t jobId, bool pause) {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    if (it == jobs_.end()) {
+        return false;
     }
-    discovery_finished_.store(true, std::memory_order_release);
-}
-
-void TransferManager::scanSource(const std::wstring& srcPath, const std::wstring& targetBase) {
-    uint64_t jId = next_job_id_++;
-    {
-        std::lock_guard<std::mutex> jLock(job_mutex_);
-        TransferProgress jp;
-        jp.job_id = jId;
-        jp.source_path = srcPath;
-        jp.destination_dir = targetBase;
-        jp.mode = options_.mode;
-        jp.is_completed = false;
-        job_progresses_[jId] = jp;
-    }
-    enqueueFolderScan(jId, srcPath, targetBase);
-}
-
-void TransferManager::enqueueFolderScan(uint64_t jobId, const std::wstring& srcPath, const std::wstring& targetBase) {
-    FileStat st = fs_->statFile(srcPath, false);
-    if (!st.exists) {
-        error_count_++;
-        recordJobError(jobId);
-        std::lock_guard<std::mutex> sLock(scan_mutex_);
-        FolderScanProgress sp;
-        sp.job_id = jobId;
-        sp.folder_path = srcPath;
-        sp.destination_dir = targetBase;
-        sp.state = ScanState::FAILED;
-        folder_scans_[jobId] = sp;
-        return;
-    }
-
-    std::wstring baseName;
-    try {
-        fs::path p(srcPath);
-        baseName = p.filename().wstring();
-        if (baseName.empty() || baseName == L".") {
-            baseName = p.parent_path().filename().wstring();
-        }
-    } catch (...) {
-        baseName = L"copied_item";
-    }
-
-    std::wstring destRootItem = PathCombine(targetBase, baseName);
-
-    if (st.is_directory && !st.is_symlink) {
-        FolderScanProgress sp;
-        sp.job_id = jobId;
-        sp.folder_path = srcPath;
-        sp.destination_dir = destRootItem;
-        sp.state = ScanState::SCANNING;
-        sp.scanned_folders = 1;
-        sp.current_item = srcPath;
-        sp.is_completed = false;
-
-        {
-            std::lock_guard<std::mutex> sLock(scan_mutex_);
-            folder_scans_[jobId] = sp;
-            active_tasks_per_job_[jobId] = 1;
-            any_scanning_active_.store(true, std::memory_order_release);
-
-            FolderScanTask task;
-            task.job_id = jobId;
-            task.current_src_dir = srcPath;
-            task.current_dst_dir = destRootItem;
-            task.root_src = srcPath;
-            task.root_dst = destRootItem;
-            pending_scan_tasks_.push_back(std::move(task));
-        }
-
-        total_scanned_folders_++;
-        total_dirs_++;
-
-        {
-            std::lock_guard<std::mutex> jLock(job_mutex_);
-            job_progresses_[jobId].total_dirs++;
-        }
-
-        TransferItem dirItem;
-        dirItem.id = next_item_id_++;
-        dirItem.job_id = jobId;
-        dirItem.src_path = srcPath;
-        dirItem.dst_path = destRootItem;
-        dirItem.root_src = srcPath;
-        dirItem.root_dst = destRootItem;
-        dirItem.is_directory = true;
-        dirItem.is_symlink = false;
-        dirItem.size = 0;
-
-        {
-            std::lock_guard<std::mutex> lock(queue_mutex_);
-            pending_items_.push_back(std::move(dirItem));
-        }
-
-        onFolderScanProgress(sp);
-        cv_items_.notify_all();
-    } else {
-        FolderScanProgress sp;
-        sp.job_id = jobId;
-        sp.folder_path = srcPath;
-        sp.destination_dir = destRootItem;
-        sp.state = ScanState::COMPLETED;
-        sp.scanned_files = 1;
-        sp.scanned_folders = 0;
-        sp.scanned_bytes = st.size;
-        sp.current_item = srcPath;
-        sp.is_completed = true;
-
-        {
-            std::lock_guard<std::mutex> sLock(scan_mutex_);
-            folder_scans_[jobId] = sp;
-        }
-
-        total_scanned_files_++;
-        total_scanned_bytes_.fetch_add(st.size, std::memory_order_relaxed);
-        total_files_++;
-        total_bytes_.fetch_add(st.size, std::memory_order_relaxed);
-
-        {
-            std::lock_guard<std::mutex> jLock(job_mutex_);
-            auto& jp = job_progresses_[jobId];
-            jp.total_files++;
-            jp.total_bytes += st.size;
-        }
-
-        TransferItem fileItem;
-        fileItem.id = next_item_id_++;
-        fileItem.job_id = jobId;
-        fileItem.src_path = srcPath;
-        fileItem.dst_path = destRootItem;
-        fileItem.root_src = srcPath;
-        fileItem.root_dst = destRootItem;
-        fileItem.is_directory = false;
-        fileItem.is_symlink = st.is_symlink;
-        fileItem.size = st.size;
-
-        {
-            std::lock_guard<std::mutex> lock(queue_mutex_);
-            pending_items_.push_back(std::move(fileItem));
-        }
-
-        onFolderScanProgress(sp);
-        cv_items_.notify_all();
-    }
-}
-
-bool TransferManager::processScanTask(const FolderScanTask& task) {
-    if (cancelled_.load(std::memory_order_relaxed)) return false;
-
-    std::vector<DirEntry> entries = fs_->listDirectory(task.current_src_dir);
-    uint32_t foundFiles = 0;
-    uint32_t foundDirs = 0;
-    uint64_t foundBytes = 0;
-    std::wstring lastItem = task.current_src_dir;
-
-    std::vector<TransferItem> newItems;
-    std::vector<FolderScanTask> newSubtasks;
-    newItems.reserve(entries.size());
-
-    for (const auto& entry : entries) {
-        if (cancelled_.load(std::memory_order_relaxed)) break;
-
-        std::wstring childDst = PathCombine(task.current_dst_dir, entry.name);
-        TransferItem item;
-        item.id = next_item_id_++;
-        item.job_id = task.job_id;
-        item.src_path = entry.full_path;
-        item.dst_path = childDst;
-        item.root_src = task.root_src;
-        item.root_dst = task.root_dst;
-        item.is_directory = entry.is_directory && !entry.is_symlink;
-        item.is_symlink = entry.is_symlink;
-        item.size = entry.size;
-
-        lastItem = entry.full_path;
-
-        if (item.is_directory) {
-            foundDirs++;
-            total_scanned_folders_++;
-            total_dirs_++;
-
-            FolderScanTask childTask;
-            childTask.job_id = task.job_id;
-            childTask.current_src_dir = entry.full_path;
-            childTask.current_dst_dir = childDst;
-            childTask.root_src = task.root_src;
-            childTask.root_dst = task.root_dst;
-            newSubtasks.push_back(std::move(childTask));
-        } else {
-            foundFiles++;
-            foundBytes += entry.size;
-            total_scanned_files_++;
-            total_scanned_bytes_.fetch_add(entry.size, std::memory_order_relaxed);
-            total_files_++;
-            total_bytes_.fetch_add(entry.size, std::memory_order_relaxed);
-        }
-
-        newItems.push_back(std::move(item));
-    }
-
-    if (!newItems.empty()) {
-        std::lock_guard<std::mutex> lock(queue_mutex_);
-        for (auto& itm : newItems) {
-            pending_items_.push_back(std::move(itm));
-        }
-    }
-
-    {
-        std::lock_guard<std::mutex> jLock(job_mutex_);
-        auto& jp = job_progresses_[task.job_id];
-        jp.total_files += foundFiles;
-        jp.total_dirs += foundDirs;
-        jp.total_bytes += foundBytes;
-    }
-
-    FolderScanProgress currentProgressSnapshot;
-    {
-        std::lock_guard<std::mutex> sLock(scan_mutex_);
-        auto& sp = folder_scans_[task.job_id];
-        sp.scanned_files += foundFiles;
-        sp.scanned_folders += foundDirs;
-        sp.scanned_bytes += foundBytes;
-        sp.current_item = lastItem;
-
-        for (auto& st : newSubtasks) {
-            pending_scan_tasks_.push_back(std::move(st));
-        }
-
-        size_t& activeCount = active_tasks_per_job_[task.job_id];
-        activeCount += newSubtasks.size();
-        if (activeCount > 0) {
-            activeCount--;
-        }
-        if (activeCount == 0) {
-            sp.state = ScanState::COMPLETED;
-            sp.is_completed = true;
-        }
-
-        bool anyLeft = false;
-        for (const auto& [jId, cnt] : active_tasks_per_job_) {
-            if (cnt > 0) { anyLeft = true; break; }
-        }
-        any_scanning_active_.store(anyLeft, std::memory_order_release);
-
-        currentProgressSnapshot = sp;
-    }
-
-    onFolderScanProgress(currentProgressSnapshot);
+    it->second->is_paused = pause;
+    it->second->progress.is_paused = pause;
     cv_items_.notify_all();
     return true;
 }
 
-void TransferManager::readerWorker(size_t /*threadIndex*/) {
-    while (running_.load(std::memory_order_acquire) && !cancelled_.load(std::memory_order_acquire)) {
-        // Prioritize any pending folder scan task from the unified thread pool
-        bool hasScanTask = false;
-        FolderScanTask scanTask;
-        {
-            std::lock_guard<std::mutex> sLock(scan_mutex_);
-            if (!pending_scan_tasks_.empty()) {
-                scanTask = std::move(pending_scan_tasks_.front());
-                pending_scan_tasks_.pop_front();
-                hasScanTask = true;
-            }
+void TransferManager::wait() {
+    std::unique_lock<std::mutex> lock(job_mutex_);
+    cv_all_done_.wait(lock, [&]() {
+        if (!service_running_.load(std::memory_order_acquire)) return true;
+        if (jobs_.empty()) return true;
+        for (const auto& [id, j] : jobs_) {
+            if (!j->is_completed && !j->is_cancelled) return false;
         }
-
-        if (hasScanTask) {
-            processScanTask(scanTask);
-            continue;
-        }
-
-        TransferItem item;
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex_);
-            cv_items_.wait(lock, [this]() {
-                bool scanAvailable = false;
-                {
-                    std::lock_guard<std::mutex> sLock(scan_mutex_);
-                    scanAvailable = !pending_scan_tasks_.empty();
-                }
-                return !pending_items_.empty() || scanAvailable || !running_.load() || cancelled_.load();
-            });
-
-            if (cancelled_.load() || (!running_.load() && pending_items_.empty())) {
-                bool scanAvailable = false;
-                {
-                    std::lock_guard<std::mutex> sLock(scan_mutex_);
-                    scanAvailable = !pending_scan_tasks_.empty();
-                }
-                if (!cancelled_.load() && scanAvailable) {
-                    continue;
-                }
-                break;
-            }
-
-            if (paused_.load(std::memory_order_relaxed) || io_error_paused_.load(std::memory_order_relaxed)) {
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-                continue;
-            }
-
-            {
-                std::lock_guard<std::mutex> sLock(scan_mutex_);
-                if (!pending_scan_tasks_.empty()) {
-                    scanTask = std::move(pending_scan_tasks_.front());
-                    pending_scan_tasks_.pop_front();
-                    hasScanTask = true;
-                }
-            }
-            if (hasScanTask) {
-                lock.unlock();
-                processScanTask(scanTask);
-                continue;
-            }
-
-            if (pending_items_.empty()) continue;
-
-            item = std::move(pending_items_.front());
-            pending_items_.pop_front();
-            active_transfers_++;
-        }
-
-        current_active_job_id_.store(item.job_id, std::memory_order_relaxed);
-        {
-            std::lock_guard<std::mutex> jLock(job_mutex_);
-            auto it = job_progresses_.find(item.job_id);
-            if (it != job_progresses_.end()) {
-                it->second.current_source_item = item.src_path;
-                it->second.current_target_item = item.dst_path;
-            }
-        }
-
-        {
-            std::lock_guard<std::mutex> lock(display_mutex_);
-            current_source_display_ = item.src_path;
-            current_target_display_ = item.dst_path;
-        }
-
-        // Process item (file, folder, symlink)
-        bool success = processSingleItem(item);
-        if (!success) {
-            error_count_++;
-            recordJobError(item.job_id);
-        }
-
-        active_transfers_--;
-        cv_all_done_.notify_all();
-    }
+        return true;
+    });
 }
 
-void TransferManager::writerWorker(size_t /*threadIndex*/) {
-    while (running_.load(std::memory_order_acquire) && !cancelled_.load(std::memory_order_acquire)) {
-        if (paused_.load(std::memory_order_relaxed) || io_error_paused_.load(std::memory_order_relaxed)) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(20));
-            continue;
-        }
-
-        // Writers grab chunks prepared by reader pipelines
-        BufferChunk* chunk = buffer_ring_->acquireReadyChunk();
-        if (!chunk) {
-            // BufferRing shutdown
-            break;
-        }
-
-        if (chunk->bytes_valid > 0 && chunk->dst_fd >= 0) {
-            ssize_t written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
-            if (written < 0 || static_cast<size_t>(written) != chunk->bytes_valid) {
-                int err = errno ? errno : EIO;
-                if (isCriticalIoError(err)) {
-                    QuestionAnswer act = handleCriticalIo(L"chunk write offset " + std::to_wstring(chunk->dst_offset), err, L"write");
-                    if (act == QuestionAnswer::RETRY) {
-                        // User recovered disk space or device; retry writing
-                        written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
-                        if (written > 0 && static_cast<size_t>(written) == chunk->bytes_valid) {
-                            bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
-                            recordJobBytesTransferred(chunk->job_id, written);
-                            buffer_ring_->releaseCommittedChunk(chunk);
-                            continue;
-                        }
-                    } else if (act == QuestionAnswer::CANCEL) {
-                        buffer_ring_->markChunkFailed(chunk, err);
-                        cancel();
-                        break;
-                    }
-                } else {
-                    TransferItem tempItem;
-                    tempItem.job_id = chunk->job_id;
-                    tempItem.dst_path = L"offset " + std::to_wstring(chunk->dst_offset);
-                    QuestionAnswer wAns = resolveQuestion(
-                        tempItem, QuestionType::WRITE_ERROR,
-                        L"Non-critical write error on destination at offset " + std::to_wstring(chunk->dst_offset), err);
-                    if (wAns == QuestionAnswer::RETRY) {
-                        written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
-                        if (written > 0 && static_cast<size_t>(written) == chunk->bytes_valid) {
-                            bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
-                            recordJobBytesTransferred(chunk->job_id, written);
-                            buffer_ring_->releaseCommittedChunk(chunk);
-                            continue;
-                        }
-                    } else if (wAns == QuestionAnswer::CANCEL) {
-                        buffer_ring_->markChunkFailed(chunk, err);
-                        cancel();
-                        break;
-                    }
-                }
-                buffer_ring_->markChunkFailed(chunk, err);
-                error_count_++;
-                recordJobError(chunk->job_id);
-                continue;
-            }
-            bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
-            recordJobBytesTransferred(chunk->job_id, written);
-        }
-
-        buffer_ring_->releaseCommittedChunk(chunk);
-    }
+void TransferManager::pause() {
+    service_paused_.store(true, std::memory_order_release);
 }
 
-bool TransferManager::isCriticalIoError(int err) {
-    return (err == ENOSPC || err == EDQUOT || err == EROFS || err == EIO || err == EBUSY || err == ENODEV);
+void TransferManager::resume() {
+    service_paused_.store(false, std::memory_order_release);
+    cv_items_.notify_all();
+}
+
+bool TransferManager::isJobCompleted(uint64_t jobId) const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    return (it != jobs_.end()) && it->second->is_completed;
+}
+
+bool TransferManager::isJobCancelled(uint64_t jobId) const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    return (it != jobs_.end()) && it->second->is_cancelled;
+}
+
+bool TransferManager::isJobPaused(uint64_t jobId) const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    return (it != jobs_.end()) && it->second->is_paused;
 }
 
 std::wstring TransferManager::getIoErrorReason() const {
@@ -712,1198 +256,79 @@ std::wstring TransferManager::getIoErrorReason() const {
     return io_error_reason_;
 }
 
+bool TransferManager::isCriticalIoError(int err) {
+    return (err == ENOSPC || err == EDQUOT || err == EROFS || err == EIO);
+}
+
 QuestionAnswer TransferManager::handleCriticalIo(const std::wstring& path, int errCode, const std::wstring& opName) {
-    had_critical_io_error_.store(true, std::memory_order_relaxed);
+    had_critical_io_error_.store(true, std::memory_order_release);
     io_error_paused_.store(true, std::memory_order_release);
 
-    std::string errStr = std::strerror(errCode);
-    std::wstring reason = (errCode == ENOSPC) ? L"No space left on device (ENOSPC)" :
-                          (errCode == EDQUOT) ? L"Disk quota exceeded (EDQUOT)" :
-                          (errCode == EROFS)  ? L"Read-only file system (EROFS)" :
-                          (L"Critical I/O error: " + NarrowToWide(errStr) + L" (errno " + std::to_wstring(errCode) + L")");
     {
         std::lock_guard<std::mutex> lock(io_error_mutex_);
-        io_error_reason_ = reason + L" during " + opName + L" on: " + path;
+        if (errCode == ENOSPC) {
+            io_error_reason_ = L"No space left on device (ENOSPC) during " + opName + L" on " + path;
+        } else if (errCode == EDQUOT) {
+            io_error_reason_ = L"Disk quota exceeded (EDQUOT) during " + opName + L" on " + path;
+        } else {
+            io_error_reason_ = L"Critical device I/O error (" + std::to_wstring(errCode) + L") during " + opName + L" on " + path;
+        }
     }
 
     TransferQuestion q;
     q.id = next_question_id_++;
     q.type = (errCode == ENOSPC) ? QuestionType::NO_SPACE_LEFT : QuestionType::CRITICAL_IO_ERROR;
-    q.source_path = path;
     q.target_path = path;
+    q.message = io_error_reason_;
     q.error_code = errCode;
-    q.message = reason + L". All transfers paused to preserve data integrity. Free storage space or fix device, then select [Retry] or [Cancel].";
-
     active_critical_question_id_ = q.id;
 
-    // Add to question pool
-    {
-        std::lock_guard<std::mutex> lock(question_mutex_);
-        active_questions_.push_back(q);
-    }
-    cv_questions_.notify_all();
-
-    // Check callback
-    bool rememberDummy = false;
-    QuestionAnswer answer = QuestionAnswer::PROMPT;
-    if (question_cb_) {
-        answer = question_cb_(q, rememberDummy);
-    } else {
-        answer = onQuestion(q, rememberDummy);
-    }
-
-    if (answer == QuestionAnswer::PROMPT) {
-        std::unique_lock<std::mutex> lock(question_mutex_);
-        cv_questions_.wait(lock, [this, qId = q.id, &answer]() {
-            if (cancelled_.load(std::memory_order_relaxed)) {
-                answer = QuestionAnswer::CANCEL;
-                return true;
-            }
-            if (!io_error_paused_.load(std::memory_order_relaxed)) {
-                answer = QuestionAnswer::RETRY;
-                return true;
-            }
-            for (const auto& activeQ : active_questions_) {
-                if (activeQ.id == qId) return false;
-            }
-            return true;
-        });
-    }
-
-    if (answer == QuestionAnswer::RETRY) {
-        io_error_paused_.store(false, std::memory_order_release);
-        {
-            std::lock_guard<std::mutex> lock(io_error_mutex_);
-            io_error_reason_.clear();
-        }
-        cv_items_.notify_all();
-    } else if (answer == QuestionAnswer::CANCEL) {
-        cancel();
-    }
-
-    return answer;
+    bool remember = false;
+    return onQuestion(q, remember);
 }
 
 bool TransferManager::recoverCriticalIo(bool retry) {
-    if (!io_error_paused_.load(std::memory_order_relaxed)) {
-        return false;
-    }
-
     if (retry) {
-        io_error_paused_.store(false, std::memory_order_release);
         {
             std::lock_guard<std::mutex> lock(io_error_mutex_);
+            io_error_paused_.store(false, std::memory_order_release);
             io_error_reason_.clear();
+            active_critical_question_id_ = 0;
         }
-        {
-            std::lock_guard<std::mutex> lock(question_mutex_);
-            for (auto it = active_questions_.begin(); it != active_questions_.end(); ++it) {
-                if (it->type == QuestionType::CRITICAL_IO_ERROR || it->type == QuestionType::NO_SPACE_LEFT) {
-                    active_questions_.erase(it);
-                    break;
-                }
-            }
-        }
-        cv_questions_.notify_all();
+        cv_io_recover_.notify_all();
         cv_items_.notify_all();
         return true;
     } else {
-        cancel();
-        return true;
-    }
-}
-
-std::wstring TransferManager::generateUniqueRenamedPath(IFileSystem* fs, const std::wstring& originalPath) {
-    try {
-        fs::path p(originalPath);
-        fs::path parent = p.parent_path();
-        std::wstring stem = p.stem().wstring();
-        std::wstring ext = p.extension().wstring();
-
-        int counter = 1;
-        while (counter < 100000) {
-            std::wstring candidateName = stem + L" (" + std::to_wstring(counter) + L")" + ext;
-            fs::path candidate = parent.empty() ? fs::path(candidateName) : (parent / candidateName);
-            if (!fs->exists(candidate.wstring())) {
-                return candidate.wstring();
-            }
-            counter++;
-        }
-    } catch (...) {}
-    return originalPath;
-}
-
-bool TransferManager::processSingleItem(TransferItem& item) {
-    if (cancelled_.load(std::memory_order_relaxed)) return false;
-
-    // Check if item belongs to a skipped folder
-    {
-        std::lock_guard<std::mutex> lock(skipped_dirs_mutex_);
-        for (const auto& prefix : skipped_dir_prefixes_) {
-            if (item.src_path == prefix || item.src_path.rfind(prefix + L"/", 0) == 0) {
-                // Item is inside a skipped folder tree
-                return true;
-            }
-        }
-    }
-
-    if (item.is_directory) {
-        return transferDirectory(item);
-    } else if (item.is_symlink) {
-        return transferSymlink(item);
-    } else {
-        return transferFile(item);
-    }
-}
-
-bool TransferManager::transferDirectory(TransferItem& item) {
-    bool dstExists = fs_->exists(item.dst_path);
-    if (dstExists) {
-        if (fs_->isDirectory(item.dst_path)) {
-            // Destination is already a folder: simply omit mkdir() without errors
-        } else {
-            // Destination is a file/link: ask user for overwrite, skip, or rename
-            QuestionAnswer answer = resolveQuestion(
-                item, QuestionType::FOLDER_DESTINATION_IS_FILE,
-                L"Destination exists and is a file, but source is a folder: " + item.dst_path);
-            if (answer == QuestionAnswer::CANCEL) {
-                cancel();
-                return false;
-            }
-            if (answer == QuestionAnswer::SKIP) {
-                // Skip source folder with all its files and subfolders
-                {
-                    std::lock_guard<std::mutex> lock(skipped_dirs_mutex_);
-                    skipped_dir_prefixes_.push_back(item.src_path);
-                }
-                return true;
-            }
-            if (answer == QuestionAnswer::RENAME) {
-                // Rename destination file preserving its extension, then make directory
-                std::wstring renamedDst = generateUniqueRenamedPath(fs_.get(), item.dst_path);
-                bool okRename = fs_->renameFile(item.dst_path, renamedDst);
-                if (!okRename) {
-                    error_count_++;
-                    return false;
-                }
-                bool created = fs_->createDirectories(item.dst_path);
-                if (!created) return false;
-            } else {
-                // OVERWRITE: delete file, create folder and go forward
-                fs_->removeFile(item.dst_path);
-                bool created = fs_->createDirectories(item.dst_path);
-                if (!created) return false;
-            }
-        }
-    } else {
-        bool created = fs_->createDirectories(item.dst_path);
-        while (!created && !cancelled_.load(std::memory_order_relaxed)) {
-            QuestionAnswer answer = resolveQuestion(
-                item, QuestionType::CANNOT_CREATE_FOLDER,
-                L"Cannot create destination folder: " + item.dst_path, errno);
-            if (answer == QuestionAnswer::CANCEL) {
-                cancel();
-                return false;
-            }
-            if (answer == QuestionAnswer::SKIP || answer == QuestionAnswer::SKIP_ALL) {
-                std::lock_guard<std::mutex> lock(skipped_dirs_mutex_);
-                skipped_dir_prefixes_.push_back(item.src_path);
-                return true;
-            }
-            if (answer == QuestionAnswer::RETRY) {
-                created = fs_->createDirectories(item.dst_path);
-            } else {
-                break;
-            }
-        }
-        if (!created) return false;
-    }
-
-    if (options_.preserve_permissions || options_.preserve_timestamps) {
-        bool metaOk = fs_->copyMetadata(item.src_path, item.dst_path, options_.preserve_ownership);
-        if (!metaOk) {
-            QuestionAnswer metaAns = resolveQuestion(
-                item, QuestionType::CANNOT_COPY_METADATA,
-                L"Cannot copy folder attributes or timestamps: " + item.dst_path, errno);
-            if (metaAns == QuestionAnswer::CANCEL) {
-                cancel();
-                return false;
-            }
-        }
-    }
-    if (options_.preserve_xattrs) {
-        fs_->copyXattrs(item.src_path, item.dst_path);
-    }
-
-    if (options_.mode == TransferMode::MOVE) {
-        // Move directory: delete source dir if empty
-        bool rmOk = fs_->removeDirectory(item.src_path);
-        while (!rmOk && !cancelled_.load(std::memory_order_relaxed)) {
-            QuestionAnswer rmAns = resolveQuestion(
-                item, QuestionType::CANNOT_REMOVE_SOURCE,
-                L"Cannot remove source folder after move: " + item.src_path, errno);
-            if (rmAns == QuestionAnswer::CANCEL) {
-                cancel();
-                return false;
-            }
-            if (rmAns == QuestionAnswer::IGNORE || rmAns == QuestionAnswer::IGNORE_ALL) {
-                break;
-            }
-            if (rmAns == QuestionAnswer::RETRY) {
-                rmOk = fs_->removeDirectory(item.src_path);
-            } else {
-                break;
-            }
-        }
-    }
-
-    dirs_transferred_++;
-    recordJobDirectoryCompleted(item.job_id);
-    return true;
-}
-
-std::wstring TransferManager::recomputeRelativeSymlink(const std::wstring& rawTarget,
-                                                      const std::wstring& symlinkSrcPath,
-                                                      const std::wstring& symlinkDstPath,
-                                                      const std::wstring& rootSrcTree) {
-    if (rawTarget.empty() || rawTarget[0] == L'/') {
-        // Absolute symlink: copied as is
-        return rawTarget;
-    }
-
-    try {
-        fs::path srcDir = fs::path(symlinkSrcPath).parent_path();
-        fs::path canonicalTarget = fs::weakly_canonical(srcDir / rawTarget);
-        fs::path canonicalRootSrc = fs::weakly_canonical(rootSrcTree);
-
-        // Check if the target is inside the source subtree
-        auto rootStr = canonicalRootSrc.wstring();
-        auto targetStr = canonicalTarget.wstring();
-
-        bool insideSourceTree = false;
-        if (targetStr.rfind(rootStr, 0) == 0) {
-            // Target begins with source tree path
-            insideSourceTree = true;
-        }
-
-        if (insideSourceTree) {
-            // Belongs to source sub-folders -> copy it as is!
-            return rawTarget;
-        } else {
-            // Points to something outside the source tree:
-            // Recompute relative path so destination points to the exact same external target!
-            fs::path dstDir = fs::path(symlinkDstPath).parent_path();
-            fs::path recomputed = fs::relative(canonicalTarget, dstDir);
-            return recomputed.wstring();
-        }
-    } catch (...) {
-        return rawTarget;
-    }
-}
-
-bool TransferManager::transferSymlink(TransferItem& item) {
-    std::wstring rawTarget = fs_->readSymlink(item.src_path);
-    if (rawTarget.empty()) {
-        QuestionAnswer ans = resolveQuestion(
-            item, QuestionType::BROKEN_SYMLINK,
-            L"Cannot read or resolve symbolic link (broken or circular): " + item.src_path, errno);
-        if (ans == QuestionAnswer::CANCEL) {
-            cancel();
-            return false;
-        }
+        stopService();
         return false;
     }
-
-    std::wstring finalTarget = recomputeRelativeSymlink(rawTarget, item.src_path, item.dst_path, item.root_src);
-
-    // Collision check for symlink destination
-    if (fs_->exists(item.dst_path)) {
-        // Link case: ask user for overwrite or skip.
-        QuestionAnswer answer = resolveQuestion(
-            item, QuestionType::LINK_DESTINATION_EXISTS,
-            L"Target destination already exists for symlink: " + item.dst_path);
-        if (answer == QuestionAnswer::CANCEL) {
-            cancel();
-            return false;
-        }
-        if (answer == QuestionAnswer::SKIP || answer == QuestionAnswer::SKIP_ALL) {
-            // Skip means do nothing and move to the next source
-            return true;
-        }
-        // Overwrite means delete old file when possible and make symlink
-        if (fs_->isDirectory(item.dst_path)) {
-            fs_->removeDirectory(item.dst_path);
-        } else {
-            fs_->removeFile(item.dst_path);
-        }
-    }
-
-    bool ok = fs_->createSymlink(finalTarget, item.dst_path);
-    if (ok) {
-        if (options_.preserve_timestamps) {
-            FileStat st = fs_->statFile(item.src_path, false);
-            fs_->setTimestamps(item.dst_path, st.atime_sec, st.atime_nsec, st.mtime_sec, st.mtime_nsec);
-        }
-        if (options_.mode == TransferMode::MOVE) {
-            bool rmOk = fs_->removeFile(item.src_path);
-            if (!rmOk) {
-                QuestionAnswer rmAns = resolveQuestion(
-                    item, QuestionType::CANNOT_REMOVE_SOURCE,
-                    L"Cannot remove source symlink after move: " + item.src_path, errno);
-                if (rmAns == QuestionAnswer::CANCEL) {
-                    cancel();
-                    return false;
-                }
-            }
-        }
-        files_transferred_++;
-        recordJobFileCompleted(item.job_id);
-    }
-    return ok;
 }
 
-void TransferManager::setAnswerForJob(uint64_t jobId, QuestionType type, QuestionAnswer answer) {
-    std::lock_guard<std::mutex> lock(question_mutex_);
-    job_remembered_answers_[jobId][type] = answer;
-}
-
-std::map<QuestionType, QuestionAnswer> TransferManager::getRememberedAnswersForJob(uint64_t jobId) const {
-    std::lock_guard<std::mutex> lock(question_mutex_);
-    auto it = job_remembered_answers_.find(jobId);
-    if (it != job_remembered_answers_.end()) {
-        return it->second;
-    }
-    return {};
-}
-
-void TransferManager::clearRememberedAnswersForJob(uint64_t jobId) {
-    std::lock_guard<std::mutex> lock(question_mutex_);
-    job_remembered_answers_.erase(jobId);
-}
-
-QuestionAnswer TransferManager::resolveQuestion(TransferItem& item, QuestionType type, const std::wstring& msg, int err) {
-    // Check if we already have a remembered answer for this QuestionType on this specific job
-    {
-        std::lock_guard<std::mutex> lock(question_mutex_);
-        if (item.job_id != 0) {
-            auto jobIt = job_remembered_answers_.find(item.job_id);
-            if (jobIt != job_remembered_answers_.end()) {
-                auto it = jobIt->second.find(type);
-                if (it != jobIt->second.end()) {
-                    questions_resolved_++;
-                    return it->second;
-                }
-            }
-        }
-        // Fall back to global remembered answer (if set for all jobs or job_id == 0)
-        auto it = remembered_answers_.find(type);
-        if (it != remembered_answers_.end()) {
-            questions_resolved_++;
-            return it->second;
-        }
-    }
-
-    TransferQuestion q;
-    q.id = next_question_id_++;
-    q.job_id = item.job_id;
-    q.type = type;
-    q.source_path = item.src_path;
-    q.target_path = item.dst_path;
-    q.message = msg;
-    q.error_code = err;
-
-    FileStat srcSt = fs_->statFile(item.src_path, false);
-    FileStat dstSt = fs_->statFile(item.dst_path, false);
-    q.source_size = srcSt.size;
-    q.target_size = dstSt.size;
-    q.source_mtime = srcSt.mtime_sec;
-    q.target_mtime = dstSt.mtime_sec;
-    q.target_is_read_only = dstSt.is_read_only;
-    q.source_is_newer = (srcSt.mtime_sec > dstSt.mtime_sec) ||
-                        (srcSt.mtime_sec == dstSt.mtime_sec && srcSt.mtime_nsec > dstSt.mtime_nsec);
-    q.size_is_different = (srcSt.size != dstSt.size);
-
-    // Check callback or virtual method first
-    bool rememberForType = false;
-    QuestionAnswer answer = QuestionAnswer::PROMPT;
-
-    if (question_cb_) {
-        answer = question_cb_(q, rememberForType);
-    } else {
-        answer = onQuestion(q, rememberForType);
-    }
-
-    if (answer != QuestionAnswer::PROMPT) {
-        QuestionAnswer normAns = answer;
-        bool shouldRemember = rememberForType;
-        if (answer == QuestionAnswer::OVERWRITE_ALL) {
-            normAns = QuestionAnswer::OVERWRITE;
-            shouldRemember = true;
-        } else if (answer == QuestionAnswer::SKIP_ALL) {
-            normAns = QuestionAnswer::SKIP;
-            shouldRemember = true;
-        } else if (answer == QuestionAnswer::IGNORE_ALL) {
-            normAns = QuestionAnswer::IGNORE;
-            shouldRemember = true;
-        } else if (answer == QuestionAnswer::AUTO_RENAME) {
-            normAns = QuestionAnswer::AUTO_RENAME;
-            shouldRemember = true;
-        }
-
-        if (shouldRemember) {
-            std::lock_guard<std::mutex> lock(question_mutex_);
-            if (item.job_id != 0) {
-                job_remembered_answers_[item.job_id][type] = normAns;
-            } else {
-                remembered_answers_[type] = normAns;
-            }
-        }
-        questions_resolved_++;
-        return normAns;
-    }
-
-    // Otherwise, post to active question pool and wait for interactive resolution
-    {
-        std::lock_guard<std::mutex> lock(question_mutex_);
-        active_questions_.push_back(q);
-    }
-    cv_questions_.notify_all();
-
-    // Block this item until answered or cancelled
-    std::unique_lock<std::mutex> lock(question_mutex_);
-    cv_questions_.wait(lock, [this, qId = q.id, jobId = item.job_id, type, &answer]() {
-        if (cancelled_.load(std::memory_order_relaxed)) {
-            answer = QuestionAnswer::CANCEL;
-            return true;
-        }
-        // Check if per-job remembered answers now covers this
-        if (jobId != 0) {
-            auto jobIt = job_remembered_answers_.find(jobId);
-            if (jobIt != job_remembered_answers_.end()) {
-                auto it = jobIt->second.find(type);
-                if (it != jobIt->second.end()) {
-                    answer = it->second;
-                    return true;
-                }
-            }
-        }
-        // Check if global remembered answers covers this
-        auto it = remembered_answers_.find(type);
-        if (it != remembered_answers_.end()) {
-            answer = it->second;
-            return true;
-        }
-        // Check if question was removed from active_questions_ with a decision
-        for (const auto& activeQ : active_questions_) {
-            if (activeQ.id == qId) {
-                return false; // Still pending
-            }
-        }
+bool TransferManager::getJob(uint64_t jobId, TransferJobRequest& outJob) const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    if (it != jobs_.end()) {
+        outJob = *(it->second);
         return true;
-    });
-
-    questions_resolved_++;
-    return answer;
-}
-
-bool TransferManager::answerQuestion(uint64_t questionId, QuestionAnswer answer, bool rememberForType, bool rememberForAllJobs) {
-    std::lock_guard<std::mutex> lock(question_mutex_);
-    for (auto it = active_questions_.begin(); it != active_questions_.end(); ++it) {
-        if (it->id == questionId) {
-            QuestionType type = it->type;
-            uint64_t jobId = it->job_id;
-            QuestionAnswer normAns = answer;
-            bool shouldRemember = rememberForType;
-
-            if (answer == QuestionAnswer::OVERWRITE_ALL) {
-                normAns = QuestionAnswer::OVERWRITE;
-                shouldRemember = true;
-            } else if (answer == QuestionAnswer::SKIP_ALL) {
-                normAns = QuestionAnswer::SKIP;
-                shouldRemember = true;
-            } else if (answer == QuestionAnswer::IGNORE_ALL) {
-                normAns = QuestionAnswer::IGNORE;
-                shouldRemember = true;
-            } else if (answer == QuestionAnswer::AUTO_RENAME) {
-                normAns = QuestionAnswer::AUTO_RENAME;
-                shouldRemember = true;
-            }
-
-            if (shouldRemember) {
-                if (rememberForAllJobs || jobId == 0) {
-                    remembered_answers_[type] = normAns;
-                }
-                if (jobId != 0) {
-                    job_remembered_answers_[jobId][type] = normAns;
-                }
-            }
-
-            active_questions_.erase(it);
-            cv_questions_.notify_all();
-            return true;
-        }
     }
     return false;
 }
 
-bool TransferManager::transferFile(TransferItem& item) {
-    FileStat srcSt = fs_->statFile(item.src_path, false);
-    if (!srcSt.exists) return false;
-
-    // Check move with read-only source requirement
-    if (options_.mode == TransferMode::MOVE && srcSt.is_read_only) {
-        QuestionAnswer answer = resolveQuestion(item, QuestionType::MOVE_READ_ONLY_SOURCE,
-                                                L"Source file is read-only. Proceed with move: " + item.src_path);
-        if (answer == QuestionAnswer::CANCEL) {
-            cancel();
-            return false;
-        }
-        if (answer == QuestionAnswer::SKIP) {
-            return true;
-        }
-    }
-
-    // Check collision if destination exists
-    int dstFlags = O_WRONLY | O_CREAT;
-    off_t startOffset = 0;
-    off_t srcOffset = 0;
-
-    bool dstExists = fs_->exists(item.dst_path);
-    if (dstExists) {
-        FileStat dstLStat = fs_->statFile(item.dst_path, false);
-        bool isRealDir = (!dstLStat.is_symlink && dstLStat.is_directory);
-
-        // Case: source/file is a file and destination/file is a folder
-        if (isRealDir) {
-            QuestionAnswer answer = resolveQuestion(
-                item, QuestionType::FILE_DESTINATION_IS_FOLDER,
-                L"Destination exists and is a folder, but source is a file: " + item.dst_path);
-            if (answer == QuestionAnswer::CANCEL) {
-                cancel();
-                return false;
-            }
-            if (answer == QuestionAnswer::SKIP) {
-                return true;
-            }
-            // PLACE_INTO: place as destination/file/file
-            fs::path srcP(item.src_path);
-            std::wstring fname = srcP.filename().wstring();
-            item.dst_path = PathCombine(item.dst_path, fname);
-
-            // Re-evaluate if destination/file/file already exists
-            dstExists = fs_->exists(item.dst_path);
-            if (dstExists) {
-                dstLStat = fs_->statFile(item.dst_path, false);
-                isRealDir = (!dstLStat.is_symlink && dstLStat.is_directory);
-            }
-        }
-
-        // Case: destination/file exists and is a regular file or link
-        if (dstExists && !isRealDir) {
-            FileStat dstStatFollow = fs_->statFile(item.dst_path, true);
-            std::wstring fileTypeStr = dstLStat.is_symlink ? L"symlink" : L"file";
-
-            // Check if source and destination point to the exact same file (st_dev/st_ino)
-            bool isSameNode = (srcSt.dev != 0 && srcSt.dev == dstStatFollow.dev &&
-                               srcSt.ino != 0 && srcSt.ino == dstStatFollow.ino);
-            if (!isSameNode) {
-                try {
-                    if (fs::equivalent(item.src_path, item.dst_path)) {
-                        isSameNode = true;
-                    }
-                } catch (...) {}
-            }
-
-            if (isSameNode) {
-                QuestionAnswer answer = resolveQuestion(
-                    item, QuestionType::SAME_SOURCE_AND_TARGET,
-                    L"Cannot copy file onto itself (source and destination are the exact same file): " + item.src_path);
-                if (answer == QuestionAnswer::CANCEL) {
-                    cancel();
-                    return false;
-                }
-                // Skip safely to avoid truncating / destroying source file!
-                return true;
-            }
-
-            // Check if destination is read-only
-            bool isReadOnlyTarget = dstStatFollow.is_read_only || dstLStat.is_read_only;
-            QuestionType qType = isReadOnlyTarget ? QuestionType::OVERWRITE_READ_ONLY_TARGET
-                                                  : QuestionType::OVERWRITE_EXISTING;
-
-            std::wstring msg = isReadOnlyTarget
-                ? (L"Destination " + fileTypeStr + L" is read-only: " + item.dst_path + L". Overwrite read-only target?")
-                : (L"Destination " + fileTypeStr + L" already exists: " + item.dst_path);
-
-            QuestionAnswer answer = resolveQuestion(item, qType, msg);
-
-            if (answer == QuestionAnswer::CANCEL) {
-                cancel();
-                return false;
-            }
-            if (answer == QuestionAnswer::SKIP || answer == QuestionAnswer::SKIP_ALL) {
-                // simply move to the next item
-                return true;
-            }
-            if (answer == QuestionAnswer::OVERWRITE_IF_NEWER) {
-                // Compare timestamps: source must be strictly newer than destination
-                bool isSourceNewer = (srcSt.mtime_sec > dstStatFollow.mtime_sec) ||
-                                     (srcSt.mtime_sec == dstStatFollow.mtime_sec && srcSt.mtime_nsec > dstStatFollow.mtime_nsec);
-                if (!isSourceNewer) {
-                    // Destination is newer or equal age -> skip without error
-                    return true;
-                }
-                // Source is newer -> proceed with overwrite
-                if (isReadOnlyTarget) {
-                    mode_t newMode = dstStatFollow.mode ? (dstStatFollow.mode | S_IWUSR) : 0644;
-                    fs_->setPermissions(item.dst_path, newMode);
-                }
-                dstFlags = O_WRONLY | O_CREAT | O_TRUNC;
-                startOffset = 0;
-                srcOffset = 0;
-            } else if (answer == QuestionAnswer::OVERWRITE_IF_DIFFERENT_SIZE) {
-                if (srcSt.size == dstStatFollow.size) {
-                    // Same size -> skip without error
-                    return true;
-                }
-                if (isReadOnlyTarget) {
-                    mode_t newMode = dstStatFollow.mode ? (dstStatFollow.mode | S_IWUSR) : 0644;
-                    fs_->setPermissions(item.dst_path, newMode);
-                }
-                dstFlags = O_WRONLY | O_CREAT | O_TRUNC;
-                startOffset = 0;
-                srcOffset = 0;
-            } else if (answer == QuestionAnswer::OVERWRITE_IF_NEWER_OR_DIFFERENT_SIZE) {
-                bool isSourceNewer = (srcSt.mtime_sec > dstStatFollow.mtime_sec) ||
-                                     (srcSt.mtime_sec == dstStatFollow.mtime_sec && srcSt.mtime_nsec > dstStatFollow.mtime_nsec);
-                bool isSizeDifferent = (srcSt.size != dstStatFollow.size);
-                if (!isSourceNewer && !isSizeDifferent) {
-                    // Neither newer nor different size -> skip without error
-                    return true;
-                }
-                if (isReadOnlyTarget) {
-                    mode_t newMode = dstStatFollow.mode ? (dstStatFollow.mode | S_IWUSR) : 0644;
-                    fs_->setPermissions(item.dst_path, newMode);
-                }
-                dstFlags = O_WRONLY | O_CREAT | O_TRUNC;
-                startOffset = 0;
-                srcOffset = 0;
-            } else if (answer == QuestionAnswer::RENAME || answer == QuestionAnswer::AUTO_RENAME) {
-                // Rename source copy destination, keeping original destination file intact
-                item.dst_path = generateUniqueRenamedPath(fs_.get(), item.dst_path);
-                dstFlags = O_WRONLY | O_CREAT | O_TRUNC;
-                startOffset = 0;
-                srcOffset = 0;
-            } else if (answer == QuestionAnswer::APPEND) {
-                if (isReadOnlyTarget) {
-                    mode_t newMode = dstStatFollow.mode ? (dstStatFollow.mode | S_IWUSR) : 0644;
-                    fs_->setPermissions(item.dst_path, newMode);
-                }
-                // Open destination file for writing, set pointer to end of file
-                dstFlags = O_WRONLY | O_CREAT;
-                startOffset = dstStatFollow.exists ? dstStatFollow.size : 0;
-                srcOffset = 0;
-                item.is_append = true;
-            } else if (answer == QuestionAnswer::RESUME) {
-                if (isReadOnlyTarget) {
-                    mode_t newMode = dstStatFollow.mode ? (dstStatFollow.mode | S_IWUSR) : 0644;
-                    fs_->setPermissions(item.dst_path, newMode);
-                }
-                // Open destination at end, open source at destination size
-                off_t resumePos = dstStatFollow.exists ? dstStatFollow.size : 0;
-                if (resumePos >= srcSt.size) {
-                    files_transferred_++;
-                    recordJobFileCompleted(item.job_id);
-                    return true;
-                }
-                dstFlags = O_WRONLY | O_CREAT;
-                startOffset = resumePos;
-                srcOffset = resumePos;
-                bytes_transferred_.fetch_add(resumePos, std::memory_order_relaxed);
-                recordJobBytesTransferred(item.job_id, resumePos);
-            } else {
-                // OVERWRITE or OVERWRITE_ALL
-                if (isReadOnlyTarget) {
-                    mode_t newMode = dstStatFollow.mode ? (dstStatFollow.mode | S_IWUSR) : 0644;
-                    fs_->setPermissions(item.dst_path, newMode);
-                }
-                // do not delete destination/file, open and truncate prior to writes
-                // If destination is a link, this updates the referred file without breaking the link
-                dstFlags = O_WRONLY | O_CREAT | O_TRUNC;
-                startOffset = 0;
-                srcOffset = 0;
-            }
-        }
-    }
-
-    item.src_start_offset = srcOffset;
-    item.dst_start_offset = startOffset;
-
-    int srcFd = fs_->openFile(item.src_path, O_RDONLY);
-    while (srcFd < 0 && !cancelled_.load(std::memory_order_relaxed)) {
-        int err = errno ? errno : EIO;
-        QuestionType qType = (err == EACCES || err == EPERM) ? QuestionType::PERMISSION_DENIED : QuestionType::IO_ERROR;
-        QuestionAnswer ans = resolveQuestion(item, qType,
-                                             L"Cannot open source file: " + item.src_path, err);
-        if (ans == QuestionAnswer::CANCEL) { cancel(); return false; }
-        if (ans == QuestionAnswer::SKIP || ans == QuestionAnswer::SKIP_ALL) { return true; }
-        if (ans == QuestionAnswer::RETRY) {
-            srcFd = fs_->openFile(item.src_path, O_RDONLY);
-        } else {
-            break;
-        }
-    }
-    if (srcFd < 0) return false;
-
-    int dstFd = fs_->openFile(item.dst_path, dstFlags, srcSt.mode ? (srcSt.mode & 0777) : 0644);
-    if (dstFd < 0) {
-        int err = errno ? errno : EIO;
-        if (isCriticalIoError(err)) {
-            QuestionAnswer act = handleCriticalIo(item.dst_path, err, L"open destination");
-            if (act == QuestionAnswer::RETRY) {
-                dstFd = fs_->openFile(item.dst_path, dstFlags, srcSt.mode ? (srcSt.mode & 0777) : 0644);
-            }
-        }
-    }
-    while (dstFd < 0 && !cancelled_.load(std::memory_order_relaxed)) {
-        int err = errno ? errno : EIO;
-        QuestionType qType = (err == EACCES || err == EPERM) ? QuestionType::PERMISSION_DENIED : QuestionType::IO_ERROR;
-        QuestionAnswer ans = resolveQuestion(item, qType,
-                                             L"Cannot open destination file: " + item.dst_path, err);
-        if (ans == QuestionAnswer::CANCEL) { cancel(); fs_->closeFile(srcFd); return false; }
-        if (ans == QuestionAnswer::SKIP || ans == QuestionAnswer::SKIP_ALL) { fs_->closeFile(srcFd); return true; }
-        if (ans == QuestionAnswer::RETRY) {
-            dstFd = fs_->openFile(item.dst_path, dstFlags, srcSt.mode ? (srcSt.mode & 0777) : 0644);
-        } else {
-            break;
-        }
-    }
-    if (dstFd < 0) {
-        fs_->closeFile(srcFd);
-        return false;
-    }
-
-    bool ok = false;
-
-    // Fast Path 1: Copy-on-Write (FICLONE on Linux, clonefile on macOS)
-    // CoW can only be used if we are starting from offset 0 with full overwrite
-    if (options_.enable_cow && startOffset == 0 && dstFlags & O_TRUNC) {
-        if (tryCoWTransfer(item, srcFd, dstFd)) {
-            ok = true;
-            cow_bytes_.fetch_add(srcSt.size, std::memory_order_relaxed);
-            bytes_transferred_.fetch_add(srcSt.size, std::memory_order_relaxed);
-            recordJobBytesTransferred(item.job_id, srcSt.size);
-        }
-    }
-
-    // Fast Path 2: Sparse File transfer (SEEK_DATA / SEEK_HOLE)
-    if (!ok && options_.enable_sparse && srcSt.is_sparse && startOffset == 0) {
-        ok = transferSparseFile(item, srcFd, dstFd);
-    }
-
-    // Fast Path 3: Memory-mapped I/O for small files (<= small_file_mmap_threshold)
-    if (!ok && static_cast<size_t>(srcSt.size) <= options_.small_file_mmap_threshold && startOffset == 0) {
-        ok = transferSmallFileMmap(item, srcFd, dstFd);
-        if (ok) {
-            mmap_bytes_.fetch_add(srcSt.size, std::memory_order_relaxed);
-            bytes_transferred_.fetch_add(srcSt.size, std::memory_order_relaxed);
-            recordJobBytesTransferred(item.job_id, srcSt.size);
-        }
-    }
-
-    // Fast Path 4: Multithreaded chunked read/write ring or copy_file_range
-    if (!ok) {
-        ok = transferChunked(item, srcFd, dstFd);
-    }
-
-    fs_->syncFile(dstFd);
-    fs_->closeFile(srcFd);
-    fs_->closeFile(dstFd);
-
-    if (ok) {
-        if (options_.preserve_permissions || options_.preserve_timestamps) {
-            bool metaOk = fs_->copyMetadata(item.src_path, item.dst_path, options_.preserve_ownership);
-            if (!metaOk) {
-                QuestionAnswer ans = resolveQuestion(
-                    item, QuestionType::CANNOT_COPY_METADATA,
-                    L"Cannot copy file attributes or timestamps: " + item.dst_path, errno);
-                if (ans == QuestionAnswer::CANCEL) {
-                    cancel();
-                    return false;
-                }
-            }
-        }
-        if (options_.preserve_xattrs) {
-            fs_->copyXattrs(item.src_path, item.dst_path);
-        }
-        if (options_.mode == TransferMode::MOVE) {
-            bool rmOk = fs_->removeFile(item.src_path);
-            while (!rmOk && !cancelled_.load(std::memory_order_relaxed)) {
-                QuestionAnswer ans = resolveQuestion(
-                    item, QuestionType::CANNOT_REMOVE_SOURCE,
-                    L"Cannot remove source file after move: " + item.src_path, errno);
-                if (ans == QuestionAnswer::CANCEL) {
-                    cancel();
-                    return false;
-                }
-                if (ans == QuestionAnswer::IGNORE || ans == QuestionAnswer::IGNORE_ALL) {
-                    break;
-                }
-                if (ans == QuestionAnswer::RETRY) {
-                    rmOk = fs_->removeFile(item.src_path);
-                } else {
-                    break;
-                }
-            }
-        }
-        files_transferred_++;
-        recordJobFileCompleted(item.job_id);
-    }
-
-    return ok;
-}
-
-bool TransferManager::tryCoWTransfer(TransferItem& item, int srcFd, int dstFd) {
-    return fs_->tryCloneOrCoW(srcFd, dstFd, item.size);
-}
-
-bool TransferManager::transferSparseFile(TransferItem& item, int srcFd, int dstFd) {
-    off_t offset = 0;
-    off_t fileSize = item.size;
-    fs_->truncateFile(dstFd, fileSize);
-
-    std::vector<uint8_t> buffer(64 * 1024);
-
-    while (offset < fileSize && !cancelled_.load(std::memory_order_relaxed)) {
-        off_t dataStart = fs_->seekData(srcFd, offset);
-        if (dataStart < 0) {
-            // No more data blocks
-            break;
-        }
-
-        off_t holeStart = fs_->seekHole(srcFd, dataStart);
-        if (holeStart < 0) {
-            holeStart = fileSize;
-        }
-
-        if (dataStart > offset) {
-            sparse_bytes_skipped_.fetch_add(dataStart - offset, std::memory_order_relaxed);
-        }
-
-        // Copy extent [dataStart, holeStart)
-        off_t extentOffset = dataStart;
-        while (extentOffset < holeStart && !cancelled_.load(std::memory_order_relaxed)) {
-            size_t toRead = std::min<size_t>(buffer.size(), holeStart - extentOffset);
-            ssize_t bytesRead = fs_->readFile(srcFd, buffer.data(), toRead, extentOffset);
-            if (bytesRead <= 0) break;
-
-            ssize_t written = fs_->writeFile(dstFd, buffer.data(), bytesRead, extentOffset);
-            if (written != bytesRead) {
-                return false;
-            }
-            bytes_transferred_.fetch_add(written, std::memory_order_relaxed);
-            recordJobBytesTransferred(item.job_id, written);
-            extentOffset += written;
-        }
-
-        offset = holeStart;
-    }
-
-    return true;
-}
-
-bool TransferManager::transferSmallFileMmap(TransferItem& item, int srcFd, int dstFd) {
-    if (item.size == 0) {
-        fs_->truncateFile(dstFd, 0);
-        return true;
-    }
-
-    void* mapped = fs_->mapFile(srcFd, item.size, 0, true);
-    if (!mapped) {
-        return false;
-    }
-
-    ssize_t written = fs_->writeFile(dstFd, mapped, item.size, 0);
-    fs_->unmapFile(mapped, item.size);
-
-    return (written == item.size);
-}
-
-bool TransferManager::transferChunked(TransferItem& item, int srcFd, int dstFd) {
-    off_t srcStart = item.src_start_offset;
-    off_t dstStart = item.dst_start_offset;
-    off_t fileSize = item.size;
-
-    if (srcStart >= fileSize) {
-        return true;
-    }
-
-    off_t bytesToTransfer = fileSize - srcStart;
-    off_t bytesCopied = 0;
-
-    // First attempt kernel zero-copy copy_file_range if supported
-    while (bytesCopied < bytesToTransfer && !cancelled_.load(std::memory_order_relaxed)) {
-        off_t srcOff = srcStart + bytesCopied;
-        off_t dstOff = dstStart + bytesCopied;
-        size_t chunkLen = std::min<size_t>(16 * 1024 * 1024, bytesToTransfer - bytesCopied);
-
-        ssize_t ret = fs_->copyFileRange(srcFd, &srcOff, dstFd, &dstOff, chunkLen);
-        if (ret > 0) {
-            bytes_transferred_.fetch_add(ret, std::memory_order_relaxed);
-            recordJobBytesTransferred(item.job_id, ret);
-            bytesCopied += ret;
-            continue;
-        }
-        // If copy_file_range returns EXDEV or ENOSYS, fall through to BufferRing
-        break;
-    }
-
-    if (bytesCopied >= bytesToTransfer) {
-        return true;
-    }
-
-    // Multithreaded BufferRing pipeline
-    std::atomic<size_t> inFlight{0};
-    std::condition_variable cvFileDone;
-    std::mutex fileMutex;
-
-    while (bytesCopied < bytesToTransfer && !cancelled_.load(std::memory_order_relaxed)) {
-        BufferChunk* chunk = buffer_ring_->acquireFreeChunk();
-        if (!chunk) {
-            // Ring shutdown
-            return false;
-        }
-
-        chunk->src_fd = srcFd;
-        chunk->dst_fd = dstFd;
-        chunk->src_offset = srcStart + bytesCopied;
-        chunk->dst_offset = dstStart + bytesCopied;
-        chunk->task_id = item.id;
-        chunk->job_id = item.job_id;
-        chunk->in_flight_counter = &inFlight;
-        chunk->cv_file_done = &cvFileDone;
-        chunk->file_done_mutex = &fileMutex;
-
-        size_t toRead = std::min<size_t>(chunk->capacity, bytesToTransfer - bytesCopied);
-        ssize_t bytesRead = fs_->readFile(srcFd, chunk->buffer, toRead, chunk->src_offset);
-
-        if (bytesRead < 0) {
-            int err = errno ? errno : EIO;
-            QuestionAnswer rAns = resolveQuestion(
-                item, QuestionType::READ_ERROR,
-                L"Read error occurred on source file: " + item.src_path, err);
-            if (rAns == QuestionAnswer::RETRY) {
-                bytesRead = fs_->readFile(srcFd, chunk->buffer, toRead, chunk->src_offset);
-            } else if (rAns == QuestionAnswer::CANCEL) {
-                buffer_ring_->publishReadyChunk(chunk, 0, true, err);
-                cancel();
-                return false;
-            } else {
-                buffer_ring_->publishReadyChunk(chunk, 0, true, 0);
-                return true;
-            }
-        }
-        if (bytesRead <= 0) {
-            buffer_ring_->publishReadyChunk(chunk, 0, true, 0);
-            break;
-        }
-
-        if (options_.verify_integrity) {
-            chunk->crc32 = BufferRing::computeCRC32(chunk->buffer, bytesRead);
-        }
-
-        bytesCopied += bytesRead;
-        bool isEof = (bytesCopied >= bytesToTransfer);
-        inFlight.fetch_add(1, std::memory_order_release);
-        buffer_ring_->publishReadyChunk(chunk, bytesRead, isEof, 0);
-    }
-
-    // Wait until all in-flight chunks for this file are written by writer workers
-    if (inFlight.load(std::memory_order_acquire) > 0) {
-        std::unique_lock<std::mutex> lock(fileMutex);
-        cvFileDone.wait(lock, [&]() {
-            return inFlight.load(std::memory_order_acquire) == 0 || cancelled_.load(std::memory_order_relaxed);
-        });
-    }
-
-    return true;
-}
-
-void TransferManager::progressWorker() {
-    auto lastUpdate = std::chrono::steady_clock::now();
-    uint64_t lastBytes = 0;
-
-    while (running_.load(std::memory_order_acquire) && !cancelled_.load(std::memory_order_acquire)) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Throttled to ~10 Hz
-
-        auto now = std::chrono::steady_clock::now();
-        double elapsedDelta = std::chrono::duration<double>(now - lastUpdate).count();
-        uint64_t currentBytes = bytes_transferred_.load(std::memory_order_relaxed);
-        uint64_t bytesDelta = (currentBytes >= lastBytes) ? (currentBytes - lastBytes) : 0;
-
-        double speedMBs = (elapsedDelta > 0.001) ? (static_cast<double>(bytesDelta) / (1024.0 * 1024.0 * elapsedDelta)) : 0.0;
-
-        lastUpdate = now;
-        lastBytes = currentBytes;
-
-        TransferProgress prog = getProgress();
-        prog.current_speed_mb_s = speedMBs;
-
-        // Determine active job progress
-        TransferProgress activeJobProg;
-        uint64_t activeId = current_active_job_id_.load(std::memory_order_relaxed);
-        bool foundActive = false;
-        if (activeId != 0) {
-            foundActive = getJobProgress(activeId, activeJobProg);
-        }
-        if (!foundActive && !prog.job_progresses.empty()) {
-            for (const auto& jp : prog.job_progresses) {
-                if (!jp.is_completed) {
-                    activeJobProg = jp;
-                    foundActive = true;
-                    break;
-                }
-            }
-            if (!foundActive) {
-                activeJobProg = prog.job_progresses.back();
-            }
-        }
-        activeJobProg.current_speed_mb_s = speedMBs;
-
-        // Dispatch per-job progress callbacks for all tracked jobs
-        for (const auto& jp : prog.job_progresses) {
-            onJobProgress(jp);
-        }
-
-        // Dispatch dual onProgress callback (active/current job + overall total progress)
-        if (progress_cb_) {
-            progress_cb_(activeJobProg, prog);
-        } else {
-            onProgress(activeJobProg, prog);
-        }
-    }
-
-    // Final flush of progress updates when transfer service completes or is cancelled
-    TransferProgress finalProg = getProgress();
-    finalProg.current_speed_mb_s = 0.0;
-    for (const auto& jp : finalProg.job_progresses) {
-        onJobProgress(jp);
-    }
-    TransferProgress finalActiveJobProg;
-    if (!finalProg.job_progresses.empty()) {
-        finalActiveJobProg = finalProg.job_progresses.back();
-    }
-    finalActiveJobProg.current_speed_mb_s = 0.0;
-    if (progress_cb_) {
-        progress_cb_(finalActiveJobProg, finalProg);
-    } else {
-        onProgress(finalActiveJobProg, finalProg);
-    }
-}
-
-TransferMetrics TransferManager::getMetrics() const {
-    TransferMetrics m;
-    m.transferred_bytes = bytes_transferred_.load(std::memory_order_relaxed);
-    m.total_bytes = total_bytes_.load(std::memory_order_relaxed);
-    m.transferred_files = files_transferred_.load(std::memory_order_relaxed);
-    m.total_files = total_files_.load(std::memory_order_relaxed);
-    m.transferred_dirs = dirs_transferred_.load(std::memory_order_relaxed);
-    m.total_dirs = total_dirs_.load(std::memory_order_relaxed);
-    m.error_count = error_count_.load(std::memory_order_relaxed);
-    m.questions_resolved_count = questions_resolved_.load(std::memory_order_relaxed);
-    m.cow_cloned_bytes = cow_bytes_.load(std::memory_order_relaxed);
-    m.sparse_bytes_skipped = sparse_bytes_skipped_.load(std::memory_order_relaxed);
-    m.mmap_transferred_bytes = mmap_bytes_.load(std::memory_order_relaxed);
-    m.had_critical_io_error = had_critical_io_error_.load(std::memory_order_relaxed);
-    m.buffer_ring_size_mb = getBufferRingSizeMB();
-    m.total_jobs_processed = total_jobs_processed_.load(std::memory_order_relaxed);
-
-    std::lock_guard<std::mutex> lock(question_mutex_);
-    m.active_questions_count = static_cast<uint32_t>(active_questions_.size());
-
-    auto now = std::chrono::steady_clock::now();
-    m.elapsed_seconds = std::chrono::duration<double>(now - start_time_).count();
-    if (m.elapsed_seconds > 0.001) {
-        m.average_speed_mb_s = (static_cast<double>(m.transferred_bytes) / (1024.0 * 1024.0 * m.elapsed_seconds));
-    }
-
-    m.folder_scans = getFolderScanProgresses();
-    m.total_scanned_files = total_scanned_files_.load(std::memory_order_relaxed);
-    m.total_scanned_folders = total_scanned_folders_.load(std::memory_order_relaxed);
-    m.total_scanned_bytes = total_scanned_bytes_.load(std::memory_order_relaxed);
-    m.job_progresses = getJobProgresses();
-    return m;
-}
-
-TransferProgress TransferManager::getProgress() const {
-    TransferProgress p;
-    p.bytes_transferred = bytes_transferred_.load(std::memory_order_relaxed);
-    p.total_bytes = total_bytes_.load(std::memory_order_relaxed);
-    p.files_transferred = files_transferred_.load(std::memory_order_relaxed);
-    p.total_files = total_files_.load(std::memory_order_relaxed);
-    p.dirs_transferred = dirs_transferred_.load(std::memory_order_relaxed);
-    p.total_dirs = total_dirs_.load(std::memory_order_relaxed);
-    p.errors_count = error_count_.load(std::memory_order_relaxed);
-    p.questions_resolved_count = questions_resolved_.load(std::memory_order_relaxed);
-    p.is_paused_for_io_error = io_error_paused_.load(std::memory_order_relaxed);
-    {
-        std::lock_guard<std::mutex> lock(io_error_mutex_);
-        p.io_error_reason = io_error_reason_;
-    }
-    p.buffer_ring_size_mb = getBufferRingSizeMB();
-
-    {
-        std::lock_guard<std::mutex> lock(queue_mutex_);
-        p.active_jobs_count = static_cast<uint32_t>(pending_job_requests_.size());
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(question_mutex_);
-        p.active_questions_count = static_cast<uint32_t>(active_questions_.size());
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(display_mutex_);
-        p.current_source_item = current_source_display_;
-        p.current_target_item = current_target_display_;
-    }
-
-    if (p.total_bytes > 0) {
-        p.progress_percent = std::min<double>(100.0, (static_cast<double>(p.bytes_transferred) / p.total_bytes) * 100.0);
-    } else if (p.total_files > 0) {
-        p.progress_percent = std::min<double>(100.0, (static_cast<double>(p.files_transferred) / p.total_files) * 100.0);
-    } else {
-        p.progress_percent = 0.0;
-    }
-
-    auto now = std::chrono::steady_clock::now();
-    p.elapsed_seconds = std::chrono::duration<double>(now - start_time_).count();
-
-    p.folder_scans = getFolderScanProgresses();
-    p.total_scanned_files = total_scanned_files_.load(std::memory_order_relaxed);
-    p.total_scanned_folders = total_scanned_folders_.load(std::memory_order_relaxed);
-    p.total_scanned_bytes = total_scanned_bytes_.load(std::memory_order_relaxed);
-    p.is_scanning_active = any_scanning_active_.load(std::memory_order_relaxed);
-    p.job_progresses = getJobProgresses();
-
-    return p;
-}
-
-std::vector<FolderScanProgress> TransferManager::getFolderScanProgresses() const {
-    std::lock_guard<std::mutex> lock(scan_mutex_);
-    std::vector<FolderScanProgress> result;
-    result.reserve(folder_scans_.size());
-    for (const auto& [_, sp] : folder_scans_) {
-        result.push_back(sp);
+std::vector<TransferJobRequest> TransferManager::getJobs() const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    std::vector<TransferJobRequest> result;
+    result.reserve(jobs_.size());
+    for (const auto& [id, j] : jobs_) {
+        result.push_back(*j);
     }
     return result;
 }
 
-bool TransferManager::getFolderScanProgress(uint64_t jobId, FolderScanProgress& outProgress) const {
-    std::lock_guard<std::mutex> lock(scan_mutex_);
-    auto it = folder_scans_.find(jobId);
-    if (it != folder_scans_.end()) {
-        outProgress = it->second;
+bool TransferManager::getJobProgress(uint64_t jobId, TransferProgress& outProgress) const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    if (it != jobs_.end()) {
+        outProgress = it->second->progress;
         return true;
     }
     return false;
@@ -1911,93 +336,32 @@ bool TransferManager::getFolderScanProgress(uint64_t jobId, FolderScanProgress& 
 
 std::vector<TransferProgress> TransferManager::getJobProgresses() const {
     std::lock_guard<std::mutex> lock(job_mutex_);
-    std::vector<TransferProgress> result;
-    result.reserve(job_progresses_.size());
-    for (const auto& [_, jp] : job_progresses_) {
-        result.push_back(jp);
+    std::vector<TransferProgress> list;
+    list.reserve(jobs_.size());
+    for (const auto& [id, j] : jobs_) {
+        list.push_back(j->progress);
     }
-    return result;
+    return list;
 }
 
-bool TransferManager::getJobProgress(uint64_t jobId, TransferProgress& outProgress) const {
+bool TransferManager::getFolderScanProgress(uint64_t jobId, FolderScanProgress& outProgress) const {
     std::lock_guard<std::mutex> lock(job_mutex_);
-    auto it = job_progresses_.find(jobId);
-    if (it != job_progresses_.end()) {
-        outProgress = it->second;
+    auto it = jobs_.find(jobId);
+    if (it != jobs_.end()) {
+        outProgress = it->second->scan_progress;
         return true;
     }
     return false;
 }
 
-std::unordered_map<uint64_t, TransferProgress> TransferManager::getJobProgressMap() const {
+std::vector<FolderScanProgress> TransferManager::getFolderScanProgresses() const {
     std::lock_guard<std::mutex> lock(job_mutex_);
-    std::unordered_map<uint64_t, TransferProgress> result;
-    for (const auto& [id, jp] : job_progresses_) {
-        result[id] = jp;
+    std::vector<FolderScanProgress> list;
+    list.reserve(jobs_.size());
+    for (const auto& [id, j] : jobs_) {
+        list.push_back(j->scan_progress);
     }
-    return result;
-}
-
-void TransferManager::recordJobBytesTransferred(uint64_t jobId, uint64_t bytes) {
-    if (jobId == 0) return;
-    std::lock_guard<std::mutex> lock(job_mutex_);
-    auto it = job_progresses_.find(jobId);
-    if (it != job_progresses_.end()) {
-        it->second.bytes_transferred += bytes;
-        if (it->second.total_bytes > 0) {
-            it->second.progress_percent = std::min<double>(100.0,
-                (static_cast<double>(it->second.bytes_transferred) / it->second.total_bytes) * 100.0);
-        }
-        checkJobCompletion(it->second);
-    }
-}
-
-void TransferManager::recordJobFileCompleted(uint64_t jobId) {
-    if (jobId == 0) return;
-    std::lock_guard<std::mutex> lock(job_mutex_);
-    auto it = job_progresses_.find(jobId);
-    if (it != job_progresses_.end()) {
-        it->second.files_transferred++;
-        if (it->second.total_files > 0 && it->second.total_bytes == 0) {
-            it->second.progress_percent = std::min<double>(100.0,
-                (static_cast<double>(it->second.files_transferred) / it->second.total_files) * 100.0);
-        }
-        checkJobCompletion(it->second);
-    }
-}
-
-void TransferManager::recordJobDirectoryCompleted(uint64_t jobId) {
-    if (jobId == 0) return;
-    std::lock_guard<std::mutex> lock(job_mutex_);
-    auto it = job_progresses_.find(jobId);
-    if (it != job_progresses_.end()) {
-        it->second.dirs_transferred++;
-        checkJobCompletion(it->second);
-    }
-}
-
-void TransferManager::recordJobError(uint64_t jobId) {
-    if (jobId == 0) return;
-    std::lock_guard<std::mutex> lock(job_mutex_);
-    auto it = job_progresses_.find(jobId);
-    if (it != job_progresses_.end()) {
-        it->second.errors_count++;
-    }
-}
-
-void TransferManager::checkJobCompletion(TransferProgress& jp) {
-    bool scanFinished = false;
-    {
-        std::lock_guard<std::mutex> sLock(scan_mutex_);
-        auto it = folder_scans_.find(jp.job_id);
-        if (it != folder_scans_.end() && it->second.is_completed) {
-            scanFinished = true;
-        }
-    }
-    if (scanFinished && jp.files_transferred >= jp.total_files && jp.dirs_transferred >= jp.total_dirs) {
-        jp.is_completed = true;
-        jp.progress_percent = 100.0;
-    }
+    return list;
 }
 
 std::vector<TransferQuestion> TransferManager::getActiveQuestions() const {
@@ -2005,28 +369,742 @@ std::vector<TransferQuestion> TransferManager::getActiveQuestions() const {
     return active_questions_;
 }
 
-// Default virtual overrides
-void TransferManager::onProgress(const TransferProgress& /*jobProgress*/, const TransferProgress& totalProgress) {
-    onProgress(totalProgress);
-}
-
-void TransferManager::onProgress(const TransferProgress& /*totalProgress*/) {
-    // Default no-op, overridden by subclasses or custom progress callback
-}
-
-void TransferManager::onJobProgress(const TransferProgress& jobProgress) {
-    if (job_progress_cb_) {
-        job_progress_cb_(jobProgress);
+void TransferManager::setAnswerForJob(uint64_t jobId, QuestionType type, QuestionAnswer answer) {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    if (it != jobs_.end()) {
+        it->second->remembered_answers[type] = answer;
     }
 }
 
-QuestionAnswer TransferManager::onQuestion(const TransferQuestion& /*question*/, bool& /*rememberForType*/) {
-    // Default returns PROMPT to allow active question pool collection
-    return QuestionAnswer::PROMPT;
+std::map<QuestionType, QuestionAnswer> TransferManager::getRememberedAnswersForJob(uint64_t jobId) const {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    if (it != jobs_.end()) {
+        return it->second->remembered_answers;
+    }
+    return {};
+}
+
+void TransferManager::clearRememberedAnswersForJob(uint64_t jobId) {
+    std::lock_guard<std::mutex> lock(job_mutex_);
+    auto it = jobs_.find(jobId);
+    if (it != jobs_.end()) {
+        it->second->remembered_answers.clear();
+    }
+}
+
+bool TransferManager::answerQuestion(uint64_t questionId, QuestionAnswer answer, bool rememberForType, bool rememberForAllJobs) {
+    std::lock_guard<std::mutex> lock(question_mutex_);
+    auto it = std::find_if(active_questions_.begin(), active_questions_.end(),
+                           [questionId](const TransferQuestion& q) { return q.id == questionId; });
+    if (it == active_questions_.end()) {
+        return false;
+    }
+
+    uint64_t qJobId = it->job_id;
+    QuestionType qType = it->type;
+
+    if (rememberForType) {
+        if (rememberForAllJobs || qJobId == 0) {
+            remembered_answers_[qType] = answer;
+        } else {
+            setAnswerForJob(qJobId, qType, answer);
+        }
+    }
+
+    active_questions_.erase(it);
+    cv_questions_.notify_all();
+    return true;
+}
+
+// --- Thread Routines ---
+
+void TransferManager::discoveryWorker() {
+    while (service_running_.load(std::memory_order_acquire)) {
+        std::shared_ptr<TransferJobRequest> job;
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex_);
+            cv_sources_.wait(lock, [&]() {
+                return !pending_job_requests_.empty() || !service_running_.load(std::memory_order_acquire);
+            });
+
+            if (!service_running_.load(std::memory_order_acquire)) {
+                break;
+            }
+
+            if (!pending_job_requests_.empty()) {
+                job = pending_job_requests_.front();
+                pending_job_requests_.pop_front();
+            }
+        }
+
+        if (!job) continue;
+
+        fs::path srcP(job->source_path);
+        fs::path dstP(job->destination_dir);
+
+        FileStat srcStat = fs_->statFile(job->source_path, false);
+        if (!srcStat.exists) {
+            job->scan_progress.state = ScanState::FAILED;
+            job->scan_progress.is_completed = true;
+            job->is_scan_completed = true;
+            job->is_completed = true;
+            job->progress.is_completed = true;
+            onFolderScanProgress(job->scan_progress);
+            cv_job_done_.notify_all();
+            continue;
+        }
+
+        if (srcStat.is_regular || srcStat.is_symlink) {
+            // Single regular file or symlink
+            fs::path targetFilePath = dstP;
+            if (fs_->isDirectory(job->destination_dir)) {
+                targetFilePath = dstP / srcP.filename();
+            }
+
+            auto item = std::make_shared<TransferItem>();
+            item->id = next_item_id_++;
+            item->job_id = job->job_id;
+            item->src_path = job->source_path;
+            item->dst_path = targetFilePath.wstring();
+            item->root_src = srcP.parent_path().wstring();
+            item->root_dst = dstP.wstring();
+            item->is_directory = false;
+            item->is_symlink = srcStat.is_symlink;
+            item->size = srcStat.size;
+
+            item->progress.source_path = item->src_path;
+            item->progress.destination_path = item->dst_path;
+            item->progress.total_bytes = item->size;
+            item->progress.is_directory = false;
+            item->progress.is_symlink = item->is_symlink;
+
+            {
+                std::lock_guard<std::mutex> lock(job_mutex_);
+                job->active_items.push_back(item);
+                job->scan_progress.scanned_files = 1;
+                job->scan_progress.scanned_bytes = item->size;
+                job->scan_progress.state = ScanState::COMPLETED;
+                job->scan_progress.is_completed = true;
+                job->progress.total_files = 1;
+                job->progress.total_bytes = item->size;
+                job->is_scan_completed = true;
+            }
+
+            onFolderScanProgress(job->scan_progress);
+
+            {
+                std::lock_guard<std::mutex> lock(queue_mutex_);
+                pending_items_.push_back(item);
+            }
+            cv_items_.notify_all();
+        } else if (srcStat.is_directory) {
+            // Directory tree scan
+            fs::path targetFolder = dstP / srcP.filename();
+            fs_->createDirectories(targetFolder.wstring());
+
+            auto rootDirItem = std::make_shared<TransferItem>();
+            rootDirItem->id = next_item_id_++;
+            rootDirItem->job_id = job->job_id;
+            rootDirItem->src_path = job->source_path;
+            rootDirItem->dst_path = targetFolder.wstring();
+            rootDirItem->root_src = job->source_path;
+            rootDirItem->root_dst = targetFolder.wstring();
+            rootDirItem->is_directory = true;
+
+            rootDirItem->progress.source_path = rootDirItem->src_path;
+            rootDirItem->progress.destination_path = rootDirItem->dst_path;
+            rootDirItem->progress.is_directory = true;
+
+            {
+                std::lock_guard<std::mutex> lock(job_mutex_);
+                job->active_items.push_back(rootDirItem);
+                job->scan_progress.scanned_folders = 1;
+                job->progress.total_dirs = 1;
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(queue_mutex_);
+                pending_items_.push_back(rootDirItem);
+            }
+            cv_items_.notify_all();
+
+            // Enumerate directory tree
+            std::deque<fs::path> subdirs;
+            subdirs.push_back(srcP);
+
+            while (!subdirs.empty() && service_running_.load(std::memory_order_acquire) && !job->is_cancelled) {
+                fs::path currDir = subdirs.front();
+                subdirs.pop_front();
+
+                std::vector<DirEntry> entries = fs_->listDirectory(currDir.wstring());
+
+                for (const auto& entry : entries) {
+                    if (entry.name == L"." || entry.name == L"..") continue;
+
+                    fs::path rel = fs::relative(fs::path(entry.full_path), srcP);
+                    fs::path itemDest = targetFolder / rel;
+
+                    auto itm = std::make_shared<TransferItem>();
+                    itm->id = next_item_id_++;
+                    itm->job_id = job->job_id;
+                    itm->src_path = entry.full_path;
+                    itm->dst_path = itemDest.wstring();
+                    itm->root_src = job->source_path;
+                    itm->root_dst = targetFolder.wstring();
+                    itm->is_directory = entry.is_directory;
+                    itm->is_symlink = entry.is_symlink;
+                    itm->size = entry.size;
+
+                    itm->progress.source_path = itm->src_path;
+                    itm->progress.destination_path = itm->dst_path;
+                    itm->progress.total_bytes = itm->size;
+                    itm->progress.is_directory = entry.is_directory;
+                    itm->progress.is_symlink = entry.is_symlink;
+
+                    {
+                        std::lock_guard<std::mutex> lock(job_mutex_);
+                        job->active_items.push_back(itm);
+                        if (entry.is_directory) {
+                            job->scan_progress.scanned_folders++;
+                            job->progress.total_dirs++;
+                        } else {
+                            job->scan_progress.scanned_files++;
+                            job->scan_progress.scanned_bytes += entry.size;
+                            job->progress.total_files++;
+                            job->progress.total_bytes += entry.size;
+                        }
+                    }
+
+                    {
+                        std::lock_guard<std::mutex> lock(queue_mutex_);
+                        pending_items_.push_back(itm);
+                    }
+                    cv_items_.notify_all();
+
+                    if (entry.is_directory) {
+                        subdirs.push_back(entry.full_path);
+                    }
+                }
+            }
+
+            {
+                std::lock_guard<std::mutex> lock(job_mutex_);
+                job->scan_progress.state = ScanState::COMPLETED;
+                job->scan_progress.is_completed = true;
+                job->is_scan_completed = true;
+            }
+            onFolderScanProgress(job->scan_progress);
+
+            checkJobCompletion(job);
+        }
+    }
+}
+
+void TransferManager::readerWorker(size_t /*threadIndex*/) {
+    while (service_running_.load(std::memory_order_acquire)) {
+        std::shared_ptr<TransferItem> item;
+        std::shared_ptr<TransferJobRequest> job;
+
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex_);
+            cv_items_.wait(lock, [&]() {
+                if (!service_running_.load(std::memory_order_acquire)) {
+                    return true;
+                }
+                if (service_paused_.load(std::memory_order_acquire) || io_error_paused_.load(std::memory_order_acquire)) {
+                    return false;
+                }
+                return !pending_items_.empty();
+            });
+
+            if (!service_running_.load(std::memory_order_acquire)) {
+                break;
+            }
+
+            if (!pending_items_.empty()) {
+                item = pending_items_.front();
+                pending_items_.pop_front();
+            }
+        }
+
+        if (!item) continue;
+
+        {
+            std::lock_guard<std::mutex> lock(job_mutex_);
+            auto it = jobs_.find(item->job_id);
+            if (it != jobs_.end()) {
+                job = it->second;
+            }
+        }
+
+        if (!job || job->is_cancelled) {
+            continue;
+        }
+
+        if (job->is_paused) {
+            // Requeue paused job items
+            std::lock_guard<std::mutex> lock(queue_mutex_);
+            pending_items_.push_back(item);
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+            continue;
+        }
+
+        processSingleItem(item);
+    }
+}
+
+void TransferManager::writerWorker(size_t /*threadIndex*/) {
+    while (service_running_.load(std::memory_order_acquire)) {
+        if (!buffer_ring_ || buffer_ring_->isShutdown()) break;
+
+        BufferChunk* chunk = buffer_ring_->acquireReadyChunk();
+        if (!chunk) {
+            break;
+        }
+
+        if (chunk->dst_fd >= 0 && chunk->bytes_valid > 0 && !chunk->is_eof) {
+            ssize_t written = fs_->writeFile(chunk->dst_fd, chunk->buffer, chunk->bytes_valid, chunk->dst_offset);
+            if (written < 0) {
+                handleCriticalIo(L"destination_write", errno, L"writeFile");
+                buffer_ring_->markChunkFailed(chunk, errno);
+                continue;
+            }
+        }
+
+        buffer_ring_->releaseCommittedChunk(chunk);
+    }
+}
+
+bool TransferManager::processSingleItem(std::shared_ptr<TransferItem> item) {
+    if (!item) return false;
+
+    std::shared_ptr<TransferJobRequest> job;
+    {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        auto it = jobs_.find(item->job_id);
+        if (it != jobs_.end()) job = it->second;
+    }
+    if (!job) return false;
+
+    pitchItemProgress(job, item);
+
+    bool ok = false;
+    if (item->is_directory) {
+        ok = transferDirectory(item);
+    } else if (item->is_symlink) {
+        ok = transferSymlink(item);
+    } else {
+        ok = transferFile(item);
+    }
+
+    finishItem(job, item);
+    return ok;
+}
+
+bool TransferManager::transferDirectory(std::shared_ptr<TransferItem> item) {
+    if (!fs_->exists(item->dst_path)) {
+        if (!fs_->createDirectories(item->dst_path)) {
+            return false;
+        }
+    }
+    fs_->copyMetadata(item->src_path, item->dst_path, options_.preserve_ownership);
+    return true;
+}
+
+bool TransferManager::transferSymlink(std::shared_ptr<TransferItem> item) {
+    std::wstring linkTarget = fs_->readSymlink(item->src_path);
+    if (linkTarget.empty()) {
+        return false;
+    }
+
+    std::wstring adjustedTarget = recomputeRelativeSymlink(linkTarget, item->src_path, item->dst_path, item->root_src);
+
+    if (fs_->exists(item->dst_path) || fs_->isSymlink(item->dst_path)) {
+        QuestionAnswer ans = resolveQuestion(item, QuestionType::LINK_DESTINATION_EXISTS,
+                                            L"Destination exists for symlink: " + item->dst_path);
+        if (ans == QuestionAnswer::SKIP || ans == QuestionAnswer::SKIP_ALL) {
+            return true;
+        }
+        fs_->removeFile(item->dst_path);
+    }
+
+    return fs_->createSymlink(adjustedTarget, item->dst_path);
+}
+
+std::wstring TransferManager::generateUniqueRenamedPath(IFileSystem* fs, const std::wstring& originalPath) {
+    fs::path p(originalPath);
+    std::wstring stem = p.stem().wstring();
+    std::wstring ext = p.extension().wstring();
+    fs::path parent = p.parent_path();
+
+    for (int counter = 1; counter <= 9999; ++counter) {
+        std::wstring candidate = (parent / (stem + L" (" + std::to_wstring(counter) + L")" + ext)).wstring();
+        if (!fs->exists(candidate)) {
+            return candidate;
+        }
+    }
+    return originalPath;
+}
+
+std::wstring TransferManager::recomputeRelativeSymlink(const std::wstring& rawTarget,
+                                                     const std::wstring& symlinkSrcPath,
+                                                     const std::wstring& symlinkDstPath,
+                                                     const std::wstring& rootSrcTree) {
+    fs::path target(rawTarget);
+    if (target.is_absolute()) {
+        return rawTarget;
+    }
+
+    fs::path srcDir = fs::path(symlinkSrcPath).parent_path();
+    fs::path resolvedTarget = fs::weakly_canonical(srcDir / target);
+
+    fs::path rootTree(rootSrcTree);
+    auto mismatch = std::mismatch(rootTree.begin(), rootTree.end(), resolvedTarget.begin());
+    bool isInternal = (mismatch.first == rootTree.end());
+
+    if (isInternal) {
+        return rawTarget;
+    }
+
+    fs::path dstDir = fs::path(symlinkDstPath).parent_path();
+    std::error_code ec;
+    fs::path newRel = fs::relative(resolvedTarget, dstDir, ec);
+    return ec ? rawTarget : newRel.wstring();
+}
+
+QuestionAnswer TransferManager::resolveQuestion(std::shared_ptr<TransferItem> item, QuestionType type, const std::wstring& msg, int err) {
+    // 1. Check job-specific remembered answers first
+    if (item && item->job_id > 0) {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        auto it = jobs_.find(item->job_id);
+        if (it != jobs_.end()) {
+            auto ansIt = it->second->remembered_answers.find(type);
+            if (ansIt != it->second->remembered_answers.end()) {
+                return ansIt->second;
+            }
+        }
+    }
+
+    // 2. Check global fallback answers
+    {
+        std::lock_guard<std::mutex> lock(question_mutex_);
+        auto it = remembered_answers_.find(type);
+        if (it != remembered_answers_.end()) {
+            return it->second;
+        }
+    }
+
+    // 3. Prompt user via callback
+    TransferQuestion q;
+    q.id = next_question_id_++;
+    q.job_id = item ? item->job_id : 0;
+    q.type = type;
+    q.source_path = item ? item->src_path : L"";
+    q.target_path = item ? item->dst_path : L"";
+    q.message = msg;
+    q.error_code = err;
+
+    bool rememberForType = false;
+    QuestionAnswer ans = onQuestion(q, rememberForType);
+
+    if (rememberForType) {
+        if (q.job_id > 0) {
+            setAnswerForJob(q.job_id, type, ans);
+        } else {
+            setAnswerForType(type, ans);
+        }
+    }
+
+    return ans;
+}
+
+bool TransferManager::transferFile(std::shared_ptr<TransferItem> item) {
+    if (!item) return false;
+
+    std::shared_ptr<TransferJobRequest> job;
+    {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        auto it = jobs_.find(item->job_id);
+        if (it != jobs_.end()) job = it->second;
+    }
+
+    FileStat srcStat = fs_->statFile(item->src_path, false);
+    FileStat dstStat = fs_->statFile(item->dst_path, false);
+    bool dstExists = dstStat.exists;
+
+    // Check collisions
+    if (dstExists) {
+        if (srcStat.dev == dstStat.dev && srcStat.ino == dstStat.ino && srcStat.ino != 0) {
+            // Same source and target inode
+            resolveQuestion(item, QuestionType::SAME_SOURCE_AND_TARGET, L"Cannot copy file onto itself");
+            return true;
+        }
+
+        QuestionType qType = dstStat.is_read_only ? QuestionType::OVERWRITE_READ_ONLY_TARGET : QuestionType::OVERWRITE_EXISTING;
+        QuestionAnswer decision = resolveQuestion(item, qType, L"Destination file already exists: " + item->dst_path);
+
+        if (decision == QuestionAnswer::SKIP || decision == QuestionAnswer::SKIP_ALL) {
+            return true;
+        } else if (decision == QuestionAnswer::OVERWRITE_IF_NEWER) {
+            bool srcIsNewer = (srcStat.mtime_sec > dstStat.mtime_sec) ||
+                              (srcStat.mtime_sec == dstStat.mtime_sec && srcStat.mtime_nsec > dstStat.mtime_nsec);
+            if (!srcIsNewer) return true;
+        } else if (decision == QuestionAnswer::OVERWRITE_IF_DIFFERENT_SIZE) {
+            if (srcStat.size == dstStat.size) return true;
+        } else if (decision == QuestionAnswer::OVERWRITE_IF_NEWER_OR_DIFFERENT_SIZE) {
+            bool srcIsNewer = (srcStat.mtime_sec > dstStat.mtime_sec) ||
+                              (srcStat.mtime_sec == dstStat.mtime_sec && srcStat.mtime_nsec > dstStat.mtime_nsec);
+            if (!srcIsNewer && srcStat.size == dstStat.size) return true;
+        } else if (decision == QuestionAnswer::AUTO_RENAME) {
+            item->dst_path = generateUniqueRenamedPath(fs_.get(), item->dst_path);
+            item->progress.destination_path = item->dst_path;
+        }
+
+        if (dstStat.is_read_only) {
+            fs_->setPermissions(item->dst_path, dstStat.mode | S_IWUSR);
+        }
+    }
+
+    int srcFd = fs_->openFile(item->src_path, O_RDONLY);
+    if (srcFd < 0) return false;
+
+    int dstFd = fs_->openFile(item->dst_path, O_WRONLY | O_CREAT | O_TRUNC, srcStat.mode ? srcStat.mode : 0644);
+    if (dstFd < 0) {
+        fs_->closeFile(srcFd);
+        return false;
+    }
+
+    bool success = false;
+    if (options_.enable_cow && tryCoWTransfer(item, srcFd, dstFd)) {
+        success = true;
+    } else if (srcStat.is_sparse && options_.enable_sparse && transferSparseFile(item, srcFd, dstFd)) {
+        success = true;
+    } else if (srcStat.size <= static_cast<off_t>(options_.small_file_mmap_threshold) && transferSmallFileMmap(item, srcFd, dstFd)) {
+        success = true;
+    } else {
+        success = transferChunked(item, srcFd, dstFd);
+    }
+
+    fs_->closeFile(srcFd);
+    fs_->closeFile(dstFd);
+
+    if (success) {
+        fs_->copyMetadata(item->src_path, item->dst_path, options_.preserve_ownership);
+        if (options_.mode == TransferMode::MOVE || (job && job->mode == TransferMode::MOVE)) {
+            fs_->removeFile(item->src_path);
+        }
+    }
+    return success;
+}
+
+bool TransferManager::tryCoWTransfer(std::shared_ptr<TransferItem> item, int srcFd, int dstFd) {
+    if (fs_->tryCloneOrCoW(srcFd, dstFd, item->size)) {
+        cow_bytes_.fetch_add(item->size, std::memory_order_relaxed);
+        item->progress.bytes_transferred = item->size;
+        item->progress.progress_percent = 100.0;
+        return true;
+    }
+    return false;
+}
+
+bool TransferManager::transferSparseFile(std::shared_ptr<TransferItem> item, int srcFd, int dstFd) {
+    off_t offset = 0;
+    while (offset < item->size) {
+        off_t dataStart = fs_->seekData(srcFd, offset);
+        if (dataStart < 0) {
+            fs_->truncateFile(dstFd, item->size);
+            break;
+        }
+
+        off_t holeStart = fs_->seekHole(srcFd, dataStart);
+        if (holeStart < 0) holeStart = item->size;
+
+        if (dataStart > offset) {
+            sparse_bytes_skipped_.fetch_add(dataStart - offset, std::memory_order_relaxed);
+        }
+
+        size_t bytesToCopy = holeStart - dataStart;
+        std::vector<char> buf(std::min<size_t>(bytesToCopy, 1024 * 1024));
+        off_t curr = dataStart;
+        while (curr < holeStart) {
+            size_t chunk = std::min<size_t>(buf.size(), holeStart - curr);
+            ssize_t r = fs_->readFile(srcFd, buf.data(), chunk, curr);
+            if (r <= 0) break;
+            fs_->writeFile(dstFd, buf.data(), r, curr);
+            curr += r;
+            item->progress.bytes_transferred += r;
+        }
+        offset = holeStart;
+    }
+    fs_->truncateFile(dstFd, item->size);
+    return true;
+}
+
+bool TransferManager::transferSmallFileMmap(std::shared_ptr<TransferItem> item, int srcFd, int dstFd) {
+    if (item->size == 0) return true;
+    void* srcMap = fs_->mapFile(srcFd, item->size, 0, true);
+    if (!srcMap) return false;
+
+    fs_->truncateFile(dstFd, item->size);
+    void* dstMap = fs_->mapFile(dstFd, item->size, 0, false);
+    if (!dstMap) {
+        fs_->unmapFile(srcMap, item->size);
+        return false;
+    }
+
+    std::memcpy(dstMap, srcMap, item->size);
+    fs_->unmapFile(srcMap, item->size);
+    fs_->unmapFile(dstMap, item->size);
+
+    mmap_bytes_.fetch_add(item->size, std::memory_order_relaxed);
+    item->progress.bytes_transferred = item->size;
+    item->progress.progress_percent = 100.0;
+    return true;
+}
+
+bool TransferManager::transferChunked(std::shared_ptr<TransferItem> item, int srcFd, int dstFd) {
+    size_t chunkSize = options_.chunk_size;
+    off_t offset = 0;
+
+    std::shared_ptr<TransferJobRequest> job;
+    {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        auto it = jobs_.find(item->job_id);
+        if (it != jobs_.end()) job = it->second;
+    }
+
+    while (offset < item->size && service_running_.load(std::memory_order_acquire)) {
+        if (job && (job->is_cancelled || job->is_paused)) break;
+        if (!buffer_ring_ || buffer_ring_->isShutdown()) break;
+
+        BufferChunk* chunk = buffer_ring_->acquireFreeChunk();
+        if (!chunk) break;
+
+        size_t toRead = std::min<size_t>(chunkSize, item->size - offset);
+        ssize_t r = fs_->readFile(srcFd, chunk->buffer, toRead, offset);
+        if (r < 0) {
+            buffer_ring_->markChunkFailed(chunk, errno);
+            return false;
+        }
+
+        chunk->src_fd = srcFd;
+        chunk->dst_fd = dstFd;
+        chunk->src_offset = offset;
+        chunk->dst_offset = offset;
+        chunk->bytes_valid = r;
+        chunk->is_eof = (offset + r >= item->size);
+
+        buffer_ring_->publishReadyChunk(chunk, r, chunk->is_eof);
+
+        offset += r;
+        item->progress.bytes_transferred = offset;
+        item->progress.progress_percent = (item->size > 0) ? (offset * 100.0 / item->size) : 100.0;
+
+        if (job) {
+            job->progress.bytes_transferred += r;
+            if (job->progress.total_bytes > 0) {
+                job->progress.progress_percent = (job->progress.bytes_transferred * 100.0) / job->progress.total_bytes;
+            }
+            pitchItemProgress(job, item);
+        }
+    }
+    return (offset >= item->size);
+}
+
+void TransferManager::pitchItemProgress(std::shared_ptr<TransferJobRequest> job, std::shared_ptr<TransferItem> item, bool forceFinal) {
+    if (!job || !item) return;
+
+    auto now = std::chrono::steady_clock::now();
+    if (!forceFinal && job->last_pitch_time.time_since_epoch().count() != 0) {
+        auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(now - job->last_pitch_time).count();
+        if (elapsedMs < 50) {
+            return;
+        }
+        if (elapsedMs > 0) {
+            uint64_t delta = job->progress.bytes_transferred - job->last_pitch_bytes;
+            job->progress.current_speed_mb_s = (delta / (1024.0 * 1024.0)) / (elapsedMs / 1000.0);
+        }
+    }
+
+    job->last_pitch_time = now;
+    job->last_pitch_bytes = job->progress.bytes_transferred;
+
+    onTransferProgress(item->progress, job->progress);
+}
+
+void TransferManager::finishItem(std::shared_ptr<TransferJobRequest> job, std::shared_ptr<TransferItem> item) {
+    if (!job || !item) return;
+
+    item->progress.is_completed = true;
+    item->progress.progress_percent = 100.0;
+
+    if (item->is_directory) {
+        job->progress.dirs_transferred++;
+    } else {
+        job->progress.files_transferred++;
+    }
+
+    onTransferProgress(item->progress, job->progress);
+
+    // Prune completed item immediately from active_items
+    {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        auto it = std::find(job->active_items.begin(), job->active_items.end(), item);
+        if (it != job->active_items.end()) {
+            job->active_items.erase(it);
+        }
+    }
+
+    checkJobCompletion(job);
+}
+
+void TransferManager::checkJobCompletion(std::shared_ptr<TransferJobRequest> job) {
+    if (!job) return;
+
+    bool done = false;
+    {
+        std::lock_guard<std::mutex> lock(job_mutex_);
+        if (job->is_scan_completed && job->active_items.empty() && !job->is_completed) {
+            job->is_completed = true;
+            job->progress.is_completed = true;
+            job->progress.progress_percent = 100.0;
+            done = true;
+        }
+    }
+
+    if (done) {
+        TransferItemProgress finalItem;
+        finalItem.source_path = job->source_path;
+        finalItem.destination_path = job->destination_dir;
+        finalItem.is_completed = true;
+        finalItem.progress_percent = 100.0;
+
+        onTransferProgress(finalItem, job->progress);
+
+        cv_job_done_.notify_all();
+        cv_all_done_.notify_all();
+    }
+}
+
+// --- Callbacks and Dispatchers ---
+
+void TransferManager::onTransferProgress(const TransferItemProgress& currentItem, const TransferProgress& jobProgress) {
+    if (item_transfer_progress_cb_) {
+        item_transfer_progress_cb_(currentItem, jobProgress);
+    }
 }
 
 void TransferManager::onFolderScanProgress(const FolderScanProgress& scan) {
     if (scan_progress_cb_) {
         scan_progress_cb_(scan);
     }
+}
+
+QuestionAnswer TransferManager::onQuestion(const TransferQuestion& question, bool& rememberForType) {
+    if (question_cb_) {
+        return question_cb_(question, rememberForType);
+    }
+    return QuestionAnswer::OVERWRITE;
 }

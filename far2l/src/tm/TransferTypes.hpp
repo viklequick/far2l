@@ -2,6 +2,8 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include <memory>
 #include <atomic>
 #include <chrono>
 #include <cstdint>
@@ -60,7 +62,7 @@ enum class ScanState {
     FAILED
 };
 
-// Independent progress metrics for a scanned folder in the copy queue
+// Independent progress metrics for a scanned folder in a transfer job
 struct FolderScanProgress {
     uint64_t job_id = 0;
     std::wstring folder_path;
@@ -101,14 +103,6 @@ struct DirEntry {
     off_t size = 0;
 };
 
-// Dynamic transfer job request with individual destination folder
-struct TransferJobRequest {
-    uint64_t job_id = 0;
-    std::wstring source_path;
-    std::wstring destination_dir;
-    TransferMode mode = TransferMode::COPY;
-};
-
 struct TransferQuestion {
     uint64_t id = 0;
     uint64_t job_id = 0;
@@ -142,15 +136,30 @@ struct TransferOptions {
     bool preserve_permissions = true;       // Preserve POSIX mode bits
     bool preserve_ownership = true;         // Preserve uid/gid (when privileged / sudo)
     bool verify_integrity = false;          // Verify CRC32 checksum of data blocks
-    bool service_mode = false;              // Run as persistent background transfer service
+    bool service_mode = true;               // Always run in service mode
 };
 
+// Progress metrics for an individual item (file, symlink, folder) currently transferring
+struct TransferItemProgress {
+    std::wstring source_path;
+    std::wstring destination_path;
+    uint64_t bytes_transferred = 0;
+    uint64_t total_bytes = 0;
+    double progress_percent = 0.0;
+    bool is_directory = false;
+    bool is_symlink = false;
+    bool is_completed = false;
+};
+
+// Complete progress metrics for an individual transfer job
 struct TransferProgress {
-    uint64_t job_id = 0;                    // 0 for total session, or individual job_id
-    std::wstring source_path;               // Source path for this transfer job
-    std::wstring destination_dir;           // Destination directory for this job
+    uint64_t job_id = 0;
+    std::wstring source_path;
+    std::wstring destination_dir;
     TransferMode mode = TransferMode::COPY;
-    bool is_completed = false;             // True when all items of this job are transferred
+    bool is_completed = false;
+    bool is_cancelled = false;
+    bool is_paused = false;
 
     uint64_t bytes_transferred = 0;
     uint64_t total_bytes = 0;
@@ -160,53 +169,69 @@ struct TransferProgress {
     uint32_t total_dirs = 0;
     uint32_t errors_count = 0;
     uint32_t questions_resolved_count = 0;
-    uint32_t active_questions_count = 0;
-    uint32_t active_jobs_count = 0;
     double current_speed_mb_s = 0.0;
     double progress_percent = 0.0;
-    std::wstring current_source_item;
-    std::wstring current_target_item;
     double elapsed_seconds = 0.0;
+
     bool is_paused_for_io_error = false;
     std::wstring io_error_reason;
     size_t buffer_ring_size_mb = 64;
-
-    // Per-folder independent scanning progress
-    std::vector<FolderScanProgress> folder_scans;
-    uint32_t total_scanned_files = 0;
-    uint32_t total_scanned_folders = 0;
-    uint64_t total_scanned_bytes = 0;
-    bool is_scanning_active = false;
-
-    // Per-job file copy progress status list
-    std::vector<TransferProgress> job_progresses;
 };
 
-struct TransferMetrics {
-    uint64_t transferred_bytes = 0;
-    uint64_t total_bytes = 0;
-    uint32_t transferred_files = 0;
-    uint32_t total_files = 0;
-    uint32_t transferred_dirs = 0;
-    uint32_t total_dirs = 0;
-    uint32_t error_count = 0;
-    uint32_t questions_resolved_count = 0;
-    uint32_t active_questions_count = 0;
-    uint32_t total_jobs_processed = 0;
-    double average_speed_mb_s = 0.0;
-    double elapsed_seconds = 0.0;
-    uint64_t cow_cloned_bytes = 0;
-    uint64_t sparse_bytes_skipped = 0;
-    uint64_t mmap_transferred_bytes = 0;
-    bool had_critical_io_error = false;
-    size_t buffer_ring_size_mb = 64;
+// Single item representing a file, folder, or symlink in flight or pending in a job
+struct TransferItem {
+    uint64_t id = 0;
+    uint64_t job_id = 0;
+    std::wstring src_path;
+    std::wstring dst_path;
+    std::wstring root_src;     // Original source tree root for relative symlink calculation
+    std::wstring root_dst;     // Original destination directory
+    bool is_directory = false;
+    bool is_symlink = false;
+    off_t size = 0;
+    bool checked = false;
+    bool resolved = false;
+    QuestionAnswer user_decision = QuestionAnswer::PROMPT;
+    off_t resume_offset = 0;
+    off_t src_start_offset = 0;
+    off_t dst_start_offset = 0;
+    bool is_append = false;
 
-    // Folder scanning statistics
-    std::vector<FolderScanProgress> folder_scans;
-    uint32_t total_scanned_files = 0;
-    uint32_t total_scanned_folders = 0;
-    uint64_t total_scanned_bytes = 0;
-
-    // Per-job file copy progress status list
-    std::vector<TransferProgress> job_progresses;
+    // Every active item owns its individual TransferItemProgress
+    TransferItemProgress progress;
 };
+
+// TransferJobRequest encapsulates everything for an individual job:
+// - single FolderScanProgress
+// - single TransferProgress
+// - active items list (completed items are pruned; only active/pending kept)
+// - per-job remembered answers
+// - per-job throttling timestamp and bytes
+struct TransferJobRequest {
+    uint64_t job_id = 0;
+    std::wstring source_path;
+    std::wstring destination_dir;
+    TransferMode mode = TransferMode::COPY;
+
+    FolderScanProgress scan_progress;
+    TransferProgress progress;
+
+    // Active items currently pending or being transferred.
+    // Completed items are pruned immediately to keep memory usage minimal.
+    std::vector<std::shared_ptr<TransferItem>> active_items;
+
+    // Per-job remembered user answers (isolated from other jobs)
+    std::map<QuestionType, QuestionAnswer> remembered_answers;
+
+    // Per-job throttling tracking held directly in the job
+    std::chrono::steady_clock::time_point last_pitch_time{};
+    uint64_t last_pitch_bytes = 0;
+
+    bool is_scanning = false;
+    bool is_scan_completed = false;
+    bool is_completed = false;
+    bool is_cancelled = false;
+    bool is_paused = false;
+};
+
+using TransferJob = TransferJobRequest;

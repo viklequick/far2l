@@ -923,7 +923,10 @@ void FileList::ShowList(int ShowStatus, int StartColumn, OpenPluginInfo &Info)
 	int ColumnCount = ShowStatus ? ViewSettings.StatusColumnCount : ViewSettings.ColumnCount;
 
 	// vk: rough check if kisat has folder/to/path form, ListData[0] = '..'
-	bool hasSubList = ListData.Count() > 1 && ListData.Count() < 10000 && wcschr(ListData[1]->strName.CPtr(), L'/') != nullptr;
+	bool hasSubList = Opt.TruncateCommonFolderPrefixInPanel 
+		&& ListData.Count() > 1 && ListData.Count() < 10000 
+		&& wcschr(ListData[1]->strName.CPtr(), L'/') != nullptr;
+
 	std::vector<FARString> merged;
 	if (hasSubList) {
 		std::vector<std::wstring> panelData;

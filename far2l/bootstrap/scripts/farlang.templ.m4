@@ -3124,6 +3124,17 @@ upd:"Show total delete progress indicator"
 "Показувати загальний індикатор видалення"
 "Адлюстроўваць агульны індыкатар выдалення"
 
+TruncateCommonFolderPrefixInPanel
+"Обрезать общие пути к файлам в панели"
+"Truncate common folder prefixes in file panels"
+upd:"Truncate common folder prefixes in file panels"
+upd:"Truncate common folder prefixes in file panels"
+upd:"Truncate common folder prefixes in file panels"
+upd:"Truncate common folder prefixes in file panels"
+upd:"Truncate common folder prefixes in file panels"
+upd:"Truncate common folder prefixes in file panels"
+upd:"Truncate common folder prefixes in file panels"
+
 ConfigPgUpChangeDisk
 "Использовать Ctrl+PgUp для мен&ю перехода"
 "Use Ctrl+Pg&Up for location menu"

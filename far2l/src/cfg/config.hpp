@@ -541,6 +541,8 @@ struct Options
 	int TTYCursorShapeInsert;
 	int TTYCursorShapeOvertype;
 
+	int TruncateCommonFolderPrefixInPanel;
+
 	Confirmation Confirm;
 	PluginConfirmation PluginConfirm;
 

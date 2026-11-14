@@ -822,6 +822,8 @@ const ConfigOpt g_cfg_opts[] {
 		L"PanelSettings", L"Shows the screen number indicator in panels" },
 	{OST_COMMON, NSecPanelLayout, "SortMode", &Opt.ShowSortMode, 1,
 		L"PanelSettings", L"Shows the current sort mode indicator in panels" },
+	{OST_COMMON, NSecPanelLayout, "TruncateCommonFolderPrefixInPanel", &Opt.TruncateCommonFolderPrefixInPanel, 1,
+		L"PanelSettings", L"Truncate common folder prefix on panels" },
 
 	{OST_COMMON, NSecLayout, "LeftHeightDecrement", &Opt.LeftHeightDecrement, 0,
 		nullptr, L"Reduces the left panel height by the specified number of rows" },

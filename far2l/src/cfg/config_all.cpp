@@ -489,6 +489,7 @@ static int Do_AllSystemSettings()
 	Builder.AddCheckbox(Msg::ConfigShowStatus, &Opt.ShowPanelStatus);
 	Builder.AddCheckbox(Msg::ConfigShowTotal, &Opt.ShowPanelTotals);
 	Builder.AddCheckbox(Msg::ConfigShowFree, &Opt.ShowPanelFree);
+	Builder.AddCheckbox(Msg::TruncateCommonFolderPrefixInPanel, &Opt.TruncateCommonFolderPrefixInPanel);
 
 	Builder.ColumnBreak();
 

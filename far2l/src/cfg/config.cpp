@@ -314,6 +314,7 @@ void PanelSettings()
 		Builder.AddCheckbox(Msg::ConfigShowScrollbar, &Opt.ShowPanelScrollbar);
 		Builder.AddCheckbox(Msg::ConfigShowScreensNumber, &Opt.ShowScreensNumber);
 		Builder.AddCheckbox(Msg::ConfigShowSortMode, &Opt.ShowSortMode);
+		Builder.AddCheckbox(Msg::TruncateCommonFolderPrefixInPanel, &Opt.TruncateCommonFolderPrefixInPanel);
 		Builder.AddOKCancel();
 
 		int clicked_id = -1;

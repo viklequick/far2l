@@ -1065,7 +1065,7 @@ void FileList::ShowList(int ShowStatus, int StartColumn, OpenPluginInfo &Info)
 							}
 							} /// Draw mark str
 #endif
-							const wchar_t *NamePtr = hasSubList && ListPos > 0 && ListPos < (int)merged.size()
+							const wchar_t *NamePtr = hasSubList && ListPos > 0 && ListPos <= (int)merged.size()
 								? merged[ListPos - 1]
 								: ListData[ListPos]->strName;
 							const wchar_t *NameCopy = NamePtr;

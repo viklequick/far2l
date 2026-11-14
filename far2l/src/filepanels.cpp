@@ -316,6 +316,7 @@ FilePanels::~FilePanels()
 	}
 
 	if(t_engine) {
+		// vk: todo: fix graceful shutdown here
 		t_engine->stopService();
 		delete t_engine;
 		t_engine = nullptr;

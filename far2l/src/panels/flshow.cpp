@@ -376,7 +376,7 @@ void FileList::ShowFileList(int Fast)
 				strCurDir = ListData[CurFile]->strName;
 				size_t pos;
 
-				if (FindLastSlash(pos, strCurDir)) {
+				if (FindLastSlash(pos, strCurDir)) { 
 					if (pos) {
 						if (strCurDir.At(pos - 1) != L':')
 							strCurDir.Truncate(pos);
@@ -914,11 +914,27 @@ static int MakeCurLeftPos(int ColumnWidth, const wchar_t *Str, int LeftPos, int 
 	return out;
 }
 
+std::vector<std::wstring> compactifyFileNamesUpTo(std::vector<std::wstring> v);
+
 void FileList::ShowList(int ShowStatus, int StartColumn, OpenPluginInfo &Info)
 {
 	int StatusShown = FALSE;
 	int MaxLeftPos = 0, MinLeftPos = FALSE;
 	int ColumnCount = ShowStatus ? ViewSettings.StatusColumnCount : ViewSettings.ColumnCount;
+
+	// vk: rough check if kisat has folder/to/path form, ListData[0] = '..'
+	bool hasSubList = ListData.Count() > 1 && ListData.Count() < 10000 && wcschr(ListData[1]->strName.CPtr(), L'/') != nullptr;
+	std::vector<FARString> merged;
+	if (hasSubList) {
+		std::vector<std::wstring> panelData;
+		panelData.reserve(ListData.Count() - 1);
+		for (int j = 1; j < ListData.Count(); ++j) {
+			panelData.push_back(ListData[j]->strName.GetWide());
+		}
+		std::vector<std::wstring> r = compactifyFileNamesUpTo(panelData);
+		merged.reserve(r.size());
+		for(size_t k = 0; k < r.size(); ++k) merged.push_back(FARString(r[k]));
+	}
 
 	for (int I = Y1 + 1 + Opt.ShowColumnTitles, J = CurTopFile; I < Y2 - 2 * Opt.ShowPanelStatus; I++, J++) {
 		int CurColumn = StartColumn;
@@ -1049,7 +1065,9 @@ void FileList::ShowList(int ShowStatus, int StartColumn, OpenPluginInfo &Info)
 							}
 							} /// Draw mark str
 #endif
-							const wchar_t *NamePtr = ListData[ListPos]->strName;
+							const wchar_t *NamePtr = hasSubList && ListPos > 0 && ListPos < (int)merged.size()
+								? merged[ListPos - 1]
+								: ListData[ListPos]->strName;
 							const wchar_t *NameCopy = NamePtr;
 
 							if (ViewFlags & COLUMN_NAMEONLY) {
@@ -1085,6 +1103,8 @@ void FileList::ShowList(int ShowStatus, int StartColumn, OpenPluginInfo &Info)
 									}
 								}
 							}
+
+							// vk: truncate to common is here
 
 							FARString strName;
 							int TooLong = ConvertName(strName, NamePtr, Width, RightAlign,

@@ -77,6 +77,8 @@ void TransferManager::stopService() {
         return;
     }
 
+    service_running_.store(false, std::memory_order_release);
+
     // Mark all remaining jobs as cancelled
     {
         std::lock_guard<std::mutex> lock(job_mutex_);
@@ -102,6 +104,7 @@ void TransferManager::stopService() {
     if (discovery_thread_.joinable()) {
         discovery_thread_.join();
     }
+
     for (auto& t : reader_threads_) {
         if (t.joinable()) t.join();
     }
@@ -111,8 +114,6 @@ void TransferManager::stopService() {
         if (t.joinable()) t.join();
     }
     writer_threads_.clear();
-
-    service_running_.store(false, std::memory_order_release);
 }
 
 uint64_t TransferManager::addTransferJob(const std::wstring& sourcePath, const std::wstring& destinationDir, TransferMode mode) {

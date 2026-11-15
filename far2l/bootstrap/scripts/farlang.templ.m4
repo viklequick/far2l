@@ -28849,7 +28849,7 @@ l:
 PanelBracketsForLongName
 l:
 "{}"
-"{}"
+"◄►"
 "{}"
 "{}"
 "{}"

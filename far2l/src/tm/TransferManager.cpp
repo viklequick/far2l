@@ -77,8 +77,6 @@ void TransferManager::stopService() {
         return;
     }
 
-    service_running_.store(false, std::memory_order_release);
-
     // Mark all remaining jobs as cancelled
     {
         std::lock_guard<std::mutex> lock(job_mutex_);
@@ -100,6 +98,9 @@ void TransferManager::stopService() {
     cv_io_recover_.notify_all();
     cv_job_done_.notify_all();
     cv_all_done_.notify_all();
+
+    // vk: we need to update flag before joins
+    service_running_.store(false, std::memory_order_release);
 
     if (discovery_thread_.joinable()) {
         discovery_thread_.join();
